@@ -5254,29 +5254,26 @@ function alexiaGenerarXLS(curso) {
     var rubricasAlumno = (normAlumn && notasOrden[normAlumn]) ? notasOrden[normAlumn] : Object.keys(notasEst);
 
     // ── Escribir notas ───────────────────────────────────
+    // REGLA ESTRICTA: solo escribir una nota si el nombre de la rúbrica
+    // coincide exactamente (normalizado) con el nombre de la columna CON.
+    // NO hay fallback posicional — evita que notas de Ev2 aparezcan en Ev1.
     var notasEscritas = [];
-    colsCON.forEach(function(col, i) {
-      var nota = null;
-
-      // Intento 1: nombre normalizado de la rúbrica == nombre de la columna CON
+    colsCON.forEach(function(col) {
       var normColAlexia = alexiaNorm(col.nombre);
+
+      // Buscar en las notas del alumno la que corresponde a esta columna
       var keyNombre = Object.keys(notasEst).find(function(rb) {
         return alexiaNorm(rb) === normColAlexia;
       });
-      if (keyNombre !== undefined) {
-        nota = notasEst[keyNombre];
-      }
 
-      // Intento 2: posición INDIVIDUAL — i-ésima rúbrica de ESTE alumno → i-ésima CON
-      if ((nota === null || nota === undefined) && rubricasAlumno[i] !== undefined) {
-        nota = notasEst[rubricasAlumno[i]];
-      }
-
-      if (nota !== null && nota !== undefined && !isNaN(Number(nota))) {
+      if (keyNombre !== undefined && notasEst[keyNombre] !== null &&
+          notasEst[keyNombre] !== undefined && !isNaN(Number(notasEst[keyNombre]))) {
+        var nota = notasEst[keyNombre];
         fila[col.idx] = nota;
         notasEscritas.push(nota);
         logEntry.notas[col.nombre] = nota;
       }
+      // Si no hay coincidencia por nombre → celda vacía (Alexia mostrará "—")
     });
 
     // Nota Final
