@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
+<meta name="arteval-version" content="v63">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -1361,7 +1362,7 @@ if ('serviceWorker' in navigator) {
       </svg>
       <div class="logo-wordmark">
         <div class="logo-text">Art<span>Eval</span></div>
-        <div class="logo-sub">Evaluador · Artes Visuales</div>
+        <div class="logo-sub">Evaluador · Artes Visuales <span style="opacity:0.45;font-size:9px;letter-spacing:0.3px;font-family:var(--font-mono);">v63</span></div>
       </div>
     </div>
 
@@ -4820,7 +4821,6 @@ function saveAlexiaDatos() {
     _checkStorageSize();
   } catch(e) {
     if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
-      // El storage está lleno — intentar guardar sin los buffers binarios
       try {
         var sinBuffers = {};
         Object.keys(alexiaDatos).forEach(function(k) {
@@ -4829,7 +4829,6 @@ function saveAlexiaDatos() {
           delete sinBuffers[k].bufferNombre;
         });
         localStorage.setItem('av_alexia_datos', JSON.stringify(sinBuffers));
-        toast('⚠️ Almacenamiento lleno: se guardaron las plantillas Alexia sin el buffer binario. Para exportar correctamente, vuelve a subir los .xls de Alexia desde la pestaña Cursos.', 'err', 9000);
         _checkStorageSize();
       } catch(e2) {
         toast('❌ Almacenamiento crítico. Ve a Configurar → Liberar espacio urgente.', 'err', 8000);
@@ -4837,6 +4836,13 @@ function saveAlexiaDatos() {
     } else {
       console.warn('[Alexia] localStorage error:', e);
     }
+  }
+  // Sincronizar plantillas Alexia con Drive en background (debounced 3s)
+  if (typeof _driveToken !== 'undefined' && _driveToken && Date.now() < _driveTokenExp) {
+    clearTimeout(window._alexiaDriveTimer);
+    window._alexiaDriveTimer = setTimeout(function() {
+      syncToDrive().catch(function(e){ console.warn('[Alexia] Drive sync:', e.message); });
+    }, 3000);
   }
 }
 
@@ -9687,6 +9693,7 @@ async function guardarYLiberarLocalStorage() {
       rubricas:     JSON.parse(JSON.stringify(rubricas)),
       listaCursos:  JSON.parse(JSON.stringify(listaCursos)),
       rubricaActiva: rubricaActiva,
+      alexiaDatos:  JSON.parse(JSON.stringify(alexiaDatos || {})),
     };
   } catch(snapErr) {
     toast('❌ Error al preparar datos: ' + snapErr.message, 'err', 6000);
@@ -9788,6 +9795,7 @@ async function syncToDrive() {
       rubricas:     JSON.parse(JSON.stringify(rubricas)),
       listaCursos:  JSON.parse(JSON.stringify(listaCursos)),
       rubricaActiva: rubricaActiva,
+      alexiaDatos:  JSON.parse(JSON.stringify(alexiaDatos || {})),
     };
 
     if (snapshot.registros.length === 0 && registros.length === 0) {
@@ -9848,6 +9856,7 @@ async function _runDailyBackup() {
       rubricas:    JSON.parse(JSON.stringify(rubricas)),
       listaCursos: JSON.parse(JSON.stringify(listaCursos)),
       rubricaActiva: rubricaActiva,
+      alexiaDatos:  JSON.parse(JSON.stringify(alexiaDatos || {})),
     };
 
     var payload  = JSON.stringify(snapshot);
@@ -9994,6 +10003,13 @@ async function syncFromDrive() {
     rubricas      = JSON.parse(JSON.stringify(raw.rubricas     || rubricas));
     listaCursos   = JSON.parse(JSON.stringify(raw.listaCursos  || {}));
     rubricaActiva = raw.rubricaActiva || 0;
+
+    // Restaurar plantillas Alexia si existen en el backup
+    if (raw.alexiaDatos && Object.keys(raw.alexiaDatos).length > 0) {
+      alexiaDatos = JSON.parse(JSON.stringify(raw.alexiaDatos));
+      saveAlexiaDatos();
+      console.log('[ArtEval] Plantillas Alexia restauradas desde Drive:', Object.keys(alexiaDatos).join(', '));
+    }
 
     saveRegistros();
     saveListaCursos();
