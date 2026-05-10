@@ -41,7 +41,7 @@
 <!-- SheetJS para leer XLS/XLSX -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
   /* ── Paleta "Tinta y Luz" ── */
@@ -50,17 +50,17 @@
   --bg3:       #eeebe4;
   --bg4:       #e5e0d6;
   --surface:   #ddd8cc;
-  --border:    rgba(60,45,30,0.10);
-  --border2:   rgba(60,45,30,0.20);
-  --text:      #1c1410;
-  --text2:     #5c4a36;
-  --text3:     #a8917a;
+  --border:    rgba(30,40,60,0.08);
+  --border2:   rgba(30,40,60,0.15);
+  --text:      #141820;
+  --text2:     #4a5568;
+  --text3:     #9aa3b0;
 
   /* Acento principal: Terracota vivo */
-  --accent:    #d4522a;
-  --accent2:   #e8714a;
-  --accent-bg: rgba(212,82,42,0.10);
-  --accent-border: rgba(212,82,42,0.30);
+  --accent:    #e05c2a;
+  --accent2:   #f07040;
+  --accent-bg: rgba(224,92,42,0.08);
+  --accent-border: rgba(224,92,42,0.25);
 
   /* Acento secundario: Índigo pizarra */
   --indigo:    #3d4f7c;
@@ -78,17 +78,17 @@
   --blue-bg:   rgba(39,98,160,0.12);
 
   /* Layout */
-  --rad:       8px;
-  --rad-lg:    12px;
-  --rad-xl:    18px;
-  --shadow-sm: 0 1px 4px rgba(30,20,10,0.08);
-  --shadow:    0 4px 20px rgba(30,20,10,0.10);
-  --shadow-lg: 0 8px 40px rgba(30,20,10,0.14);
+  --rad:       6px;
+  --rad-lg:    10px;
+  --rad-xl:    16px;
+  --shadow-sm: 0 1px 3px rgba(20,24,32,0.06);
+  --shadow:    0 2px 12px rgba(20,24,32,0.08);
+  --shadow-lg: 0 8px 32px rgba(20,24,32,0.12);
 
   /* Tipografía */
-  --font-display: 'Playfair Display', Georgia, serif;
+  --font-display: 'Inter', system-ui, sans-serif;
   --font-ui:      'Inter', system-ui, sans-serif;
-  --font-mono:    'JetBrains Mono', 'Courier New', monospace;
+  --font-mono:    'JetBrains Mono', 'SF Mono', 'Courier New', monospace;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -173,12 +173,11 @@ select#inputCurso:focus, select.curso-select:focus { outline: none; border-color
   grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 16px;
-  padding: 0 24px;
-  height: 62px;
-  background: rgba(247,245,240,0.99); backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(60,45,30,0.15);
+  padding: 0 20px;
+  height: 56px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
   position: sticky; top: 0; z-index: 100;
-  box-shadow: 0 1px 0 var(--border), 0 2px 16px rgba(30,20,10,0.06);
 }
 /* Buscador global central */
 .topbar-search { width: 100%; max-width: 440px; justify-self: center; position: relative; }
@@ -204,11 +203,8 @@ select#inputCurso:focus, select.curso-select:focus { outline: none; border-color
 .topbar-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
 .logo-icon {
   width: 40px; height: 40px; flex-shrink: 0;
-  --logo-bg: #1c3a4a;
+  --logo-bg: var(--accent);
   --logo-fg: #ffffff;
-  --logo-accent: #4a9b8e;
-  --logo-dot2: #e07b4a;
-  --logo-dot3: #c0855a;
   filter: drop-shadow(0 2px 6px rgba(28,58,74,0.30));
 }
 /* Logo sobre fondos oscuros (modo presentación, reportes) */
@@ -220,15 +216,15 @@ select#inputCurso:focus, select.curso-select:focus { outline: none; border-color
 }
 .logo-wordmark { display: flex; flex-direction: column; gap: 0; }
 .logo-text {
-  font-family: var(--font-display);
-  font-size: 20px; font-weight: 700;
-  color: var(--text); letter-spacing: -0.5px; line-height: 1;
+  font-family: var(--font-ui);
+  font-size: 18px; font-weight: 700;
+  color: var(--text); letter-spacing: -0.3px; line-height: 1;
 }
 .logo-text span { color: var(--accent); }
 .logo-sub {
   font-family: var(--font-mono);
-  font-size: 9px; color: var(--text3);
-  letter-spacing: 1.5px; text-transform: uppercase; margin-top: 2px;
+  font-size: 8px; color: var(--text3);
+  letter-spacing: 1.2px; text-transform: uppercase; margin-top: 3px;
 }
 .topbar-right { display: flex; align-items: center; gap: 8px; }
 .conteo-pill {
@@ -293,42 +289,31 @@ select#inputCurso:focus, select.curso-select:focus { outline: none; border-color
 
 /* ── TABS ── */
 .tabs {
-  display: flex; gap: 2px; padding: 10px 20px 0;
+  display: flex; gap: 0; padding: 0 16px;
   background: var(--bg2);
-  border-bottom: 2px solid var(--border);
+  border-bottom: 1px solid var(--border);
   overflow-x: auto; scrollbar-width: none;
 }
 .tabs::-webkit-scrollbar { display: none; }
 .tab {
   font-family: var(--font-ui); font-size: 12px; font-weight: 500;
-  padding: 8px 14px 10px; border-radius: 6px 6px 0 0;
-  border: 1px solid transparent; border-bottom: none;
-  cursor: pointer; background: transparent; color: var(--text2);
-  transition: all 0.15s; white-space: nowrap;
-  letter-spacing: 0.1px; position: relative; bottom: -2px;
+  padding: 0 16px; height: 44px;
+  border: none; border-bottom: 2px solid transparent;
+  cursor: pointer; background: transparent; color: var(--text3);
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap; letter-spacing: 0;
+  display: flex; align-items: center; gap: 5px;
+  touch-action: manipulation;
 }
-.tab:hover { color: var(--text2); background: var(--bg3); }
+.tab:hover { color: var(--text2); }
 .tab.active {
-  background: var(--bg);
   color: var(--accent);
-  border-color: var(--accent);
-  border-bottom-color: var(--bg);
-  font-weight: 700;
-  box-shadow: 0 -2px 0 0 var(--accent) inset;
+  border-bottom-color: var(--accent);
+  font-weight: 600;
 }
-.tab.active::after {
-  content: '';
-  position: absolute;
-  bottom: -2px; left: 0; right: 0;
-  height: 3px;
-  background: var(--accent);
-  border-radius: 2px 2px 0 0;
-}
-.tab:hover:not(.active) {
-  color: var(--accent);
-  background: var(--accent-bg);
-}
-.tab-icon { margin-right: 5px; font-size: 13px; }
+.tab.active::after { display: none; }
+.tab:hover:not(.active) { color: var(--text2); }
+.tab-icon { font-size: 13px; }
 
 /* ── MAIN CONTENT ── */
 .content { flex: 1; padding: 24px 28px; max-width: 1140px; margin: 0 auto; width: 100%; }
@@ -1327,7 +1312,7 @@ body { font-size: 14px; }
 // ── Service Worker para PWA offline ──────────────────────────────────────────
 if ('serviceWorker' in navigator) {
   // Inyectar SW como blob (funciona desde cualquier origen: file://, localhost, github.io)
-  var swCode = "\n// ArtEval Service Worker — cache para funcionamiento offline\nconst CACHE_NAME = 'arteval-v62';\nconst URLS_TO_CACHE = [\n  // El propio HTML\n  self.location.pathname,\n  // CDNs críticos\n  'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',\n  'https://accounts.google.com/gsi/client',\n  'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap',\n];\n\nself.addEventListener('install', function(event) {\n  event.waitUntil(\n    caches.open(CACHE_NAME).then(function(cache) {\n      return cache.addAll(URLS_TO_CACHE.filter(function(url) {\n        return !url.startsWith('https://accounts.google.com'); // no cachear OAuth\n      }));\n    }).catch(function(e) { console.warn('[SW] Cache parcial:', e.message); })\n  );\n  self.skipWaiting();\n});\n\nself.addEventListener('activate', function(event) {\n  event.waitUntil(\n    caches.keys().then(function(keys) {\n      return Promise.all(keys.filter(function(k){ return k !== CACHE_NAME; }).map(function(k){ return caches.delete(k); }));\n    })\n  );\n  self.clients.claim();\n});\n\nself.addEventListener('fetch', function(event) {\n  // No interceptar llamadas a APIs de Google (Drive, Gemini, OAuth)\n  var url = event.request.url;\n  if (url.includes('googleapis.com') || url.includes('accounts.google.com') || url.includes('script.google.com')) {\n    return; // pasar directo sin cache\n  }\n  event.respondWith(\n    caches.match(event.request).then(function(cached) {\n      if (cached) return cached;\n      return fetch(event.request).then(function(response) {\n        if (response && response.status === 200 && response.type !== 'opaque') {\n          var clone = response.clone();\n          caches.open(CACHE_NAME).then(function(cache){ cache.put(event.request, clone); });\n        }\n        return response;\n      }).catch(function() { return cached || new Response('Sin conexión', {status: 503}); });\n    })\n  );\n});\n";
+  var swCode = "\n// ArtEval Service Worker — cache para funcionamiento offline\nconst CACHE_NAME = 'arteval-v62';\nconst URLS_TO_CACHE = [\n  // El propio HTML\n  self.location.pathname,\n  // CDNs críticos\n  'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',\n  'https://accounts.google.com/gsi/client',\n  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap',\n];\n\nself.addEventListener('install', function(event) {\n  event.waitUntil(\n    caches.open(CACHE_NAME).then(function(cache) {\n      return cache.addAll(URLS_TO_CACHE.filter(function(url) {\n        return !url.startsWith('https://accounts.google.com'); // no cachear OAuth\n      }));\n    }).catch(function(e) { console.warn('[SW] Cache parcial:', e.message); })\n  );\n  self.skipWaiting();\n});\n\nself.addEventListener('activate', function(event) {\n  event.waitUntil(\n    caches.keys().then(function(keys) {\n      return Promise.all(keys.filter(function(k){ return k !== CACHE_NAME; }).map(function(k){ return caches.delete(k); }));\n    })\n  );\n  self.clients.claim();\n});\n\nself.addEventListener('fetch', function(event) {\n  // No interceptar llamadas a APIs de Google (Drive, Gemini, OAuth)\n  var url = event.request.url;\n  if (url.includes('googleapis.com') || url.includes('accounts.google.com') || url.includes('script.google.com')) {\n    return; // pasar directo sin cache\n  }\n  event.respondWith(\n    caches.match(event.request).then(function(cached) {\n      if (cached) return cached;\n      return fetch(event.request).then(function(response) {\n        if (response && response.status === 200 && response.type !== 'opaque') {\n          var clone = response.clone();\n          caches.open(CACHE_NAME).then(function(cache){ cache.put(event.request, clone); });\n        }\n        return response;\n      }).catch(function() { return cached || new Response('Sin conexión', {status: 503}); });\n    })\n  );\n});\n";
   var blob   = new Blob([swCode], { type: 'application/javascript' });
   var swUrl  = URL.createObjectURL(blob);
   navigator.serviceWorker.register(swUrl, { scope: './' }).then(function(reg) {
@@ -1350,19 +1335,19 @@ if ('serviceWorker' in navigator) {
   <!-- TOPBAR -->
   <div class="topbar">
     <div class="topbar-logo">
-      <svg class="logo-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="ArtEval logo">
-        <rect width="48" height="48" rx="10" fill="var(--logo-bg,#1c3a4a)"/>
-        <path d="M10 38 L10 10 L38 10 L38 38" stroke="var(--logo-fg,#ffffff)" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-        <polyline points="8,18 13,23 20,13" stroke="var(--logo-fg,#ffffff)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-        <line x1="38" y1="10" x2="18" y2="36" stroke="var(--logo-fg,#ffffff)" stroke-width="3" stroke-linecap="round"/>
-        <ellipse cx="16.5" cy="37.5" rx="3.5" ry="2" transform="rotate(-40 16.5 37.5)" fill="var(--logo-accent,#4a9b8e)"/>
-        <circle cx="30" cy="27" r="2.2" fill="var(--logo-accent,#4a9b8e)"/>
-        <circle cx="36" cy="27" r="2.2" fill="var(--logo-dot2,#e07b4a)"/>
-        <circle cx="33" cy="33" r="2.2" fill="var(--logo-dot3,#c0855a)"/>
+<svg class="logo-icon" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="ArtEval">
+        <!-- Fondo cuadrado con esquinas redondeadas -->
+        <rect width="44" height="44" rx="10" fill="var(--logo-bg,#e05c2a)"/>
+        <!-- Letra A estilizada — evoca "Arte" y "Aprobado" -->
+        <path d="M10 34 L22 10 L34 34" stroke="var(--logo-fg,#ffffff)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <!-- Barra horizontal del A — evoca rúbrica/evaluación -->
+        <line x1="14" y1="25" x2="30" y2="25" stroke="var(--logo-fg,#ffffff)" stroke-width="2.5" stroke-linecap="round"/>
+        <!-- Punto de acento — pincel/evaluación -->
+        <circle cx="34" cy="34" r="2.8" fill="var(--logo-fg,#ffffff)" opacity="0.9"/>
       </svg>
       <div class="logo-wordmark">
         <div class="logo-text">Art<span>Eval</span></div>
-        <div class="logo-sub">Evaluador · Artes Visuales <span style="opacity:0.45;font-size:9px;letter-spacing:0.3px;font-family:var(--font-mono);">v63</span></div>
+        <div class="logo-sub">Evaluador · Artes Visuales <span style="opacity:0.45;font-size:9px;letter-spacing:0.3px;font-family:var(--font-mono);">v65</span></div>
       </div>
     </div>
 
@@ -6673,8 +6658,8 @@ small, .text-xs, code { font-size: 12px; }
 
 /* Safe areas para notch/Dynamic Island */
 .topbar {
-  padding-left: max(16px, env(safe-area-inset-left));
-  padding-right: max(16px, env(safe-area-inset-right));
+  padding-left: max(20px, env(safe-area-inset-left));
+  padding-right: max(20px, env(safe-area-inset-right));
 }
 .content {
   padding-bottom: max(20px, env(safe-area-inset-bottom));
@@ -6734,6 +6719,231 @@ small, .text-xs, code { font-size: 12px; }
   to   { transform: translateX(-50%) translateY(0);    opacity: 1; }
 }
 
+
+/* ═══════════════════════════════════════════════════════════════
+   REDISEÑO v65 — UI Minimalista Profesional
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Fuente base más limpia */
+body { font-size: 13px; color: var(--text); background: var(--bg); line-height: 1.5; }
+
+/* Buscador global — más limpio */
+.global-search-input {
+  background: var(--bg3) !important;
+  border: 1px solid transparent !important;
+  border-radius: var(--rad-lg) !important;
+  font-size: 13px !important;
+  transition: all 0.15s !important;
+}
+.global-search-input:focus {
+  background: var(--bg2) !important;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px var(--accent-bg) !important;
+}
+
+/* Config cards — menos saturadas */
+.config-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--rad-lg);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  box-shadow: none;
+}
+.config-card h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 12px;
+  letter-spacing: -0.1px;
+}
+
+/* Libro de clases — amplio y legible */
+.libro-tabla {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+}
+.libro-tabla th {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+  white-space: nowrap;
+}
+.libro-tabla td {
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+  font-size: 13px;
+}
+.libro-tabla tr:hover td { background: var(--bg3); }
+
+/* Filas de estudiantes — más cómodas */
+.estudiante-row {
+  padding: 12px 16px !important;
+  border-radius: var(--rad) !important;
+  border: none !important;
+  border-left: 3px solid transparent !important;
+  margin-bottom: 2px !important;
+  background: var(--bg2) !important;
+  transition: background 0.1s !important;
+}
+.estudiante-row:hover { background: var(--bg3) !important; }
+.estudiante-row.pendiente { border-left-color: var(--red) !important; }
+.estudiante-row.entregado { border-left-color: var(--green) !important; }
+
+/* Nombre del alumno — jerarquía clara */
+.est-nombre {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: var(--text) !important;
+  letter-spacing: -0.1px !important;
+}
+
+/* Notas — monospace, peso visual correcto */
+.est-nota, .nota-val {
+  font-family: var(--font-mono) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+}
+
+/* Chips de estadísticas de curso */
+.curso-chip-stat {
+  background: var(--bg2) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--rad) !important;
+  padding: 12px 16px !important;
+  box-shadow: none !important;
+}
+.csn { font-size: 22px !important; font-weight: 700 !important; color: var(--text) !important; }
+.csl { font-size: 11px !important; color: var(--text3) !important; }
+
+/* Criterios de rúbrica — más espacio */
+.criterio-row {
+  padding: 12px 14px !important;
+  border-radius: var(--rad) !important;
+  background: var(--bg2) !important;
+  border: 1px solid var(--border) !important;
+  margin-bottom: 6px !important;
+}
+.criterio-nombre {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: var(--text) !important;
+  line-height: 1.5 !important;
+}
+
+/* Botones de nivel — más limpios */
+.nivel-btn {
+  border: 1px solid var(--border2) !important;
+  border-radius: var(--rad) !important;
+  background: var(--bg2) !important;
+  min-height: 44px !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  transition: all 0.12s !important;
+}
+.nivel-btn:hover { border-color: var(--accent) !important; color: var(--accent) !important; }
+
+/* Modales — sombra más limpia */
+.modal-box {
+  background: var(--bg2) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--rad-xl) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+.modal-title {
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: var(--text) !important;
+  letter-spacing: -0.2px !important;
+  margin-bottom: 8px !important;
+}
+.modal-hint {
+  font-size: 13px !important;
+  color: var(--text3) !important;
+  line-height: 1.6 !important;
+  margin-bottom: 16px !important;
+}
+
+/* Toast — más preciso */
+.toast {
+  border-radius: var(--rad-lg) !important;
+  font-size: 13px !important;
+  box-shadow: var(--shadow-lg) !important;
+  border: 1px solid var(--border) !important;
+}
+
+/* Sidebar de cursos */
+.curso-sidebar-btn {
+  border-radius: var(--rad) !important;
+  border: 1px solid var(--border) !important;
+  background: var(--bg2) !important;
+  transition: all 0.12s !important;
+}
+.curso-sidebar-btn:hover {
+  border-color: var(--accent) !important;
+  background: var(--accent-bg) !important;
+}
+.curso-sidebar-btn.active {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+}
+
+/* Barra de progreso curso */
+#barraProgresoCurso {
+  background: var(--bg3) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--rad) !important;
+}
+#barraProgresoCursoFill {
+  background: var(--accent) !important;
+}
+
+/* NE tags — más discretos */
+.ne-tag {
+  font-size: 9px !important;
+  padding: 1px 5px !important;
+  border-radius: 4px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.3px !important;
+}
+
+/* Sección libro — header limpio */
+.libro-seccion {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: var(--text3) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.8px !important;
+  padding: 16px 16px 8px !important;
+}
+
+/* Panel Drive */
+#drivePanelWrap {
+  border: 1px solid var(--border) !important;
+  border-radius: var(--rad-lg) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+
+/* Remove excess duplicate active tab rules */
+@layer arteval-reset {
+  .tab.active { background: transparent; }
+}
+
+
+/* Override BG tokens to neutral */
+:root {
+  --bg:  #f8f9fa;
+  --bg3: #f1f3f5;
+  --bg4: #e9ecef;
+}
 </style></head><body>
   <h1>📋 Informe de Evaluaciones · Artes Visuales</h1>
   <div class="meta">
