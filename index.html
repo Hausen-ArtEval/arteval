@@ -1885,6 +1885,7 @@ if ('serviceWorker' in navigator) {
           <button class="btn" onclick="verDuplicados()" id="btnDuplicados" style="display:none">⚠️ Duplicados</button>
           <button class="btn" onclick="abrirExportMultiple()" id="btnExport" style="display:none">Exportar CSV</button>
           <button class="btn" onclick="abrirExportAlexia()" id="btnExportAlexia" style="display:none" title="Exportar en formato Alexia (.xls)">📥 Alexia XLS</button>
+          <button class="btn btn-primary" onclick="abrirExportUniversal()" id="btnExportUniversal" style="display:none;background:var(--accent);color:#fff;border-color:var(--accent);" title="Exportar para cualquier sistema escolar">📤 Exportar notas</button>
           <button class="btn" onclick="limpiarRegistrosDuplicados()" id="btnLimpiarDups" style="display:none;border-color:var(--amber);color:var(--amber);" title="Detectar y corregir rúbricas incorrectas y evaluaciones duplicadas">🔍 Limpiar duplicados</button>
           <button class="btn btn-danger" onclick="limpiarTodo()" id="btnLimpiarTodo" style="display:none">Limpiar todo</button>
         </div>
@@ -3571,6 +3572,8 @@ function renderRegistros() {
     if (btnLim) btnLim.style.display = 'none';
     const _btnAlexia = document.getElementById('btnExportAlexia');
     if (_btnAlexia) _btnAlexia.style.display = 'none';
+    const _btnUniv = document.getElementById('btnExportUniversal');
+    if (_btnUniv) _btnUniv.style.display = 'none';
     const _btnDupsH = document.getElementById('btnLimpiarDups');
     if (_btnDupsH) _btnDupsH.style.display = 'none';
     const btnDup = document.getElementById('btnDuplicados');
@@ -3585,6 +3588,8 @@ function renderRegistros() {
   if (btnLim) btnLim.style.display = 'inline-block';
   const _btnAlexia2 = document.getElementById('btnExportAlexia');
   if (_btnAlexia2) _btnAlexia2.style.display = 'inline-block';
+  const _btnUniversal = document.getElementById('btnExportUniversal');
+  if (_btnUniversal) _btnUniversal.style.display = 'inline-block';
   const _btnDups = document.getElementById('btnLimpiarDups');
   if (_btnDups) _btnDups.style.display = 'inline-block';
 
@@ -4801,6 +4806,277 @@ function confirmarExportCSV() {
   const cursosSel = [...cursosExport].join('_') || 'todos';
   a.download = `arteval_${cursosSel}.csv`; a.click();
   cerrarModal();
+}
+
+
+// ═══════════════════════════════════════════════════════
+//  MÓDULO EXPORTACIÓN UNIVERSAL — Compatibilidad multi-sistema
+//  Soporta: Alexia, Schooltrack, Napsis/SIGE, Colegium, Excel genérico
+// ═══════════════════════════════════════════════════════
+
+var SISTEMAS_ESCOLARES = {
+  alexia: {
+    nombre:      'Alexia',
+    descripcion: 'Sistema de gestión escolar (colegios privados/subvencionados)',
+    icono:       '📋',
+    extension:   '.xls',
+    requiere:    'plantilla', // requiere plantilla previa subida
+  },
+  schooltrack: {
+    nombre:      'Schooltrack',
+    descripcion: 'Libro de clases digital (colegios privados)',
+    icono:       '📗',
+    extension:   '.xlsx',
+    requiere:    null,
+  },
+  napsis: {
+    nombre:      'Napsis / SIGE MINEDUC',
+    descripcion: 'Sistema MINEDUC para colegios municipales y subvencionados',
+    icono:       '🏫',
+    extension:   '.csv',
+    requiere:    null,
+  },
+  colegium: {
+    nombre:      'Colegium',
+    descripcion: 'Plataforma educativa para colegios privados',
+    icono:       '📘',
+    extension:   '.xlsx',
+    requiere:    null,
+  },
+  excel: {
+    nombre:      'Excel genérico',
+    descripcion: 'Compatible con cualquier sistema que importe Excel',
+    icono:       '📊',
+    extension:   '.xlsx',
+    requiere:    null,
+  },
+};
+
+// ── Generar Excel para Schooltrack ─────────────────────────────────────────────
+// Formato: N° | RUT | Apellidos | Nombre | Evaluación1 | Evaluación2 | Promedio
+function exportarSchooltrack(curso) {
+  if (typeof XLSX === 'undefined') { toast('❌ Librería Excel no cargada', 'err', 4000); return; }
+  var key = alexiaNormCurso(curso);
+
+  var regs = registros.filter(function(r) {
+    return alexiaNormCurso(r.curso || '') === key && !r.noEntregado;
+  });
+
+  // Evaluaciones únicas del curso
+  var evals = [...new Set(regs.map(function(r){ return r.rubricaNombre || ''; }).filter(Boolean))].sort();
+
+  // Agrupar por alumno
+  var porAlumno = {};
+  regs.forEach(function(r) {
+    var n = alexiaNorm(r.nombre || '');
+    if (!porAlumno[n]) porAlumno[n] = { nombre: r.nombre, notas: {} };
+    porAlumno[n].notas[r.rubricaNombre || ''] = r.nota;
+  });
+
+  // Completar con nómina
+  var nomina = listaCursos[curso] || [];
+  nomina.forEach(function(e) {
+    var n = alexiaNorm(e.nombre || '');
+    if (!porAlumno[n]) porAlumno[n] = { nombre: e.nombre, notas: {} };
+  });
+
+  var alumnos = Object.values(porAlumno).sort(function(a,b){
+    return a.nombre.localeCompare(b.nombre, 'es');
+  });
+
+  // Encabezado Schooltrack
+  var header = ['N°', 'Apellidos y Nombre', 'Sección'].concat(evals).concat(['Promedio']);
+  var rows = [header];
+
+  alumnos.forEach(function(al, idx) {
+    var notas  = evals.map(function(e){ return al.notas[e] !== undefined ? al.notas[e] : ''; });
+    var vals   = notas.filter(function(n){ return n !== ''; }).map(Number);
+    var prom   = vals.length > 0 ? Math.round(vals.reduce(function(a,b){return a+b;},0)/vals.length*10)/10 : '';
+    rows.push([idx+1, al.nombre, curso].concat(notas).concat([prom]));
+  });
+
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.aoa_to_sheet(rows);
+  // Ancho de columnas
+  ws['!cols'] = [{wch:4},{wch:35},{wch:8}].concat(evals.map(function(){return {wch:18};})).concat([{wch:10}]);
+  XLSX.utils.book_append_sheet(wb, ws, curso);
+  XLSX.writeFile(wb, 'Schooltrack_' + key + '.xlsx');
+  toast('✅ Schooltrack exportado — ' + alumnos.length + ' alumnos', 'ok', 3000);
+}
+
+// ── Generar CSV para Napsis/SIGE MINEDUC ──────────────────────────────────────
+// Formato: RUT;Apellidos;Nombre;Sección;Evaluación;Nota;Promedio
+function exportarNapsis(curso) {
+  var key  = alexiaNormCurso(curso);
+  var regs = registros.filter(function(r) {
+    return alexiaNormCurso(r.curso || '') === key && !r.noEntregado;
+  });
+
+  var evals = [...new Set(regs.map(function(r){ return r.rubricaNombre || ''; }).filter(Boolean))].sort();
+
+  var porAlumno = {};
+  regs.forEach(function(r) {
+    var n = alexiaNorm(r.nombre || '');
+    if (!porAlumno[n]) porAlumno[n] = { nombre: r.nombre, notas: {} };
+    porAlumno[n].notas[r.rubricaNombre || ''] = r.nota;
+  });
+
+  var nomina = listaCursos[curso] || [];
+  nomina.forEach(function(e) {
+    var n = alexiaNorm(e.nombre || '');
+    if (!porAlumno[n]) porAlumno[n] = { nombre: e.nombre, notas: {} };
+  });
+
+  var alumnos = Object.values(porAlumno).sort(function(a,b){
+    return a.nombre.localeCompare(b.nombre, 'es');
+  });
+
+  // Formato SIGE: separado por punto y coma
+  var lines = ['N°;Apellidos y Nombre;Sección;' + evals.join(';') + ';Promedio'];
+  alumnos.forEach(function(al, idx) {
+    var notas = evals.map(function(e){ return al.notas[e] !== undefined ? String(al.notas[e]).replace('.',',') : ''; });
+    var vals  = evals.map(function(e){ return al.notas[e]; }).filter(function(n){ return n !== undefined; }).map(Number);
+    var prom  = vals.length > 0 ? (Math.round(vals.reduce(function(a,b){return a+b;},0)/vals.length*10)/10).toString().replace('.',',') : '';
+    lines.push([idx+1, al.nombre, curso].concat(notas).concat([prom]).join(';'));
+  });
+
+  var csv  = '\uFEFF' + lines.join('\r\n'); // BOM para Excel en Windows
+  var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  var a    = document.createElement('a');
+  a.href   = URL.createObjectURL(blob);
+  a.download = 'SIGE_Napsis_' + key + '.csv';
+  a.click();
+  toast('✅ Napsis/SIGE exportado — ' + alumnos.length + ' alumnos', 'ok', 3000);
+}
+
+// ── Generar Excel genérico (compatible con Colegium y otros) ──────────────────
+function exportarExcelGenerico(curso) {
+  if (typeof XLSX === 'undefined') { toast('❌ Librería Excel no cargada', 'err', 4000); return; }
+  var key  = alexiaNormCurso(curso);
+  var regs = registros.filter(function(r) {
+    return alexiaNormCurso(r.curso || '') === key && !r.noEntregado;
+  });
+
+  var evals = [...new Set(regs.map(function(r){ return r.rubricaNombre || ''; }).filter(Boolean))].sort();
+
+  var porAlumno = {};
+  regs.forEach(function(r) {
+    var n = alexiaNorm(r.nombre || '');
+    if (!porAlumno[n]) porAlumno[n] = { nombre: r.nombre, notas: {} };
+    porAlumno[n].notas[r.rubricaNombre || ''] = r.nota;
+  });
+
+  var nomina = listaCursos[curso] || [];
+  nomina.forEach(function(e, idx) {
+    var n = alexiaNorm(e.nombre || '');
+    if (!porAlumno[n]) porAlumno[n] = { nombre: e.nombre, notas: {}, num: idx+1, pie: e.pie };
+    else { porAlumno[n].num = idx+1; porAlumno[n].pie = e.pie; }
+  });
+
+  var alumnos = Object.values(porAlumno).sort(function(a,b){
+    return (a.num||999) - (b.num||999);
+  });
+
+  // Hoja 1: Notas
+  var header = ['N°', 'Apellidos y Nombre', 'Sección', 'PIE'].concat(evals).concat(['Promedio']);
+  var rows   = [header];
+  alumnos.forEach(function(al, idx) {
+    var notas = evals.map(function(e){ return al.notas[e] !== undefined ? al.notas[e] : ''; });
+    var vals  = notas.filter(function(n){ return n !== ''; }).map(Number);
+    var prom  = vals.length > 0 ? Math.round(vals.reduce(function(a,b){return a+b;},0)/vals.length*10)/10 : '';
+    rows.push([(al.num||idx+1), al.nombre, curso, al.pie?'PIE':''].concat(notas).concat([prom]));
+  });
+
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:4},{wch:35},{wch:8},{wch:5}].concat(evals.map(function(){return {wch:20};})).concat([{wch:10}]);
+
+  // Estilo encabezado (si soportado)
+  XLSX.utils.book_append_sheet(wb, ws, 'Notas ' + curso);
+
+  // Hoja 2: Resumen
+  var conNota   = alumnos.filter(function(a){ return Object.keys(a.notas).length > 0; }).length;
+  var sinNota   = alumnos.length - conNota;
+  var todasNotas = regs.filter(function(r){ return r.nota; }).map(function(r){ return r.nota; });
+  var promGeneral = todasNotas.length > 0
+    ? Math.round(todasNotas.reduce(function(a,b){return a+b;},0)/todasNotas.length*10)/10
+    : 0;
+
+  var resumen = [
+    ['Resumen — ' + curso],
+    ['Total alumnos', alumnos.length],
+    ['Con al menos una nota', conNota],
+    ['Sin evaluar', sinNota],
+    ['Promedio general', promGeneral],
+    ['Evaluaciones', evals.length],
+    [],
+    ['Evaluaciones registradas:'],
+  ].concat(evals.map(function(e){
+    var notasEval = regs.filter(function(r){ return r.rubricaNombre === e; });
+    var pE = notasEval.length > 0
+      ? Math.round(notasEval.reduce(function(s,r){return s+r.nota;},0)/notasEval.length*10)/10
+      : 0;
+    return [e, notasEval.length + ' evaluados', 'prom. ' + pE];
+  }));
+
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(resumen), 'Resumen');
+  XLSX.writeFile(wb, 'ArtEval_' + key + '.xlsx');
+  toast('✅ Excel exportado — ' + alumnos.length + ' alumnos · 2 hojas', 'ok', 3000);
+}
+
+// ── Modal selector de sistema ──────────────────────────────────────────────────
+function abrirExportUniversal() {
+  var cursos = cursosUnicos();
+  if (!cursos.length) { toast('No hay evaluaciones guardadas', 'err', 3000); return; }
+
+  var html = '<div class="modal-title">📤 Exportar notas — Sistema escolar</div>'
+    + '<div class="modal-hint">Selecciona el sistema de tu colegio. ArtEval genera el archivo exacto que necesitas para importar las notas.</div>'
+    + '<div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px;">Curso:</div>'
+    + '<select id="exportSistCurso" class="filter-select" style="width:100%;margin-bottom:16px;min-height:40px;">'
+    + cursos.map(function(c){ return '<option value="' + c + '">' + c + '</option>'; }).join('')
+    + '</select>'
+    + '<div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:10px;">Sistema escolar:</div>'
+    + '<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">';
+
+  Object.entries(SISTEMAS_ESCOLARES).forEach(function(entry) {
+    var id      = entry[0];
+    var sys     = entry[1];
+    var checked = (id === 'excel') ? ' checked' : '';
+    html += '<label style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rad);cursor:pointer;">'
+      + '<input type="radio" name="exportSist" value="' + id + '"' + checked + '>'
+      + '<span style="font-size:20px;">' + sys.icono + '</span>'
+      + '<div style="flex:1;">'
+      + '<div style="font-size:13px;font-weight:600;color:var(--text);">' + sys.nombre + '</div>'
+      + '<div style="font-size:11px;color:var(--text3);">' + sys.descripcion + '</div>'
+      + '</div>'
+      + '<span style="font-size:10px;color:var(--text3);">' + sys.extension + '</span>'
+      + '</label>';
+  });
+
+  html += '</div>'
+    + '<div class="modal-footer">'
+    + '<button class="btn" onclick="cerrarModal()">Cancelar</button>'
+    + '<button class="btn btn-primary" onclick="_ejecutarExportUniversal()">⬇ Exportar</button>'
+    + '</div>';
+
+  abrirModal(html);
+}
+
+function _ejecutarExportUniversal() {
+  var curso  = document.getElementById('exportSistCurso')?.value;
+  var sistema = document.querySelector('input[name="exportSist"]:checked')?.value;
+  if (!curso || !sistema) { toast('Selecciona curso y sistema', 'err', 3000); return; }
+
+  cerrarModal();
+
+  switch(sistema) {
+    case 'alexia':      abrirExportAlexia(); break;
+    case 'schooltrack': exportarSchooltrack(curso); break;
+    case 'napsis':      exportarNapsis(curso); break;
+    case 'colegium':    exportarExcelGenerico(curso); break; // mismo formato Excel
+    case 'excel':       exportarExcelGenerico(curso); break;
+    default:            toast('Sistema no reconocido', 'err', 3000);
+  }
 }
 
 
