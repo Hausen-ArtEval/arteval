@@ -1603,6 +1603,7 @@ media (prefers-color-scheme: dark) {
   <!-- TOAST -->
   <div class="toast-wrap" id="toastWrap"></div>
   <div id="autoSaveIndicator">✓ Guardado</div>
+  <div id="offlinePendingBanner" style="display:none;position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:801;background:#FF9500;color:white;font-size:13px;font-weight:600;padding:8px 20px;border-radius:20px;box-shadow:0 2px 12px rgba(0,0,0,0.15);pointer-events:none;"></div>
   <div id="storageWarning"></div>
 
   <!-- TOPBAR -->
@@ -2953,6 +2954,53 @@ function _flashAutoSave() {
   el._timer = setTimeout(function() { el.classList.remove('visible'); }, 2500);
 }
 
+
+// ── Cola offline: fusionar notas pendientes antes de sincronizar con Drive ──
+// Se llama ANTES de cualquier operación de sync para no perder notas offline
+function _flushPendingQueue() {
+  try {
+    var queue = JSON.parse(localStorage.getItem('av_pending_queue') || '[]');
+    if (!queue.length) return 0;
+    var existentes = new Set(registros.map(function(r) {
+      return (r.nombre||'') + '|' + (r.curso||'') + '|' + (r.instancia||'') + '|' + (r.fecha||'');
+    }));
+    var nuevos = 0;
+    queue.forEach(function(qr) {
+      var key = (qr.nombre||'') + '|' + (qr.curso||'') + '|' + (qr.instancia||'') + '|' + (qr.fecha||'');
+      if (!existentes.has(key)) {
+        registros.unshift(qr);
+        existentes.add(key);
+        nuevos++;
+      }
+    });
+    if (nuevos > 0) {
+      saveRegistros();
+      console.info('[ArtEval] Cola offline: ' + nuevos + ' nota(s) fusionada(s) antes de sync');
+    }
+    // Limpiar la cola una vez fusionada
+    localStorage.removeItem('av_pending_queue');
+    return nuevos;
+  } catch(e) {
+    console.warn('[ArtEval] Error al fusionar cola offline:', e.message);
+    return 0;
+  }
+}
+
+// Banner de notas pendientes offline
+function _checkPendingQueue() {
+  try {
+    var queue = JSON.parse(localStorage.getItem('av_pending_queue') || '[]');
+    var banner = document.getElementById('offlinePendingBanner');
+    if (!banner) return;
+    if (queue.length > 0) {
+      banner.textContent = '⏳ ' + queue.length + ' nota(s) pendiente(s) de sincronizar con Drive';
+      banner.style.display = 'block';
+    } else {
+      banner.style.display = 'none';
+    }
+  } catch(e) {}
+}
+
 function saveRegistros() {
   try {
     localStorage.setItem('av_registros', JSON.stringify(registros));
@@ -3649,6 +3697,13 @@ function guardar() {
   };
   registros.unshift(nuevoReg);
   saveRegistros();
+  // Cola offline: guardar cada nota al momento de ingresarse
+  // Garantiza recuperación aunque Drive sobreescriba al reconectar
+  try {
+    var _queue = JSON.parse(localStorage.getItem('av_pending_queue') || '[]');
+    _queue.push(nuevoReg);
+    localStorage.setItem('av_pending_queue', JSON.stringify(_queue));
+  } catch(e) { /* silencioso si localStorage lleno */ }
   enviarASheets(nuevoReg);
   // Intentar capturar imagen del canvas si hay trabajo visible
   try {
@@ -4107,8 +4162,35 @@ function renderLibroClases(filtrados, container) {
         if (n === undefined) return '<td class="sin-nota">—</td>';
         if (al.noEntregado && al.noEntregado[inst]) return '<td class="no-entregado-cell" title="Trabajo no entregado">NE</td>';
         const clr = n>=6.0?'var(--blue)':n>=4.0?'var(--green)':'var(--red)';
-        // Encontrar idx del registro para poder editar desde libro
-        const regIdx = registros.findIndex(function(rx){ return (rx.curso||'')===curso && mismoEstudiante(rx.nombre||'', al.nombre) && (rx.instancia||'Evaluación 1')===inst; });
+        // Buscar TODOS los registros de este alumno+instancia (puede haber conflicto de rubrica)
+        const regsMatch = [];
+        registros.forEach(function(rx, ri) {
+          if ((rx.curso||'') === curso && mismoEstudiante(rx.nombre||'', al.nombre) && (rx.instancia||'Evaluación 1') === inst) {
+            regsMatch.push({r: rx, i: ri});
+          }
+        });
+        // CONFLICTO: mismo alumno, misma instancia, mas de un registro
+        if (regsMatch.length > 1) {
+          let items = '';
+          regsMatch.forEach(function(o) {
+            const nfmt = o.r.nota ? o.r.nota.toFixed(1) : '?';
+            const rub  = o.r.rubricaNombre || o.r.rubrica || 'sin rubrica';
+            const clrN = o.r.nota >= 6.0 ? 'var(--blue)' : o.r.nota >= 4.0 ? 'var(--green)' : 'var(--red)';
+            const otrosIdx = regsMatch.filter(function(x){ return x.i !== o.i; }).map(function(x){ return x.i; }).join(',');
+            items += '<div style="display:flex;align-items:center;gap:4px;margin:2px 0;">'
+              + '<span style="font-weight:700;color:' + clrN + ';font-size:12px;">' + nfmt + '</span>'
+              + '<span style="font-size:9px;color:var(--text3);max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + rub + '">' + rub + '</span>'
+              + '<button onclick="resolverConflictoLibro(' + o.i + ',' + otrosIdx + ')" '
+              + 'style="font-size:9px;padding:1px 5px;border-radius:4px;border:1px solid var(--green);color:var(--green);background:none;cursor:pointer;" '
+              + 'title="Mantener esta nota y eliminar la otra">✓ Esta</button>'
+              + '</div>';
+          });
+          return '<td class="nota-cell conflicto-rubrica" style="background:rgba(255,149,0,0.08);border:1px solid rgba(255,149,0,0.35);padding:4px;min-width:140px;">'
+            + '<div style="font-size:9px;font-weight:700;color:var(--accent);margin-bottom:3px;">⚠ 2 rúbricas</div>'
+            + items + '</td>';
+        }
+        // Normal: 0 o 1 registro
+        const regIdx = regsMatch.length ? regsMatch[0].i : -1;
         const clickAttr = regIdx > -1 ? `onclick="editarRegistro(${regIdx})" title="Clic para editar" style="cursor:pointer;color:${clr};"` : `style="color:${clr};"`;
         return `<td class="nota-cell" ${clickAttr}>${n.toFixed(1)}</td>`;
       }).join('');
@@ -7771,6 +7853,8 @@ function actualizarCtxResumen() {
   }
   // Fusionar automáticamente SIN NÓMINA con sus entradas oficiales
   setTimeout(function() { deduplicarYFusionarTodos(); }, 100);
+  // Verificar notas pendientes offline
+  setTimeout(function() { if(typeof _checkPendingQueue==='function') _checkPendingQueue(); }, 500);
   actualizarConteo();
   renderCriterios();
   actualizarRubricaSelect();
@@ -9558,6 +9642,33 @@ async function borrarTodosLosDatos() {
 
 
 // ── Limpiar duplicados en un curso específico ──
+
+// ── Resolver conflicto de rubrica desde el Libro de Clases ──
+function resolverConflictoLibro(idxMantener) {
+  const extras = Array.prototype.slice.call(arguments, 1);
+  const mantener = registros[idxMantener];
+  if (!mantener) { toast('⚠ Registro no encontrado', 'err'); return; }
+  const nombre = mantener.nombre || '';
+  const inst   = mantener.instancia || 'Evaluacion 1';
+  const nota   = mantener.nota ? mantener.nota.toFixed(1) : '?';
+  const rub    = mantener.rubricaNombre || mantener.rubrica || 'sin rubrica';
+  // Eliminar los otros en orden descendente para no desplazar indices
+  const aEliminar = extras.map(Number).filter(function(i){ return !isNaN(i) && i !== idxMantener && i >= 0; });
+  aEliminar.sort(function(a,b){ return b - a; });
+  aEliminar.forEach(function(i){ registros.splice(i, 1); });
+  saveRegistros();
+  actualizarConteo();
+  renderSidebarCounts();
+  // Refrescar libro si está visible
+  const libroBtn = document.querySelector('[data-tab="reporte"]');
+  if (libroBtn && document.getElementById('tab-reporte')) {
+    const filtrados = registros;
+    const cont = document.getElementById('libroContainer');
+    if (cont) renderLibroClases(filtrados, cont);
+  }
+  toast('✓ Conflicto resuelto: ' + nombre + ' · ' + inst + ' → Nota ' + nota + ' (' + rub + ')', 'ok', 4000);
+}
+
 async function limpiarDuplicadosCurso(curso) {
   const lista = listaCursos[curso] || [];
   if (!lista.length) { toast('Sin estudiantes en ' + curso, 'info'); return; }
@@ -10390,6 +10501,17 @@ function _onAccessToken(tokenResponse) {
   _updateDrivePanel();
   // Programar auto-backup diario
   _scheduleAutoBackup();
+  // PRIMERO: fusionar notas offline antes de cualquier sync con Drive
+  // Esto garantiza que las notas ingresadas sin conexión no se pierdan
+  if (typeof _flushPendingQueue === 'function') {
+    var recuperadas = _flushPendingQueue();
+    if (recuperadas > 0) {
+      toast('✅ ' + recuperadas + ' nota(s) offline recuperada(s) y fusionadas', 'ok', 5000);
+      actualizarConteo();
+      renderSidebarCounts();
+    }
+  }
+  if (typeof _checkPendingQueue === 'function') _checkPendingQueue();
   // Si el localStorage está casi lleno y Drive está activo, guardar y liberar automáticamente
   _autoSyncIfNeeded();
 }
