@@ -756,11 +756,11 @@ a:hover { text-decoration: underline; }
   display: inline-flex; align-items: center; gap: 4px;
   font-size: 10px; font-weight: 600; letter-spacing: 0.3px;
   text-transform: uppercase; font-family: var(--font-mono);
-  background: rgba(255,149,0,0.09); color: #FF9500;
-  border: 1px solid rgba(255,149,0,0.28);
+  background: var(--pie-bg); color: var(--pie);
+  border: 1px solid var(--pie-border);
   border-radius: 20px; padding: 2px 8px 2px 5px; flex-shrink: 0;
 }
-.pie-badge svg { flex-shrink: 0; stroke: #FF9500 !important; fill: none; }
+.pie-badge svg { flex-shrink: 0; stroke: currentColor; fill: none; }
 .reg-card.pie-card { border-left: 3px solid var(--pie2); }
 .pie-toggle-row {
   display: flex; align-items: center; gap: 10px;
@@ -2537,7 +2537,7 @@ body { font-size: 14px; }
           <div class="pie-toggle-row" onclick="togglePiePanel()">
             <input type="checkbox" id="pieCheck" onclick="event.stopPropagation();togglePiePanel()" />
             <div>
-              <div class="pie-toggle-label"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:middle" aria-label="PIE"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Estudiante PIE / Adecuación curricular</div>
+              <div class="pie-toggle-label"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:middle" aria-label="PIE"><circle cx="12" cy="4.5" r="1.5"/><path d="M12 6.5 L10 12 L14 12"/><path d="M14 12 L16.5 9"/><path d="M10 12 L9 16 L12.5 19"/><circle cx="9" cy="19.5" r="2.5"/><circle cx="15.5" cy="19.5" r="1.5"/><path d="M12.5 19 L15.5 19"/></svg> Estudiante PIE / Adecuación curricular</div>
               <div class="pie-toggle-sub">Activa para aplicar evaluación diferenciada</div>
             </div>
           </div>
@@ -2825,11 +2825,11 @@ body { font-size: 14px; }
           </div>
           <!-- Importar lista PIE -->
           <div style="background:var(--pie-bg);border:1px solid var(--pie-border);border-radius:var(--rad);padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-            <span style="font-size:12px;color:var(--pie);font-weight:700;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:middle" aria-label="PIE"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Importar lista PIE</span>
+            <span style="font-size:12px;color:var(--pie);font-weight:700;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:middle" aria-label="PIE"><circle cx="12" cy="4.5" r="1.5"/><path d="M12 6.5 L10 12 L14 12"/><path d="M14 12 L16.5 9"/><path d="M10 12 L9 16 L12.5 19"/><circle cx="9" cy="19.5" r="2.5"/><circle cx="15.5" cy="19.5" r="1.5"/><path d="M12.5 19 L15.5 19"/></svg> Importar lista PIE</span>
             <span style="font-size:11px;color:var(--text3);">TXT, CSV o XLS con nombres — se marcan automáticamente como PIE en todos los cursos</span>
             <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;margin-left:auto;">
               <input type="file" id="importPIEFile" accept=".txt,.csv,.xls,.xlsx" style="display:none" onchange="importarListaPIE(this)">
-              <button class="btn" style="font-size:12px;padding:5px 14px;background:var(--pie);color:white;border-color:var(--pie);" onclick="document.getElementById('importPIEFile').click()"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:middle" aria-label="PIE"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Elegir archivo PIE</button>
+              <button class="btn" style="font-size:12px;padding:5px 14px;background:var(--pie);color:white;border-color:var(--pie);" onclick="document.getElementById('importPIEFile').click()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:middle" aria-label="PIE"><circle cx="12" cy="4.5" r="1.5"/><path d="M12 6.5 L10 12 L14 12"/><path d="M14 12 L16.5 9"/><path d="M10 12 L9 16 L12.5 19"/><circle cx="9" cy="19.5" r="2.5"/><circle cx="15.5" cy="19.5" r="1.5"/><path d="M12.5 19 L15.5 19"/></svg> Elegir archivo PIE</button>
             </label>
             <span id="importPIEStatus" style="font-size:11px;color:var(--pie);font-family:var(--font-mono);font-weight:600;"></span>
           </div>
@@ -4419,7 +4419,7 @@ function renderRegistros() {
     card.innerHTML = `
       <div class="reg-avatar">${iniciales(r.nombre)}</div>
       <div class="reg-info">
-        <div class="reg-nombre">${r.nombre||'Sin nombre'}${esDup?'<span class="dup-badge">DUP</span>':''}${r.pie?'<span class="pie-badge"><svg width=10 height=10 viewBox=0 0 24 24 fill=none stroke=currentColor stroke-width=1.8 stroke-linecap=round stroke-linejoin=round style=flex-shrink:0;vertical-align:middle aria-label=PIE><circle cx=12 cy=4 r=1.5/><path d=M12 6 L10 11 L14 11/><path d=M14 11 L17 8/><path d=M10 11 L9 15 L12 18/><circle cx=9 cy=18 r=3.5/><circle cx=16 cy=18 r=1.5/><path d=M12 18 L16 18/></svg>PIE</span>':''} <span class="instancia-badge" onclick="event.stopPropagation();filtrarPorInstancia('${instancia}')" title="Filtrar por ${instancia}" style="cursor:pointer;">${instancia}</span>${r.noEntregado?'<span class="no-entregado-badge">✕ No entregado</span>':''}</div>
+        <div class="reg-nombre">${r.nombre||'Sin nombre'}${esDup?'<span class="dup-badge">DUP</span>':''}${r.pie?'<span class="pie-badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:middle" aria-label="PIE"><circle cx="12" cy="4.5" r="1.5"/><path d="M12 6.5 L10 12 L14 12"/><path d="M14 12 L16.5 9"/><path d="M10 12 L9 16 L12.5 19"/><circle cx="9" cy="19.5" r="2.5"/><circle cx="15.5" cy="19.5" r="1.5"/><path d="M12.5 19 L15.5 19"/></svg>PIE</span>':''} <span class="instancia-badge" onclick="event.stopPropagation();filtrarPorInstancia('${instancia}')" title="Filtrar por ${instancia}" style="cursor:pointer;">${instancia}</span>${r.noEntregado?'<span class="no-entregado-badge">✕ No entregado</span>':''}</div>
         <div class="reg-meta">${r.fecha||''}${r.curso?' · '+r.curso:''}${r.instancia&&r.instancia!=='Evaluación 1'?' · '+r.instancia:''}${r.rubricaNombre?' · '+r.rubricaNombre:''} · ${r.pts??'?'}/${r.maxPts??'?'} pts</div>
       </div>
       <span class="reg-badge" style="background:${bg};color:${clr}">${nota.toFixed(1)} — ${nLabel}</span>
@@ -4527,7 +4527,7 @@ function renderLibroClases(filtrados, container) {
       html += `<tr class="${claseFilaNE}">
         <td style="font-weight:500;"><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;margin-right:8px;">${i+1}</span>${al.nombre}${tagNE}${tagSinEvaluar}</td>
         ${notasColsFinal}${promCellFinal}
-        <td class="pie-cell">${al.pie?'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:middle" aria-label="PIE"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>':''}</td>
+        <td class="pie-cell">${al.pie?'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:middle" aria-label="PIE"><circle cx="12" cy="4.5" r="1.5"/><path d="M12 6.5 L10 12 L14 12"/><path d="M14 12 L16.5 9"/><path d="M10 12 L9 16 L12.5 19"/><circle cx="9" cy="19.5" r="2.5"/><circle cx="15.5" cy="19.5" r="1.5"/><path d="M12.5 19 L15.5 19"/></svg>':''}</td>
       </tr>`;
     });
 
@@ -4724,7 +4724,7 @@ function editarRegistro(idx) {
       <div class="pie-toggle-row" style="border-radius:var(--rad);margin:0;" onclick="toggleEditPie()">
         <input type="checkbox" id="editPieCheck" ${r.pie?'checked':''} onclick="event.stopPropagation();toggleEditPie()">
         <div>
-          <div class="pie-toggle-label"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:middle" aria-label="PIE"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Estudiante PIE / Adecuación curricular</div>
+          <div class="pie-toggle-label"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:middle" aria-label="PIE"><circle cx="12" cy="4.5" r="1.5"/><path d="M12 6.5 L10 12 L14 12"/><path d="M14 12 L16.5 9"/><path d="M10 12 L9 16 L12.5 19"/><circle cx="9" cy="19.5" r="2.5"/><circle cx="15.5" cy="19.5" r="1.5"/><path d="M12.5 19 L15.5 19"/></svg> Estudiante PIE / Adecuación curricular</div>
           <div class="pie-toggle-sub">${r.pie?'Actualmente marcado como PIE':'Sin adecuación curricular'}</div>
         </div>
       </div>
@@ -7935,7 +7935,7 @@ function actualizarConteoPIE() {
   }
 
   if (pie > 0) {
-    badge.innerHTML = `${baseLabel}${pendientes} · <span style="color:var(--pie2);font-weight:700;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:middle" aria-label="PIE"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> ${pie} PIE</span>`;
+    badge.innerHTML = `${baseLabel}${pendientes} · <span style="color:var(--pie2);font-weight:700;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:middle" aria-label="PIE"><circle cx="12" cy="4.5" r="1.5"/><path d="M12 6.5 L10 12 L14 12"/><path d="M14 12 L16.5 9"/><path d="M10 12 L9 16 L12.5 19"/><circle cx="9" cy="19.5" r="2.5"/><circle cx="15.5" cy="19.5" r="1.5"/><path d="M12.5 19 L15.5 19"/></svg> ${pie} PIE</span>`;
   } else if (pendientes) {
     badge.innerHTML = `${baseLabel}<span style="color:var(--text3)">${pendientes}</span>`;
   } else {
@@ -8237,7 +8237,7 @@ function verDetalle(idx) {
     </div>`;
   }).join('');
 
-  const pieInfo = r.pie ? `<div style="margin-top:6px;"><span class="pie-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:middle" aria-label="PIE"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> PIE${r.pieNota?' · '+r.pieNota:''}</span></div>` : '';
+  const pieInfo = r.pie ? `<div style="margin-top:6px;"><span class="pie-badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:middle" aria-label="PIE"><circle cx="12" cy="4.5" r="1.5"/><path d="M12 6.5 L10 12 L14 12"/><path d="M14 12 L16.5 9"/><path d="M10 12 L9 16 L12.5 19"/><circle cx="9" cy="19.5" r="2.5"/><circle cx="15.5" cy="19.5" r="1.5"/><path d="M12.5 19 L15.5 19"/></svg> PIE${r.pieNota?' · '+r.pieNota:''}</span></div>` : '';
 
   abrirModal(`
     <div class="detalle-header">
@@ -8331,7 +8331,7 @@ function _mostrarAutocompletadoImmediate(val) {
     const nombreSeguro = v.nombre.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
     const cursoSeguro  = (v.curso||'').replace(/'/g,"\\'");
     const cursoLabel   = v.curso ? `<span class="ac-curso">${v.curso}</span>` : '';
-    const pieBadge     = v.pie  ? '<span class="ac-pie"><svg width=10 height=10 viewBox=0 0 24 24 fill=none stroke=currentColor stroke-width=1.8 stroke-linecap=round stroke-linejoin=round style=flex-shrink:0;vertical-align:middle aria-label=PIE><circle cx=12 cy=4 r=1.5/><path d=M12 6 L10 11 L14 11/><path d=M14 11 L17 8/><path d=M10 11 L9 15 L12 18/><circle cx=9 cy=18 r=3.5/><circle cx=16 cy=18 r=1.5/><path d=M12 18 L16 18/></svg></span>' : '';
+    const pieBadge     = v.pie  ? '<span class="ac-pie"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:middle" aria-label="PIE"><circle cx="12" cy="4.5" r="1.5"/><path d="M12 6.5 L10 12 L14 12"/><path d="M14 12 L16.5 9"/><path d="M10 12 L9 16 L12.5 19"/><circle cx="9" cy="19.5" r="2.5"/><circle cx="15.5" cy="19.5" r="1.5"/><path d="M12.5 19 L15.5 19"/></svg></span>' : '';
     const pendiente    = !v.tieneEval ? '<span class="ac-pendiente">PENDIENTE</span>' : '';
     // Mostrar últimas notas del estudiante
     const regsEst = registros.filter(function(r){ return mismoEstudiante(r.nombre||'', v.nombre) && (!v.curso||(r.curso||'')===(v.curso||'')); })
@@ -9049,11 +9049,11 @@ function renderCursoMain() {
     { key: 'todos',     lbl: 'Todos (' + lista.length + ')',          cls: '' },
     { key: 'entregado', lbl: '✓ Entregados (' + entregados + ')',     cls: 'f-entregado' },
     { key: 'pendiente', lbl: '⚠ Pendientes (' + pendientes + ')',    cls: 'f-pendiente' },
-    { key: 'pie',       lbl: '<svg width=10 height=10 viewBox=0 0 24 24 fill=none stroke=currentColor stroke-width=1.8 stroke-linecap=round stroke-linejoin=round style=flex-shrink:0;vertical-align:middle aria-label=PIE><circle cx=12 cy=4 r=1.5/><path d=M12 6 L10 11 L14 11/><path d=M14 11 L17 8/><path d=M10 11 L9 15 L12 18/><circle cx=9 cy=18 r=3.5/><circle cx=16 cy=18 r=1.5/><path d=M12 18 L16 18/></svg> PIE (' + pieCount + ')',             cls: 'f-pie' },
+    { key: 'pie',       lbl: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:middle" aria-label="PIE"><circle cx="12" cy="4.5" r="1.5"/><path d="M12 6.5 L10 12 L14 12"/><path d="M14 12 L16.5 9"/><path d="M10 12 L9 16 L12.5 19"/><circle cx="9" cy="19.5" r="2.5"/><circle cx="15.5" cy="19.5" r="1.5"/><path d="M12.5 19 L15.5 19"/></svg> PIE (' + pieCount + ')', cls: 'f-pie' },
   ].forEach(function(f) {
     const btn = document.createElement('button');
     btn.className = 'est-filtro-btn ' + f.cls + (estFiltro === f.key ? ' active' : '');
-    btn.textContent = f.lbl;
+    btn.innerHTML = f.lbl;
     btn.onclick = function(){ setEstFiltro(f.key, curso); };
     filtros.appendChild(btn);
   });
@@ -9110,7 +9110,7 @@ function renderCursoMain() {
         const pb = document.createElement('span');
         pb.className = 'est-badge eb-pie';
         pb.title = e.pieNota || 'PIE';
-        pb.textContent = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:middle" aria-label="PIE"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> PIE';
+        pb.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:middle" aria-label="PIE"><circle cx="12" cy="4.5" r="1.5"/><path d="M12 6.5 L10 12 L14 12"/><path d="M14 12 L16.5 9"/><path d="M10 12 L9 16 L12.5 19"/><circle cx="9" cy="19.5" r="2.5"/><circle cx="15.5" cy="19.5" r="1.5"/><path d="M12.5 19 L15.5 19"/></svg> PIE';
         badges.appendChild(pb);
       }
       const sb = document.createElement('span');
@@ -9169,7 +9169,7 @@ function renderCursoMain() {
       const btnPie = document.createElement('button');
       btnPie.className = 'est-btn pie-toggle' + (e.pie ? ' active' : '');
       btnPie.title = e.pie ? 'Quitar PIE' : 'Marcar como PIE';
-      btnPie.innerHTML = e.pie ? '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2"/><path d="M12 7v8"/><path d="m9 20 3-3 3 3"/><path d="M8 17H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h14"/></svg>' : '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2"/><path d="M12 7v8"/><path d="m9 20 3-3 3 3"/></svg> PIE';
+      btnPie.innerHTML = e.pie ? '<svg width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"flex-shrink:0;vertical-align:middle\" aria-label=\"PIE\"><circle cx=\"12\" cy=\"4.5\" r=\"1.5\"/><path d=\"M12 6.5 L10 12 L14 12\"/><path d=\"M14 12 L16.5 9\"/><path d=\"M10 12 L9 16 L12.5 19\"/><circle cx=\"9\" cy=\"19.5\" r=\"2.5\"/><circle cx=\"15.5\" cy=\"19.5\" r=\"1.5\"/><path d=\"M12.5 19 L15.5 19\"/></svg>' : '<svg width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"flex-shrink:0;vertical-align:middle\" aria-label=\"PIE\"><circle cx=\"12\" cy=\"4.5\" r=\"1.5\"/><path d=\"M12 6.5 L10 12 L14 12\"/><path d=\"M14 12 L16.5 9\"/><path d=\"M10 12 L9 16 L12.5 19\"/><circle cx=\"9\" cy=\"19.5\" r=\"2.5\"/><circle cx=\"15.5\" cy=\"19.5\" r=\"1.5\"/><path d=\"M12.5 19 L15.5 19\"/></svg> PIE';
       (function(nb, cb){ btnPie.onclick = function(){ toggleEstPIE(nb, cb); }; })(e.nombre, curso);
       acts.appendChild(btnPie);
 
@@ -9959,7 +9959,7 @@ async function limpiarDuplicadosCurso(curso) {
     const nombres = grupo.map(function(g) {
       return '<li style="padding:3px 0;">' +
         '<span style="font-weight:600;">' + g.est.nombre + '</span>' +
-        (g.est.pie ? ' <span class="pie-badge" style="font-size:9px;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:middle" aria-label="PIE"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> PIE</span>' : '') +
+        (g.est.pie ? ' <span class="pie-badge" style="font-size:9px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:middle" aria-label="PIE"><circle cx="12" cy="4.5" r="1.5"/><path d="M12 6.5 L10 12 L14 12"/><path d="M14 12 L16.5 9"/><path d="M10 12 L9 16 L12.5 19"/><circle cx="9" cy="19.5" r="2.5"/><circle cx="15.5" cy="19.5" r="1.5"/><path d="M12.5 19 L15.5 19"/></svg> PIE</span>' : '') +
         '</li>';
     }).join('');
     return '<div style="margin-bottom:10px;"><div style="font-size:10px;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;margin-bottom:4px;">Grupo duplicado</div><ul style="margin:0;padding-left:16px;font-size:13px;">' + nombres + '</ul></div>';
@@ -10113,7 +10113,7 @@ async function mostrarConfirmacionMerge(curso, candidatos, onConfirm) {
         <span class="merge-badge-old">${c.nombreSN}</span>
         <span class="merge-arrow">→</span>
         <span class="merge-badge-new">${c.nombreOficial}</span>
-        ${c.pieNueva ? '<span class="merge-pie-flag"><svg width=10 height=10 viewBox=0 0 24 24 fill=none stroke=currentColor stroke-width=1.8 stroke-linecap=round stroke-linejoin=round style=flex-shrink:0;vertical-align:middle aria-label=PIE><circle cx=12 cy=4 r=1.5/><path d=M12 6 L10 11 L14 11/><path d=M14 11 L17 8/><path d=M10 11 L9 15 L12 18/><circle cx=9 cy=18 r=3.5/><circle cx=16 cy=18 r=1.5/><path d=M12 18 L16 18/></svg></span>' : ''}
+        ${c.pieNueva ? '<span class="merge-pie-flag"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:middle" aria-label="PIE"><circle cx="12" cy="4.5" r="1.5"/><path d="M12 6.5 L10 12 L14 12"/><path d="M14 12 L16.5 9"/><path d="M10 12 L9 16 L12.5 19"/><circle cx="9" cy="19.5" r="2.5"/><circle cx="15.5" cy="19.5" r="1.5"/><path d="M12.5 19 L15.5 19"/></svg></span>' : ''}
       </td>
       <td>${notasHTML}</td>
       <td><span class="merge-score">${pctScore}%</span></td>
@@ -10511,7 +10511,7 @@ function buscarEnCursos(val) {
     `<div class="autocomplete-item" data-idx="${i}"
          onmousedown="seleccionarEstudianteCursos('${est.nombre.replace(/'/g,"\\'")}','${est.curso.replace(/'/g,"\\'")}')">
        <span style="flex:1;font-weight:500;">${est.nombre}</span>
-       ${est.pie ? '<span class="pie-badge" style="font-size:9px;margin:0 4px;"><svg width=10 height=10 viewBox=0 0 24 24 fill=none stroke=currentColor stroke-width=1.8 stroke-linecap=round stroke-linejoin=round style=flex-shrink:0;vertical-align:middle aria-label=PIE><circle cx=12 cy=4 r=1.5/><path d=M12 6 L10 11 L14 11/><path d=M14 11 L17 8/><path d=M10 11 L9 15 L12 18/><circle cx=9 cy=18 r=3.5/><circle cx=16 cy=18 r=1.5/><path d=M12 18 L16 18/></svg></span>' : ''}
+       ${est.pie ? '<span class="pie-badge" style="font-size:9px;margin:0 4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:middle" aria-label="PIE"><circle cx="12" cy="4.5" r="1.5"/><path d="M12 6.5 L10 12 L14 12"/><path d="M14 12 L16.5 9"/><path d="M10 12 L9 16 L12.5 19"/><circle cx="9" cy="19.5" r="2.5"/><circle cx="15.5" cy="19.5" r="1.5"/><path d="M12.5 19 L15.5 19"/></svg></span>' : ''}
        <span class="autocomplete-meta">${est.curso}</span>
        ${est.tieneEval ? '<span style="font-size:10px;color:var(--green);margin-left:4px;">✓</span>' : '<span style="font-size:10px;color:var(--red);margin-left:4px;">○</span>'}
      </div>`
