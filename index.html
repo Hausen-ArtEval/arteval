@@ -123,6 +123,8 @@ body {
   font-size: 15px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 * { -webkit-tap-highlight-color: transparent; }
 ::-webkit-scrollbar { width: 4px; height: 4px; }
@@ -138,12 +140,13 @@ body {
   align-items: center;
   gap: 16px;
   padding: 0 20px;
-  height: 56px;
-  background: rgba(242,242,247,0.90);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-bottom: 0.5px solid var(--border);
+  height: 58px;
+  background: rgba(242,242,247,0.88);
+  backdrop-filter: blur(28px) saturate(200%);
+  -webkit-backdrop-filter: blur(28px) saturate(200%);
+  border-bottom: 0.5px solid rgba(0,0,0,0.08);
   position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.05);
 }
 .topbar-logo { display: flex; align-items: center; gap: 9px; text-decoration: none; }
 .logo-icon { height: 42px; width: auto; flex-shrink: 0; display: block; object-fit: contain; }
@@ -178,15 +181,15 @@ body {
 
 /* ── TABS ──────────────────────────────────────────────── */
 .tabs {
-  display: flex; gap: 4px;
-  padding: 8px 16px;
-  background: rgba(255,255,255,0.94);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-bottom: 0.5px solid var(--border);
+  display: flex; gap: 3px;
+  padding: 7px 14px;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-bottom: 0.5px solid rgba(0,0,0,0.07);
   overflow-x: auto; scrollbar-width: none;
   align-items: center;
-  height: 52px;
+  height: 50px;
 }
 .tabs::-webkit-scrollbar { display: none; }
 .tab {
@@ -288,8 +291,9 @@ body {
 .card {
   background: var(--bg2); border: 0.5px solid var(--border);
   border-radius: var(--rad-lg); overflow: hidden;
-  box-shadow: var(--shadow); transition: box-shadow 0.2s;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06); transition: box-shadow 0.2s, transform 0.2s;
 }
+.card:hover { box-shadow: 0 6px 24px rgba(0,0,0,0.09); }
 .card:hover { box-shadow: var(--shadow-lg); }
 .card-header {
   padding: 12px 18px; border-bottom: 0.5px solid var(--border);
@@ -347,32 +351,43 @@ input[type="text"]:focus, textarea:focus, select:focus {
 
 /* ── CRITERIOS ──────────────────────────────────────────── */
 .criterios-scroll { padding: 12px 14px; display: flex; flex-direction: column; gap: 7px; max-height: 460px; overflow-y: auto; }
-.criterio-item { border: 0.5px solid var(--border); border-radius: var(--rad); padding: 11px 13px; transition: border-color 0.2s; background: var(--bg2); }
+.criterio-item { border: 1px solid var(--border); border-radius: 14px; padding: 13px 15px; transition: all 0.2s; background: var(--bg2); margin-bottom: 2px; }
+.criterio-item:hover { border-color: var(--accent-border); background: var(--bg3); }
 .criterio-item.done { border-color: rgba(255,149,0,0.35); background: var(--accent-bg); }
-.criterio-name { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 8px; display: flex; gap: 6px; align-items: flex-start; }
-.crit-num { font-size: 10px; font-family: var(--font-mono); color: var(--text3); background: var(--bg3); padding: 1px 6px; border-radius: 6px; flex-shrink: 0; margin-top: 2px; }
+.criterio-name { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 10px; display: flex; gap: 8px; align-items: flex-start; line-height: 1.45; }
+.crit-num { font-size: 11px; font-family: var(--font-mono); font-weight: 700; color: var(--accent); background: var(--accent-bg); border: 1px solid var(--accent-border); padding: 2px 7px; border-radius: 8px; flex-shrink: 0; margin-top: 1px; min-width: 24px; text-align: center; }
 .niveles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
 .nivel-btn {
-  font-size: 11px; padding: 8px 3px; border-radius: 10px;
-  border: 0.5px solid var(--border); cursor: pointer;
+  font-size: 11px; padding: 10px 4px; border-radius: 12px;
+  border: 1.5px solid var(--border); cursor: pointer;
   background: var(--bg2); color: var(--text3);
-  transition: all 0.12s; text-align: center; line-height: 1.3;
-  font-family: var(--font-ui); min-height: 52px;
+  transition: all 0.15s; text-align: center; line-height: 1.3;
+  font-family: var(--font-ui); min-height: 54px;
+  font-weight: 500; letter-spacing: 0.2px;
+}
+.nivel-btn:hover {
+  border-color: var(--accent); color: var(--accent);
+  background: var(--accent-bg); transform: translateY(-1px);
 }
 .nivel-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
-.nivel-btn.sel-MB { background: var(--blue-bg); color: var(--blue); border-color: rgba(0,122,255,0.3); font-weight: 600; }
+.nivel-btn.sel-MB { background: rgba(52,199,89,0.15); color: #1a9e48; border-color: rgba(52,199,89,0.5); font-weight: 700; box-shadow: 0 2px 8px rgba(52,199,89,0.2); }
 .nivel-btn.sel-L  { background: var(--green-bg); color: var(--green); border-color: rgba(52,199,89,0.3); font-weight: 600; }
 .nivel-btn.sel-M  { background: var(--amber-bg); color: var(--amber); border-color: rgba(255,159,10,0.3); font-weight: 600; }
 .nivel-btn.sel-N  { background: var(--red-bg); color: var(--red); border-color: rgba(255,59,48,0.3); font-weight: 600; }
-.ia-nota { font-size: 10px; color: var(--text3); margin-top: 5px; font-style: italic; font-family: var(--font-mono); }
+.ia-nota {
+  font-size: 11px; color: var(--accent); margin-top: 6px;
+  font-style: normal; font-family: var(--font-mono);
+  background: var(--accent-bg); border-radius: 8px;
+  padding: 3px 8px; display: inline-block; font-weight: 600;
+}
 
 /* ── RESUMEN ─────────────────────────────────────────────── */
 .resumen-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; padding: 12px 14px; border-top: 0.5px solid var(--border); }
 .resumen-card { background: var(--bg3); border-radius: var(--rad); padding: 10px; text-align: center; }
-.resumen-val { font-size: 20px; font-weight: 700; color: var(--text); font-family: var(--font-mono); }
+.resumen-val { font-size: 22px; font-weight: 700; color: var(--text); font-family: var(--font-mono); letter-spacing: -0.5px; }
 .resumen-lbl { font-size: 10px; color: var(--text3); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
-.resumen-footer { padding: 10px 14px; border-top: 0.5px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
-.nivel-pill { font-size: 11px; font-weight: 500; padding: 4px 12px; border-radius: 20px; display: none; }
+.resumen-footer { padding: 12px 16px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; background: var(--bg3); border-radius: 0 0 var(--rad-lg) var(--rad-lg); }
+.nivel-pill { font-size: 12px; font-weight: 700; padding: 5px 14px; border-radius: 20px; display: none; letter-spacing: 0.3px; text-transform: uppercase; }
 
 /* ── REGISTROS ──────────────────────────────────────────── */
 .reg-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 8px; }
@@ -411,7 +426,7 @@ input[type="text"]:focus, textarea:focus, select:focus {
   border-radius: var(--rad-lg); padding: 16px;
   box-shadow: var(--shadow);
 }
-.stat-val { font-size: 26px; font-weight: 700; color: var(--text); font-family: var(--font-mono); }
+.stat-val { font-size: 28px; font-weight: 800; color: var(--text); font-family: var(--font-mono); letter-spacing: -1px; }
 .stat-lbl { font-size: 10px; color: var(--text3); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.8px; }
 .stat-editable { font-size: 28px; font-weight: 600; color: var(--text); font-family: var(--font-mono); background: none; border: none; width: 100%; padding: 0; cursor: text; }
 .stat-editable:focus { outline: 2px solid var(--accent); border-radius: 4px; padding: 0 4px; }
@@ -579,7 +594,7 @@ input[type="text"]:focus, textarea:focus, select:focus {
 .eb-entregado { background: var(--green-bg); color: var(--green); }
 .eb-pendiente { background: var(--red-bg); color: var(--red); }
 .eb-pie { background: var(--pie-bg); color: var(--pie); }
-.est-nota { font-family: var(--font-mono); font-size: 14px; font-weight: 700; width: 36px; text-align: right; flex-shrink: 0; }
+.est-nota { font-family: var(--font-mono); font-size: 16px; font-weight: 800; width: 40px; text-align: right; flex-shrink: 0; letter-spacing: -0.5px; }
 .est-actions { display: flex; gap: 4px; }
 .est-btn { font-size: 13px; padding: 6px 9px; border: 0.5px solid var(--border); border-radius: 9px; background: var(--bg3); color: var(--text2); cursor: pointer; transition: all 0.12s; min-height: 36px; display: flex; align-items: center; gap: 4px; font-family: var(--font-ui); }
 .est-btn:hover { background: var(--bg4); color: var(--text); }
@@ -2034,7 +2049,7 @@ media (prefers-color-scheme: dark) {
           <div class="pie-toggle-row" onclick="togglePiePanel()">
             <input type="checkbox" id="pieCheck" onclick="event.stopPropagation();togglePiePanel()" />
             <div>
-              <div class="pie-toggle-label"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:4px;vertical-align:middle;flex-shrink:0" aria-label="PIE"><circle cx="12" cy="5" r="3"/><path d="M9 18a3 3 0 0 1 3-3h3.5"/><path d="M17 10l-3.5 5 1.5 5"/><path d="M12 15h5"/><circle cx="10" cy="18" r="4"/></svg> Estudiante PIE / Adecuación curricular</div>
+              <div class="pie-toggle-label"><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:middle" aria-label="PIE"><circle cx="13" cy="3.5" r="1.8" fill="currentColor" stroke="none"/><path d="M13 5.3 L11 9 L14.5 9"/><path d="M14.5 9 L16.5 7"/><path d="M11 9 L10 13"/><path d="M10 13 L13 13"/><circle cx="9.5" cy="15.5" r="3"/><circle cx="16" cy="7.5" r="1" fill="currentColor" stroke="none"/></svg> Estudiante PIE / Adecuación curricular</div>
               <div class="pie-toggle-sub">Activa para aplicar evaluación diferenciada</div>
             </div>
           </div>
@@ -2322,11 +2337,11 @@ media (prefers-color-scheme: dark) {
           </div>
           <!-- Importar lista PIE -->
           <div style="background:var(--pie-bg);border:1px solid var(--pie-border);border-radius:var(--rad);padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-            <span style="font-size:12px;color:var(--pie);font-weight:700;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:4px;vertical-align:middle;flex-shrink:0" aria-label="PIE"><circle cx="12" cy="5" r="3"/><path d="M9 18a3 3 0 0 1 3-3h3.5"/><path d="M17 10l-3.5 5 1.5 5"/><path d="M12 15h5"/><circle cx="10" cy="18" r="4"/></svg> Importar lista PIE</span>
+            <span style="font-size:12px;color:var(--pie);font-weight:700;"><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:middle" aria-label="PIE"><circle cx="13" cy="3.5" r="1.8" fill="currentColor" stroke="none"/><path d="M13 5.3 L11 9 L14.5 9"/><path d="M14.5 9 L16.5 7"/><path d="M11 9 L10 13"/><path d="M10 13 L13 13"/><circle cx="9.5" cy="15.5" r="3"/><circle cx="16" cy="7.5" r="1" fill="currentColor" stroke="none"/></svg> Importar lista PIE</span>
             <span style="font-size:11px;color:var(--text3);">TXT, CSV o XLS con nombres — se marcan automáticamente como PIE en todos los cursos</span>
             <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;margin-left:auto;">
               <input type="file" id="importPIEFile" accept=".txt,.csv,.xls,.xlsx" style="display:none" onchange="importarListaPIE(this)">
-              <button class="btn" style="font-size:12px;padding:5px 14px;background:var(--pie);color:white;border-color:var(--pie);" onclick="document.getElementById('importPIEFile').click()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:4px;vertical-align:middle;flex-shrink:0" aria-label="PIE"><circle cx="12" cy="5" r="3"/><path d="M9 18a3 3 0 0 1 3-3h3.5"/><path d="M17 10l-3.5 5 1.5 5"/><path d="M12 15h5"/><circle cx="10" cy="18" r="4"/></svg> Elegir archivo PIE</button>
+              <button class="btn" style="font-size:12px;padding:5px 14px;background:var(--pie);color:white;border-color:var(--pie);" onclick="document.getElementById('importPIEFile').click()"><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:middle" aria-label="PIE"><circle cx="13" cy="3.5" r="1.8" fill="currentColor" stroke="none"/><path d="M13 5.3 L11 9 L14.5 9"/><path d="M14.5 9 L16.5 7"/><path d="M11 9 L10 13"/><path d="M10 13 L13 13"/><circle cx="9.5" cy="15.5" r="3"/><circle cx="16" cy="7.5" r="1" fill="currentColor" stroke="none"/></svg> Elegir archivo PIE</button>
             </label>
             <span id="importPIEStatus" style="font-size:11px;color:var(--pie);font-family:var(--font-mono);font-weight:600;"></span>
           </div>
@@ -2770,19 +2785,77 @@ let cooldownInterval = null;
 let editandoRubrica = null; // índice o null
 
 function getDefaultRubricas() {
-  return [{
-    nombre: 'Arte Románico 5°B',
-    criterios: [
-      'Preparación del fondo (colores y materiales)',
-      'Estado y cuidado de la hoja',
-      'Representación de figuras de apóstoles y Jesús al estilo medieval',
-      'Uso de colores complementarios o contrastantes',
-      'Uso del pastel graso o lápices para texturas y efectos',
-      'Composición y uso del espacio',
-      'Dedicación, concentración y cuidado durante las clases',
-      'Reflexión sobre la propia obra usando ficha de obra'
-    ]
-  }];
+  return [
+    {
+      nombre: 'Arte Románico (Medieval)',
+      criterios: [
+        'Preparación y cuidado del fondo (colores y materiales)',
+        'Estado y cuidado de la hoja o soporte',
+        'Representación de figuras al estilo medieval (bidimensional, jerárquica)',
+        'Uso de colores complementarios o contrastantes',
+        'Textura y efectos con pastel graso o lápices',
+        'Composición y uso del espacio pictórico',
+        'Dedicación, concentración y actitud durante el proceso',
+        'Reflexión escrita sobre la propia obra'
+      ]
+    },
+    {
+      nombre: 'Dibujo de Observación',
+      criterios: [
+        'Proporción y escala de los elementos observados',
+        'Uso correcto de la línea (presión, dirección, variación)',
+        'Representación del volumen mediante sombra y luz',
+        'Detalle y precisión en la representación',
+        'Composición dentro del soporte',
+        'Limpieza y cuidado del trabajo final'
+      ]
+    },
+    {
+      nombre: 'Pintura con Témpera / Acuarela',
+      criterios: [
+        'Mezcla y aplicación correcta del color',
+        'Armonía o contraste cromático intencional',
+        'Control del pincel y la técnica (capas, aguado, empaste)',
+        'Representación del espacio (perspectiva o planos)',
+        'Expresividad y intención comunicativa de la obra',
+        'Limpieza, orden y cuidado de materiales',
+        'Proceso reflexivo: boceto o planificación previa'
+      ]
+    },
+    {
+      nombre: 'Escultura / Modelado',
+      criterios: [
+        'Manejo adecuado del material (greda, papel maché, alambre)',
+        'Forma y volumen tridimensional logrado',
+        'Detalles superficiales y acabado',
+        'Originalidad y creatividad del diseño',
+        'Estabilidad y estructura de la pieza',
+        'Proceso de trabajo y actitud durante las clases'
+      ]
+    },
+    {
+      nombre: 'Diseño y Collage',
+      criterios: [
+        'Uso intencional del color como elemento de diseño',
+        'Equilibrio y ritmo visual en la composición',
+        'Selección y organización de elementos visuales',
+        'Concepto o mensaje comunicado',
+        'Técnica de recorte, pegado y montaje',
+        'Originalidad y coherencia del resultado final'
+      ]
+    },
+    {
+      nombre: 'Arte Abstracto / Expresionismo',
+      criterios: [
+        'Uso expresivo del color (temperatura, saturación, emoción)',
+        'Gestualidad y energía del trazo o mancha',
+        'Composición dinámica: movimiento y tensión visual',
+        'Relación entre forma y emoción/concepto',
+        'Uso de materiales y técnicas mixtas',
+        'Reflexión oral o escrita sobre la intención de la obra'
+      ]
+    }
+  ];
 }
 
 function getRubrica() { return rubricas[rubricaActiva] || rubricas[0]; }
@@ -2954,7 +3027,7 @@ function renderCriterios() {
     div.innerHTML = `
       <div class="criterio-name"><span class="crit-num">${i+1}</span>${c}</div>
       <div class="niveles">
-        ${[['MB','Muy bien','3'],['L','Logrado','2'],['M','Medianamente','1'],['N','Por lograr','0']].map(([k,lbl,pts]) =>
+        ${[['MB','Destacado','3'],['L','Logrado','2'],['M','En proceso','1'],['N','Por lograr','0']].map(([k,lbl,pts]) =>
           `<button class="nivel-btn ${ev?.nivel===k?'sel-'+k:''}" onclick="setNivel(${i},'${k}')">${lbl}<br><span style="font-family:'DM Mono',monospace;font-size:9px;opacity:0.7">${pts}pts</span></button>`
         ).join('')}
       </div>
@@ -3916,7 +3989,7 @@ function renderRegistros() {
     card.innerHTML = `
       <div class="reg-avatar">${iniciales(r.nombre)}</div>
       <div class="reg-info">
-        <div class="reg-nombre">${r.nombre||'Sin nombre'}${esDup?'<span class="dup-badge">DUP</span>':''}${r.pie?'<span class="pie-badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:4px;vertical-align:middle;flex-shrink:0" aria-label="PIE"><circle cx="12" cy="5" r="3"/><path d="M9 18a3 3 0 0 1 3-3h3.5"/><path d="M17 10l-3.5 5 1.5 5"/><path d="M12 15h5"/><circle cx="10" cy="18" r="4"/></svg>PIE</span>':''} <span class="instancia-badge" onclick="event.stopPropagation();filtrarPorInstancia('${instancia}')" title="Filtrar por ${instancia}" style="cursor:pointer;">${instancia}</span>${r.noEntregado?'<span class="no-entregado-badge">✕ No entregado</span>':''}</div>
+        <div class="reg-nombre">${r.nombre||'Sin nombre'}${esDup?'<span class="dup-badge">DUP</span>':''}${r.pie?'<span class="pie-badge"><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:middle" aria-label="PIE"><circle cx="13" cy="3.5" r="1.8" fill="currentColor" stroke="none"/><path d="M13 5.3 L11 9 L14.5 9"/><path d="M14.5 9 L16.5 7"/><path d="M11 9 L10 13"/><path d="M10 13 L13 13"/><circle cx="9.5" cy="15.5" r="3"/><circle cx="16" cy="7.5" r="1" fill="currentColor" stroke="none"/></svg>PIE</span>':''} <span class="instancia-badge" onclick="event.stopPropagation();filtrarPorInstancia('${instancia}')" title="Filtrar por ${instancia}" style="cursor:pointer;">${instancia}</span>${r.noEntregado?'<span class="no-entregado-badge">✕ No entregado</span>':''}</div>
         <div class="reg-meta">${r.fecha||''}${r.curso?' · '+r.curso:''}${r.instancia&&r.instancia!=='Evaluación 1'?' · '+r.instancia:''}${r.rubricaNombre?' · '+r.rubricaNombre:''} · ${r.pts??'?'}/${r.maxPts??'?'} pts</div>
       </div>
       <span class="reg-badge" style="background:${bg};color:${clr}">${nota.toFixed(1)} — ${nLabel}</span>
@@ -4024,7 +4097,7 @@ function renderLibroClases(filtrados, container) {
       html += `<tr class="${claseFilaNE}">
         <td style="font-weight:500;"><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;margin-right:8px;">${i+1}</span>${al.nombre}${tagNE}${tagSinEvaluar}</td>
         ${notasColsFinal}${promCellFinal}
-        <td class="pie-cell">${al.pie?'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:4px;vertical-align:middle;flex-shrink:0" aria-label="PIE"><circle cx="12" cy="5" r="3"/><path d="M9 18a3 3 0 0 1 3-3h3.5"/><path d="M17 10l-3.5 5 1.5 5"/><path d="M12 15h5"/><circle cx="10" cy="18" r="4"/></svg>':''}</td>
+        <td class="pie-cell">${al.pie?'<svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:middle" aria-label="PIE"><circle cx="13" cy="3.5" r="1.8" fill="currentColor" stroke="none"/><path d="M13 5.3 L11 9 L14.5 9"/><path d="M14.5 9 L16.5 7"/><path d="M11 9 L10 13"/><path d="M10 13 L13 13"/><circle cx="9.5" cy="15.5" r="3"/><circle cx="16" cy="7.5" r="1" fill="currentColor" stroke="none"/></svg>':''}</td>
       </tr>`;
     });
 
@@ -4221,7 +4294,7 @@ function editarRegistro(idx) {
       <div class="pie-toggle-row" style="border-radius:var(--rad);margin:0;" onclick="toggleEditPie()">
         <input type="checkbox" id="editPieCheck" ${r.pie?'checked':''} onclick="event.stopPropagation();toggleEditPie()">
         <div>
-          <div class="pie-toggle-label"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:4px;vertical-align:middle;flex-shrink:0" aria-label="PIE"><circle cx="12" cy="5" r="3"/><path d="M9 18a3 3 0 0 1 3-3h3.5"/><path d="M17 10l-3.5 5 1.5 5"/><path d="M12 15h5"/><circle cx="10" cy="18" r="4"/></svg> Estudiante PIE / Adecuación curricular</div>
+          <div class="pie-toggle-label"><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:middle" aria-label="PIE"><circle cx="13" cy="3.5" r="1.8" fill="currentColor" stroke="none"/><path d="M13 5.3 L11 9 L14.5 9"/><path d="M14.5 9 L16.5 7"/><path d="M11 9 L10 13"/><path d="M10 13 L13 13"/><circle cx="9.5" cy="15.5" r="3"/><circle cx="16" cy="7.5" r="1" fill="currentColor" stroke="none"/></svg> Estudiante PIE / Adecuación curricular</div>
           <div class="pie-toggle-sub">${r.pie?'Actualmente marcado como PIE':'Sin adecuación curricular'}</div>
         </div>
       </div>
@@ -7432,7 +7505,7 @@ function actualizarConteoPIE() {
   }
 
   if (pie > 0) {
-    badge.innerHTML = `${baseLabel}${pendientes} · <span style="color:var(--pie2);font-weight:700;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:4px;vertical-align:middle;flex-shrink:0" aria-label="PIE"><circle cx="12" cy="5" r="3"/><path d="M9 18a3 3 0 0 1 3-3h3.5"/><path d="M17 10l-3.5 5 1.5 5"/><path d="M12 15h5"/><circle cx="10" cy="18" r="4"/></svg> ${pie} PIE</span>`;
+    badge.innerHTML = `${baseLabel}${pendientes} · <span style="color:var(--pie2);font-weight:700;"><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:middle" aria-label="PIE"><circle cx="13" cy="3.5" r="1.8" fill="currentColor" stroke="none"/><path d="M13 5.3 L11 9 L14.5 9"/><path d="M14.5 9 L16.5 7"/><path d="M11 9 L10 13"/><path d="M10 13 L13 13"/><circle cx="9.5" cy="15.5" r="3"/><circle cx="16" cy="7.5" r="1" fill="currentColor" stroke="none"/></svg> ${pie} PIE</span>`;
   } else if (pendientes) {
     badge.innerHTML = `${baseLabel}<span style="color:var(--text3)">${pendientes}</span>`;
   } else {
@@ -7734,7 +7807,7 @@ function verDetalle(idx) {
     </div>`;
   }).join('');
 
-  const pieInfo = r.pie ? `<div style="margin-top:6px;"><span class="pie-badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:4px;vertical-align:middle;flex-shrink:0" aria-label="PIE"><circle cx="12" cy="5" r="3"/><path d="M9 18a3 3 0 0 1 3-3h3.5"/><path d="M17 10l-3.5 5 1.5 5"/><path d="M12 15h5"/><circle cx="10" cy="18" r="4"/></svg> PIE${r.pieNota?' · '+r.pieNota:''}</span></div>` : '';
+  const pieInfo = r.pie ? `<div style="margin-top:6px;"><span class="pie-badge"><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:middle" aria-label="PIE"><circle cx="13" cy="3.5" r="1.8" fill="currentColor" stroke="none"/><path d="M13 5.3 L11 9 L14.5 9"/><path d="M14.5 9 L16.5 7"/><path d="M11 9 L10 13"/><path d="M10 13 L13 13"/><circle cx="9.5" cy="15.5" r="3"/><circle cx="16" cy="7.5" r="1" fill="currentColor" stroke="none"/></svg> PIE${r.pieNota?' · '+r.pieNota:''}</span></div>` : '';
 
   abrirModal(`
     <div class="detalle-header">
@@ -7828,7 +7901,7 @@ function _mostrarAutocompletadoImmediate(val) {
     const nombreSeguro = v.nombre.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
     const cursoSeguro  = (v.curso||'').replace(/'/g,"\\'");
     const cursoLabel   = v.curso ? `<span class="ac-curso">${v.curso}</span>` : '';
-    const pieBadge     = v.pie  ? '<span class="ac-pie"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:4px;vertical-align:middle;flex-shrink:0" aria-label="PIE"><circle cx="12" cy="5" r="3"/><path d="M9 18a3 3 0 0 1 3-3h3.5"/><path d="M17 10l-3.5 5 1.5 5"/><path d="M12 15h5"/><circle cx="10" cy="18" r="4"/></svg></span>' : '';
+    const pieBadge     = v.pie  ? '<span class="ac-pie"><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:middle" aria-label="PIE"><circle cx="13" cy="3.5" r="1.8" fill="currentColor" stroke="none"/><path d="M13 5.3 L11 9 L14.5 9"/><path d="M14.5 9 L16.5 7"/><path d="M11 9 L10 13"/><path d="M10 13 L13 13"/><circle cx="9.5" cy="15.5" r="3"/><circle cx="16" cy="7.5" r="1" fill="currentColor" stroke="none"/></svg></span>' : '';
     const pendiente    = !v.tieneEval ? '<span class="ac-pendiente">PENDIENTE</span>' : '';
     // Mostrar últimas notas del estudiante
     const regsEst = registros.filter(function(r){ return mismoEstudiante(r.nombre||'', v.nombre) && (!v.curso||(r.curso||'')===(v.curso||'')); })
@@ -8546,7 +8619,7 @@ function renderCursoMain() {
     { key: 'todos',     lbl: 'Todos (' + lista.length + ')',          cls: '' },
     { key: 'entregado', lbl: '✓ Entregados (' + entregados + ')',     cls: 'f-entregado' },
     { key: 'pendiente', lbl: '⚠ Pendientes (' + pendientes + ')',    cls: 'f-pendiente' },
-    { key: 'pie',       lbl: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:4px;vertical-align:middle;flex-shrink:0" aria-label="PIE"><circle cx="12" cy="5" r="3"/><path d="M9 18a3 3 0 0 1 3-3h3.5"/><path d="M17 10l-3.5 5 1.5 5"/><path d="M12 15h5"/><circle cx="10" cy="18" r="4"/></svg> PIE (' + pieCount + ')', cls: 'f-pie' },
+    { key: 'pie',       lbl: '<svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:middle" aria-label="PIE"><circle cx="13" cy="3.5" r="1.8" fill="currentColor" stroke="none"/><path d="M13 5.3 L11 9 L14.5 9"/><path d="M14.5 9 L16.5 7"/><path d="M11 9 L10 13"/><path d="M10 13 L13 13"/><circle cx="9.5" cy="15.5" r="3"/><circle cx="16" cy="7.5" r="1" fill="currentColor" stroke="none"/></svg> PIE (' + pieCount + ')', cls: 'f-pie' },
   ].forEach(function(f) {
     const btn = document.createElement('button');
     btn.className = 'est-filtro-btn ' + f.cls + (estFiltro === f.key ? ' active' : '');
@@ -8607,7 +8680,7 @@ function renderCursoMain() {
         const pb = document.createElement('span');
         pb.className = 'est-badge eb-pie';
         pb.title = e.pieNota || 'PIE';
-        pb.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:4px;vertical-align:middle;flex-shrink:0" aria-label="PIE"><circle cx="12" cy="5" r="3"/><path d="M9 18a3 3 0 0 1 3-3h3.5"/><path d="M17 10l-3.5 5 1.5 5"/><path d="M12 15h5"/><circle cx="10" cy="18" r="4"/></svg> PIE';
+        pb.innerHTML = '<svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:middle" aria-label="PIE"><circle cx="13" cy="3.5" r="1.8" fill="currentColor" stroke="none"/><path d="M13 5.3 L11 9 L14.5 9"/><path d="M14.5 9 L16.5 7"/><path d="M11 9 L10 13"/><path d="M10 13 L13 13"/><circle cx="9.5" cy="15.5" r="3"/><circle cx="16" cy="7.5" r="1" fill="currentColor" stroke="none"/></svg> PIE';
         badges.appendChild(pb);
       }
       const sb = document.createElement('span');
@@ -9456,7 +9529,7 @@ async function limpiarDuplicadosCurso(curso) {
     const nombres = grupo.map(function(g) {
       return '<li style="padding:3px 0;">' +
         '<span style="font-weight:600;">' + g.est.nombre + '</span>' +
-        (g.est.pie ? ' <span class="pie-badge" style="font-size:9px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:4px;vertical-align:middle;flex-shrink:0" aria-label="PIE"><circle cx="12" cy="5" r="3"/><path d="M9 18a3 3 0 0 1 3-3h3.5"/><path d="M17 10l-3.5 5 1.5 5"/><path d="M12 15h5"/><circle cx="10" cy="18" r="4"/></svg> PIE</span>' : '') +
+        (g.est.pie ? ' <span class="pie-badge" style="font-size:9px;"><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:middle" aria-label="PIE"><circle cx="13" cy="3.5" r="1.8" fill="currentColor" stroke="none"/><path d="M13 5.3 L11 9 L14.5 9"/><path d="M14.5 9 L16.5 7"/><path d="M11 9 L10 13"/><path d="M10 13 L13 13"/><circle cx="9.5" cy="15.5" r="3"/><circle cx="16" cy="7.5" r="1" fill="currentColor" stroke="none"/></svg> PIE</span>' : '') +
         '</li>';
     }).join('');
     return '<div style="margin-bottom:10px;"><div style="font-size:10px;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;margin-bottom:4px;">Grupo duplicado</div><ul style="margin:0;padding-left:16px;font-size:13px;">' + nombres + '</ul></div>';
@@ -9610,7 +9683,7 @@ async function mostrarConfirmacionMerge(curso, candidatos, onConfirm) {
         <span class="merge-badge-old">${c.nombreSN}</span>
         <span class="merge-arrow">→</span>
         <span class="merge-badge-new">${c.nombreOficial}</span>
-        ${c.pieNueva ? '<span class="merge-pie-flag"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:4px;vertical-align:middle;flex-shrink:0" aria-label="PIE"><circle cx="12" cy="5" r="3"/><path d="M9 18a3 3 0 0 1 3-3h3.5"/><path d="M17 10l-3.5 5 1.5 5"/><path d="M12 15h5"/><circle cx="10" cy="18" r="4"/></svg></span>' : ''}
+        ${c.pieNueva ? '<span class="merge-pie-flag"><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:middle" aria-label="PIE"><circle cx="13" cy="3.5" r="1.8" fill="currentColor" stroke="none"/><path d="M13 5.3 L11 9 L14.5 9"/><path d="M14.5 9 L16.5 7"/><path d="M11 9 L10 13"/><path d="M10 13 L13 13"/><circle cx="9.5" cy="15.5" r="3"/><circle cx="16" cy="7.5" r="1" fill="currentColor" stroke="none"/></svg></span>' : ''}
       </td>
       <td>${notasHTML}</td>
       <td><span class="merge-score">${pctScore}%</span></td>
@@ -10008,7 +10081,7 @@ function buscarEnCursos(val) {
     `<div class="autocomplete-item" data-idx="${i}"
          onmousedown="seleccionarEstudianteCursos('${est.nombre.replace(/'/g,"\\'")}','${est.curso.replace(/'/g,"\\'")}')">
        <span style="flex:1;font-weight:500;">${est.nombre}</span>
-       ${est.pie ? '<span class="pie-badge" style="font-size:9px;margin:0 4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:4px;vertical-align:middle;flex-shrink:0" aria-label="PIE"><circle cx="12" cy="5" r="3"/><path d="M9 18a3 3 0 0 1 3-3h3.5"/><path d="M17 10l-3.5 5 1.5 5"/><path d="M12 15h5"/><circle cx="10" cy="18" r="4"/></svg></span>' : ''}
+       ${est.pie ? '<span class="pie-badge" style="font-size:9px;margin:0 4px;"><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:middle" aria-label="PIE"><circle cx="13" cy="3.5" r="1.8" fill="currentColor" stroke="none"/><path d="M13 5.3 L11 9 L14.5 9"/><path d="M14.5 9 L16.5 7"/><path d="M11 9 L10 13"/><path d="M10 13 L13 13"/><circle cx="9.5" cy="15.5" r="3"/><circle cx="16" cy="7.5" r="1" fill="currentColor" stroke="none"/></svg></span>' : ''}
        <span class="autocomplete-meta">${est.curso}</span>
        ${est.tieneEval ? '<span style="font-size:10px;color:var(--green);margin-left:4px;">✓</span>' : '<span style="font-size:10px;color:var(--red);margin-left:4px;">○</span>'}
      </div>`
