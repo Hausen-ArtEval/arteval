@@ -194,7 +194,7 @@ body {
 .tabs::-webkit-scrollbar { display: none; }
 .tab {
   font-family: var(--font-ui); font-size: 13.5px; font-weight: 500;
-  padding: 0 14px; height: 36px;
+  padding: 0 14px; height: 38px;
   border: none; border-bottom: none;
   cursor: pointer; background: transparent; color: var(--text3);
   transition: all 0.2s ease;
@@ -363,7 +363,8 @@ input[type="text"]:focus, textarea:focus, select:focus {
   background: var(--bg2); color: var(--text3);
   transition: all 0.15s; text-align: center; line-height: 1.3;
   font-family: var(--font-ui); min-height: 54px;
-  font-weight: 500; letter-spacing: 0.2px;
+  font-weight: 500; letter-spacing: 0.2px;  touch-action: manipulation;
+
 }
 .nivel-btn:hover {
   border-color: var(--accent); color: var(--accent);
@@ -374,12 +375,7 @@ input[type="text"]:focus, textarea:focus, select:focus {
 .nivel-btn.sel-L  { background: var(--green-bg); color: var(--green); border-color: rgba(52,199,89,0.3); font-weight: 600; }
 .nivel-btn.sel-M  { background: var(--amber-bg); color: var(--amber); border-color: rgba(255,159,10,0.3); font-weight: 600; }
 .nivel-btn.sel-N  { background: var(--red-bg); color: var(--red); border-color: rgba(255,59,48,0.3); font-weight: 600; }
-.ia-nota {
-  font-size: 11px; color: var(--accent); margin-top: 6px;
-  font-style: normal; font-family: var(--font-mono);
-  background: var(--accent-bg); border-radius: 8px;
-  padding: 3px 8px; display: inline-block; font-weight: 600;
-}
+.ia-nota { font-size: 11px; color: var(--accent); margin-top: 6px; font-style: normal; font-family: var(--font-mono); background: var(--accent-bg); border-radius: 8px; padding: 3px 8px; display: inline-block; font-weight: 600; }
 
 /* ── RESUMEN ─────────────────────────────────────────────── */
 .resumen-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; padding: 12px 14px; border-top: 0.5px solid var(--border); }
@@ -616,9 +612,9 @@ input[type="text"]:focus, textarea:focus, select:focus {
 .eb-entregado { background: var(--green-bg); color: var(--green); }
 .eb-pendiente { background: var(--red-bg); color: var(--red); }
 .eb-pie { background: var(--pie-bg); color: var(--pie); }
-.est-nota { font-family: var(--font-mono); font-size: 16px; font-weight: 800; width: 40px; text-align: right; flex-shrink: 0; letter-spacing: -0.5px; }
+.est-nota { font-family: var(--font-mono); font-size: 16px; font-weight: 800; width: 44px; text-align: right; flex-shrink: 0; letter-spacing: -0.5px; }
 .est-actions { display: flex; gap: 4px; }
-.est-btn { font-size: 13px; padding: 6px 9px; border: 0.5px solid var(--border); border-radius: 9px; background: var(--bg3); color: var(--text2); cursor: pointer; transition: all 0.12s; min-height: 36px; display: flex; align-items: center; gap: 4px; font-family: var(--font-ui); }
+.est-btn { font-size: 13px; padding: 7px 11px; border: 0.5px solid var(--border); border-radius: 9px; background: var(--bg3); color: var(--text2); cursor: pointer; transition: all 0.15s; min-height: 40px; display: flex; align-items: center; gap: 4px; font-family: var(--font-ui); touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 .est-btn:hover { background: var(--bg4); color: var(--text); }
 .est-btn.pie-toggle { color: var(--text3); }
 .est-btn.pie-toggle:hover { color: #FF9500; border-color: rgba(255,149,0,0.4); background: rgba(255,149,0,0.08); }
@@ -1513,7 +1509,47 @@ media (prefers-color-scheme: dark) {
 .est-btn.pie-toggle:not(.active) {
   color: var(--text3);
   border-style: dashed;
-}</style>
+}
+/* ── QA v72 ─────────────────────────────────────────────── */
+@keyframes arteval-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.72; transform: scale(0.97); }
+}
+#offlinePendingBanner { animation: slideDown 0.35s ease; }
+@keyframes slideDown {
+  from { opacity:0; transform:translateX(-50%) translateY(-10px); }
+  to   { opacity:1; transform:translateX(-50%) translateY(0); }
+}
+.conflicto-rubrica {
+  background: rgba(255,149,0,0.08) !important;
+  border: 1.5px solid rgba(255,149,0,0.42) !important;
+  border-radius: 6px;
+  animation: parpadeo-conflicto 2s ease-in-out 3;
+}
+@keyframes parpadeo-conflicto {
+  0%,100% { background: rgba(255,149,0,0.08) !important; }
+  50%     { background: rgba(255,149,0,0.20) !important; }
+}
+@supports (padding: max(0px)) {
+  .topbar {
+    padding-left:  max(20px, env(safe-area-inset-left));
+    padding-right: max(20px, env(safe-area-inset-right));
+  }
+}
+@media (pointer: coarse) {
+  .btn, .tab, select, input[type="text"], input[type="number"] { min-height: 44px; }
+  .nivel-btn { min-height: 54px; }
+  .est-btn   { min-height: 40px; }
+}
+/* QA: Spinner */
+@keyframes arteval-spin { to { transform: rotate(360deg); } }
+.av-spinner { width:18px;height:18px;border-radius:50%;border:2px solid var(--border2);border-top-color:var(--accent);animation:arteval-spin 0.7s linear infinite;display:inline-block;vertical-align:middle;flex-shrink:0; }
+.av-spinner-sm { width:13px;height:13px;border-width:1.5px; }
+@keyframes warnPulse { 0%,100%{border-color:rgba(255,149,0,0.35);}50%{border-color:rgba(255,149,0,0.8);} }
+.conflicto-rubrica { animation:warnPulse 1.5s ease-in-out 3; }
+@keyframes slideDown { from{opacity:0;transform:translateX(-50%) translateY(-8px);}to{opacity:1;transform:translateX(-50%) translateY(0);} }
+#offlinePendingBanner { animation:slideDown 0.3s ease; }
+</style>
 
 <script>
 // ── Service Worker PWA — registro seguro sin blob: URLs ──────────────────────
@@ -1708,6 +1744,8 @@ media (prefers-color-scheme: dark) {
           <div id="driveSyncInfo" style="font-size:12px;color:var(--text2);
             padding:12px 14px;background:var(--bg3);border-radius:12px;
             margin-bottom:10px;border:0.5px solid var(--border);line-height:1.8;"></div>
+        <div id="driveSyncCounts" style="font-size:12px;font-family:var(--font-mono);color:var(--text2);margin:-4px 0 8px 0;padding:4px 14px;"></div>
+        <div id="driveIntegrityBadge" style="display:none;font-size:12px;font-weight:600;padding:6px 14px;border-radius:10px;background:rgba(255,149,0,0.10);color:#FF9500;margin-bottom:8px;"></div>
 
           <!-- 3. Toggle auto-backup — Apple switch -->
           <div style="display:flex;align-items:center;justify-content:space-between;
@@ -2808,9 +2846,10 @@ function actualizarEstadoConfigDrive() {
 // ═══════════════════════════════════════════════════════
 let rubricas    = JSON.parse(localStorage.getItem('av_rubricas') || 'null') || getDefaultRubricas();
 let contextoGuardado = {}; // se carga en init desde localStorage
-let registros   = JSON.parse(localStorage.getItem('av_registros') || '[]');
-let listaCursos = JSON.parse(localStorage.getItem('av_lista_cursos') || '{}');
-let rubricaActiva = parseInt(localStorage.getItem('av_rubrica_activa') || '0');
+// FIX QA v72: init protegido — JSON corrupto no congela la app
+let registros   = (function(){ try { return JSON.parse(localStorage.getItem('av_registros')||'[]')||[]; } catch(e){ console.error('[ArtEval] av_registros:',e.message); return []; } })();
+let listaCursos = (function(){ try { return JSON.parse(localStorage.getItem('av_lista_cursos')||'{}')||{}; } catch(e){ console.error('[ArtEval] av_lista_cursos:',e.message); return {}; } })();
+let rubricaActiva = (function(){ var v=parseInt(localStorage.getItem('av_rubrica_activa')||'0'); return isNaN(v)?0:v; })();
 // Autocomplete cache — aquí para evitar zona muerta al llamar saveRegistros/saveListaCursos
 let _candidatosCache = null;
 let _acDebounceTimer = null;
@@ -3007,6 +3046,8 @@ function saveRegistros() {
     _invalidarCandidatos();
     _flashAutoSave();
     _checkStorageSize();
+    // FIX SYNC: actualizar badge de integridad local vs Drive
+    setTimeout(function(){ if(typeof _updateDriveIntegrityBadge==='function') _updateDriveIntegrityBadge(); }, 150);
   } catch(e) {
     if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
       // localStorage lleno: si Drive está conectado, guardar allá automáticamente
@@ -3038,6 +3079,8 @@ function _driveSaveDebounced() {
 }
 
 // Auto-sync si el storage está lleno y Drive está activo
+function _flashDriveSaving(on){var b=document.querySelector('.cloud-btn');if(b){if(on)b.classList.add('drive-saving');else b.classList.remove('drive-saving');}}
+
 function _autoSyncIfNeeded() {
   try {
     var total = 0;
@@ -5059,8 +5102,24 @@ function importarDatos(e) {
       saveRegistros();
       repararRegistros();
       actualizarConteo();
-      if (status) status.textContent = `✓ ${nuevos} registros importados (${importados.length - nuevos} duplicados omitidos). Notas recalculadas automáticamente.`;
+      renderSidebarCounts();
+      const _totalLocal = registros.length;
+      localStorage.setItem('av_local_count_last_import', String(_totalLocal));
+      if (status) status.textContent = '✓ ' + nuevos + ' importados. Total: ' + _totalLocal + '. Sincronizando Drive...';
       e.target.value = '';
+      // FIX SYNC: push-priority — el dato local manda tras restauración manual
+      setTimeout(async function() {
+        try {
+          if (typeof syncToDrive === 'function' && typeof _driveToken !== 'undefined' && _driveToken) {
+            await syncToDrive();
+            if (status) status.textContent = '✅ ' + _totalLocal + ' registros en local y en Drive.';
+          } else {
+            if (status) status.textContent = '✓ ' + _totalLocal + ' importados. Conecta Drive para sincronizar.';
+          }
+        } catch(e2) {
+          if (status) status.textContent = '✓ ' + _totalLocal + ' importados (Drive: ' + e2.message + ')';
+        }
+      }, 400);
     } catch(err) {
       if (status) status.textContent = '✗ Error al leer el archivo: ' + err.message;
     }
@@ -5567,7 +5626,7 @@ function _ejecutarExportUniversal() {
 // Almacena la plantilla de cada curso tal como la subió el usuario.
 // Clave: sección normalizada (ej. "6A"). Valor: objeto con todas las
 // filas originales y los índices de columnas detectados.
-let alexiaDatos = JSON.parse(localStorage.getItem('av_alexia_datos') || '{}');
+let alexiaDatos = (function(){ try { return JSON.parse(localStorage.getItem('av_alexia_datos') || '{}') || {}; } catch(e) { console.error('[ArtEval] alexia_datos corrupto:', e.message); return {}; } })();
 
 function saveAlexiaDatos() {
   try {
@@ -7585,6 +7644,12 @@ function showTab(name) {
   if (name==='progreso')     renderProgreso();
   if (name==='reporte')      renderReporte();
   if (name==='rubricas')     renderRubricas();
+  // FIX QA v72: detener stream de cámara al salir del tab evaluar
+  if (name !== 'evaluar' && typeof stream !== 'undefined' && stream) {
+    try { stream.getTracks().forEach(function(t){ t.stop(); }); stream = null;
+      var _vid = document.getElementById('camVideo'); if (_vid) _vid.srcObject = null;
+    } catch(e) { /* silencioso */ }
+  }
   if (name==='config') {
     const k = getKey();
     const inp = document.getElementById('apiKeyInput');
@@ -10512,6 +10577,7 @@ function _onAccessToken(tokenResponse) {
     }
   }
   if (typeof _checkPendingQueue === 'function') _checkPendingQueue();
+  setTimeout(function(){ if(typeof _updateDriveIntegrityBadge==='function') _updateDriveIntegrityBadge(); }, 800);
   // Si el localStorage está casi lleno y Drive está activo, guardar y liberar automáticamente
   _autoSyncIfNeeded();
 }
@@ -10579,6 +10645,8 @@ function _updateCloudUI(state) {
     error:        ['⚠️','Error Drive',  'error'],
     disconnected: ['☁️','Desconectado', ''],
   };
+  // FIX QA v72: feedback visual mientras Drive guarda
+  btn.style.animation = (state==='saving'||state==='restoring') ? 'arteval-pulse 1.2s ease-in-out infinite' : '';
   var [ic, tx, cls] = map[state] || map.disconnected;
   if (icon) icon.textContent = ic;
   if (txt)  txt.textContent  = tx;
@@ -10723,6 +10791,7 @@ async function guardarYLiberarLocalStorage() {
 
     // Paso 3: recién aquí — con integridad confirmada — liberar localStorage
     localStorage.setItem('av_last_drive_sync', new Date().toISOString());
+    localStorage.setItem('av_drive_last_count', String(nRegsEsperados));
     localStorage.removeItem('av_registros');
     // PROTECCIÓN: Usar deep copy del snapshot verificado — nunca asignación directa
     registros = JSON.parse(JSON.stringify(rawDrive.registros));
@@ -10800,8 +10869,10 @@ async function syncToDrive() {
     }
 
     localStorage.setItem('av_last_drive_sync', new Date().toISOString());
+    localStorage.setItem('av_drive_last_count', String(snapshot.registros.length));
     _updateCloudUI('synced');
     _checkDriveSyncInfo();
+    if (typeof _updateDriveIntegrityBadge === 'function') _updateDriveIntegrityBadge();
     toast('✅ Guardado en Drive — ' + snapshot.registros.length + ' registros', 'ok', 3000);
   } catch(e) {
     _updateCloudUI('error');
