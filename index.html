@@ -3061,6 +3061,7 @@ function _checkPendingQueue() {
 function saveRegistros() {
   try {
     localStorage.setItem('av_registros', JSON.stringify(registros));
+    localStorage.setItem('av_local_count', String(registros.length)); // FIX SYNC: conteo local siempre actualizado
     _invalidarCandidatos();
     _flashAutoSave();
     _checkStorageSize();
@@ -10670,23 +10671,30 @@ function _onAccessToken(tokenResponse) {
   var warnEl = document.getElementById('storageWarning');
   if (warnEl) warnEl.style.display = 'none';
   // Auto-sync al conectar
-  _checkDriveSyncInfo();
   _updateDrivePanel();
   // Programar auto-backup diario
   _scheduleAutoBackup();
-  // PRIMERO: fusionar notas offline antes de cualquier sync con Drive
-  // Esto garantiza que las notas ingresadas sin conexión no se pierdan
+  // PASO 1: fusionar cola offline ANTES de comparar con Drive
   if (typeof _flushPendingQueue === 'function') {
     var recuperadas = _flushPendingQueue();
     if (recuperadas > 0) {
-      toast('✅ ' + recuperadas + ' nota(s) offline recuperada(s) y fusionadas', 'ok', 5000);
+      toast('✅ ' + recuperadas + ' nota(s) offline recuperada(s)', 'ok', 4000);
       actualizarConteo();
       renderSidebarCounts();
     }
   }
   if (typeof _checkPendingQueue === 'function') _checkPendingQueue();
-  setTimeout(function(){ if(typeof _updateDriveIntegrityBadge==='function') _updateDriveIntegrityBadge(); }, 800);
-  // Si el localStorage está casi lleno y Drive está activo, guardar y liberar automáticamente
+  // PASO 2: sync inteligente — compara local vs Drive y resuelve diferencias
+  // Delay de 1s para que la UI se estabilice primero
+  setTimeout(function() {
+    _smartSyncOnConnect().catch(function(e) {
+      console.warn('[ArtEval] SmartSync falló:', e.message);
+      // Fallback: solo actualizar panel
+      _checkDriveSyncInfo();
+      if (typeof _updateDriveIntegrityBadge === 'function') _updateDriveIntegrityBadge();
+    });
+  }, 1000);
+  // PASO 3: verificar espacio local
   _autoSyncIfNeeded();
 }
 
@@ -10938,6 +10946,87 @@ async function guardarYLiberarLocalStorage() {
   }
 }
 
+
+// ── SYNC INTELIGENTE al reconectar Drive ─────────────────────────────────
+// Compara conteo local vs Drive y resuelve la desincronización automáticamente.
+// LOCAL SIEMPRE GANA si tiene más registros (push-priority).
+async function _smartSyncOnConnect() {
+  if (!_driveToken || Date.now() >= _driveTokenExp) return;
+  try {
+    var folderId = await _getOrCreateFolder();
+    var fileRef  = await _findDbFile(folderId);
+
+    var localCount = registros.length;
+    var driveCount = 0;
+    var driveData  = null;
+
+    // Leer el archivo de Drive si existe
+    if (fileRef) {
+      try {
+        var resp = await _driveRequest('GET',
+          'https://www.googleapis.com/drive/v3/files/' + fileRef.id + '?alt=media');
+        driveData  = await resp.json();
+        driveCount = (driveData.registros || []).length;
+      } catch(readErr) {
+        console.warn('[ArtEval] No se pudo leer Drive para comparar:', readErr.message);
+      }
+    }
+
+    // Actualizar conteo de referencia Drive
+    if (driveCount > 0) {
+      localStorage.setItem('av_drive_last_count', String(driveCount));
+    }
+
+    console.info('[ArtEval] SmartSync: local=' + localCount + ' drive=' + driveCount);
+
+    if (localCount === 0 && driveCount === 0) return; // nada que hacer
+
+    if (localCount >= driveCount) {
+      // LOCAL ES MAESTRO: subir a Drive (siempre que haya diferencia o sea primera vez)
+      if (localCount > driveCount || !fileRef) {
+        console.info('[ArtEval] SmartSync: local tiene más (' + localCount + ' vs ' + driveCount + ') → subiendo a Drive');
+        _updateCloudUI('saving');
+        await syncToDrive();
+        console.info('[ArtEval] SmartSync: subida completada');
+      }
+      // Si son iguales, no hacer nada — ya están sincronizados
+    } else {
+      // DRIVE TIENE MÁS: fusionar — no sobreescribir, añadir los que faltan en local
+      console.info('[ArtEval] SmartSync: Drive tiene más (' + driveCount + ' vs ' + localCount + ') → fusionando');
+      if (driveData && driveData.registros) {
+        var existentes = new Set(registros.map(function(r) {
+          return (r.nombre||'') + '|' + (r.curso||'') + '|' + (r.fecha||'') + '|' + (r.instancia||'');
+        }));
+        var fusionados = 0;
+        driveData.registros.forEach(function(r) {
+          var key = (r.nombre||'') + '|' + (r.curso||'') + '|' + (r.fecha||'') + '|' + (r.instancia||'');
+          if (!existentes.has(key)) {
+            registros.push(r);
+            existentes.add(key);
+            fusionados++;
+          }
+        });
+        if (fusionados > 0) {
+          saveRegistros();
+          actualizarConteo();
+          renderSidebarCounts();
+          // Ahora subir el resultado fusionado a Drive (local+drive → drive)
+          await syncToDrive();
+          toast('✅ Fusionados ' + fusionados + ' registros desde Drive. Total: ' + registros.length, 'ok', 5000);
+          console.info('[ArtEval] SmartSync: fusión completada, total=' + registros.length);
+        }
+      }
+    }
+
+    // Actualizar badge de integridad
+    if (typeof _updateDriveIntegrityBadge === 'function') _updateDriveIntegrityBadge();
+
+  } catch(e) {
+    console.warn('[ArtEval] SmartSync error (silencioso):', e.message);
+    // No mostrar toast de error — es silencioso para no interrumpir al profesor
+  }
+}
+
 async function syncToDrive() {
   _updateCloudUI('saving');
   try {
@@ -10976,12 +11065,14 @@ async function syncToDrive() {
         body, { 'Content-Type': 'multipart/related; boundary="' + boundary + '"' });
     }
 
-    localStorage.setItem('av_last_drive_sync', new Date().toISOString());
+    var _syncTs = new Date().toISOString();
+    localStorage.setItem('av_last_drive_sync', _syncTs);
     localStorage.setItem('av_drive_last_count', String(snapshot.registros.length));
+    localStorage.setItem('av_drive_sync_ts', _syncTs); // timestamp para comparación
     _updateCloudUI('synced');
     _checkDriveSyncInfo();
     if (typeof _updateDriveIntegrityBadge === 'function') _updateDriveIntegrityBadge();
-    toast('✅ Guardado en Drive — ' + snapshot.registros.length + ' registros', 'ok', 3000);
+    toast('✅ Drive actualizado — ' + snapshot.registros.length + ' registros', 'ok', 3000);
   } catch(e) {
     _updateCloudUI('error');
     toast('❌ Error al guardar en Drive: ' + e.message, 'err', 6000);
