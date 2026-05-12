@@ -149,7 +149,7 @@ body {
   box-shadow: 0 1px 0 rgba(0,0,0,0.05);
 }
 .topbar-logo { display: flex; align-items: center; gap: 9px; text-decoration: none; }
-.logo-icon { height: 42px; width: auto; flex-shrink: 0; display: block; object-fit: contain; }
+.logo-icon { height: 45px; width: auto; flex-shrink: 0; display: block; object-fit: contain; }
 .logo-wordmark { display: none; }
 .logo-text {
   font-family: var(--font-display);
@@ -1549,6 +1549,24 @@ media (prefers-color-scheme: dark) {
 .conflicto-rubrica { animation:warnPulse 1.5s ease-in-out 3; }
 @keyframes slideDown { from{opacity:0;transform:translateX(-50%) translateY(-8px);}to{opacity:1;transform:translateX(-50%) translateY(0);} }
 #offlinePendingBanner { animation:slideDown 0.3s ease; }
+
+/* Modal Rúbrica Táctil */
+.rubrica-tactil-overlay{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,0.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;align-items:flex-end;justify-content:center;}
+.rubrica-tactil-sheet{background:var(--bg2);border-radius:24px 24px 0 0;width:100%;max-width:680px;max-height:90vh;overflow-y:auto;padding:0 0 40px 0;box-shadow:0 -8px 40px rgba(0,0,0,0.3);animation:slideUp 0.28s cubic-bezier(.34,1.3,.64,1);}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.rubrica-tactil-header{position:sticky;top:0;z-index:10;background:var(--bg2);border-bottom:0.5px solid var(--border);padding:16px 20px 12px;display:flex;align-items:center;justify-content:space-between;}
+.rubrica-tactil-titulo{font-size:17px;font-weight:700;color:var(--text);letter-spacing:-0.3px;}
+.rubrica-tactil-nota-preview{font-size:28px;font-weight:800;font-family:var(--font-mono);color:var(--accent);min-width:60px;text-align:right;}
+.rubrica-tactil-criterio{padding:14px 20px;border-bottom:0.5px solid var(--border);}
+.rubrica-tactil-crit-nombre{font-size:14px;font-weight:600;color:var(--text);margin-bottom:10px;line-height:1.4;}
+.rubrica-tactil-niveles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+.rt-nivel-btn{min-height:60px;border-radius:14px;border:1.5px solid var(--border);background:var(--bg3);color:var(--text3);font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:8px 4px;font-family:var(--font-ui);touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+.rt-nivel-btn:active{transform:scale(0.95);}
+.rt-nivel-btn.sel-MB{background:rgba(52,199,89,0.15);color:#1a9e48;border-color:rgba(52,199,89,0.5);font-weight:700;}
+.rt-nivel-btn.sel-L{background:rgba(0,122,255,0.12);color:var(--blue);border-color:rgba(0,122,255,0.35);font-weight:700;}
+.rt-nivel-btn.sel-M{background:rgba(255,159,10,0.12);color:#b07800;border-color:rgba(255,159,10,0.4);font-weight:700;}
+.rt-nivel-btn.sel-N{background:rgba(255,59,48,0.10);color:var(--red);border-color:rgba(255,59,48,0.35);font-weight:700;}
+.rubrica-tactil-footer{position:sticky;bottom:0;background:var(--bg2);border-top:0.5px solid var(--border);padding:14px 20px;display:flex;gap:10px;align-items:center;}
 </style>
 
 <script>
@@ -1744,8 +1762,8 @@ media (prefers-color-scheme: dark) {
           <div id="driveSyncInfo" style="font-size:12px;color:var(--text2);
             padding:12px 14px;background:var(--bg3);border-radius:12px;
             margin-bottom:10px;border:0.5px solid var(--border);line-height:1.8;"></div>
-        <div id="driveSyncCounts" style="font-size:12px;font-family:var(--font-mono);color:var(--text2);margin:-4px 0 8px 0;padding:4px 14px;"></div>
-        <div id="driveIntegrityBadge" style="display:none;font-size:12px;font-weight:600;padding:6px 14px;border-radius:10px;background:rgba(255,149,0,0.10);color:#FF9500;margin-bottom:8px;"></div>
+        <div id="driveSyncCounts" style="font-size:12px;font-family:var(--font-mono);color:var(--text2);padding:2px 14px 6px;"></div>
+        <div id="driveIntegrityBadge" style="display:none;font-size:12px;font-weight:600;padding:6px 14px;border-radius:10px;background:rgba(255,149,0,0.10);color:#FF9500;margin-bottom:6px;"></div>
 
           <!-- 3. Toggle auto-backup — Apple switch -->
           <div style="display:flex;align-items:center;justify-content:space-between;
@@ -2127,7 +2145,7 @@ media (prefers-color-scheme: dark) {
           <div class="pie-toggle-row" onclick="togglePiePanel()">
             <input type="checkbox" id="pieCheck" onclick="event.stopPropagation();togglePiePanel()" />
             <div>
-              <div class="pie-toggle-label"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="2.8" r="1.8" fill="currentColor" stroke="none"/><path d="M11 4.5 L9 8.5"/><path d="M10 6.5 L13 5.5"/><path d="M7.5 11.5 L10.5 11.5"/><path d="M9 8.5 L7.5 11.5"/><circle cx="7.5" cy="13" r="2.5"/></svg> Estudiante PIE / Adecuación curricular</div>
+              <div class="pie-toggle-label"><svg width="12" height="12" viewBox="0 0 100 100" fill="#FF9500" style="flex-shrink:0;vertical-align:middle;display:inline-block" aria-label="PIE"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="#FF9500" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/></svg> Estudiante PIE / Adecuación curricular</div>
               <div class="pie-toggle-sub">Activa para aplicar evaluación diferenciada</div>
             </div>
           </div>
@@ -2415,11 +2433,11 @@ media (prefers-color-scheme: dark) {
           </div>
           <!-- Importar lista PIE -->
           <div style="background:var(--pie-bg);border:1px solid var(--pie-border);border-radius:var(--rad);padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-            <span style="font-size:12px;color:var(--pie);font-weight:700;"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="2.8" r="1.8" fill="currentColor" stroke="none"/><path d="M11 4.5 L9 8.5"/><path d="M10 6.5 L13 5.5"/><path d="M7.5 11.5 L10.5 11.5"/><path d="M9 8.5 L7.5 11.5"/><circle cx="7.5" cy="13" r="2.5"/></svg> Importar lista PIE</span>
+            <span style="font-size:12px;color:var(--pie);font-weight:700;"><svg width="12" height="12" viewBox="0 0 100 100" fill="#FF9500" style="flex-shrink:0;vertical-align:middle;display:inline-block" aria-label="PIE"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="#FF9500" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/></svg> Importar lista PIE</span>
             <span style="font-size:11px;color:var(--text3);">TXT, CSV o XLS con nombres — se marcan automáticamente como PIE en todos los cursos</span>
             <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;margin-left:auto;">
               <input type="file" id="importPIEFile" accept=".txt,.csv,.xls,.xlsx" style="display:none" onchange="importarListaPIE(this)">
-              <button class="btn" style="font-size:12px;padding:5px 14px;background:var(--pie);color:white;border-color:var(--pie);" onclick="document.getElementById('importPIEFile').click()"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="2.8" r="1.8" fill="currentColor" stroke="none"/><path d="M11 4.5 L9 8.5"/><path d="M10 6.5 L13 5.5"/><path d="M7.5 11.5 L10.5 11.5"/><path d="M9 8.5 L7.5 11.5"/><circle cx="7.5" cy="13" r="2.5"/></svg> Elegir archivo PIE</button>
+              <button class="btn" style="font-size:12px;padding:5px 14px;background:var(--pie);color:white;border-color:var(--pie);" onclick="document.getElementById('importPIEFile').click()"><svg width="12" height="12" viewBox="0 0 100 100" fill="#FF9500" style="flex-shrink:0;vertical-align:middle;display:inline-block" aria-label="PIE"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="#FF9500" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/></svg> Elegir archivo PIE</button>
             </label>
             <span id="importPIEStatus" style="font-size:11px;color:var(--pie);font-family:var(--font-mono);font-weight:600;"></span>
           </div>
@@ -3046,7 +3064,6 @@ function saveRegistros() {
     _invalidarCandidatos();
     _flashAutoSave();
     _checkStorageSize();
-    // FIX SYNC: actualizar badge de integridad local vs Drive
     setTimeout(function(){ if(typeof _updateDriveIntegrityBadge==='function') _updateDriveIntegrityBadge(); }, 150);
   } catch(e) {
     if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
@@ -3781,6 +3798,7 @@ function guardar() {
   toast(`✓ <strong>${nombre}</strong> · ${nuevoReg.instancia||'Evaluación 1'} · <strong>${nota.toFixed(1)}</strong> — ${_tLabel}${pieSufijo}`, 'ok', 3500);
   setTimeout(actualizarTodaLaApp, 80);
   actualizarBarraProgresoCurso();
+  if (typeof _driveSaveDebounced === 'function') _driveSaveDebounced(); // FIX SYNC: push-on-change
 }
 
 // ── Guardar trabajo NO ENTREGADO ──
@@ -4126,7 +4144,7 @@ function renderRegistros() {
     card.innerHTML = `
       <div class="reg-avatar">${iniciales(r.nombre)}</div>
       <div class="reg-info">
-        <div class="reg-nombre">${r.nombre||'Sin nombre'}${esDup?'<span class="dup-badge">DUP</span>':''}${r.pie?'<span class="pie-badge"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="2.8" r="1.8" fill="currentColor" stroke="none"/><path d="M11 4.5 L9 8.5"/><path d="M10 6.5 L13 5.5"/><path d="M7.5 11.5 L10.5 11.5"/><path d="M9 8.5 L7.5 11.5"/><circle cx="7.5" cy="13" r="2.5"/></svg>PIE</span>':''} <span class="instancia-badge" onclick="event.stopPropagation();filtrarPorInstancia('${instancia}')" title="Filtrar por ${instancia}" style="cursor:pointer;">${instancia}</span>${r.noEntregado?'<span class="no-entregado-badge">✕ No entregado</span>':''}</div>
+        <div class="reg-nombre">${r.nombre||'Sin nombre'}${esDup?'<span class="dup-badge">DUP</span>':''}${r.pie?'<span class="pie-badge"><svg width="12" height="12" viewBox="0 0 100 100" fill="#FF9500" style="flex-shrink:0;vertical-align:middle;display:inline-block" aria-label="PIE"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="#FF9500" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/></svg>PIE</span>':''} <span class="instancia-badge" onclick="event.stopPropagation();filtrarPorInstancia('${instancia}')" title="Filtrar por ${instancia}" style="cursor:pointer;">${instancia}</span>${r.noEntregado?'<span class="no-entregado-badge">✕ No entregado</span>':''}</div>
         <div class="reg-meta">${r.fecha||''}${r.curso?' · '+r.curso:''}${r.instancia&&r.instancia!=='Evaluación 1'?' · '+r.instancia:''}${r.rubricaNombre?' · '+r.rubricaNombre:''} · ${r.pts??'?'}/${r.maxPts??'?'} pts</div>
       </div>
       <span class="reg-badge" style="background:${bg};color:${clr}">${nota.toFixed(1)} — ${nLabel}</span>
@@ -4261,7 +4279,7 @@ function renderLibroClases(filtrados, container) {
       html += `<tr class="${claseFilaNE}">
         <td style="font-weight:500;"><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;margin-right:8px;">${i+1}</span>${al.nombre}${tagNE}${tagSinEvaluar}</td>
         ${notasColsFinal}${promCellFinal}
-        <td class="pie-cell">${al.pie?'<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="2.8" r="1.8" fill="currentColor" stroke="none"/><path d="M11 4.5 L9 8.5"/><path d="M10 6.5 L13 5.5"/><path d="M7.5 11.5 L10.5 11.5"/><path d="M9 8.5 L7.5 11.5"/><circle cx="7.5" cy="13" r="2.5"/></svg>':''}</td>
+        <td class="pie-cell">${al.pie?'<svg width="12" height="12" viewBox="0 0 100 100" fill="#FF9500" style="flex-shrink:0;vertical-align:middle;display:inline-block" aria-label="PIE"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="#FF9500" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/></svg>':''}</td>
       </tr>`;
     });
 
@@ -4458,7 +4476,7 @@ function editarRegistro(idx) {
       <div class="pie-toggle-row" style="border-radius:var(--rad);margin:0;" onclick="toggleEditPie()">
         <input type="checkbox" id="editPieCheck" ${r.pie?'checked':''} onclick="event.stopPropagation();toggleEditPie()">
         <div>
-          <div class="pie-toggle-label"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="2.8" r="1.8" fill="currentColor" stroke="none"/><path d="M11 4.5 L9 8.5"/><path d="M10 6.5 L13 5.5"/><path d="M7.5 11.5 L10.5 11.5"/><path d="M9 8.5 L7.5 11.5"/><circle cx="7.5" cy="13" r="2.5"/></svg> Estudiante PIE / Adecuación curricular</div>
+          <div class="pie-toggle-label"><svg width="12" height="12" viewBox="0 0 100 100" fill="#FF9500" style="flex-shrink:0;vertical-align:middle;display:inline-block" aria-label="PIE"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="#FF9500" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/></svg> Estudiante PIE / Adecuación curricular</div>
           <div class="pie-toggle-sub">${r.pie?'Actualmente marcado como PIE':'Sin adecuación curricular'}</div>
         </div>
       </div>
@@ -5103,21 +5121,20 @@ function importarDatos(e) {
       repararRegistros();
       actualizarConteo();
       renderSidebarCounts();
-      const _totalLocal = registros.length;
-      localStorage.setItem('av_local_count_last_import', String(_totalLocal));
-      if (status) status.textContent = '✓ ' + nuevos + ' importados. Total: ' + _totalLocal + '. Sincronizando Drive...';
+      const _tot = registros.length;
+      localStorage.setItem('av_local_count_last_import', String(_tot));
+      if (status) status.textContent = '✓ ' + nuevos + ' importados. Total: ' + _tot + '. Sincronizando...';
       e.target.value = '';
-      // FIX SYNC: push-priority — el dato local manda tras restauración manual
       setTimeout(async function() {
         try {
           if (typeof syncToDrive === 'function' && typeof _driveToken !== 'undefined' && _driveToken) {
             await syncToDrive();
-            if (status) status.textContent = '✅ ' + _totalLocal + ' registros en local y en Drive.';
+            if (status) status.textContent = '✅ ' + _tot + ' registros en local y en Drive.';
           } else {
-            if (status) status.textContent = '✓ ' + _totalLocal + ' importados. Conecta Drive para sincronizar.';
+            if (status) status.textContent = '✓ ' + _tot + ' importados. Conecta Drive para sincronizar.';
           }
         } catch(e2) {
-          if (status) status.textContent = '✓ ' + _totalLocal + ' importados (Drive: ' + e2.message + ')';
+          if (status) status.textContent = '✓ ' + _tot + ' importados (Drive: ' + e2.message + ')';
         }
       }, 400);
     } catch(err) {
@@ -7691,7 +7708,7 @@ function actualizarConteoPIE() {
   }
 
   if (pie > 0) {
-    badge.innerHTML = `${baseLabel}${pendientes} · <span style="color:var(--pie2);font-weight:700;"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="2.8" r="1.8" fill="currentColor" stroke="none"/><path d="M11 4.5 L9 8.5"/><path d="M10 6.5 L13 5.5"/><path d="M7.5 11.5 L10.5 11.5"/><path d="M9 8.5 L7.5 11.5"/><circle cx="7.5" cy="13" r="2.5"/></svg> ${pie} PIE</span>`;
+    badge.innerHTML = `${baseLabel}${pendientes} · <span style="color:var(--pie2);font-weight:700;"><svg width="12" height="12" viewBox="0 0 100 100" fill="#FF9500" style="flex-shrink:0;vertical-align:middle;display:inline-block" aria-label="PIE"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="#FF9500" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/></svg> ${pie} PIE</span>`;
   } else if (pendientes) {
     badge.innerHTML = `${baseLabel}<span style="color:var(--text3)">${pendientes}</span>`;
   } else {
@@ -7934,6 +7951,92 @@ function actualizarCtxResumen() {
 
 // ── TOAST ──
 let _toastTimer = null;
+
+// ── Modal Rúbrica Táctil (iPad) ──────────────────────────────────────────
+function abrirRubricaTactil(nombreAlumno, cursoAlumno, esPIE) {
+  var ex = document.getElementById('rubricaTactilOverlay');
+  if (ex) ex.remove();
+  var crits = getCriterios();
+  var rub   = getRubrica();
+  var maxPts = crits.length * 3;
+  var critsHTML = '';
+  crits.forEach(function(c, i) {
+    critsHTML += '<div class="rubrica-tactil-criterio">'
+      + '<div class="rubrica-tactil-crit-nombre"><span style="display:inline-block;min-width:22px;text-align:center;background:var(--accent-bg);color:var(--accent);border-radius:6px;font-size:10px;font-weight:700;padding:1px 5px;margin-right:6px;">' + (i+1) + '</span>' + c + '</div>'
+      + '<div class="rubrica-tactil-niveles">';
+    [['MB','Destacado','3'],['L','Logrado','2'],['M','En proceso','1'],['N','Por lograr','0']].forEach(function(n) {
+      critsHTML += '<button class="rt-nivel-btn" data-crit="' + i + '" data-nivel="' + n[0] + '" onclick="_rtSet(' + i + ',\'' + n[0] + '\',this)">'
+        + '<span style="font-size:12px;font-weight:700;">' + n[0] + '</span>'
+        + '<span style="font-size:9px;opacity:0.7;">' + n[1] + '</span>'
+        + '<span style="font-size:9px;">' + n[2] + ' pts</span></button>';
+    });
+    critsHTML += '</div></div>';
+  });
+  var ov = document.createElement('div');
+  ov.className = 'rubrica-tactil-overlay';
+  ov.id = 'rubricaTactilOverlay';
+  ov.innerHTML = '<div class="rubrica-tactil-sheet">'
+    + '<div class="rubrica-tactil-header"><div>'
+    + '<div class="rubrica-tactil-titulo">' + (nombreAlumno || 'Evaluación') + '</div>'
+    + '<div style="font-size:12px;color:var(--text3);margin-top:2px;">' + (cursoAlumno||'') + ' \u00b7 ' + (rub.nombre||'') + '</div></div>'
+    + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">'
+    + '<div class="rubrica-tactil-nota-preview" id="rtNotaP">\u2014</div>'
+    + '<div style="font-size:10px;color:var(--text3);" id="rtPtsP">0/' + maxPts + ' pts</div>'
+    + '</div></div>'
+    + critsHTML
+    + '<div class="rubrica-tactil-footer">'
+    + '<div style="flex:1;font-size:12px;color:var(--text3);" id="rtRes">Selecciona niveles</div>'
+    + '<button class="btn" onclick="_rtClose()" style="min-height:44px;">Cancelar</button>'
+    + '<button class="btn btn-primary" id="rtBtnG" onclick="_rtConfirm(\'' + (nombreAlumno||'').replace(/'/g,"\\'") + '\',\'' + (cursoAlumno||'').replace(/'/g,"\\'") + '\',' + (esPIE?'true':'false') + ')" style="min-height:44px;" disabled>Guardar Nota</button>'
+    + '</div></div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click', function(e){ if(e.target===ov) _rtClose(); });
+}
+function _rtClose() {
+  var el = document.getElementById('rubricaTactilOverlay');
+  if (el) { el.style.opacity='0'; el.style.transition='opacity 0.2s'; setTimeout(function(){el.remove();},200); }
+}
+function _rtSet(ci, nivel, btn) {
+  var ov = document.getElementById('rubricaTactilOverlay');
+  if (!ov) return;
+  ov.querySelectorAll('[data-crit="'+ci+'"]').forEach(function(b){ b.classList.remove('sel-MB','sel-L','sel-M','sel-N'); });
+  btn.classList.add('sel-'+nivel);
+  _rtUpdate(ov);
+}
+function _rtUpdate(ov) {
+  var crits = getCriterios();
+  var maxPts = crits.length * 3;
+  var pts = 0; var cnt = 0;
+  ov.querySelectorAll('.rt-nivel-btn.sel-MB,.rt-nivel-btn.sel-L,.rt-nivel-btn.sel-M,.rt-nivel-btn.sel-N').forEach(function(b){
+    var n = b.getAttribute('data-nivel');
+    pts += n==='MB'?3:n==='L'?2:n==='M'?1:0; cnt++;
+  });
+  var nota = cnt > 0 ? ptsANota(pts, maxPts) : null;
+  var p = ov.querySelector('#rtNotaP'); var ps = ov.querySelector('#rtPtsP'); var r = ov.querySelector('#rtRes'); var g = ov.querySelector('#rtBtnG');
+  if (p) { p.textContent = nota ? nota.toFixed(1) : '\u2014'; p.style.color = nota ? (nota>=6?'var(--green)':nota>=4?'var(--blue)':'var(--red)') : 'var(--accent)'; }
+  if (ps) ps.textContent = pts+'/'+maxPts+' pts';
+  if (r) r.textContent = cnt+' de '+crits.length+' criterios evaluados';
+  if (g) g.disabled = cnt === 0;
+}
+function _rtConfirm(nombre, curso, esPIE) {
+  var ov = document.getElementById('rubricaTactilOverlay');
+  if (!ov) return;
+  var crits = getCriterios();
+  var evalT = {};
+  ov.querySelectorAll('.rt-nivel-btn.sel-MB,.rt-nivel-btn.sel-L,.rt-nivel-btn.sel-M,.rt-nivel-btn.sel-N').forEach(function(b){
+    var ci = parseInt(b.getAttribute('data-crit'));
+    var ni = b.getAttribute('data-nivel');
+    evalT[ci] = { nivel: ni, criterio: crits[ci]||('Criterio '+(ci+1)), pts: ni==='MB'?3:ni==='L'?2:ni==='M'?1:0 };
+  });
+  if (!Object.keys(evalT).length) { toast('\u26a0\ufe0f Evalúa al menos un criterio', 'err'); return; }
+  var inpN = document.getElementById('inputNombre'); var inpC = document.getElementById('inputCurso');
+  if (inpN) inpN.value = nombre; if (inpC) inpC.value = curso;
+  evaluacion = evalT;
+  var pc = document.getElementById('pieCheck'); if (pc) pc.checked = esPIE;
+  _rtClose();
+  setTimeout(function(){ guardar(); }, 100);
+}
+
 function toast(msg, tipo = 'ok', duracion = 3200) {
   const wrap = document.getElementById('toastWrap');
   if (!wrap) { setStatus(msg); return; }
@@ -8015,7 +8118,7 @@ function verDetalle(idx) {
     </div>`;
   }).join('');
 
-  const pieInfo = r.pie ? `<div style="margin-top:6px;"><span class="pie-badge"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="2.8" r="1.8" fill="currentColor" stroke="none"/><path d="M11 4.5 L9 8.5"/><path d="M10 6.5 L13 5.5"/><path d="M7.5 11.5 L10.5 11.5"/><path d="M9 8.5 L7.5 11.5"/><circle cx="7.5" cy="13" r="2.5"/></svg> PIE${r.pieNota?' · '+r.pieNota:''}</span></div>` : '';
+  const pieInfo = r.pie ? `<div style="margin-top:6px;"><span class="pie-badge"><svg width="12" height="12" viewBox="0 0 100 100" fill="#FF9500" style="flex-shrink:0;vertical-align:middle;display:inline-block" aria-label="PIE"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="#FF9500" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/></svg> PIE${r.pieNota?' · '+r.pieNota:''}</span></div>` : '';
 
   abrirModal(`
     <div class="detalle-header">
@@ -8109,7 +8212,7 @@ function _mostrarAutocompletadoImmediate(val) {
     const nombreSeguro = v.nombre.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
     const cursoSeguro  = (v.curso||'').replace(/'/g,"\\'");
     const cursoLabel   = v.curso ? `<span class="ac-curso">${v.curso}</span>` : '';
-    const pieBadge     = v.pie  ? '<span class="ac-pie"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="2.8" r="1.8" fill="currentColor" stroke="none"/><path d="M11 4.5 L9 8.5"/><path d="M10 6.5 L13 5.5"/><path d="M7.5 11.5 L10.5 11.5"/><path d="M9 8.5 L7.5 11.5"/><circle cx="7.5" cy="13" r="2.5"/></svg></span>' : '';
+    const pieBadge     = v.pie  ? '<span class="ac-pie"><svg width="12" height="12" viewBox="0 0 100 100" fill="#FF9500" style="flex-shrink:0;vertical-align:middle;display:inline-block" aria-label="PIE"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="#FF9500" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/></svg></span>' : '';
     const pendiente    = !v.tieneEval ? '<span class="ac-pendiente">PENDIENTE</span>' : '';
     // Mostrar últimas notas del estudiante
     const regsEst = registros.filter(function(r){ return mismoEstudiante(r.nombre||'', v.nombre) && (!v.curso||(r.curso||'')===(v.curso||'')); })
@@ -8827,7 +8930,7 @@ function renderCursoMain() {
     { key: 'todos',     lbl: 'Todos (' + lista.length + ')',          cls: '' },
     { key: 'entregado', lbl: '✓ Entregados (' + entregados + ')',     cls: 'f-entregado' },
     { key: 'pendiente', lbl: '⚠ Pendientes (' + pendientes + ')',    cls: 'f-pendiente' },
-    { key: 'pie',       lbl: '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="2.8" r="1.8" fill="currentColor" stroke="none"/><path d="M11 4.5 L9 8.5"/><path d="M10 6.5 L13 5.5"/><path d="M7.5 11.5 L10.5 11.5"/><path d="M9 8.5 L7.5 11.5"/><circle cx="7.5" cy="13" r="2.5"/></svg> PIE (' + pieCount + ')', cls: 'f-pie' },
+    { key: 'pie',       lbl: '<svg width="12" height="12" viewBox="0 0 100 100" fill="#FF9500" style="flex-shrink:0;vertical-align:middle;display:inline-block" aria-label="PIE"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="#FF9500" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/></svg> PIE (' + pieCount + ')', cls: 'f-pie' },
   ].forEach(function(f) {
     const btn = document.createElement('button');
     btn.className = 'est-filtro-btn ' + f.cls + (estFiltro === f.key ? ' active' : '');
@@ -8888,7 +8991,7 @@ function renderCursoMain() {
         const pb = document.createElement('span');
         pb.className = 'est-badge eb-pie';
         pb.title = e.pieNota || 'PIE';
-        pb.innerHTML = '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="2.8" r="1.8" fill="currentColor" stroke="none"/><path d="M11 4.5 L9 8.5"/><path d="M10 6.5 L13 5.5"/><path d="M7.5 11.5 L10.5 11.5"/><path d="M9 8.5 L7.5 11.5"/><circle cx="7.5" cy="13" r="2.5"/></svg> PIE';
+        pb.innerHTML = '<svg width="12" height="12" viewBox="0 0 100 100" fill="#FF9500" style="flex-shrink:0;vertical-align:middle;display:inline-block" aria-label="PIE"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="#FF9500" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/></svg> PIE';
         badges.appendChild(pb);
       }
       const sb = document.createElement('span');
@@ -9164,6 +9267,11 @@ function verDetalleEstCurso(nombre, curso) {
 
 // ── Evaluar desde cursos: prefill y saltar a tab evaluar ──
 function evaluarEstDesde(nombre, curso) {
+  if (window.matchMedia('(pointer: coarse)').matches && typeof abrirRubricaTactil === 'function') {
+    var _e = (listaCursos[curso]||[]).find(function(x){ return mismoEstudiante(x.nombre||'',nombre||''); });
+    abrirRubricaTactil(nombre, curso, _e ? !!_e.pie : false);
+    return;
+  }
   showTab('evaluar');
   setTimeout(() => {
     const inp = document.getElementById('inputNombre');
@@ -9764,7 +9872,7 @@ async function limpiarDuplicadosCurso(curso) {
     const nombres = grupo.map(function(g) {
       return '<li style="padding:3px 0;">' +
         '<span style="font-weight:600;">' + g.est.nombre + '</span>' +
-        (g.est.pie ? ' <span class="pie-badge" style="font-size:9px;"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="2.8" r="1.8" fill="currentColor" stroke="none"/><path d="M11 4.5 L9 8.5"/><path d="M10 6.5 L13 5.5"/><path d="M7.5 11.5 L10.5 11.5"/><path d="M9 8.5 L7.5 11.5"/><circle cx="7.5" cy="13" r="2.5"/></svg> PIE</span>' : '') +
+        (g.est.pie ? ' <span class="pie-badge" style="font-size:9px;"><svg width="12" height="12" viewBox="0 0 100 100" fill="#FF9500" style="flex-shrink:0;vertical-align:middle;display:inline-block" aria-label="PIE"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="#FF9500" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/></svg> PIE</span>' : '') +
         '</li>';
     }).join('');
     return '<div style="margin-bottom:10px;"><div style="font-size:10px;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;margin-bottom:4px;">Grupo duplicado</div><ul style="margin:0;padding-left:16px;font-size:13px;">' + nombres + '</ul></div>';
@@ -9918,7 +10026,7 @@ async function mostrarConfirmacionMerge(curso, candidatos, onConfirm) {
         <span class="merge-badge-old">${c.nombreSN}</span>
         <span class="merge-arrow">→</span>
         <span class="merge-badge-new">${c.nombreOficial}</span>
-        ${c.pieNueva ? '<span class="merge-pie-flag"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="2.8" r="1.8" fill="currentColor" stroke="none"/><path d="M11 4.5 L9 8.5"/><path d="M10 6.5 L13 5.5"/><path d="M7.5 11.5 L10.5 11.5"/><path d="M9 8.5 L7.5 11.5"/><circle cx="7.5" cy="13" r="2.5"/></svg></span>' : ''}
+        ${c.pieNueva ? '<span class="merge-pie-flag"><svg width="12" height="12" viewBox="0 0 100 100" fill="#FF9500" style="flex-shrink:0;vertical-align:middle;display:inline-block" aria-label="PIE"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="#FF9500" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/></svg></span>' : ''}
       </td>
       <td>${notasHTML}</td>
       <td><span class="merge-score">${pctScore}%</span></td>
@@ -10316,7 +10424,7 @@ function buscarEnCursos(val) {
     `<div class="autocomplete-item" data-idx="${i}"
          onmousedown="seleccionarEstudianteCursos('${est.nombre.replace(/'/g,"\\'")}','${est.curso.replace(/'/g,"\\'")}')">
        <span style="flex:1;font-weight:500;">${est.nombre}</span>
-       ${est.pie ? '<span class="pie-badge" style="font-size:9px;margin:0 4px;"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="2.8" r="1.8" fill="currentColor" stroke="none"/><path d="M11 4.5 L9 8.5"/><path d="M10 6.5 L13 5.5"/><path d="M7.5 11.5 L10.5 11.5"/><path d="M9 8.5 L7.5 11.5"/><circle cx="7.5" cy="13" r="2.5"/></svg></span>' : ''}
+       ${est.pie ? '<span class="pie-badge" style="font-size:9px;margin:0 4px;"><svg width="12" height="12" viewBox="0 0 100 100" fill="#FF9500" style="flex-shrink:0;vertical-align:middle;display:inline-block" aria-label="PIE"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="#FF9500" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/></svg></span>' : ''}
        <span class="autocomplete-meta">${est.curso}</span>
        ${est.tieneEval ? '<span style="font-size:10px;color:var(--green);margin-left:4px;">✓</span>' : '<span style="font-size:10px;color:var(--red);margin-left:4px;">○</span>'}
      </div>`
