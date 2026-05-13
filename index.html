@@ -1615,6 +1615,97 @@ media (prefers-color-scheme: dark) {
   font-family: var(--font-mono);
   flex-shrink: 0; letter-spacing: -0.5px;
 }
+
+/* ── Modal Correos Apoderados ─────────────────────────────────────────── */
+.email-modal-overlay {
+  position: fixed; inset: 0; z-index: 3000;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.email-modal-box {
+  background: var(--bg2); border-radius: 20px;
+  width: 100%; max-width: 680px; max-height: 88vh;
+  overflow: hidden; display: flex; flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  animation: slideUp 0.25s cubic-bezier(.34,1.3,.64,1);
+}
+.email-modal-header {
+  padding: 20px 24px 14px;
+  border-bottom: 0.5px solid var(--border);
+  display: flex; align-items: center;
+  justify-content: space-between; gap: 12px;
+  flex-shrink: 0;
+}
+.email-modal-title {
+  font-size: 17px; font-weight: 700; color: var(--text);
+}
+.email-modal-body {
+  overflow-y: auto; flex: 1; padding: 16px 24px;
+}
+.email-alumno-card {
+  background: var(--bg3); border-radius: 14px;
+  padding: 16px; margin-bottom: 12px;
+  border: 1px solid var(--border);
+}
+.email-alumno-header {
+  display: flex; align-items: center;
+  justify-content: space-between; margin-bottom: 10px; gap: 8px;
+}
+.email-alumno-nombre {
+  font-size: 14px; font-weight: 700; color: var(--text);
+}
+.email-alumno-prom {
+  font-size: 16px; font-weight: 800;
+  font-family: var(--font-mono); color: var(--red);
+  flex-shrink: 0;
+}
+.email-campo {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 8px;
+}
+.email-campo label {
+  font-size: 11px; font-weight: 600; color: var(--text3);
+  text-transform: uppercase; letter-spacing: 0.5px;
+  min-width: 90px; flex-shrink: 0;
+}
+.email-campo input {
+  flex: 1; padding: 7px 10px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--bg2);
+  color: var(--text); font-size: 13px; font-family: var(--font-ui);
+}
+.email-campo input:focus {
+  outline: none; border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}
+.email-preview {
+  background: var(--bg2); border-radius: 10px;
+  padding: 12px; font-size: 12px; line-height: 1.7;
+  color: var(--text2); white-space: pre-wrap;
+  border: 1px solid var(--border); margin-top: 10px;
+  font-family: var(--font-ui); max-height: 180px;
+  overflow-y: auto;
+}
+.email-acciones {
+  display: flex; gap: 8px; margin-top: 10px;
+  flex-wrap: wrap;
+}
+.email-modal-footer {
+  padding: 14px 24px; border-top: 0.5px solid var(--border);
+  display: flex; align-items: center;
+  justify-content: space-between; gap: 10px;
+  flex-shrink: 0; background: var(--bg2);
+}
+.email-import-strip {
+  background: var(--accent-bg); border-radius: 10px;
+  padding: 10px 14px; margin-bottom: 14px;
+  display: flex; align-items: center; gap: 10px;
+  font-size: 13px; color: var(--accent); font-weight: 600;
+}
+.email-import-strip input[type=file] {
+  display: none;
+}
 </style>
 
 <script>
@@ -1946,7 +2037,7 @@ media (prefers-color-scheme: dark) {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             <div id="dashAlertaTitulo" style="font-size:13px;font-weight:700;color:var(--red);">Alumnos con promedio crítico (&lt; 4.0)</div>
           </div>
-          <div style="font-size:11px;color:var(--text3);cursor:pointer;" onclick="this.closest('#dashAlertaWrap').querySelector('.dash-alerta-body').style.display=this.closest('#dashAlertaWrap').querySelector('.dash-alerta-body').style.display==='none'?'block':'none'">mostrar/ocultar</div>
+          <div style="display:flex;gap:8px;align-items:center;"><div style="font-size:11px;color:var(--text3);cursor:pointer;" onclick="this.closest('#dashAlertaWrap').querySelector('.dash-alerta-body').style.display=this.closest('#dashAlertaWrap').querySelector('.dash-alerta-body').style.display==='none'?'block':'none'">mostrar/ocultar</div><button onclick="abrirModalCorreosApoderados()" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;font-family:var(--font-ui);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>📧 Avisar apoderados</button></div>
         </div>
         <div class="dash-alerta-body">
           <div id="dashAlertaCursos"></div>
@@ -8168,6 +8259,452 @@ document.addEventListener('visibilitychange', function() {
 });
 
 // ── Modal Rúbrica Táctil (iPad) ──────────────────────────────────────────
+
+// ── SISTEMA DE CORREOS A APODERADOS ──────────────────────────────────────
+// Almacena emails de apoderados: { 'APELLIDOS NOMBRE': 'email@ejemplo.cl' }
+var _apoderadoEmails = (function() {
+  try { return JSON.parse(localStorage.getItem('av_apoderado_emails') || '{}') || {}; }
+  catch(e) { return {}; }
+})();
+
+function _saveApoderadoEmails() {
+  try { localStorage.setItem('av_apoderado_emails', JSON.stringify(_apoderadoEmails)); }
+  catch(e) {}
+}
+
+// Obtener email de un alumno por nombre (búsqueda flexible)
+function _getEmailApoderado(nombre) {
+  if (!nombre) return '';
+  var norm = (nombre||'').trim().toUpperCase();
+  // Búsqueda exacta
+  if (_apoderadoEmails[norm]) return _apoderadoEmails[norm];
+  // Búsqueda flexible (mismoEstudiante)
+  var keys = Object.keys(_apoderadoEmails);
+  for (var i = 0; i < keys.length; i++) {
+    if (mismoEstudiante(keys[i], norm)) return _apoderadoEmails[keys[i]];
+  }
+  return '';
+}
+
+// Importar planilla de matrícula (Excel/CSV con columna de email apoderado)
+function importarPlanillaApoderados(file) {
+  if (!file) return;
+  var ext = file.name.split('.').pop().toLowerCase();
+  if (ext === 'csv' || ext === 'txt') {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      _procesarPlanillaApoderadosCSV(e.target.result, file.name);
+    };
+    reader.readAsText(file, 'UTF-8');
+  } else {
+    // Excel: usar SheetJS si está disponible
+    var reader2 = new FileReader();
+    reader2.onload = function(e) {
+      try {
+        if (typeof XLSX !== 'undefined') {
+          var wb = XLSX.read(e.target.result, { type: 'array' });
+          var ws = wb.Sheets[wb.SheetNames[0]];
+          var rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+          _procesarPlanillaApoderadosRows(rows, file.name);
+        } else {
+          toast('⚠ Formato Excel no soportado sin librería. Usa CSV.', 'err', 5000);
+        }
+      } catch(e2) {
+        toast('✗ Error leyendo Excel: ' + e2.message, 'err');
+      }
+    };
+    reader2.readAsArrayBuffer(file);
+  }
+}
+
+function _procesarPlanillaApoderadosCSV(text, fileName) {
+  var sep = text.includes(';') ? ';' : ',';
+  var rows = text.split('\n').map(function(l) {
+    return l.split(sep).map(function(c) { return c.replace(/^"|"$/g,'').trim(); });
+  }).filter(function(r) { return r.some(function(c) { return c; }); });
+  _procesarPlanillaApoderadosRows(rows, fileName);
+}
+
+function _procesarPlanillaApoderadosRows(rows, fileName) {
+  if (!rows.length) { toast('✗ Planilla vacía', 'err'); return; }
+
+  var header = rows[0].map(function(h) { return (h||'').toString().toLowerCase().trim(); });
+
+  // Detectar columnas de nombre y email
+  var colNombre = -1, colApellidos = -1, colEmail = -1, colEmailAp = -1;
+  header.forEach(function(h, i) {
+    if (/nombre/.test(h) && !/apod/.test(h)) colNombre = i;
+    if (/apellido/.test(h)) colApellidos = i;
+    if (/email.*apod|correo.*apod|apod.*email|apod.*correo|email_apod/.test(h)) colEmailAp = i;
+    else if (/email|correo/.test(h) && colEmailAp === -1) colEmail = i;
+  });
+
+  // Si no hay columna de email apoderado, buscar email2, email_padre, etc.
+  if (colEmailAp === -1) {
+    header.forEach(function(h, i) {
+      if (/email2|correo2|apoderado/.test(h)) colEmailAp = i;
+    });
+  }
+
+  var emailCol = colEmailAp !== -1 ? colEmailAp : colEmail;
+
+  if (emailCol === -1) {
+    toast('⚠ No se encontró columna de email en la planilla. Columnas: ' + header.slice(0,6).join(', '), 'err', 7000);
+    return;
+  }
+
+  var importados = 0, sinEmail = 0;
+  rows.slice(1).forEach(function(row) {
+    var nombre = '';
+    if (colApellidos !== -1 && colNombre !== -1) {
+      nombre = ((row[colApellidos]||'') + ' ' + (row[colNombre]||'')).trim();
+    } else if (colNombre !== -1) {
+      nombre = (row[colNombre]||'').trim();
+    } else {
+      nombre = (row[0]||'').trim();
+    }
+    var email = (row[emailCol]||'').trim();
+    if (!nombre) return;
+    if (!email || !email.includes('@')) { sinEmail++; return; }
+    _apoderadoEmails[nombre.toUpperCase()] = email.toLowerCase();
+    importados++;
+  });
+
+  _saveApoderadoEmails();
+  toast('✅ ' + importados + ' emails de apoderados importados' +
+    (sinEmail ? ' · ' + sinEmail + ' sin email' : ''), 'ok', 5000);
+
+  // Actualizar el modal si está abierto
+  var modal = document.getElementById('emailApoderadosModal');
+  if (modal) _renderEmailCards();
+}
+
+// ── Generar texto del correo para un alumno crítico ──────────────────────
+function _generarTextoEmail(al, nombreProfesor, nombreColegio) {
+  var notas = al.notas || [];
+  var instancias = al.instancias || [];
+  var prom = al.promedio ? al.promedio.toFixed(1) : '?';
+
+  // Tabla de notas
+  var tablaNotas = '';
+  notas.forEach(function(n, i) {
+    var inst = instancias[i] || ('Evaluación ' + (i+1));
+    var nota = (typeof n === 'number') ? n.toFixed(1) : n;
+    var estado = n >= 6 ? 'Destacado' : n >= 4 ? 'Logrado' : 'No logrado';
+    tablaNotas += '   • ' + inst + ': ' + nota + ' (' + estado + ')\n';
+  });
+
+  var sugerencias = [
+    'Revise junto a su pupilo/a los trabajos y materiales evaluados.',
+    'Apoye en casa destinando un tiempo semanal a revisar los aprendizajes de Artes Visuales.',
+    'Si tiene dudas sobre las evaluaciones, puede solicitar una reunión con el/la docente.',
+    'Fomente que su pupilo/a traiga todos los materiales requeridos a cada clase.',
+  ];
+
+  return 'Estimado/a apoderado/a de ' + al.nombre + ':\n\n' +
+    'Me dirijo a usted para informarle sobre el rendimiento académico de su pupilo/a en la asignatura de Artes Visuales.\n\n' +
+    'Durante el período evaluado, ' + al.nombre.split(' ')[0] + ' ha obtenido las siguientes calificaciones:\n\n' +
+    tablaNotas + '\n' +
+    'Promedio actual: ' + prom + ' — Situación: Rendimiento crítico (bajo 4,0)\n\n' +
+    'Para apoyar a su pupilo/a a mejorar su situación académica, le sugerimos:\n\n' +
+    sugerencias.map(function(s) { return '   • ' + s; }).join('\n') + '\n\n' +
+    'Quedamos a su disposición ante cualquier consulta.\n\n' +
+    'Atentamente,\n' +
+    (nombreProfesor || 'Docente de Artes Visuales') + '\n' +
+    (nombreColegio ? nombreColegio + '\n' : '') +
+    'Artes Visuales';
+}
+
+// ── Abrir modal de correos ────────────────────────────────────────────────
+function abrirModalCorreosApoderados() {
+  var existing = document.getElementById('emailApoderadosModal');
+  if (existing) existing.remove();
+
+  var overlay = document.createElement('div');
+  overlay.className = 'email-modal-overlay';
+  overlay.id = 'emailApoderadosModal';
+  overlay.innerHTML =
+    '<div class="email-modal-box">' +
+      '<div class="email-modal-header">' +
+        '<div>' +
+          '<div class="email-modal-title">📧 Correos a apoderados — Promedio crítico</div>' +
+          '<div style="font-size:12px;color:var(--text3);margin-top:2px;">Alumnos con 2+ evaluaciones y promedio &lt; 4,0</div>' +
+        '</div>' +
+        '<button onclick="_cerrarEmailModal()" style="background:none;border:none;cursor:pointer;' +
+          'font-size:22px;color:var(--text3);line-height:1;padding:4px;">×</button>' +
+      '</div>' +
+      '<div class="email-modal-body" id="emailModalBody">' +
+        '<div class="email-import-strip">' +
+          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+            'stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+            '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>' +
+            '<polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>' +
+          '</svg>' +
+          '<span>Importar planilla de matrícula con emails de apoderados</span>' +
+          '<label style="cursor:pointer;background:var(--accent);color:#fff;border-radius:8px;' +
+            'padding:5px 12px;font-size:12px;font-weight:600;">' +
+            'Subir Excel/CSV' +
+            '<input type="file" accept=".xlsx,.xls,.csv,.txt" ' +
+              'onchange="importarPlanillaApoderados(this.files[0]);this.value=\'\'">' +
+          '</label>' +
+          '<span style="font-size:11px;color:var(--accent);opacity:0.8;" id="emailCountBadge">' +
+            Object.keys(_apoderadoEmails).length + ' emails guardados' +
+          '</span>' +
+        '</div>' +
+        '<div style="display:flex;gap:8px;margin-bottom:14px;">' +
+          '<div style="flex:1">' +
+            '<label style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:4px;">Tu nombre</label>' +
+            '<input id="emailNombreProf" type="text" placeholder="Nombre del profesor/a" ' +
+              'style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--border);' +
+                'background:var(--bg3);color:var(--text);font-size:13px;">' +
+          '</div>' +
+          '<div style="flex:1">' +
+            '<label style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:4px;">Nombre del colegio</label>' +
+            '<input id="emailNombreColegio" type="text" placeholder="Nombre del establecimiento" ' +
+              'style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--border);' +
+                'background:var(--bg3);color:var(--text);font-size:13px;">' +
+          '</div>' +
+        '</div>' +
+        '<div id="emailCardsContainer"></div>' +
+      '</div>' +
+      '<div class="email-modal-footer">' +
+        '<div style="font-size:12px;color:var(--text3);" id="emailFooterCount"></div>' +
+        '<div style="display:flex;gap:8px;">' +
+          '<button class="btn" onclick="_cerrarEmailModal()">Cerrar</button>' +
+          '<button class="btn btn-primary" onclick="_enviarTodosEmail()" ' +
+            'style="background:var(--accent);color:#fff;border-color:var(--accent);">' +
+            '📧 Abrir todos en correo</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', function(e) {
+    if (e.target === overlay) _cerrarEmailModal();
+  });
+
+  // Restaurar nombre prof/colegio guardados
+  var prof = localStorage.getItem('av_email_prof') || '';
+  var cole = localStorage.getItem('av_email_colegio') || '';
+  var profInp = document.getElementById('emailNombreProf');
+  var coleInp = document.getElementById('emailNombreColegio');
+  if (profInp && prof) profInp.value = prof;
+  if (coleInp && cole) coleInp.value = cole;
+
+  // Guardar al cambiar
+  if (profInp) profInp.addEventListener('input', function() {
+    localStorage.setItem('av_email_prof', this.value);
+    _renderEmailCards();
+  });
+  if (coleInp) coleInp.addEventListener('input', function() {
+    localStorage.setItem('av_email_colegio', this.value);
+    _renderEmailCards();
+  });
+
+  _renderEmailCards();
+}
+
+function _cerrarEmailModal() {
+  var el = document.getElementById('emailApoderadosModal');
+  if (el) {
+    el.style.opacity = '0';
+    el.style.transition = 'opacity 0.2s';
+    setTimeout(function() { el.remove(); }, 200);
+  }
+}
+
+function _renderEmailCards() {
+  var container = document.getElementById('emailCardsContainer');
+  var footerCount = document.getElementById('emailFooterCount');
+  var countBadge = document.getElementById('emailCountBadge');
+  if (!container) return;
+
+  var prof = (document.getElementById('emailNombreProf') || {}).value || localStorage.getItem('av_email_prof') || '';
+  var cole = (document.getElementById('emailNombreColegio') || {}).value || localStorage.getItem('av_email_colegio') || '';
+
+  // Recopilar alumnos críticos (misma lógica que _renderDashAlertas)
+  var criticos = [];
+  TODOS_LOS_CURSOS.forEach(function(curso) {
+    var regsAll = registros.filter(function(r) {
+      return (r.curso || '') === curso && r.nota !== undefined && r.nota !== null;
+    });
+    if (!regsAll.length) return;
+
+    var porAlumno = {};
+    regsAll.forEach(function(r) {
+      var key = (r.nombre || '').trim().toUpperCase();
+      if (!key) return;
+      if (!porAlumno[key]) porAlumno[key] = {
+        nombre: r.nombre, curso: curso,
+        notas: [], instancias: [], pie: false
+      };
+      porAlumno[key].notas.push(r.nota);
+      porAlumno[key].instancias.push(r.instancia || 'Evaluación 1');
+      if (r.pie) porAlumno[key].pie = true;
+    });
+
+    Object.values(porAlumno).forEach(function(al) {
+      if (al.notas.length < 2) return;
+      al.promedio = al.notas.reduce(function(s, n) { return s + n; }, 0) / al.notas.length;
+      if (al.promedio < 4.0) criticos.push(al);
+    });
+  });
+
+  criticos.sort(function(a, b) { return a.promedio - b.promedio; });
+
+  if (countBadge) countBadge.textContent = Object.keys(_apoderadoEmails).length + ' emails guardados';
+  if (footerCount) footerCount.textContent = criticos.length + ' alumno' + (criticos.length !== 1 ? 's' : '') + ' con promedio crítico';
+
+  if (!criticos.length) {
+    container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3);">' +
+      '✅ No hay alumnos con promedio crítico actualmente.</div>';
+    return;
+  }
+
+  container.innerHTML = '';
+  criticos.forEach(function(al, idx) {
+    var email = _getEmailApoderado(al.nombre);
+    var texto = _generarTextoEmail(al, prof, cole);
+    var prom = al.promedio.toFixed(1);
+    var promColor = al.promedio < 2.5 ? '#FF3B30' : '#FF9500';
+    var notasStr = al.notas.map(function(n, i) {
+      return (al.instancias[i] || ('Ev.' + (i+1))) + ': ' + n.toFixed(1);
+    }).join(' · ');
+
+    var card = document.createElement('div');
+    card.className = 'email-alumno-card';
+    card.id = 'emailCard_' + idx;
+
+    card.innerHTML =
+      '<div class="email-alumno-header">' +
+        '<div>' +
+          '<div class="email-alumno-nombre">' + al.nombre +
+            (al.pie ? ' <span style="color:#FF9500;font-size:11px;">● PIE</span>' : '') +
+          '</div>' +
+          '<div style="font-size:11px;color:var(--text3);margin-top:2px;">' +
+            al.curso + ' · ' + notasStr +
+          '</div>' +
+        '</div>' +
+        '<div style="text-align:right;">' +
+          '<div class="email-alumno-prom" style="color:' + promColor + ';">' + prom + '</div>' +
+          '<div style="font-size:10px;color:var(--text3);">promedio</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="email-campo">' +
+        '<label>Email apoderado</label>' +
+        '<input type="email" id="emailInp_' + idx + '" placeholder="apoderado@email.cl" value="' + email + '">' +
+      '</div>' +
+      '<div class="email-campo">' +
+        '<label>Con copia a UTP</label>' +
+        '<input type="email" id="emailUTP_' + idx + '" placeholder="utp@colegio.cl" ' +
+          'value="' + (localStorage.getItem('av_email_utp') || '') + '">' +
+      '</div>' +
+      '<details style="margin-top:10px;">' +
+        '<summary style="font-size:12px;font-weight:600;color:var(--text3);cursor:pointer;' +
+          'user-select:none;padding:4px 0;">Ver texto del correo ▾</summary>' +
+        '<pre class="email-preview" id="emailTexto_' + idx + '">' + texto + '</pre>' +
+      '</details>' +
+      '<div class="email-acciones">' +
+        '<button class="btn btn-sm" onclick="_abrirEnCorreo(' + idx + ')" ' +
+          'style="background:var(--accent);color:#fff;border-color:var(--accent);min-height:36px;">' +
+          '📧 Abrir en correo</button>' +
+        '<button class="btn btn-sm" onclick="_copiarTextoEmail(' + idx + ')" ' +
+          'style="min-height:36px;">Copiar texto</button>' +
+        '<button class="btn btn-sm" onclick="_guardarEmailApoderado(' + idx + ',\'' +
+          al.nombre.replace(/'/g,"\\'") + '\')" ' +
+          'style="min-height:36px;">Guardar email</button>' +
+      '</div>';
+
+    container.appendChild(card);
+
+    // Guardar email UTP al cambiar (es el mismo para todos)
+    var utpInp = card.querySelector('#emailUTP_' + idx);
+    if (utpInp) utpInp.addEventListener('change', function() {
+      localStorage.setItem('av_email_utp', this.value);
+    });
+  });
+
+  window._emailCriticos = criticos;
+}
+
+function _abrirEnCorreo(idx) {
+  var al = (window._emailCriticos || [])[idx];
+  if (!al) return;
+  var email = (document.getElementById('emailInp_' + idx) || {}).value || '';
+  var emailUTP = (document.getElementById('emailUTP_' + idx) || {}).value || '';
+  var prof = (document.getElementById('emailNombreProf') || {}).value || '';
+  var cole = (document.getElementById('emailNombreColegio') || {}).value || '';
+  var texto = _generarTextoEmail(al, prof, cole);
+  var asunto = 'Información académica Artes Visuales — ' + al.nombre;
+
+  // Construir mailto: con CC a UTP
+  var mailto = 'mailto:' + encodeURIComponent(email)
+    + (emailUTP ? '?cc=' + encodeURIComponent(emailUTP) : '?')
+    + (emailUTP ? '&' : '')
+    + 'subject=' + encodeURIComponent(asunto)
+    + '&body=' + encodeURIComponent(texto);
+
+  // Guardar email del apoderado si se escribió
+  if (email && email.includes('@')) {
+    _apoderadoEmails[al.nombre.trim().toUpperCase()] = email.toLowerCase();
+    _saveApoderadoEmails();
+  }
+
+  window.location.href = mailto;
+}
+
+function _copiarTextoEmail(idx) {
+  var al = (window._emailCriticos || [])[idx];
+  if (!al) return;
+  var prof = (document.getElementById('emailNombreProf') || {}).value || '';
+  var cole = (document.getElementById('emailNombreColegio') || {}).value || '';
+  var texto = _generarTextoEmail(al, prof, cole);
+  navigator.clipboard.writeText(texto).then(function() {
+    toast('✓ Texto copiado — pégalo en tu correo corporativo', 'ok', 3000);
+  }).catch(function() {
+    // Fallback para Safari/iPad
+    var ta = document.createElement('textarea');
+    ta.value = texto;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    ta.remove();
+    toast('✓ Texto copiado', 'ok', 2500);
+  });
+}
+
+function _guardarEmailApoderado(idx, nombreAlumno) {
+  var email = (document.getElementById('emailInp_' + idx) || {}).value || '';
+  if (!email || !email.includes('@')) {
+    toast('⚠ Ingresa un email válido', 'err'); return;
+  }
+  _apoderadoEmails[nombreAlumno.trim().toUpperCase()] = email.toLowerCase();
+  _saveApoderadoEmails();
+  var badge = document.getElementById('emailCountBadge');
+  if (badge) badge.textContent = Object.keys(_apoderadoEmails).length + ' emails guardados';
+  toast('✓ Email guardado para ' + nombreAlumno.split(' ')[0], 'ok', 2000);
+}
+
+function _enviarTodosEmail() {
+  var criticos = window._emailCriticos || [];
+  var sinEmail = criticos.filter(function(al, i) {
+    return !(document.getElementById('emailInp_' + i) || {}).value;
+  });
+  if (sinEmail.length) {
+    toast('⚠ ' + sinEmail.length + ' alumnos sin email de apoderado. Ingresalos primero.', 'err', 5000);
+    return;
+  }
+  // Abrir el primero y notificar cuántos quedan
+  if (criticos.length > 0) {
+    _abrirEnCorreo(0);
+    if (criticos.length > 1) {
+      setTimeout(function() {
+        toast('Abre el correo del siguiente alumno con el botón "📧 Abrir en correo"', 'info', 6000);
+      }, 1500);
+    }
+  }
+}
+
 function abrirRubricaTactil(nombreAlumno, cursoAlumno, esPIE) {
   var ex = document.getElementById('rubricaTactilOverlay');
   if (ex) ex.remove();
