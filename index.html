@@ -1714,6 +1714,23 @@ media (prefers-color-scheme: dark) {
 .email-import-strip input[type=file] {
   display: none;
 }
+
+/* ── Modal exportación Alexia ─────────────────────────────────────────── */
+.alexia-export-curso-activo {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; border-radius: 12px;
+  margin-bottom: 12px;
+}
+.alexia-stat-box {
+  flex: 1; text-align: center; padding: 12px 8px;
+  background: var(--bg3); border-radius: var(--rad);
+}
+.alexia-stat-num {
+  font-size: 24px; font-weight: 800; letter-spacing: -1px;
+}
+.alexia-stat-lbl {
+  font-size: 11px; color: var(--text3); margin-top: 2px;
+}
 </style>
 
 <script>
@@ -2350,7 +2367,7 @@ media (prefers-color-scheme: dark) {
           <button class="filtro-pie-btn" id="btnFiltroPie" onclick="toggleFiltroPie()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2"/><path d="M12 7v8"/><path d="m9 20 3-3 3 3"/><path d="M8 17H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h14"/></svg> PIE</button>
           <button class="btn" onclick="verDuplicados()" id="btnDuplicados" style="display:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Duplicados</button>
           <button class="btn" onclick="abrirExportMultiple()" id="btnExport" style="display:none">Exportar CSV</button>
-          <button class="btn" onclick="abrirExportAlexia()" id="btnExportAlexia" style="display:none" title="Exportar en formato Alexia (.xls)">📥 Alexia XLS</button>
+          <button class="btn" onclick="abrirExportAlexia(cursoSeleccionado)" id="btnExportAlexia" style="display:none" title="Exportar en formato Alexia (.xls)">📥 Alexia XLS</button>
           <button class="btn btn-primary" onclick="abrirExportUniversal()" id="btnExportUniversal" style="display:none;background:var(--accent);color:#fff;border-color:var(--accent);" title="Exportar para cualquier sistema escolar">📤 Exportar notas</button>
           <button class="btn" onclick="limpiarRegistrosDuplicados()" id="btnLimpiarDups" style="display:none;border-color:var(--amber);color:var(--amber);" title="Detectar y corregir rúbricas incorrectas y evaluaciones duplicadas">🔍 Limpiar duplicados</button>
           <button class="btn btn-danger" onclick="limpiarTodo()" id="btnLimpiarTodo" style="display:none">Limpiar todo</button>
@@ -6408,156 +6425,214 @@ function renderAlexiaPlantillasList() {
 }
 
 // ── Modal de selección antes de exportar ───────────────────────────────────────
-function abrirExportAlexia() {
-  var cursos = cursosUnicos();
-  if (!cursos.length) { toast('No hay evaluaciones guardadas', 'err', 3000); return; }
+function abrirExportAlexia(cursoDirecto) {
+  // Si se pasa un curso directo (desde el panel de Registros),
+  // generar y mostrar el diagnóstico de ese curso inmediatamente
+  var cursoTarget = cursoDirecto || cursoSeleccionado || null;
 
-  var rubricasUnicas = [...new Set(
-    registros.filter(Boolean).map(function(r) { return r.rubricaNombre; }).filter(Boolean)
-  )].sort();
+  var cursosDisp = cursosUnicos();
+  if (!cursosDisp.length) { toast('No hay evaluaciones guardadas', 'err', 3000); return; }
 
-  var cursosInfo = cursos.map(function(c) {
+  if (typeof XLSX === 'undefined') {
+    toast('❌ Librería Excel no cargada. Recarga la página.', 'err', 4000); return;
+  }
+
+  // ── Modo directo: curso ya seleccionado → ir directo al diagnóstico ──
+  if (cursoTarget && alexiaDatos[alexiaNormCurso(cursoTarget)]) {
+    _exportAlexiaDiagnostico([cursoTarget]);
+    return;
+  }
+
+  // ── Modo selección: mostrar todos los cursos disponibles ──
+  var cursosInfo = cursosDisp.map(function(c) {
     var key = alexiaNormCurso(c);
     var p   = alexiaDatos[key];
     return { curso: c, key: key, p: p || null };
   });
-
   var sinPlantilla = cursosInfo.filter(function(ci) { return !ci.p; });
 
-  var html = '<div class="modal-title">📥 Exportar notas para Alexia</div>'
-    + '<div class="modal-hint">El archivo exportado es idéntico al original de Alexia con las notas de ArtEval escritas en cada columna. Alumnos sin nota quedan con celda vacía (Alexia muestra "–").</div>'
-    + (cursoSeleccionado ? '<div style="background:var(--accent-bg);border:1px solid var(--accent-border);border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:12px;color:var(--accent);font-weight:600;">📌 Curso activo en Registros: <strong>' + cursoSeleccionado + '</strong> — ya marcado abajo</div>' : '');
+  var html = '<div class="modal-title">📥 Exportar notas para Alexia</div>';
 
-  if (sinPlantilla.length) {
-    html += '<div style="background:rgba(245,166,35,0.1);border:1px solid rgba(245,166,35,0.3);'
-      + 'border-radius:6px;padding:10px;margin-bottom:12px;font-size:12px;color:#f5a623;">'
-      + '⚠️ <strong>' + sinPlantilla.map(function(c) { return c.curso; }).join(', ') + '</strong>'
-      + ' no tienen plantilla Alexia. Ve a <em>Configurar → Plantillas Alexia</em> y sube el .xls vacío de Alexia.</div>';
+  // Banner de curso activo
+  if (cursoTarget) {
+    var keyTarget = alexiaNormCurso(cursoTarget);
+    var tienePlantilla = !!alexiaDatos[keyTarget];
+    html += '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;'
+      + 'background:' + (tienePlantilla ? 'rgba(52,199,89,0.12)' : 'rgba(255,149,0,0.10)') + ';'
+      + 'border:1px solid ' + (tienePlantilla ? 'rgba(52,199,89,0.3)' : 'rgba(255,149,0,0.3)') + ';'
+      + 'border-radius:10px;margin-bottom:12px;">'
+      + '<div style="font-size:22px;">' + (tienePlantilla ? '✅' : '⚠️') + '</div>'
+      + '<div>'
+      + '<div style="font-size:13px;font-weight:700;color:var(--text);">Curso activo: ' + cursoTarget + '</div>'
+      + '<div style="font-size:12px;color:var(--text3);margin-top:2px;">'
+      + (tienePlantilla
+          ? 'Plantilla Alexia cargada — puedes exportar directamente'
+          : 'Sin plantilla Alexia. Sube el .xls vacío desde Configurar → Plantillas Alexia')
+      + '</div></div>'
+      + (tienePlantilla
+          ? '<button class="btn btn-primary" '
+            + 'data-curso="' + cursoTarget + '" '
+            + 'onclick="cerrarModal();_exportAlexiaDiagnostico([this.dataset.curso])" '
+            + 'style="margin-left:auto;background:var(--green);border-color:var(--green);white-space:nowrap;">'
+            + '⬇ Exportar ' + cursoTarget + '</button>'
+          : '')
+      + '</div>';
   }
 
-  html += '<div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px;">Cursos a exportar:</div>'
+  html += '<div style="font-size:12px;color:var(--text2);margin-bottom:8px;">'
+    + (cursoTarget ? 'O selecciona otro curso:' : 'Selecciona los cursos a exportar:')
+    + '</div>'
     + '<div style="display:flex;flex-direction:column;gap:5px;margin-bottom:14px;" id="alexiaCursosCheck">';
 
   cursosInfo.forEach(function(ci) {
     var id    = 'achk_' + ci.key.replace(/[^a-z0-9]/gi, '_');
+    var esCursoActivo = ci.curso === cursoTarget;
+    var numNotas = registros.filter(function(r){
+      return alexiaNormCurso(r.curso||'') === ci.key;
+    }).length;
     var badge = ci.p
-      ? '✅ ' + (ci.p.estudiantes||[]).length + ' alumnos · ' + (ci.p.colsCON||[]).length + ' controles'
-      : '⚠️ sin plantilla';
-    html += '<label style="display:flex;align-items:center;gap:10px;padding:8px 12px;'
-      + 'background:var(--bg3);border:1px solid var(--border);border-radius:var(--rad);cursor:pointer;font-size:13px;">'
-      + '<input type="checkbox" id="' + id + '" ' + ((ci.p || ci.curso === cursoSeleccionado) ? 'checked' : '') + ' data-curso="' + ci.curso + '">'
-      + '<span style="flex:1;font-weight:500;">' + ci.curso + '</span>'
-      + '<span style="font-size:11px;color:' + (ci.p ? 'var(--green)' : 'var(--amber)') + ';font-family:\'DM Mono\',monospace;">' + badge + '</span>'
+      ? numNotas + ' notas · ' + (ci.p.colsCON||[]).length + ' columnas en plantilla'
+      : '⚠️ sin plantilla Alexia';
+    var borderColor = esCursoActivo
+      ? 'var(--accent)' : ci.p ? 'var(--border)' : 'rgba(255,149,0,0.3)';
+    var bgColor = esCursoActivo ? 'var(--accent-bg)' : 'var(--bg3)';
+    html += '<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;'
+      + 'background:' + bgColor + ';border:1.5px solid ' + borderColor + ';'
+      + 'border-radius:var(--rad);cursor:pointer;font-size:13px;">'
+      + '<input type="checkbox" id="' + id + '" '
+      + ((ci.p && (esCursoActivo || !cursoTarget)) ? 'checked' : '') + ' data-curso="' + ci.curso + '">'
+      + '<div style="flex:1;">'
+      + '<span style="font-weight:' + (esCursoActivo ? '700' : '500') + ';color:var(--text);">'
+      + ci.curso + (esCursoActivo ? ' 📌' : '') + '</span>'
+      + '</div>'
+      + '<span style="font-size:11px;color:' + (ci.p ? 'var(--green)' : 'var(--amber)') + ';'
+      + 'font-family:var(--font-mono);">' + badge + '</span>'
       + '</label>';
   });
+
   html += '</div>';
 
-  if (rubricasUnicas.length) {
-    html += '<div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px;">Evaluaciones a exportar:</div>'
-      + '<div style="display:flex;flex-direction:column;gap:3px;margin-bottom:16px;">';
-    rubricasUnicas.forEach(function(r) {
-      var encontrada = Object.values(alexiaDatos).some(function(p) {
-        return (p.colsCON||[]).some(function(col) {
-          return alexiaNorm(col.nombre) === alexiaNorm(r);
-        });
-      });
-      html += '<div style="display:flex;align-items:center;gap:8px;padding:5px 10px;'
-        + 'background:var(--bg3);border-radius:var(--rad);font-size:12px;">'
-        + (encontrada
-            ? '<span style="color:var(--green);font-size:14px;">✓</span>'
-            : '<span style="color:var(--amber);font-size:14px;">⚠</span>')
-        + '<span>' + r + '</span>'
-        + (encontrada
-            ? '<span style="font-size:10px;color:var(--text3);margin-left:auto;">columna encontrada</span>'
-            : '<span style="font-size:10px;color:var(--amber);margin-left:auto;">sin columna en plantilla</span>')
-        + '</div>';
-    });
-    html += '</div>';
+  if (sinPlantilla.length && !cursoTarget) {
+    html += '<div style="background:rgba(255,149,0,0.08);border:1px solid rgba(255,149,0,0.25);'
+      + 'border-radius:8px;padding:10px;margin-bottom:12px;font-size:12px;color:var(--amber);">'
+      + '⚠️ <strong>' + sinPlantilla.map(function(c){return c.curso;}).join(', ') + '</strong>'
+      + ' no tienen plantilla. Ve a <em>Configurar → Plantillas Alexia</em> y sube el .xls vacío.</div>';
   }
 
   html += '<div class="modal-footer">'
     + '<button class="btn" onclick="cerrarModal()">Cancelar</button>'
-    + '<button class="btn btn-primary" onclick="confirmarExportAlexia()">Ver diagnóstico →</button>'
+    + '<button class="btn btn-primary" onclick="confirmarExportAlexia()">Ver diagnóstico y exportar →</button>'
     + '</div>';
 
   abrirModal(html);
 }
 
-function confirmarExportAlexia() {
+// ── Generar diagnóstico y exportar para los cursos seleccionados ──────────
+function _exportAlexiaDiagnostico(cursos) {
   if (typeof XLSX === 'undefined') {
-    toast('❌ Librería Excel no cargada. Recarga la página.', 'err', 4000); return;
+    toast('❌ Librería Excel no cargada.', 'err', 4000); return;
   }
-
-  var checked      = document.querySelectorAll('#alexiaCursosCheck input[type=checkbox]:checked');
-  var seleccionados = Array.from(checked).map(function(cb) { return cb.getAttribute('data-curso'); });
-  if (!seleccionados.length) { toast('Selecciona al menos un curso', 'err', 3000); return; }
-
   var resultados = [], errores = [];
-  seleccionados.forEach(function(curso) {
-    if (!alexiaDatos[alexiaNormCurso(curso)]) { errores.push(curso + ' (sin plantilla)'); return; }
+  cursos.forEach(function(curso) {
+    if (!alexiaDatos[alexiaNormCurso(curso)]) {
+      errores.push(curso + ' (sin plantilla)'); return;
+    }
     var res = alexiaGenerarXLS(curso);
     if (res) resultados.push({ curso: curso, res: res });
     else     errores.push(curso + ' (error al generar)');
   });
 
   if (!resultados.length) {
-    toast('⚠️ No se generó ningún archivo: ' + errores.join(', '), 'err', 4000); return;
+    toast('⚠️ No se generó ningún archivo: ' + errores.join(', '), 'err', 5000); return;
   }
 
-  // Diagnóstico
+  // Calcular estadísticas
   var totalAlumnos = 0, conNota = 0, sinNota = 0, diagnostico = '';
   resultados.forEach(function(item) {
-    var log = item.res.matchLog;
+    var log = item.res.matchLog || [];
     totalAlumnos += log.length;
-    var conN = log.filter(function(l) { return Object.keys(l.notas).length > 0; }).length;
+    var conN = log.filter(function(l){ return Object.keys(l.notas||{}).length > 0; }).length;
     sinNota  += log.length - conN;
     conNota  += conN;
-    diagnostico += '<div style="margin-bottom:10px;">'
-      + '<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:5px;">' + item.curso + '</div>'
-      + '<div style="font-size:11px;font-family:var(--font-mono,monospace);display:flex;flex-direction:column;gap:2px;max-height:180px;overflow-y:auto;">';
+
+    diagnostico += '<div style="margin-bottom:12px;">';
+    if (resultados.length > 1) {
+      diagnostico += '<div style="font-size:12px;font-weight:700;color:var(--text);'
+        + 'border-bottom:1px solid var(--border);padding-bottom:4px;margin-bottom:6px;">'
+        + item.curso + '</div>';
+    }
+    diagnostico += '<div style="display:flex;flex-direction:column;gap:2px;">';
     log.forEach(function(l) {
-      var notasStr = Object.entries(l.notas).map(function(e) {
-        return e[0].split(' ')[0] + ':' + e[1];
-      }).join('  ');
-      var ok = Object.keys(l.notas).length > 0;
-      diagnostico += '<div style="color:' + (ok ? 'var(--green)' : 'var(--text3)') + ';padding:1px 0;">'
-        + (ok ? '✅' : '○') + ' ' + l.alexia
-        + (notasStr ? '<span style="color:var(--accent);margin-left:6px;">' + notasStr + '</span>' : '')
+      var notas  = l.notas || {};
+      var tieneNotas = Object.keys(notas).length > 0;
+      // Mostrar cada evaluación con su nota
+      var notasArr = Object.entries(notas).map(function(e){
+        return '<span style="background:var(--accent-bg);color:var(--accent);'
+          + 'border-radius:4px;padding:0 5px;font-size:10px;margin-left:4px;">'
+          + e[0].replace('Evaluación ','Ev.') + ': ' + e[1] + '</span>';
+      }).join('');
+      diagnostico += '<div style="display:flex;align-items:center;gap:6px;'
+        + 'padding:3px 6px;border-radius:6px;'
+        + 'background:' + (tieneNotas ? 'rgba(52,199,89,0.06)' : 'var(--bg3)') + ';">'
+        + '<span style="font-size:13px;">' + (tieneNotas ? '✅' : '○') + '</span>'
+        + '<span style="font-size:12px;color:var(--text);flex:1;font-weight:'
+        + (tieneNotas ? '500' : '400') + ';">' + (l.alexia || l.nombre || '—') + '</span>'
+        + notasArr
         + '</div>';
     });
     diagnostico += '</div></div>';
   });
 
+  // Mostrar diagnóstico con botón de descarga
+  var alertMsg = sinNota > 0 && conNota === 0
+    ? '<div style="font-size:12px;color:var(--red);padding:8px 12px;background:rgba(255,59,48,0.08);'
+      + 'border-radius:8px;margin-bottom:10px;">❌ Ningún alumno con nota encontrado. '
+      + 'Verifica que el nombre del curso en ArtEval coincida con el de la plantilla Alexia.</div>'
+    : sinNota > 0
+      ? '<div style="font-size:12px;color:var(--amber);padding:8px 12px;background:rgba(255,149,0,0.08);'
+        + 'border-radius:8px;margin-bottom:10px;">⚠️ ' + sinNota + ' alumno(s) sin nota — '
+        + 'quedarán con celda vacía en Alexia.</div>'
+      : '<div style="font-size:12px;color:var(--green);padding:8px 12px;background:rgba(52,199,89,0.08);'
+        + 'border-radius:8px;margin-bottom:10px;">✅ Todos los alumnos con nota.</div>';
+
   abrirModal(
-    '<div class="modal-title">📊 Resumen antes de exportar</div>'
-    + '<div style="display:flex;gap:10px;margin-bottom:14px;">'
-    +   '<div style="flex:1;text-align:center;padding:10px;background:var(--bg3);border-radius:var(--rad);">'
-    +     '<div style="font-size:22px;font-weight:700;color:var(--green);">' + conNota + '</div>'
+    '<div class="modal-title">📊 Diagnóstico — listo para exportar</div>'
+    + '<div style="display:flex;gap:8px;margin-bottom:12px;">'
+    +   '<div style="flex:1;text-align:center;padding:12px 8px;background:var(--bg3);border-radius:var(--rad);">'
+    +     '<div style="font-size:24px;font-weight:800;color:var(--green);">' + conNota + '</div>'
     +     '<div style="font-size:11px;color:var(--text3);">con notas</div></div>'
-    +   '<div style="flex:1;text-align:center;padding:10px;background:var(--bg3);border-radius:var(--rad);">'
-    +     '<div style="font-size:22px;font-weight:700;color:var(--text3);">' + sinNota + '</div>'
-    +     '<div style="font-size:11px;color:var(--text3);">sin nota (–)</div></div>'
-    +   '<div style="flex:1;text-align:center;padding:10px;background:var(--bg3);border-radius:var(--rad);">'
-    +     '<div style="font-size:22px;font-weight:700;color:var(--text);">' + totalAlumnos + '</div>'
+    +   '<div style="flex:1;text-align:center;padding:12px 8px;background:var(--bg3);border-radius:var(--rad);">'
+    +     '<div style="font-size:24px;font-weight:800;color:var(--text3);">' + sinNota + '</div>'
+    +     '<div style="font-size:11px;color:var(--text3);">sin nota</div></div>'
+    +   '<div style="flex:1;text-align:center;padding:12px 8px;background:var(--bg3);border-radius:var(--rad);">'
+    +     '<div style="font-size:24px;font-weight:800;color:var(--text);">' + totalAlumnos + '</div>'
     +     '<div style="font-size:11px;color:var(--text3);">total alumnos</div></div>'
     + '</div>'
-    + '<div style="font-size:11px;color:var(--text2);margin-bottom:8px;">Detalle por alumno:</div>'
-    + '<div style="background:var(--bg3);border-radius:var(--rad);padding:10px;margin-bottom:14px;max-height:220px;overflow-y:auto;">'
-    + diagnostico + '</div>'
-    + (errores.length ? '<div style="font-size:12px;color:var(--amber);margin-bottom:10px;">⚠️ Sin plantilla: ' + errores.join(', ') + '</div>' : '')
-    + (sinNota > 0 && conNota === 0
-        ? '<div style="font-size:12px;color:var(--red);margin-bottom:10px;">❌ Ningún alumno con nota encontrado. Verifica que el curso en ArtEval coincida exactamente con el curso de la plantilla.</div>'
-        : sinNota > 0
-          ? '<div style="font-size:12px;color:var(--amber);margin-bottom:10px;">⚠️ ' + sinNota + ' alumno(s) sin nota exportada. Las celdas quedarán vacías y Alexia las mostrará como "–".</div>'
-          : '<div style="font-size:12px;color:var(--green);margin-bottom:10px;">✅ Todos los alumnos con nota encontrada.</div>')
+    + alertMsg
+    + '<div style="background:var(--bg3);border-radius:var(--rad);padding:10px;'
+    + 'max-height:260px;overflow-y:auto;margin-bottom:12px;">' + diagnostico + '</div>'
+    + (errores.length ? '<div style="font-size:12px;color:var(--amber);margin-bottom:10px;">'
+      + '⚠️ Sin plantilla: ' + errores.join(', ') + '</div>' : '')
     + '<div class="modal-footer">'
     + '<button class="btn" onclick="cerrarModal()">Cancelar</button>'
-    + '<button class="btn btn-primary" onclick="alexiaDescargarResultados()">⬇ Descargar XLS</button>'
+    + '<button class="btn btn-primary" onclick="alexiaDescargarResultados()" '
+    + 'style="background:var(--green);border-color:var(--green);">'
+    + '⬇ Descargar XLS' + (resultados.length > 1 ? ' (' + resultados.length + ' archivos)' : '') + '</button>'
     + '</div>'
   );
 
   window._alexiaResultadosPendientes = resultados;
 }
+
+
+function confirmarExportAlexia() {
+  var checked = document.querySelectorAll('#alexiaCursosCheck input[type=checkbox]:checked');
+  var seleccionados = Array.from(checked).map(function(cb){ return cb.getAttribute('data-curso'); });
+  if (!seleccionados.length) { toast('Selecciona al menos un curso', 'err', 3000); return; }
+  cerrarModal();
+  setTimeout(function(){ _exportAlexiaDiagnostico(seleccionados); }, 150);
+}
+
 
 function alexiaDescargarResultados() {
   var resultados = window._alexiaResultadosPendientes || [];
