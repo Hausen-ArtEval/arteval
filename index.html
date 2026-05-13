@@ -107,9 +107,18 @@
   --shadow-xl: 0 20px 60px rgba(0,0,0,0.10);
 
   /* Tipografía */
-  --font-display: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-ui:      -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-ui:      'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono:    'DM Mono', 'SF Mono', 'Menlo', monospace;
+
+  /* Design tokens AE (aliases para consistencia) */
+  --ae-orange:      #FF9500;
+  --ae-orange-dark: #E67E00;
+  --ae-black:       #1C1C1E;
+  --ae-gray:        #8E8E93;
+  --ae-gray-light:  #F2F2F7;
+  --ae-white:       #FFFFFF;
+  --ae-border:      #E5E5EA;
 }
 
 /* ── RESET ──────────────────────────────────────────────── */
@@ -140,7 +149,7 @@ body {
   align-items: center;
   gap: 16px;
   padding: 0 20px;
-  height: 58px;
+  height: 56px;
   background: rgba(242,242,247,0.88);
   backdrop-filter: blur(28px) saturate(200%);
   -webkit-backdrop-filter: blur(28px) saturate(200%);
@@ -165,7 +174,7 @@ body {
 .topbar-search { width: 100%; max-width: 400px; justify-self: center; position: relative; }
 .global-search-input {
   width: 100%; padding: 8px 14px 8px 45px !important;
-  border: 0.5px solid var(--border); border-radius: 10px;
+  border: 0.5px solid var(--border); border-radius: var(--rad);
   background: var(--bg2); color: var(--text);
   font-size: 13px; font-family: var(--font-ui);
   transition: border-color 0.15s, box-shadow 0.15s; outline: none;
@@ -243,7 +252,7 @@ body {
 .btn-icon { padding: 8px 10px; }
 
 .btn-primary {
-  background: var(--accent); color: #fff;
+  background: var(--accent); color: #FFFFFF;
   border-color: transparent; border-radius: var(--rad);
   font-weight: 600;
   box-shadow: 0 2px 10px rgba(255,149,0,0.20);
@@ -252,12 +261,12 @@ body {
 .btn-primary:active { transform: translateY(0); }
 
 .btn-success {
-  background: var(--green); color: #fff;
+  background: var(--green); color: #FFFFFF;
   border-color: transparent; border-radius: var(--rad);
   font-weight: 700;
   box-shadow: 0 2px 8px rgba(52,199,89,0.25);
 }
-.btn-success:hover { background: #28B34B; box-shadow: 0 4px 14px rgba(52,199,89,0.38); transform: translateY(-1px); }
+.btn-success:hover { background: #34C759; box-shadow: 0 4px 14px rgba(52,199,89,0.38); transform: translateY(-1px); }
 
 .btn-danger { background: var(--red-bg); color: var(--red); border-color: rgba(255,59,48,0.2); border-radius: var(--rad); }
 .btn-danger:hover { background: rgba(255,59,48,0.16); }
@@ -293,7 +302,7 @@ body {
   border-radius: var(--rad-lg); overflow: hidden;
   box-shadow: 0 2px 12px rgba(0,0,0,0.06); transition: box-shadow 0.2s, transform 0.2s;
 }
-.card:hover { box-shadow: 0 6px 24px rgba(0,0,0,0.09); }
+.card:hover { box-shadow: 0 6px 24px rgba(0,0,0,0.09); transform: translateY(-1px); }
 .card:hover { box-shadow: var(--shadow-lg); }
 .card-header {
   padding: 12px 18px; border-bottom: 0.5px solid var(--border);
@@ -346,8 +355,8 @@ input[type="text"]:focus, textarea:focus, select:focus {
 .cam-placeholder p { font-size: 13px; color: var(--text3); }
 .cam-badge-wrap { position: absolute; top: 10px; right: 10px; display: flex; gap: 6px; }
 .cam-badge { font-size: 10px; font-family: var(--font-mono); padding: 3px 8px; border-radius: 20px; font-weight: 500; }
-.cam-badge.live { background: rgba(255,59,48,0.55); color: #fff; animation: pulse 1.5s infinite; border: 1px solid var(--red); }
-.cam-badge.ia   { background: rgba(0,122,255,0.55); color: #fff; }
+.cam-badge.live { background: rgba(255,59,48,0.55); color: #FFFFFF; animation: pulse 1.5s infinite; border: 1px solid var(--red); }
+.cam-badge.ia   { background: rgba(0,122,255,0.55); color: #FFFFFF; }
 
 /* ── CRITERIOS ──────────────────────────────────────────── */
 .criterios-scroll { padding: 12px 14px; display: flex; flex-direction: column; gap: 7px; max-height: 460px; overflow-y: auto; }
@@ -397,7 +406,7 @@ input[type="text"]:focus, textarea:focus, select:focus {
 .reg-list { display: flex; flex-direction: column; gap: 5px; }
 .reg-card {
   background: var(--bg2); border: 0.5px solid var(--border);
-  border-radius: 13px; padding: 13px 16px;
+  border-radius: var(--rad); padding: 13px 16px;
   display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
   transition: all 0.15s; box-shadow: var(--shadow-sm);
 }
@@ -411,7 +420,7 @@ input[type="text"]:focus, textarea:focus, select:focus {
 .empty-state { text-align: center; padding: 3rem; color: var(--text3); font-size: 13px; }
 .empty-icon { font-size: 32px; margin-bottom: 8px; opacity: 0.3; }
 .reg-card.ne-card { border-left: 3px solid var(--red); opacity: 0.85; }
-.reg-card.ne-card .reg-nombre::after { content: ' NE'; font-size: 9px; font-weight: 800; color: #fff; background: var(--red); padding: 1px 5px; border-radius: 4px; margin-left: 6px; vertical-align: middle; font-family: var(--font-mono); }
+.reg-card.ne-card .reg-nombre::after { content: ' NE'; font-size: 9px; font-weight: 800; color: #FFFFFF; background: var(--red); padding: 1px 5px; border-radius: 4px; margin-left: 6px; vertical-align: middle; font-family: var(--font-mono); }
 
 /* ── STATS ──────────────────────────────────────────────── */
 .stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 20px; }
@@ -471,7 +480,7 @@ input[type="text"]:focus, textarea:focus, select:focus {
 .step-text { font-size: 13px; color: var(--text2); line-height: 1.5; }
 .api-status { font-size: 11px; font-family: var(--font-mono); }
 .drive-step { display: flex; gap: 12px; margin-bottom: 14px; }
-.drive-step-num { width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.drive-step-num { width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: #FFFFFF; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .drive-step-body { flex: 1; }
 .drive-step-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
 .drive-step-desc { font-size: 12px; color: var(--text3); line-height: 1.6; }
@@ -521,7 +530,7 @@ input[type="text"]:focus, textarea:focus, select:focus {
 }
 .toast {
   display: flex; align-items: center; gap: 10px;
-  padding: 13px 18px; border-radius: 16px;
+  padding: 13px 18px; border-radius: var(--rad-lg);
   background: var(--bg2); border: 0.5px solid var(--border);
   box-shadow: 0 8px 32px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.06);
   font-size: 13.5px; font-weight: 500; color: var(--text);
@@ -560,7 +569,7 @@ input[type="text"]:focus, textarea:focus, select:focus {
 .prog-item-fecha { font-size: 10px; color: var(--text3); }
 .prog-item-nota { font-size: 16px; font-weight: 700; font-family: var(--font-mono); margin-left: auto; }
 .prog-item-arrow { font-size: 16px; font-weight: 700; }
-.prom-chip { display: inline-block; padding: 2px 8px; border-radius: 10px; font-family: var(--font-mono); font-weight: 700; font-size: 11px; }
+.prom-chip { display: inline-block; padding: 2px 8px; border-radius: var(--rad); font-family: var(--font-mono); font-weight: 700; font-size: 11px; }
 
 /* ── CURSOS ──────────────────────────────────────────────── */
 .curso-layout { display: grid; grid-template-columns: 200px 1fr; gap: 16px; }
@@ -575,7 +584,7 @@ input[type="text"]:focus, textarea:focus, select:focus {
   text-align: left; min-height: 44px;
 }
 .curso-sidebar-btn:hover { background: var(--bg3); border-color: rgba(255,149,0,0.3); color: var(--text); }
-.curso-sidebar-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.curso-sidebar-btn.active { background: var(--accent); border-color: var(--accent); color: #FFFFFF; font-weight: 600; box-shadow: 0 2px 8px rgba(255,149,0,0.25); }
 .cs-count { font-size: 10px; font-family: var(--font-mono); margin-left: auto; opacity: 0.75; }
 .curso-resumen { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
 .curso-chip-stat { background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--rad); padding: 13px 16px; box-shadow: var(--shadow-sm); min-width: 72px; }
@@ -590,7 +599,7 @@ input[type="text"]:focus, textarea:focus, select:focus {
 .curso-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
 .est-filtros { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
 .est-filtro-btn { padding: 7px 14px; font-size: 12px; border-radius: 20px; border: 0.5px solid var(--border); background: transparent; color: var(--text3); cursor: pointer; transition: all 0.12s; min-height: 34px; font-family: var(--font-ui); }
-.est-filtro-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.est-filtro-btn.active { background: var(--accent); color: #FFFFFF; border-color: var(--accent); }
 .est-filtro-btn:hover:not(.active) { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); }
 .estudiante-list { display: flex; flex-direction: column; gap: 4px; }
 .estudiante-row {
@@ -608,7 +617,7 @@ input[type="text"]:focus, textarea:focus, select:focus {
 .est-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; background: var(--accent-bg); color: var(--accent); }
 .est-nombre { flex: 1; min-width: 0; font-size: 14px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: var(--font-ui); }
 .est-badges { display: flex; gap: 4px; flex-wrap: wrap; }
-.est-badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 10px; white-space: nowrap; }
+.est-badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: var(--rad); white-space: nowrap; }
 .eb-entregado { background: var(--green-bg); color: var(--green); }
 .eb-pendiente { background: var(--red-bg); color: var(--red); }
 .eb-pie { background: var(--pie-bg); color: var(--pie); }
@@ -635,13 +644,15 @@ input[type="text"]:focus, textarea:focus, select:focus {
 .libro-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .libro-tabla { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; min-width: 600px; }
 .libro-tabla th { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; padding: 12px 18px; border-bottom: 0.5px solid var(--border); background: var(--bg3); white-space: nowrap; }
-.libro-tabla td { padding: 16px 20px; font-size: 15px; border-bottom: 0.5px solid var(--border); vertical-align: middle; }
+.libro-tabla td { padding: 16px 20px; font-size: 15px; border-bottom: 0.5px solid var(--border); vertical-align: middle;; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.libro-tabla .nombre-cell { font-weight: 600; }
+
 .libro-tabla tr:last-child td { border-bottom: none; }
 .libro-tabla tr:hover td { background: var(--bg3); }
 .libro-tabla tr.fila-sin-evaluar td { background: rgba(255,159,10,0.04); border-left: 2px solid var(--amber); color: var(--text3); }
 .libro-seccion { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.8px; padding: 14px 16px 6px; }
 .sin-nota-pendiente { color: var(--amber); font-family: var(--font-mono); font-weight: 700; text-align: center; font-size: 13px; opacity: 0.7; }
-.sin-evaluar-tag { background: var(--amber); color: #fff; }
+.sin-evaluar-tag { background: var(--amber); color: #FFFFFF; }
 .nota-val { font-family: var(--font-mono); font-weight: 700; font-size: 13px; padding: 2px 8px; border-radius: 8px; cursor: pointer; transition: background 0.12s; }
 .nota-val:hover { background: var(--bg3); }
 .nota-val.editing { background: var(--accent-bg); color: var(--accent); }
@@ -689,7 +700,7 @@ input[type="text"]:focus, textarea:focus, select:focus {
   .stats-grid { grid-template-columns: repeat(2,1fr); }
 }
 @media (max-width: 900px) {
-  .tab { flex-shrink: 0; padding: 0 10px; font-size: 11px; gap: 4px; height: 32px; border-radius: 10px; }
+  .tab { flex-shrink: 0; padding: 0 10px; font-size: 11px; gap: 4px; height: 32px; border-radius: var(--rad); }
   .tab svg { display: inline-block; flex-shrink: 0; width: 13px; height: 13px; }
   .tabs { height: 48px; padding: 6px 12px; gap: 3px; }
   .content { padding: 14px; }
@@ -714,21 +725,21 @@ input[type="text"]:focus, textarea:focus, select:focus {
 @media print { .no-print { display: none !important; } }
 
 /* ── PRES ────────────────────────────────────────────────── */
-.presentacion-overlay { position: fixed; inset: 0; background: #0f0f0f; z-index: 9000; display: flex; flex-direction: column; overflow-y: auto; }
+.presentacion-overlay { position: fixed; inset: 0; background: var(--ae-black); z-index: 9000; display: flex; flex-direction: column; overflow-y: auto; }
 .pres-topbar { display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; border-bottom: 1px solid rgba(255,255,255,0.08); flex-shrink: 0; }
 .pres-topbar-logo { display: flex; align-items: center; gap: 8px; }
 .pres-topbar-logo span { font-family: var(--font-display); font-size: 15px; color: rgba(255,255,255,0.85); font-weight: 600; }
 .pres-close { background: rgba(255,255,255,0.1); border: none; border-radius: 8px; color: rgba(255,255,255,0.7); font-size: 13px; padding: 6px 14px; cursor: pointer; font-family: var(--font-ui); }
 .pres-body { flex: 1; padding: 32px 24px; max-width: 700px; margin: 0 auto; width: 100%; }
 .pres-header { margin-bottom: 28px; }
-.pres-nombre { font-size: 26px; font-weight: 700; color: #fff; letter-spacing: -0.5px; margin-bottom: 6px; }
+.pres-nombre { font-size: 26px; font-weight: 700; color: #FFFFFF; letter-spacing: -0.5px; margin-bottom: 6px; }
 .pres-meta { font-size: 13px; color: rgba(255,255,255,0.5); font-family: var(--font-mono); }
 .pres-nota-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 32px; }
 .pres-nota-grande { font-size: 72px; font-weight: 700; font-family: var(--font-mono); line-height: 1; }
 .pres-resultado { font-size: 14px; font-weight: 600; padding: 6px 20px; border-radius: 20px; }
 .pres-pts { font-size: 12px; color: rgba(255,255,255,0.45); font-family: var(--font-mono); }
 .pres-criterios { display: flex; flex-direction: column; gap: 8px; }
-.pres-crit { display: grid; grid-template-columns: 28px 1fr auto; gap: 10px; align-items: start; padding: 10px 14px; background: rgba(255,255,255,0.05); border-radius: 10px; }
+.pres-crit { display: grid; grid-template-columns: 28px 1fr auto; gap: 10px; align-items: start; padding: 10px 14px; background: rgba(255,255,255,0.05); border-radius: var(--rad); }
 .pres-crit-num { font-size: 11px; color: rgba(255,255,255,0.35); font-family: var(--font-mono); padding-top: 2px; }
 .pres-crit-nombre { font-size: 13px; color: rgba(255,255,255,0.85); line-height: 1.4; }
 .pres-crit-nivel-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
@@ -747,8 +758,8 @@ input[type="text"]:focus, textarea:focus, select:focus {
 /* ── SWITCHES ────────────────────────────────────────────── */
 .switch { position: relative; width: 44px; height: 26px; cursor: pointer; display: inline-block; }
 .switch input { opacity: 0; width: 0; height: 0; }
-.switch-track { position: absolute; inset: 0; background: #D1D1D6; border-radius: 13px; transition: background 0.2s; }
-.switch-thumb { position: absolute; width: 22px; height: 22px; background: #fff; border-radius: 50%; top: 2px; left: 2px; transition: left 0.2s; box-shadow: 0 1px 4px rgba(0,0,0,0.25); }
+.switch-track { position: absolute; inset: 0; background: var(--ae-border); border-radius: var(--rad); transition: background 0.2s; }
+.switch-thumb { position: absolute; width: 22px; height: 22px; background: var(--bg2); border-radius: 50%; top: 2px; left: 2px; transition: left 0.2s; box-shadow: 0 1px 4px rgba(0,0,0,0.25); }
 .switch input:checked + .switch-track { background: var(--accent); }
 .switch input:checked ~ .switch-thumb { left: 20px; }
 #autoBackupToggle:checked + span { background: var(--accent); }
@@ -760,7 +771,7 @@ input[type="text"]:focus, textarea:focus, select:focus {
 code { font-family: var(--font-mono); font-size: 12px; background: var(--bg3); padding: 1px 6px; border-radius: 5px; }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
-.badge { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+.badge { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: var(--rad); }
 .score-badge { background: var(--accent-bg); color: var(--accent); padding: 4px 12px; border-radius: var(--rad); font-size: 13px; font-weight: 600; }
 .score-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); margin-right: 4px; vertical-align: middle; }
 .tag { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 8px; display: inline-flex; align-items: center; gap: 3px; }
@@ -865,7 +876,7 @@ select#inputCurso:focus, select.curso-select:focus { outline: none; border-color
 
 .field-wrap input, .field-wrap select {
   width: 100%; font-size: 14px; padding: 10px 14px;
-  border: 0.5px solid var(--border); border-radius: 10px;
+  border: 0.5px solid var(--border); border-radius: var(--rad);
   background: var(--bg2); color: var(--text);
   font-family: var(--font-ui); transition: border-color 0.15s, box-shadow 0.15s;
 }
@@ -876,7 +887,7 @@ select#inputCurso:focus, select.curso-select:focus { outline: none; border-color
 
 .field-wrap select option { background: var(--bg3); }
 
-.cam-badge.analizando { background: var(--accent); color: #fff; }
+.cam-badge.analizando { background: var(--accent); color: #FFFFFF; }
 
 .cam-actions { padding: 12px 16px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; border-top: 1px solid var(--border); }
 
@@ -976,7 +987,7 @@ select#inputCurso:focus, select.curso-select:focus { outline: none; border-color
 
 .modal-field label { font-size: 11px; color: var(--text3); display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.4px; font-family: var(--font-mono); }
 
-.modal-field input, .modal-field select { width: 100%; font-size: 13px; padding: 9px 12px; border: 1px solid rgba(60,45,30,0.22); border-radius: var(--rad); background: #fff; color: var(--text); font-family: var(--font-ui); box-shadow: inset 0 1px 3px rgba(30,20,10,0.05); }
+.modal-field input, .modal-field select { width: 100%; font-size: 13px; padding: 9px 12px; border: 1px solid rgba(60,45,30,0.22); border-radius: var(--rad); background: var(--bg2); color: var(--text); font-family: var(--font-ui); box-shadow: inset 0 1px 3px rgba(30,20,10,0.05); }
 
 .modal-field input:focus, .modal-field select:focus { outline: none; border-color: var(--accent); }
 
@@ -988,7 +999,7 @@ select#inputCurso:focus, select.curso-select:focus { outline: none; border-color
 
 .modal-criterio-name .num { font-family: var(--font-mono); color: var(--text3); font-size: 10px; }
 
-  .pres-close:hover { background: rgba(255,149,0,0.30); color: #fff; }
+  .pres-close:hover { background: rgba(255,149,0,0.30); color: #FFFFFF; }
 
   .pres-pie-badge {
     display: inline-flex; align-items: center; gap: 5px;
@@ -1071,7 +1082,7 @@ keyframes presEntrada {
 .no-entregado-badge {
   display: inline-flex; align-items: center; gap: 4px;
   font-size: 10px; font-weight: 700; padding: 2px 8px;
-  border-radius: 10px; letter-spacing: 0.3px;
+  border-radius: var(--rad); letter-spacing: 0.3px;
   background: var(--red-bg); color: var(--red);
   border: 1px solid color-mix(in srgb, var(--red) 30%, transparent);
   font-family: var(--font-mono);
@@ -1104,7 +1115,7 @@ keyframes presEntrada {
   font-size: 9px;
   font-weight: 700;
   font-family: var(--font-mono);
-  color: #fff;
+  color: #FFFFFF;
   background: var(--red);
   padding: 1px 5px;
   border-radius: 4px;
@@ -1122,7 +1133,7 @@ keyframes presEntrada {
 
 .libro-seccion::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
-.instancia-badge { font-size: 9px; font-family: var(--font-mono); font-weight: 600; padding: 1px 6px; border-radius: 10px; letter-spacing: 0.3px; background: #e8edf5; color: #3d4f7c; border: 1px solid rgba(61,79,124,0.25); }
+.instancia-badge { font-size: 9px; font-family: var(--font-mono); font-weight: 600; padding: 1px 6px; border-radius: var(--rad); letter-spacing: 0.3px; background: #e8edf5; color: #3d4f7c; border: 1px solid rgba(61,79,124,0.25); }
 
 .autocomplete-item:last-child { border-bottom: none; }
 
@@ -1202,7 +1213,7 @@ select:focus:not(:focus-visible) { outline: none; }
 
 .lista-ingreso textarea {
   width: 100%; padding: 10px 12px; border: 1px solid var(--border2);
-  border-radius: var(--rad); background: #fff; font-family: var(--font-mono);
+  border-radius: var(--rad); background: var(--bg2); font-family: var(--font-mono);
   font-size: 12px; resize: vertical; min-height: 120px; color: var(--text);
   box-shadow: inset 0 1px 3px rgba(30,20,10,0.06);
 }
@@ -1279,7 +1290,7 @@ select:focus:not(:focus-visible) { outline: none; }
 
 .pie-report-select {
   width: 100%; padding: 6px 10px; border: 1px solid var(--border2);
-  border-radius: var(--rad); background: #fff; font-family: var(--font-ui);
+  border-radius: var(--rad); background: var(--bg2); font-family: var(--font-ui);
   font-size: 12px; margin-top: 6px;
 }
 
@@ -1349,7 +1360,7 @@ select:focus:not(:focus-visible) { outline: none; }
   position: absolute; top: 10px; right: 10px;
   font-size: 9px; font-weight: 700; font-family: var(--font-mono);
   text-transform: uppercase; letter-spacing: .5px;
-  padding: 2px 7px; border-radius: 10px;
+  padding: 2px 7px; border-radius: var(--rad);
 }
 
 .riesgo-list { display: flex; flex-direction: column; gap: 6px; }
@@ -1502,7 +1513,7 @@ media (prefers-color-scheme: dark) {
 
 .est-btn.pie-toggle.active {
   background: var(--pie);
-  color: #fff;
+  color: #FFFFFF;
   border-color: var(--pie);
   font-weight: 700;
 }
@@ -2179,7 +2190,7 @@ media (prefers-color-scheme: dark) {
         <div class="reg-toolbar-left">
           <span class="reg-title" id="regTitulo">Sin registros</span>
           <div class="search-wrap">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             <input class="search-input" type="text" id="buscarRegistros" placeholder="Buscar estudiante..." oninput="renderRegistros()">
           </div>
           <select class="filter-select" id="filtroRubrica" onchange="renderRegistros()">
@@ -2218,7 +2229,7 @@ media (prefers-color-scheme: dark) {
     <div id="tab-estadisticas" style="display:none">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;">
         <div class="search-wrap">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input class="search-input" type="text" id="buscarEstadisticas" placeholder="Buscar estudiante..." oninput="renderEstadisticas()">
         </div>
         <select class="filter-select" id="statsRubrica" onchange="renderEstadisticas()" style="font-size:13px;padding:7px 12px;">
@@ -2255,7 +2266,7 @@ media (prefers-color-scheme: dark) {
     <div id="tab-progreso" style="display:none">
       <div class="prog-toolbar">
         <div class="search-wrap">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input class="search-input" type="text" id="buscarProgreso" placeholder="Buscar estudiante..." oninput="renderProgreso()">
         </div>
         <select class="filter-select" id="filtroCursoProgreso" onchange="renderProgreso()">
@@ -2276,7 +2287,7 @@ media (prefers-color-scheme: dark) {
     <div id="tab-reporte" style="display:none">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
         <div class="search-wrap">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input class="search-input" type="text" id="buscarReporte" placeholder="Buscar estudiante..." oninput="renderReporte()">
         </div>
         <select class="filter-select" id="filtroRubricaReporte" onchange="renderReporte()">
@@ -2383,7 +2394,7 @@ media (prefers-color-scheme: dark) {
           <!-- Buscador universal de estudiantes en Cursos -->
           <div style="position:relative;margin-bottom:10px;">
             <div class="search-bar" style="max-width:400px;">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               <input class="search-input" type="text" id="buscarCursos"
                 placeholder="Buscar estudiante en todos los cursos..."
                 autocomplete="off"
@@ -3065,7 +3076,10 @@ function saveRegistros() {
     _invalidarCandidatos();
     _flashAutoSave();
     _checkStorageSize();
-    setTimeout(function(){ if(typeof _updateDriveIntegrityBadge==='function') _updateDriveIntegrityBadge(); }, 150);
+    setTimeout(function(){
+      if(typeof _actualizarEstadoSync==='function') _actualizarEstadoSync();
+      else if(typeof _updateDriveIntegrityBadge==='function') _updateDriveIntegrityBadge();
+    }, 200);
   } catch(e) {
     if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
       // localStorage lleno: si Drive está conectado, guardar allá automáticamente
@@ -4787,7 +4801,7 @@ function renderEstadisticas() {
     (!bus || (r.nombre||'').toLowerCase().includes(bus))
   );
   if (!data.length) {
-    cont.innerHTML = '<div class="empty-state"> <svg style="width:40px;height:40px;opacity:0.2;margin-bottom:10px;" viewBox="0 0 48 48" fill="none"> <rect width="48" height="48" rx="11" fill="#1c1410"/> <path d="M24 7 L42 40 L6 40 Z" stroke="white" stroke-width="3.5" stroke-linejoin="round" fill="none"/> <rect x="13" y="28" width="22" height="4" rx="0.5" fill="white"/> <path d="M24 15 L38 37 L10 37 Z" fill="#1c1410"/> <line x1="23.5" y1="17" x2="17" y2="32" stroke="white" stroke-width="1.3" stroke-linecap="round"/> </svg> <div>Sin datos para mostrar.</div> <div style="font-size:12px;margin-top:4px;">Guarda evaluaciones primero</div> </div>';
+    cont.innerHTML = '<div class="empty-state"> <svg style="width:40px;height:40px;opacity:0.2;margin-bottom:10px;" viewBox="0 0 48 48" fill="none"> <rect width="48" height="48" rx="11" fill="#1c1410"/> <path d="M24 7 L42 40 L6 40 Z" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round" fill="none"/> <rect x="13" y="28" width="22" height="4" rx="0.5" fill="white"/> <path d="M24 15 L38 37 L10 37 Z" fill="#1c1410"/> <line x1="23.5" y1="17" x2="17" y2="32" stroke="white" stroke-width="1.5" stroke-linecap="round"/> </svg> <div>Sin datos para mostrar.</div> <div style="font-size:12px;margin-top:4px;">Guarda evaluaciones primero</div> </div>';
     return;
   }
   const notas   = data.map(r => r.nota||1);
@@ -4873,7 +4887,7 @@ function renderEstadisticas() {
         return x+','+y;
       }).join(' ');
       const sparkSVG = sparkNotas.length>1 ? `<svg viewBox="0 0 ${sparkW} ${sparkH}" width="${sparkW}" height="${sparkH}" style="flex-shrink:0;opacity:.7">
-        <polyline points="${sparkPts}" fill="none" stroke="${promClr}" stroke-width="1.8" stroke-linejoin="round"/>
+        <polyline points="${sparkPts}" fill="none" stroke="${promClr}" stroke-width="2" stroke-linejoin="round"/>
         <line x1="2" y1="${sparkH-2-(4-sMin)/(sMax-sMin)*(sparkH-4)}" x2="${sparkW-2}" y2="${sparkH-2-(4-sMin)/(sMax-sMin)*(sparkH-4)}" stroke="#86efac" stroke-width="0.8" stroke-dasharray="2,2"/>
       </svg>` : '';
       return `
@@ -4942,7 +4956,7 @@ function renderRubricas() {
     const div = document.createElement('div');
     div.className = 'rubrica-card' + (i===rubricaActiva?' active':'');
     div.innerHTML = `
-      <div class="rubrica-check"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+      <div class="rubrica-check"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>
       <div class="rubrica-card-name">${r.nombre}</div>
       <div class="rubrica-card-meta">${r.criterios.length} criterios · máx ${r.criterios.length*3} pts</div>
       <div style="display:flex;gap:6px;margin-top:10px;">
@@ -6825,7 +6839,7 @@ function renderProgreso() {
     .sort(function(a,b){ return a.nombre.localeCompare(b.nombre,'es',{sensitivity:'base'}); });
 
   if (!alumnos.length) {
-    cont.innerHTML = '<div class="empty-state"><svg style="width:40px;height:40px;opacity:0.2;margin-bottom:10px;" viewBox="0 0 48 48" fill="none"><rect width="48" height="48" rx="11" fill="#1c1410"/><path d="M24 7 L42 40 L6 40 Z" stroke="white" stroke-width="3.5" stroke-linejoin="round" fill="none"/><rect x="13" y="28" width="22" height="4" rx="0.5" fill="white"/><path d="M24 15 L38 37 L10 37 Z" fill="#1c1410"/><line x1="23.5" y1="17" x2="17" y2="32" stroke="white" stroke-width="1.3" stroke-linecap="round"/></svg><div>Sin datos de progreso.</div><div style="font-size:12px;margin-top:4px;">Guarda al menos una evaluación para ver el progreso</div></div>';
+    cont.innerHTML = '<div class="empty-state"><svg style="width:40px;height:40px;opacity:0.2;margin-bottom:10px;" viewBox="0 0 48 48" fill="none"><rect width="48" height="48" rx="11" fill="#1c1410"/><path d="M24 7 L42 40 L6 40 Z" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round" fill="none"/><rect x="13" y="28" width="22" height="4" rx="0.5" fill="white"/><path d="M24 15 L38 37 L10 37 Z" fill="#1c1410"/><line x1="23.5" y1="17" x2="17" y2="32" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg><div>Sin datos de progreso.</div><div style="font-size:12px;margin-top:4px;">Guarda al menos una evaluación para ver el progreso</div></div>';
     return;
   }
 
@@ -7519,7 +7533,7 @@ function renderReporte() {
   );
 
   if (!data.length) {
-    cont.innerHTML = '<div class="empty-state"> <svg style="width:40px;height:40px;opacity:0.2;margin-bottom:10px;" viewBox="0 0 48 48" fill="none"> <rect width="48" height="48" rx="11" fill="#1c1410"/> <path d="M24 7 L42 40 L6 40 Z" stroke="white" stroke-width="3.5" stroke-linejoin="round" fill="none"/> <rect x="13" y="28" width="22" height="4" rx="0.5" fill="white"/> <path d="M24 15 L38 37 L10 37 Z" fill="#1c1410"/> <line x1="23.5" y1="17" x2="17" y2="32" stroke="white" stroke-width="1.3" stroke-linecap="round"/> </svg> <div>Sin datos para mostrar.</div> <div style="font-size:12px;margin-top:4px;">Selecciona una rúbrica o curso para ver los reportes</div> </div>';
+    cont.innerHTML = '<div class="empty-state"> <svg style="width:40px;height:40px;opacity:0.2;margin-bottom:10px;" viewBox="0 0 48 48" fill="none"> <rect width="48" height="48" rx="11" fill="#1c1410"/> <path d="M24 7 L42 40 L6 40 Z" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round" fill="none"/> <rect x="13" y="28" width="22" height="4" rx="0.5" fill="white"/> <path d="M24 15 L38 37 L10 37 Z" fill="#1c1410"/> <line x1="23.5" y1="17" x2="17" y2="32" stroke="white" stroke-width="1.5" stroke-linecap="round"/> </svg> <div>Sin datos para mostrar.</div> <div style="font-size:12px;margin-top:4px;">Selecciona una rúbrica o curso para ver los reportes</div> </div>';
     return;
   }
 
@@ -7938,6 +7952,19 @@ function actualizarCtxResumen() {
   setTimeout(function() { deduplicarYFusionarTodos(); }, 100);
   // Verificar notas pendientes offline
   setTimeout(function() { if(typeof _checkPendingQueue==='function') _checkPendingQueue(); }, 500);
+  // FIX SYNC: verificar si el cierre anterior dejó datos sin subir
+  setTimeout(function() {
+    var pending = localStorage.getItem('av_sync_pending');
+    if (pending) {
+      try {
+        var p = JSON.parse(pending);
+        // Mostrar aviso al profesor
+        toast('⚠ La sesión anterior se cerró con ' + p.count + ' registros sin sincronizar. Conéctate a Drive para subirlos.', 'err', 8000);
+        console.info('[ArtEval] Sync pendiente del cierre anterior:', p);
+      } catch(e) {}
+    }
+  }, 1200);
+  // Limpiar sync_pending cuando la sync sea exitosa (se hace en syncToDrive)
   actualizarConteo();
   renderCriterios();
   actualizarRubricaSelect();
@@ -7952,6 +7979,65 @@ function actualizarCtxResumen() {
 
 // ── TOAST ──
 let _toastTimer = null;
+
+
+// ── Guardia de cierre: sincronizar antes de cerrar la pestaña ────────────
+// Se dispara con beforeunload (desktop) y pagehide (iOS/iPad)
+
+// ── Estado de sync en tiempo real ────────────────────────────────────────
+function _actualizarEstadoSync() {
+  var localCount = registros ? registros.length : 0;
+  var driveCount = parseInt(localStorage.getItem('av_drive_last_count') || '0', 10);
+  var lastSync   = localStorage.getItem('av_last_drive_sync');
+  var tieneToken = typeof _driveToken !== 'undefined' && _driveToken &&
+                   Date.now() < (typeof _driveTokenExp !== 'undefined' ? _driveTokenExp : 0);
+
+  // Badge de integridad
+  if (typeof _updateDriveIntegrityBadge === 'function') _updateDriveIntegrityBadge();
+
+  // Si hay pendientes y token activo, disparar sync
+  if (localCount > driveCount && driveCount > 0 && tieneToken) {
+    console.info('[ArtEval] Estado: ' + localCount + ' local vs ' + driveCount + ' drive → sync automática');
+    if (typeof syncToDrive === 'function') {
+      syncToDrive().catch(function(e){ console.warn('[ArtEval] Auto-sync silencioso falló:', e.message); });
+    }
+  }
+}
+
+function _guardiaCierre() {
+  // Solo actuar si hay datos locales que Drive no tiene
+  var localCount = registros ? registros.length : 0;
+  var driveCount = parseInt(localStorage.getItem('av_drive_last_count') || '0', 10);
+  var tieneToken = typeof _driveToken !== 'undefined' && _driveToken &&
+                   Date.now() < (typeof _driveTokenExp !== 'undefined' ? _driveTokenExp : 0);
+
+  // Si hay diferencia Y hay token activo → intentar sync síncrona (best-effort)
+  if (localCount > driveCount && tieneToken) {
+    // Marcar que hay datos pendientes de subir
+    try {
+      localStorage.setItem('av_sync_pending', JSON.stringify({
+        count:     localCount,
+        timestamp: new Date().toISOString(),
+        reason:    'cierre_antes_sync'
+      }));
+    } catch(e) {}
+    // Intentar sync en background (el browser puede no esperar a que termine)
+    // pero al menos la cola de pendientes queda guardada
+    if (typeof syncToDrive === 'function') {
+      syncToDrive().catch(function(){});
+    }
+  }
+}
+
+// Registrar los eventos de cierre
+window.addEventListener('beforeunload', _guardiaCierre);
+window.addEventListener('pagehide',     _guardiaCierre);  // iOS Safari
+// visibilitychange: cuando el profesor cambia de app en iPad
+document.addEventListener('visibilitychange', function() {
+  if (document.visibilityState === 'hidden') {
+    _guardiaCierre();
+  }
+});
 
 // ── Modal Rúbrica Táctil (iPad) ──────────────────────────────────────────
 function abrirRubricaTactil(nombreAlumno, cursoAlumno, esPIE) {
@@ -10686,6 +10772,7 @@ function _onAccessToken(tokenResponse) {
   if (typeof _checkPendingQueue === 'function') _checkPendingQueue();
   // PASO 2: sync inteligente — compara local vs Drive y resuelve diferencias
   // Delay de 1s para que la UI se estabilice primero
+  // Reducir delay a 300ms — más rápido al reconectar
   setTimeout(function() {
     _smartSyncOnConnect().catch(function(e) {
       console.warn('[ArtEval] SmartSync falló:', e.message);
@@ -10693,7 +10780,7 @@ function _onAccessToken(tokenResponse) {
       _checkDriveSyncInfo();
       if (typeof _updateDriveIntegrityBadge === 'function') _updateDriveIntegrityBadge();
     });
-  }, 1000);
+  }, 300);
   // PASO 3: verificar espacio local
   _autoSyncIfNeeded();
 }
@@ -11068,7 +11155,8 @@ async function syncToDrive() {
     var _syncTs = new Date().toISOString();
     localStorage.setItem('av_last_drive_sync', _syncTs);
     localStorage.setItem('av_drive_last_count', String(snapshot.registros.length));
-    localStorage.setItem('av_drive_sync_ts', _syncTs); // timestamp para comparación
+    localStorage.setItem('av_drive_sync_ts', _syncTs);
+    localStorage.removeItem('av_sync_pending'); // FIX SYNC: cierre limpio confirmado
     _updateCloudUI('synced');
     _checkDriveSyncInfo();
     if (typeof _updateDriveIntegrityBadge === 'function') _updateDriveIntegrityBadge();
