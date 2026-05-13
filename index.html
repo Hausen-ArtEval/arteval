@@ -6473,113 +6473,100 @@ function renderAlexiaPlantillasList() {
 
 // ── Modal de selección antes de exportar ───────────────────────────────────────
 function abrirExportAlexia(cursoDirecto) {
-  // Si se pasa un curso directo (desde el panel de Registros),
-  // generar y mostrar el diagnóstico de ese curso inmediatamente
   var cursoTarget = cursoDirecto || cursoSeleccionado || null;
-
-  var cursosDisp = cursosUnicos();
-  if (!cursosDisp.length) { toast('No hay evaluaciones guardadas', 'err', 3000); return; }
 
   if (typeof XLSX === 'undefined') {
     toast('❌ Librería Excel no cargada. Recarga la página.', 'err', 4000); return;
   }
+  var cursosDisp = cursosUnicos();
+  if (!cursosDisp.length) { toast('No hay evaluaciones guardadas', 'err', 3000); return; }
 
-  // ── Modo directo: curso ya seleccionado → ir directo al diagnóstico ──
+  // ── CASO 1: hay curso seleccionado ──────────────────────────────────────
   if (cursoTarget) {
     var keyT = alexiaNormCurso(cursoTarget);
     if (alexiaDatos[keyT]) {
-      // Tiene plantilla → exportar inmediatamente sin modal
+      // Tiene plantilla → ir DIRECTO al diagnóstico y descarga, sin modal
       _exportAlexiaDiagnostico([cursoTarget]);
       return;
     }
-    // No tiene plantilla → mostrar aviso específico antes del modal
-    toast('⚠ ' + cursoTarget + ' no tiene plantilla Alexia. Sube el .xls desde Configurar → Plantillas Alexia', 'err', 7000);
-    // Continúa al modal de selección con el curso resaltado
+    // Tiene curso pero SIN plantilla → modal pequeño solo para ese curso
+    var html = '<div class="modal-title">📥 Exportar ' + cursoTarget + ' para Alexia</div>'
+      + '<div style="background:rgba(255,149,0,0.10);border:1px solid rgba(255,149,0,0.3);'
+      + 'border-radius:12px;padding:14px 16px;margin-bottom:14px;">'
+      + '<div style="font-size:14px;font-weight:700;color:var(--amber);margin-bottom:6px;">⚠️ Sin plantilla Alexia para ' + cursoTarget + '</div>'
+      + '<div style="font-size:13px;color:var(--text2);line-height:1.5;">'
+      + 'Para exportar en formato Alexia necesitas subir el archivo <strong>.xls vacío</strong> '
+      + 'que descargaste desde Alexia para este curso.<br><br>'
+      + 'Ve a <strong>Configurar → Plantillas Alexia</strong> y sube el archivo.</div>'
+      + '</div>'
+      + '<div style="font-size:12px;color:var(--text3);margin-bottom:10px;">¿O prefieres exportar otro curso?</div>'
+      + '<div style="display:flex;flex-direction:column;gap:4px;max-height:220px;overflow-y:auto;" id="alexiaCursosCheck">';
+
+    cursosDisp.forEach(function(c) {
+      var key = alexiaNormCurso(c);
+      var p   = alexiaDatos[key];
+      if (!p) return; // solo mostrar los que tienen plantilla
+      var n = registros.filter(function(r){ return alexiaNormCurso(r.curso||'') === key; }).length;
+      var id = 'achk_' + key.replace(/[^a-z0-9]/gi,'_');
+      html += '<label style="display:flex;align-items:center;gap:10px;padding:8px 12px;'
+        + 'background:var(--bg3);border:1px solid var(--border);border-radius:var(--rad);cursor:pointer;">'
+        + '<input type="checkbox" id="' + id + '" data-curso="' + c + '">'
+        + '<span style="flex:1;font-size:13px;font-weight:500;">' + c + '</span>'
+        + '<span style="font-size:11px;color:var(--green);font-family:var(--font-mono);">' + n + ' notas</span>'
+        + '</label>';
+    });
+
+    html += '</div>'
+      + '<div class="modal-footer">'
+      + '<button class="btn" onclick="cerrarModal()">Cancelar</button>'
+      + '<button class="btn btn-primary" onclick="confirmarExportAlexia()">Exportar seleccionados →</button>'
+      + '</div>';
+    abrirModal(html);
+    return;
   }
 
-  // ── Modo selección: mostrar todos los cursos disponibles ──
+  // ── CASO 2: sin curso seleccionado → modal de selección múltiple ────────
   var cursosInfo = cursosDisp.map(function(c) {
     var key = alexiaNormCurso(c);
     var p   = alexiaDatos[key];
-    return { curso: c, key: key, p: p || null };
+    var n   = registros.filter(function(r){ return alexiaNormCurso(r.curso||'') === key; }).length;
+    return { curso: c, key: key, p: p||null, n: n };
   });
-  var sinPlantilla = cursosInfo.filter(function(ci) { return !ci.p; });
+  var conPlantilla  = cursosInfo.filter(function(ci){ return !!ci.p; });
+  var sinPlantilla  = cursosInfo.filter(function(ci){ return !ci.p; });
 
-  var html = '<div class="modal-title">📥 Exportar notas para Alexia</div>';
-
-  // Banner de curso activo
-  if (cursoTarget) {
-    var keyTarget = alexiaNormCurso(cursoTarget);
-    var tienePlantilla = !!alexiaDatos[keyTarget];
-    html += '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;'
-      + 'background:' + (tienePlantilla ? 'rgba(52,199,89,0.12)' : 'rgba(255,149,0,0.10)') + ';'
-      + 'border:1px solid ' + (tienePlantilla ? 'rgba(52,199,89,0.3)' : 'rgba(255,149,0,0.3)') + ';'
-      + 'border-radius:10px;margin-bottom:12px;">'
-      + '<div style="font-size:22px;">' + (tienePlantilla ? '✅' : '⚠️') + '</div>'
-      + '<div>'
-      + '<div style="font-size:13px;font-weight:700;color:var(--text);">Curso activo: ' + cursoTarget + '</div>'
-      + '<div style="font-size:12px;color:var(--text3);margin-top:2px;">'
-      + (tienePlantilla
-          ? 'Plantilla Alexia cargada — puedes exportar directamente'
-          : 'Sin plantilla Alexia. Sube el .xls vacío desde Configurar → Plantillas Alexia')
-      + '</div></div>'
-      + (tienePlantilla
-          ? '<button class="btn btn-primary" '
-            + 'data-curso="' + cursoTarget + '" '
-            + 'onclick="cerrarModal();_exportAlexiaDiagnostico([this.dataset.curso])" '
-            + 'style="margin-left:auto;background:var(--green);border-color:var(--green);white-space:nowrap;">'
-            + '⬇ Exportar ' + cursoTarget + '</button>'
-          : '')
-      + '</div>';
-  }
-
-  html += '<div style="font-size:12px;color:var(--text2);margin-bottom:8px;">'
-    + (cursoTarget ? 'O selecciona otro curso:' : 'Selecciona los cursos a exportar:')
-    + '</div>'
+  var html = '<div class="modal-title">📥 Exportar notas para Alexia</div>'
+    + '<div style="font-size:12px;color:var(--text2);margin-bottom:10px;">Selecciona los cursos a exportar:</div>'
     + '<div style="display:flex;flex-direction:column;gap:5px;margin-bottom:14px;" id="alexiaCursosCheck">';
 
   cursosInfo.forEach(function(ci) {
-    var id    = 'achk_' + ci.key.replace(/[^a-z0-9]/gi, '_');
-    var esCursoActivo = ci.curso === cursoTarget;
-    var numNotas = registros.filter(function(r){
-      return alexiaNormCurso(r.curso||'') === ci.key;
-    }).length;
+    var id = 'achk_' + ci.key.replace(/[^a-z0-9]/gi,'_');
     var badge = ci.p
-      ? numNotas + ' notas · ' + (ci.p.colsCON||[]).length + ' columnas en plantilla'
+      ? ci.n + ' notas · ' + (ci.p.colsCON||[]).length + ' columnas en plantilla'
       : '⚠️ sin plantilla Alexia';
-    var borderColor = esCursoActivo
-      ? 'var(--accent)' : ci.p ? 'var(--border)' : 'rgba(255,149,0,0.3)';
-    var bgColor = esCursoActivo ? 'var(--accent-bg)' : 'var(--bg3)';
     html += '<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;'
-      + 'background:' + bgColor + ';border:1.5px solid ' + borderColor + ';'
+      + 'background:var(--bg3);border:1.5px solid ' + (ci.p ? 'var(--border)' : 'rgba(255,149,0,0.3)') + ';'
       + 'border-radius:var(--rad);cursor:pointer;font-size:13px;">'
       + '<input type="checkbox" id="' + id + '" '
-      + ((ci.p && (esCursoActivo || !cursoTarget)) ? 'checked' : '') + ' data-curso="' + ci.curso + '">'
-      + '<div style="flex:1;">'
-      + '<span style="font-weight:' + (esCursoActivo ? '700' : '500') + ';color:var(--text);">'
-      + ci.curso + (esCursoActivo ? ' 📌' : '') + '</span>'
-      + '</div>'
-      + '<span style="font-size:11px;color:' + (ci.p ? 'var(--green)' : 'var(--amber)') + ';'
-      + 'font-family:var(--font-mono);">' + badge + '</span>'
+      + (ci.p ? 'checked' : 'disabled') + ' data-curso="' + ci.curso + '">'
+      + '<span style="flex:1;font-weight:500;color:' + (ci.p ? 'var(--text)' : 'var(--text3)') + ';">' + ci.curso + '</span>'
+      + '<span style="font-size:11px;color:' + (ci.p ? 'var(--green)' : 'var(--amber)') + ';font-family:var(--font-mono);">' + badge + '</span>'
       + '</label>';
   });
 
   html += '</div>';
-
-  if (sinPlantilla.length && !cursoTarget) {
-    html += '<div style="background:rgba(255,149,0,0.08);border:1px solid rgba(255,149,0,0.25);'
-      + 'border-radius:8px;padding:10px;margin-bottom:12px;font-size:12px;color:var(--amber);">'
-      + '⚠️ <strong>' + sinPlantilla.map(function(c){return c.curso;}).join(', ') + '</strong>'
-      + ' no tienen plantilla. Ve a <em>Configurar → Plantillas Alexia</em> y sube el .xls vacío.</div>';
+  if (sinPlantilla.length) {
+    html += '<div style="font-size:11px;color:var(--amber);margin-bottom:10px;">'
+      + '⚠️ ' + sinPlantilla.map(function(c){return c.curso;}).join(', ')
+      + ' sin plantilla — sube el .xls desde Configurar → Plantillas Alexia</div>';
   }
-
   html += '<div class="modal-footer">'
     + '<button class="btn" onclick="cerrarModal()">Cancelar</button>'
     + '<button class="btn btn-primary" onclick="confirmarExportAlexia()">Ver diagnóstico y exportar →</button>'
     + '</div>';
-
   abrirModal(html);
 }
+
 
 // ── Generar diagnóstico y exportar para los cursos seleccionados ──────────
 function _exportAlexiaDiagnostico(cursos) {
