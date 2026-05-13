@@ -6166,7 +6166,8 @@ function alexiaMatchNombre(notasMap, apellidos, nombrePila) {
 function alexiaGenerarXLS(curso) {
   var key = alexiaNormCurso(curso);
   var p   = alexiaDatos[key];
-  if (!p) return null;
+  if (!p) { console.warn('[Alexia] No hay datos para curso:', curso); return null; }
+  try {
 
   var totalCols = p.totalCols || 12;
 
@@ -6187,6 +6188,18 @@ function alexiaGenerarXLS(curso) {
   var notasMapNombre = {};
   var notasMapGuid   = {};
   var notasOrden     = {}; // { normNombre → [rb1, rb2, ...] en orden }
+
+  // FIX: calcular orden de instancias DENTRO de la función
+  var instanciasOrden = [];
+  regsCurso.forEach(function(r) {
+    var inst = r.instancia || 'Evaluación 1';
+    if (instanciasOrden.indexOf(inst) === -1) instanciasOrden.push(inst);
+  });
+  instanciasOrden.sort(function(a, b) {
+    var na = parseInt((a.match(/\d+/) || ['99'])[0]);
+    var nb = parseInt((b.match(/\d+/) || ['99'])[0]);
+    return na - nb;
+  });
 
   regsCurso.forEach(function(r) {
     var nota = r.nota;
@@ -6322,21 +6335,31 @@ function alexiaGenerarXLS(curso) {
 
       // FIX: mapeo POSICIONAL — la columna CON[i] recibe la instancia i
       // colIdx = posición de esta columna dentro de colsCON (0, 1, 2...)
-      var colIdx = colsCON.indexOf(col);
-      var instKey = instanciasOrden[colIdx]; // 'Evaluación 1', 'Evaluación 2', etc.
+      // FIX: mapeo posicional CON[i] → Evaluación i
+      var colIdx  = colsCON.indexOf(col);
+      var instKey = (instanciasOrden && instanciasOrden[colIdx]) || null;
 
       var nota = null;
-      if (instKey !== undefined && notasEst[instKey] !== undefined && notasEst[instKey] !== null) {
-        // Match posicional exacto
-        nota = notasEst[instKey];
-      } else {
-        // Fallback: buscar por nombre de rúbrica (compatibilidad con registros antiguos)
+      // 1° Match posicional: instancia i → columna CON[i]
+      if (instKey && notasEst[instKey] !== undefined && notasEst[instKey] !== null
+          && !isNaN(Number(notasEst[instKey]))) {
+        nota = Number(notasEst[instKey]);
+      }
+      // 2° Fallback por nombre de rúbrica (registros sin instancia definida)
+      if (nota === null) {
         var keyNombre = Object.keys(notasEst).find(function(rb) {
           return alexiaNorm(rb) === normColAlexia;
         });
         if (keyNombre !== undefined && notasEst[keyNombre] !== null &&
             notasEst[keyNombre] !== undefined && !isNaN(Number(notasEst[keyNombre]))) {
-          nota = notasEst[keyNombre];
+          nota = Number(notasEst[keyNombre]);
+        }
+      }
+      // 3° Fallback posicional por índice en las claves del mapa
+      if (nota === null) {
+        var claves = Object.keys(notasEst);
+        if (claves[colIdx] !== undefined && !isNaN(Number(notasEst[claves[colIdx]]))) {
+          nota = Number(notasEst[claves[colIdx]]);
         }
       }
 
@@ -6364,6 +6387,11 @@ function alexiaGenerarXLS(curso) {
   }
 
   return { wsData: rows, matchLog: matchLog, key: key, curso: curso };
+  } catch(err) {
+    console.error('[Alexia] Error generando XLS para', curso, ':', err.message);
+    toast('❌ Error al generar ' + curso + ': ' + err.message, 'err', 6000);
+    return null;
+  }
 }
 
 // Variante de alexiaMatchNombre que devuelve la CLAVE del mapa (no el valor)
@@ -6662,13 +6690,13 @@ function confirmarExportAlexia() {
 
 function alexiaDescargarResultados() {
   var resultados = window._alexiaResultadosPendientes || [];
-  if (!resultados.length) { toast('⚠️ No hay resultados para descargar', 'err', 3000); cerrarModal(); return; }
-
-  // Guard: verificar que la librería XLSX esté cargada (falla sin internet al inicio)
+  if (!resultados.length) {
+    toast('⚠️ No hay resultados para descargar', 'err', 3000);
+    cerrarModal(); return;
+  }
   if (typeof XLSX === 'undefined') {
-    toast('❌ La librería Excel no está cargada. Verifica tu conexión a internet y recarga la página.', 'err', 7000);
-    cerrarModal();
-    return;
+    toast('❌ Librería Excel no cargada. Verifica conexión y recarga.', 'err', 7000);
+    cerrarModal(); return;
   }
 
   var generados = 0;
@@ -6678,27 +6706,51 @@ function alexiaDescargarResultados() {
         toast('⚠️ ' + (item.curso || 'Curso') + ': sin datos para exportar', 'err', 4000);
         return;
       }
+
       var wb = XLSX.utils.book_new();
       var ws = XLSX.utils.aoa_to_sheet(item.res.wsData);
       XLSX.utils.book_append_sheet(wb, ws, 'Hoja1');
-      // Nombre de archivo: usar el nombre original del curso (con °) no el key
-      var nombreArchivo = 'Alexia_' + (item.res.curso || item.res.key).replace(/[^\wÀ-ÿ°]/g, '') + '.xls';
-      XLSX.writeFile(wb, nombreArchivo);
+      var nombreArchivo = 'Alexia_' + (item.res.curso || item.res.key || 'curso').replace(/[^a-zA-Z0-9_\-]/g, '_') + '.xls';
+
+      // FIX: usar XLSX.write() + Blob para .xls en browser
+      // type:'binary' solo aplica a write(), no a writeFile()
+      var wbout = XLSX.write(wb, { bookType: 'biff8', type: 'binary' });
+
+      // Convertir string binario a ArrayBuffer
+      var buf = new ArrayBuffer(wbout.length);
+      var view = new Uint8Array(buf);
+      for (var i = 0; i < wbout.length; i++) {
+        view[i] = wbout.charCodeAt(i) & 0xFF;
+      }
+
+      // Crear Blob y descargar
+      var blob = new Blob([buf], { type: 'application/vnd.ms-excel' });
+      var url  = URL.createObjectURL(blob);
+      var a    = document.createElement('a');
+      a.href        = url;
+      a.download    = nombreArchivo;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function() {
+        URL.revokeObjectURL(url);
+        a.remove();
+      }, 1000);
+
       generados++;
     } catch(e) {
-      toast('❌ Error al escribir ' + (item.curso || '') + ': ' + e.message, 'err', 5000);
+      console.error('[Alexia] Error al escribir XLS:', e);
+      toast('❌ Error al generar ' + (item.curso || '') + ': ' + e.message, 'err', 6000);
     }
   });
+
   cerrarModal();
   window._alexiaResultadosPendientes = null;
-  if (generados > 0)
-    toast('✅ ' + generados + ' archivo' + (generados !== 1 ? 's' : '') + ' descargado' + (generados !== 1 ? 's' : '') + ' — listos para subir a Alexia', 'ok', 4000);
+  if (generados > 0) {
+    toast('✅ ' + generados + ' archivo' + (generados !== 1 ? 's descargados' : ' descargado') + ' — listos para subir a Alexia', 'ok', 5000);
+  }
 }
 
-
-// ═══════════════════════════════════════════════════════
-//  MODO PRESENTACIÓN
-// ═══════════════════════════════════════════════════════
 function modoPresentacion(idx) {
   const r = registros[idx]; if (!r) return;
 
