@@ -4259,7 +4259,7 @@ function renderRegistros() {
     if (btnExp) btnExp.style.display = 'none';
     if (btnLim) btnLim.style.display = 'none';
     const _btnAlexia = document.getElementById('btnExportAlexia');
-    if (_btnAlexia) _btnAlexia.style.display = 'none';
+    if (_btnAlexia) { _btnAlexia.style.display = 'none'; _btnAlexia.textContent = '📥 Alexia XLS'; }
     const _btnUniv = document.getElementById('btnExportUniversal');
     if (_btnUniv) _btnUniv.style.display = 'none';
     const _btnDupsH = document.getElementById('btnLimpiarDups');
@@ -4275,7 +4275,12 @@ function renderRegistros() {
   if (btnExp) btnExp.style.display = 'inline-block';
   if (btnLim) btnLim.style.display = 'inline-block';
   const _btnAlexia2 = document.getElementById('btnExportAlexia');
-  if (_btnAlexia2) _btnAlexia2.style.display = 'inline-block';
+  if (_btnAlexia2) {
+    _btnAlexia2.style.display = 'inline-block';
+    // Mostrar el nombre del curso en el botón para feedback inmediato
+    _btnAlexia2.textContent = '📥 Alexia — ' + curso;
+    _btnAlexia2.title = 'Exportar planilla Alexia para ' + curso;
+  }
   const _btnUniversal = document.getElementById('btnExportUniversal');
   if (_btnUniversal) _btnUniversal.style.display = 'inline-block';
   const _btnDups = document.getElementById('btnLimpiarDups');
@@ -6187,10 +6192,11 @@ function alexiaGenerarXLS(curso) {
     var nota = r.nota;
     if (r.noEntregado) return;
     if (nota === null || nota === undefined || nota === '' || isNaN(Number(nota))) return;
-    var rb   = r.rubricaNombre || 'Evaluación';
+    // FIX: usar instancia como clave (no rubricaNombre) para mapeo posicional
+    var rb   = r.instancia || r.rubricaNombre || 'Evaluación 1';
     var norm = alexiaNorm(r.nombre || '');
 
-    // Por nombre
+    // Por nombre — clave = instancia
     if (!notasMapNombre[norm]) { notasMapNombre[norm] = {}; notasOrden[norm] = []; }
     if (notasMapNombre[norm][rb] === undefined) notasOrden[norm].push(rb); // preservar orden
     notasMapNombre[norm][rb] = Number(nota);
@@ -6206,7 +6212,7 @@ function alexiaGenerarXLS(curso) {
     }
     if (guid) {
       if (!notasMapGuid[guid]) notasMapGuid[guid] = {};
-      notasMapGuid[guid][rb] = Number(nota);
+      notasMapGuid[guid][rb] = Number(nota); // rb = instancia
     }
   });
 
@@ -6314,19 +6320,32 @@ function alexiaGenerarXLS(curso) {
     colsCON.forEach(function(col) {
       var normColAlexia = alexiaNorm(col.nombre);
 
-      // Buscar en las notas del alumno la que corresponde a esta columna
-      var keyNombre = Object.keys(notasEst).find(function(rb) {
-        return alexiaNorm(rb) === normColAlexia;
-      });
+      // FIX: mapeo POSICIONAL — la columna CON[i] recibe la instancia i
+      // colIdx = posición de esta columna dentro de colsCON (0, 1, 2...)
+      var colIdx = colsCON.indexOf(col);
+      var instKey = instanciasOrden[colIdx]; // 'Evaluación 1', 'Evaluación 2', etc.
 
-      if (keyNombre !== undefined && notasEst[keyNombre] !== null &&
-          notasEst[keyNombre] !== undefined && !isNaN(Number(notasEst[keyNombre]))) {
-        var nota = notasEst[keyNombre];
-        fila[col.idx] = nota;
-        notasEscritas.push(nota);
-        logEntry.notas[col.nombre] = nota;
+      var nota = null;
+      if (instKey !== undefined && notasEst[instKey] !== undefined && notasEst[instKey] !== null) {
+        // Match posicional exacto
+        nota = notasEst[instKey];
+      } else {
+        // Fallback: buscar por nombre de rúbrica (compatibilidad con registros antiguos)
+        var keyNombre = Object.keys(notasEst).find(function(rb) {
+          return alexiaNorm(rb) === normColAlexia;
+        });
+        if (keyNombre !== undefined && notasEst[keyNombre] !== null &&
+            notasEst[keyNombre] !== undefined && !isNaN(Number(notasEst[keyNombre]))) {
+          nota = notasEst[keyNombre];
+        }
       }
-      // Si no hay coincidencia por nombre → celda vacía (Alexia mostrará "—")
+
+      if (nota !== null && nota !== undefined && !isNaN(Number(nota))) {
+        fila[col.idx] = Number(nota);
+        notasEscritas.push(Number(nota));
+        logEntry.notas[col.nombre] = Number(nota);
+      }
+      // Si no hay nota → celda vacía (Alexia mostrará "—")
     });
 
     // Nota Final
@@ -6438,9 +6457,16 @@ function abrirExportAlexia(cursoDirecto) {
   }
 
   // ── Modo directo: curso ya seleccionado → ir directo al diagnóstico ──
-  if (cursoTarget && alexiaDatos[alexiaNormCurso(cursoTarget)]) {
-    _exportAlexiaDiagnostico([cursoTarget]);
-    return;
+  if (cursoTarget) {
+    var keyT = alexiaNormCurso(cursoTarget);
+    if (alexiaDatos[keyT]) {
+      // Tiene plantilla → exportar inmediatamente sin modal
+      _exportAlexiaDiagnostico([cursoTarget]);
+      return;
+    }
+    // No tiene plantilla → mostrar aviso específico antes del modal
+    toast('⚠ ' + cursoTarget + ' no tiene plantilla Alexia. Sube el .xls desde Configurar → Plantillas Alexia', 'err', 7000);
+    // Continúa al modal de selección con el curso resaltado
   }
 
   // ── Modo selección: mostrar todos los cursos disponibles ──
