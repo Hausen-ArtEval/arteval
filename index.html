@@ -1578,6 +1578,43 @@ media (prefers-color-scheme: dark) {
 .rt-nivel-btn.sel-M{background:rgba(255,159,10,0.12);color:#b07800;border-color:rgba(255,159,10,0.4);font-weight:700;}
 .rt-nivel-btn.sel-N{background:rgba(255,59,48,0.10);color:var(--red);border-color:rgba(255,59,48,0.35);font-weight:700;}
 .rubrica-tactil-footer{position:sticky;bottom:0;background:var(--bg2);border-top:0.5px solid var(--border);padding:14px 20px;display:flex;gap:10px;align-items:center;}
+
+/* ── Dashboard: Alumnos Críticos ─────────────────────────────────────── */
+.dash-alerta-curso {
+  margin-bottom: 14px;
+}
+.dash-alerta-curso-nombre {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.5px; color: var(--text3);
+  padding: 0 2px 6px; border-bottom: 1px solid var(--border);
+  margin-bottom: 6px;
+}
+.dash-alerta-alumnos {
+  display: flex; flex-direction: column; gap: 4px;
+}
+.dash-alerta-alumno {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 10px; border-radius: var(--rad);
+  background: var(--bg3); cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.15s;
+  gap: 8px;
+}
+.dash-alerta-alumno:hover {
+  background: var(--red-bg);
+  border-color: rgba(255,59,48,0.2);
+}
+.dash-alerta-nombre {
+  font-size: 13px; font-weight: 600; color: var(--text);
+  flex: 1; min-width: 0; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap;
+  display: flex; align-items: center; gap: 4px;
+}
+.dash-alerta-nota {
+  font-size: 14px; font-weight: 800;
+  font-family: var(--font-mono);
+  flex-shrink: 0; letter-spacing: -0.5px;
+}
 </style>
 
 <script>
@@ -1903,9 +1940,17 @@ media (prefers-color-scheme: dark) {
       </div>
 
       <!-- SEMÁFORO ALERTA CURSOS -->
-      <div id="dashAlertaWrap" style="display:none;margin-bottom:16px;padding:12px 16px;background:var(--red-bg);border:1px solid rgba(176,40,40,.2);border-radius:var(--rad-lg);">
-        <div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:8px;">⚠️ Cursos con pendientes críticos</div>
-        <div id="dashAlertaCursos" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+      <div id="dashAlertaWrap" style="display:none;margin-bottom:16px;padding:14px 16px;background:var(--red-bg);border:1px solid rgba(255,59,48,0.18);border-radius:var(--rad-lg);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div id="dashAlertaTitulo" style="font-size:13px;font-weight:700;color:var(--red);">Alumnos con promedio crítico (&lt; 4.0)</div>
+          </div>
+          <div style="font-size:11px;color:var(--text3);cursor:pointer;" onclick="this.closest('#dashAlertaWrap').querySelector('.dash-alerta-body').style.display=this.closest('#dashAlertaWrap').querySelector('.dash-alerta-body').style.display==='none'?'block':'none'">mostrar/ocultar</div>
+        </div>
+        <div class="dash-alerta-body">
+          <div id="dashAlertaCursos"></div>
+        </div>
       </div>
 
       <!-- GRID DE CURSOS -->
@@ -6606,22 +6651,105 @@ function _renderDashAlertas(instFiltro) {
   const cont = document.getElementById('dashAlertaCursos');
   if (!wrap || !cont) return;
 
-  const criticos = TODOS_LOS_CURSOS.filter(function(curso) {
-    const nomina = listaCursos[curso] || [];
-    if (!nomina.length) return false;
-    const regs = registros.filter(r => (r.curso||'')===curso && (!instFiltro || (r.instancia||'Evaluación 1')===instFiltro));
-    const evaluados = new Set(regs.map(r=>(r.nombre||'').trim().toUpperCase())).size;
-    const pct = Math.round(evaluados/nomina.length*100);
-    return nomina.length > 0 && pct < 40 && regs.length > 0;
+  // Recopilar alumnos con >= 2 notas y promedio < 4.0, agrupados por curso
+  const porCurso = {};
+
+  TODOS_LOS_CURSOS.forEach(function(curso) {
+    const regsAll = registros.filter(function(r) {
+      return (r.curso || '') === curso && r.nota !== undefined && r.nota !== null;
+    });
+    if (!regsAll.length) return;
+
+    // Agrupar por alumno
+    const porAlumno = {};
+    regsAll.forEach(function(r) {
+      const key = (r.nombre || '').trim().toUpperCase();
+      if (!key) return;
+      if (!porAlumno[key]) porAlumno[key] = { nombre: r.nombre, notas: [], pie: false };
+      porAlumno[key].notas.push(r.nota);
+      if (r.pie) porAlumno[key].pie = true;
+    });
+
+    // Filtrar: >= 2 notas Y promedio < 4.0
+    const criticos = Object.values(porAlumno).filter(function(al) {
+      if (al.notas.length < 2) return false;
+      const prom = al.notas.reduce(function(s, n) { return s + n; }, 0) / al.notas.length;
+      al.promedio = prom;
+      return prom < 4.0;
+    });
+
+    criticos.sort(function(a, b) { return a.promedio - b.promedio; });
+    if (criticos.length) porCurso[curso] = criticos;
   });
 
-  if (!criticos.length) { wrap.style.display='none'; return; }
-  wrap.style.display = 'block';
-  cont.innerHTML = criticos.map(c =>
-    `<button class="btn btn-sm" style="border-color:var(--red);color:var(--red);" onclick="irACurso('${c}')">${c}</button>`
-  ).join('');
-}
+  const totalCriticos = Object.values(porCurso).reduce(function(s, arr) { return s + arr.length; }, 0);
 
+  if (!totalCriticos) {
+    wrap.style.display = 'none';
+    return;
+  }
+
+  wrap.style.display = 'block';
+
+  // Construir HTML usando DOM (sin concatenación de strings con comillas anidadas)
+  cont.innerHTML = '';
+
+  Object.keys(porCurso).sort().forEach(function(curso) {
+    const alumnos = porCurso[curso];
+
+    const cursoDiv = document.createElement('div');
+    cursoDiv.className = 'dash-alerta-curso';
+
+    const cursoNom = document.createElement('div');
+    cursoNom.className = 'dash-alerta-curso-nombre';
+    cursoNom.textContent = curso + ' (' + alumnos.length + ')';
+    cursoDiv.appendChild(cursoNom);
+
+    const alumnosDiv = document.createElement('div');
+    alumnosDiv.className = 'dash-alerta-alumnos';
+
+    alumnos.forEach(function(al) {
+      const prom = al.promedio.toFixed(1);
+      const promColor = al.promedio < 2.5 ? '#FF3B30' : '#FF9500';
+
+      const row = document.createElement('div');
+      row.className = 'dash-alerta-alumno';
+      row.title = al.nombre + ' — Promedio ' + prom;
+      row.addEventListener('click', (function(c) {
+        return function() { irACurso(c); };
+      })(curso));
+
+      const nombreSpan = document.createElement('span');
+      nombreSpan.className = 'dash-alerta-nombre';
+      nombreSpan.textContent = al.nombre;
+
+      // Ícono PIE si corresponde
+      if (al.pie) {
+        const pieEl = document.createElement('span');
+        pieEl.innerHTML = '<svg width="11" height="11" viewBox="0 0 100 100" fill="' + promColor + '" style="flex-shrink:0;vertical-align:middle;display:inline-block;margin-left:3px" aria-label="PIE"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="' + promColor + '" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="' + promColor + '" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="' + promColor + '" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="' + promColor + '" stroke-width="8" stroke-linecap="round" fill="none"/></svg>';
+        nombreSpan.appendChild(pieEl);
+      }
+
+      const notaSpan = document.createElement('span');
+      notaSpan.className = 'dash-alerta-nota';
+      notaSpan.style.color = promColor;
+      notaSpan.textContent = prom;
+
+      row.appendChild(nombreSpan);
+      row.appendChild(notaSpan);
+      alumnosDiv.appendChild(row);
+    });
+
+    cursoDiv.appendChild(alumnosDiv);
+    cont.appendChild(cursoDiv);
+  });
+
+  // Actualizar título con conteo real
+  const titleEl = document.getElementById('dashAlertaTitulo');
+  if (titleEl) {
+    titleEl.textContent = totalCriticos + ' alumno' + (totalCriticos !== 1 ? 's' : '') + ' con promedio crítico (< 4.0)';
+  }
+}
 function _renderDashRiesgo() {
   const cont = document.getElementById('dashRiesgoList');
   if (!cont) return;
