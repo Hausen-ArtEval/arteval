@@ -1580,6 +1580,13 @@ media (prefers-color-scheme: dark) {
 .rubrica-tactil-footer{position:sticky;bottom:0;background:var(--bg2);border-top:0.5px solid var(--border);padding:14px 20px;display:flex;gap:10px;align-items:center;}
 
 /* ── Dashboard: Alumnos Críticos ─────────────────────────────────────── */
+.dash-alerta-wrap-inner {
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
 .dash-alerta-curso {
   margin-bottom: 14px;
 }
@@ -1594,15 +1601,16 @@ media (prefers-color-scheme: dark) {
 }
 .dash-alerta-alumno {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 7px 10px; border-radius: var(--rad);
-  background: var(--bg3); cursor: pointer;
-  border: 1px solid transparent;
-  transition: all 0.15s;
-  gap: 8px;
+  padding: 8px 12px; border-radius: 10px;
+  background: var(--bg2); cursor: pointer;
+  border: 1px solid var(--border);
+  transition: all 0.15s; gap: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 .dash-alerta-alumno:hover {
   background: var(--red-bg);
-  border-color: rgba(255,59,48,0.2);
+  border-color: rgba(255,59,48,0.25);
+  transform: translateX(2px);
 }
 .dash-alerta-nombre {
   font-size: 13px; font-weight: 600; color: var(--text);
@@ -2040,7 +2048,7 @@ media (prefers-color-scheme: dark) {
           <div style="display:flex;gap:8px;align-items:center;"><div style="font-size:11px;color:var(--text3);cursor:pointer;" onclick="this.closest('#dashAlertaWrap').querySelector('.dash-alerta-body').style.display=this.closest('#dashAlertaWrap').querySelector('.dash-alerta-body').style.display==='none'?'block':'none'">mostrar/ocultar</div><button onclick="abrirModalCorreosApoderados()" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;font-family:var(--font-ui);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>📧 Avisar apoderados</button></div>
         </div>
         <div class="dash-alerta-body">
-          <div id="dashAlertaCursos"></div>
+          <div class="dash-alerta-wrap-inner"><div id="dashAlertaCursos"></div></div>
         </div>
       </div>
 
@@ -5567,15 +5575,26 @@ function exportarSchooltrack(curso) {
     return alexiaNormCurso(r.curso || '') === key && !r.noEntregado;
   });
 
-  // Evaluaciones únicas del curso
-  var evals = [...new Set(regs.map(function(r){ return r.rubricaNombre || ''; }).filter(Boolean))].sort();
+  // FIX: usar instancia como clave de columna (no rubricaNombre)
+  var evalKeys = [];
+  regs.forEach(function(r) {
+    var inst = r.instancia || ('Evaluación ' + (r.rubricaNombre || '1'));
+    if (!evalKeys.includes(inst)) evalKeys.push(inst);
+  });
+  evalKeys.sort(function(a, b) {
+    var na = parseInt((a.match(/\d+/) || ['999'])[0]);
+    var nb = parseInt((b.match(/\d+/) || ['999'])[0]);
+    return na - nb;
+  });
+  var evals = evalKeys;
 
-  // Agrupar por alumno
+  // Agrupar por alumno usando instancia como clave
   var porAlumno = {};
   regs.forEach(function(r) {
-    var n = alexiaNorm(r.nombre || '');
+    var n    = alexiaNorm(r.nombre || '');
+    var inst = r.instancia || ('Evaluación ' + (r.rubricaNombre || '1'));
     if (!porAlumno[n]) porAlumno[n] = { nombre: r.nombre, notas: {} };
-    porAlumno[n].notas[r.rubricaNombre || ''] = r.nota;
+    if (porAlumno[n].notas[inst] === undefined) porAlumno[n].notas[inst] = r.nota;
   });
 
   // Completar con nómina
@@ -5617,13 +5636,21 @@ function exportarNapsis(curso) {
     return alexiaNormCurso(r.curso || '') === key && !r.noEntregado;
   });
 
-  var evals = [...new Set(regs.map(function(r){ return r.rubricaNombre || ''; }).filter(Boolean))].sort();
+  // FIX: columnas por instancia no por rúbrica
+  var evalKeys2 = [];
+  regs.forEach(function(r) {
+    var inst = r.instancia || ('Evaluación ' + (r.rubricaNombre || '1'));
+    if (!evalKeys2.includes(inst)) evalKeys2.push(inst);
+  });
+  evalKeys2.sort(function(a,b){ return parseInt((a.match(/\d+/)||['999'])[0])-parseInt((b.match(/\d+/)||['999'])[0]); });
+  var evals = evalKeys2;
 
   var porAlumno = {};
   regs.forEach(function(r) {
-    var n = alexiaNorm(r.nombre || '');
+    var n    = alexiaNorm(r.nombre || '');
+    var inst = r.instancia || ('Evaluación ' + (r.rubricaNombre || '1'));
     if (!porAlumno[n]) porAlumno[n] = { nombre: r.nombre, notas: {} };
-    porAlumno[n].notas[r.rubricaNombre || ''] = r.nota;
+    if (porAlumno[n].notas[inst] === undefined) porAlumno[n].notas[inst] = r.nota;
   });
 
   var nomina = listaCursos[curso] || [];
@@ -5662,13 +5689,38 @@ function exportarExcelGenerico(curso) {
     return alexiaNormCurso(r.curso || '') === key && !r.noEntregado;
   });
 
-  var evals = [...new Set(regs.map(function(r){ return r.rubricaNombre || ''; }).filter(Boolean))].sort();
+  // FIX: usar instancia como clave de columna (no rubricaNombre)
+  // Así Evaluación 1 y Evaluación 2 son columnas distintas aunque tengan la misma rúbrica
+  // Orden preservado por fecha/aparición
+  var evalKeys = []; // [instancia, ...] en orden de aparición
+  regs.forEach(function(r) {
+    var inst = r.instancia || ('Evaluación ' + (r.rubricaNombre || '1'));
+    if (!evalKeys.includes(inst)) evalKeys.push(inst);
+  });
+  // Ordenar por número de instancia si es posible
+  evalKeys.sort(function(a, b) {
+    var na = parseInt((a.match(/\d+/) || ['999'])[0]);
+    var nb = parseInt((b.match(/\d+/) || ['999'])[0]);
+    return na - nb;
+  });
+  var evals = evalKeys; // compatibilidad con el resto del código
+
+  // Mapa de rúbricas por instancia (para el encabezado informativo)
+  var rubPorInst = {};
+  regs.forEach(function(r) {
+    var inst = r.instancia || ('Evaluación ' + (r.rubricaNombre || '1'));
+    if (!rubPorInst[inst]) rubPorInst[inst] = r.rubricaNombre || '';
+  });
 
   var porAlumno = {};
   regs.forEach(function(r) {
-    var n = alexiaNorm(r.nombre || '');
+    var n    = alexiaNorm(r.nombre || '');
+    var inst = r.instancia || ('Evaluación ' + (r.rubricaNombre || '1'));
     if (!porAlumno[n]) porAlumno[n] = { nombre: r.nombre, notas: {} };
-    porAlumno[n].notas[r.rubricaNombre || ''] = r.nota;
+    // FIX: guardar por instancia, no por rúbrica
+    if (porAlumno[n].notas[inst] === undefined) {
+      porAlumno[n].notas[inst] = r.nota;
+    }
   });
 
   var nomina = listaCursos[curso] || [];
@@ -5683,8 +5735,11 @@ function exportarExcelGenerico(curso) {
   });
 
   // Hoja 1: Notas
-  var header = ['N°', 'Apellidos y Nombre', 'Sección', 'PIE'].concat(evals).concat(['Promedio']);
-  var rows   = [header];
+  // Fila 1: instancias (Evaluación 1, Evaluación 2...)
+  // Fila 2 (sub-header): nombre de la rúbrica asociada
+  var header  = ['N°', 'Apellidos y Nombre', 'Sección', 'PIE'].concat(evals).concat(['Promedio']);
+  var subhead = ['', '', '', ''].concat(evals.map(function(e){ return rubPorInst[e] || ''; })).concat(['']);
+  var rows    = [header, subhead];
   alumnos.forEach(function(al, idx) {
     var notas = evals.map(function(e){ return al.notas[e] !== undefined ? al.notas[e] : ''; });
     var vals  = notas.filter(function(n){ return n !== ''; }).map(Number);
@@ -5717,7 +5772,7 @@ function exportarExcelGenerico(curso) {
     [],
     ['Evaluaciones registradas:'],
   ].concat(evals.map(function(e){
-    var notasEval = regs.filter(function(r){ return r.rubricaNombre === e; });
+    var notasEval = regs.filter(function(r){ return (r.instancia||('Evaluación '+(r.rubricaNombre||'1'))) === e; });
     var pE = notasEval.length > 0
       ? Math.round(notasEval.reduce(function(s,r){return s+r.nota;},0)/notasEval.length*10)/10
       : 0;
@@ -6370,7 +6425,8 @@ function abrirExportAlexia() {
   var sinPlantilla = cursosInfo.filter(function(ci) { return !ci.p; });
 
   var html = '<div class="modal-title">📥 Exportar notas para Alexia</div>'
-    + '<div class="modal-hint">El archivo exportado es idéntico al original de Alexia con las notas de ArtEval escritas en cada columna. Alumnos sin nota quedan con celda vacía (Alexia muestra "–").</div>';
+    + '<div class="modal-hint">El archivo exportado es idéntico al original de Alexia con las notas de ArtEval escritas en cada columna. Alumnos sin nota quedan con celda vacía (Alexia muestra "–").</div>'
+    + (cursoSeleccionado ? '<div style="background:var(--accent-bg);border:1px solid var(--accent-border);border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:12px;color:var(--accent);font-weight:600;">📌 Curso activo en Registros: <strong>' + cursoSeleccionado + '</strong> — ya marcado abajo</div>' : '');
 
   if (sinPlantilla.length) {
     html += '<div style="background:rgba(245,166,35,0.1);border:1px solid rgba(245,166,35,0.3);'
@@ -6389,7 +6445,7 @@ function abrirExportAlexia() {
       : '⚠️ sin plantilla';
     html += '<label style="display:flex;align-items:center;gap:10px;padding:8px 12px;'
       + 'background:var(--bg3);border:1px solid var(--border);border-radius:var(--rad);cursor:pointer;font-size:13px;">'
-      + '<input type="checkbox" id="' + id + '" ' + (ci.p ? 'checked' : '') + ' data-curso="' + ci.curso + '">'
+      + '<input type="checkbox" id="' + id + '" ' + ((ci.p || ci.curso === cursoSeleccionado) ? 'checked' : '') + ' data-curso="' + ci.curso + '">'
       + '<span style="flex:1;font-weight:500;">' + ci.curso + '</span>'
       + '<span style="font-size:11px;color:' + (ci.p ? 'var(--green)' : 'var(--amber)') + ';font-family:\'DM Mono\',monospace;">' + badge + '</span>'
       + '</label>';
@@ -8276,12 +8332,18 @@ function _saveApoderadoEmails() {
 function _getEmailApoderado(nombre) {
   if (!nombre) return '';
   var norm = (nombre||'').trim().toUpperCase();
+  function _extractEmail(val) {
+    if (!val) return '';
+    if (typeof val === 'string') return val;
+    if (typeof val === 'object') return val.email || '';
+    return '';
+  }
   // Búsqueda exacta
-  if (_apoderadoEmails[norm]) return _apoderadoEmails[norm];
-  // Búsqueda flexible (mismoEstudiante)
+  if (_apoderadoEmails[norm]) return _extractEmail(_apoderadoEmails[norm]);
+  // Búsqueda flexible
   var keys = Object.keys(_apoderadoEmails);
   for (var i = 0; i < keys.length; i++) {
-    if (mismoEstudiante(keys[i], norm)) return _apoderadoEmails[keys[i]];
+    if (mismoEstudiante(keys[i], norm)) return _extractEmail(_apoderadoEmails[keys[i]]);
   }
   return '';
 }
@@ -8328,91 +8390,139 @@ function _procesarPlanillaApoderadosCSV(text, fileName) {
 function _procesarPlanillaApoderadosRows(rows, fileName) {
   if (!rows.length) { toast('✗ Planilla vacía', 'err'); return; }
 
-  var header = rows[0].map(function(h) { return (h||'').toString().toLowerCase().trim(); });
-
-  // Detectar columnas de nombre y email
-  var colNombre = -1, colApellidos = -1, colEmail = -1, colEmailAp = -1;
-  header.forEach(function(h, i) {
-    if (/nombre/.test(h) && !/apod/.test(h)) colNombre = i;
-    if (/apellido/.test(h)) colApellidos = i;
-    if (/email.*apod|correo.*apod|apod.*email|apod.*correo|email_apod/.test(h)) colEmailAp = i;
-    else if (/email|correo/.test(h) && colEmailAp === -1) colEmail = i;
+  var header = rows[0].map(function(h) {
+    return (h||'').toString().toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g,'')
+      .replace(/[°º]/g,'').trim();
   });
 
-  // Si no hay columna de email apoderado, buscar email2, email_padre, etc.
-  if (colEmailAp === -1) {
-    header.forEach(function(h, i) {
-      if (/email2|correo2|apoderado/.test(h)) colEmailAp = i;
-    });
-  }
+  // ── Detectar columnas del formato ALEXIA-EMO (planilla de matrícula oficial) ──
+  // Formato: Col0=N°Mat, Col2=ApPaterno, Col3=ApMaterno, Col4=Nombre, Col5=Curso
+  //          Col12=email apoderado titular
+  var isAlexiaEMO = header.some(function(h) {
+    return /apellido.?paterno|n.?matricula|matricula/.test(h);
+  });
 
-  var emailCol = colEmailAp !== -1 ? colEmailAp : colEmail;
+  var colApPat=-1, colApMat=-1, colNom=-1, colCurso=-1;
+  var colEmail=-1, colNombreCompleto=-1;
 
-  if (emailCol === -1) {
-    toast('⚠ No se encontró columna de email en la planilla. Columnas: ' + header.slice(0,6).join(', '), 'err', 7000);
+  header.forEach(function(h, i) {
+    if (/apellido.?pat/.test(h))  colApPat = i;
+    if (/apellido.?mat/.test(h))  colApMat = i;
+    if (/^nombre.?alum|^nombre$/.test(h) && !/apod|supl|padre|madre/.test(h)) colNom = i;
+    if (/^curso$/.test(h))        colCurso = i;
+    if (/e.?mail.?apod.*tit|e.?mail.?apod.*acad|e.mail.apoderado.acad/.test(h)) colEmail = i;
+    else if (/e.?mail|correo/.test(h) && !/supl|padre|madre|financ|apod.?3|apod.?4/.test(h) && colEmail === -1) colEmail = i;
+    if (/nombre.?completo|alumno/.test(h) && !/apod/.test(h)) colNombreCompleto = i;
+  });
+
+  // Si no se detectó email del apoderado titular, buscar col 12 (índice 12, col 13 en Excel)
+  if (colEmail === -1 && isAlexiaEMO && rows[0].length >= 13) colEmail = 12;
+  if (colApPat === -1 && isAlexiaEMO) colApPat = 2;
+  if (colApMat === -1 && isAlexiaEMO) colApMat = 3;
+  if (colNom   === -1 && isAlexiaEMO) colNom   = 4;
+  if (colCurso === -1 && isAlexiaEMO) colCurso = 5;
+
+  if (colEmail === -1) {
+    toast('⚠ No se encontró columna de email. Columnas detectadas: ' +
+      header.slice(0,8).join(', '), 'err', 8000);
     return;
   }
 
-  var importados = 0, sinEmail = 0;
+  var importados = 0, sinEmail = 0, sinNombre = 0;
+  var cursosEncontrados = new Set();
+
   rows.slice(1).forEach(function(row) {
+    // Construir nombre completo
     var nombre = '';
-    if (colApellidos !== -1 && colNombre !== -1) {
-      nombre = ((row[colApellidos]||'') + ' ' + (row[colNombre]||'')).trim();
-    } else if (colNombre !== -1) {
-      nombre = (row[colNombre]||'').trim();
+    if (colApPat !== -1 && colNom !== -1) {
+      var ap = (row[colApPat]||'').toString().trim();
+      var am = colApMat !== -1 ? (row[colApMat]||'').toString().trim() : '';
+      var no = (row[colNom]||'').toString().trim();
+      nombre = [ap, am, no].filter(Boolean).join(' ');
+    } else if (colNombreCompleto !== -1) {
+      nombre = (row[colNombreCompleto]||'').toString().trim();
     } else {
-      nombre = (row[0]||'').trim();
+      nombre = (row[0]||'').toString().trim();
     }
-    var email = (row[emailCol]||'').trim();
-    if (!nombre) return;
-    if (!email || !email.includes('@')) { sinEmail++; return; }
-    _apoderadoEmails[nombre.toUpperCase()] = email.toLowerCase();
-    importados++;
+
+    if (!nombre || nombre.length < 3) { sinNombre++; return; }
+
+    var email = (row[colEmail]||'').toString().trim().toLowerCase();
+    if (!email || !email.includes('@')) { sinEmail++; }
+
+    // Normalizar formato de curso: '3A' → '3°A', '3°A' → '3°A'
+    var curso = colCurso !== -1 ? (row[colCurso]||'').toString().trim() : '';
+    if (curso && /^[3-6][A-Da-d]$/.test(curso)) {
+      curso = curso[0] + '°' + curso[1].toUpperCase();
+    }
+
+    var key = nombre.toUpperCase();
+    _apoderadoEmails[key] = {
+      email:  email || '',
+      curso:  curso,
+      nombre: nombre
+    };
+    if (email && email.includes('@')) importados++;
+    else sinEmail++;
+    if (curso) cursosEncontrados.add(curso);
   });
 
   _saveApoderadoEmails();
-  toast('✅ ' + importados + ' emails de apoderados importados' +
-    (sinEmail ? ' · ' + sinEmail + ' sin email' : ''), 'ok', 5000);
+  var cursosStr = Array.from(cursosEncontrados).filter(function(c){
+    return /^[3-6]/.test(c);
+  }).sort().join(', ');
+  toast('✅ Planilla importada: ' + importados + ' emails de apoderados · Cursos: ' + (cursosStr||'varios'),
+    'ok', 7000);
 
-  // Actualizar el modal si está abierto
-  var modal = document.getElementById('emailApoderadosModal');
-  if (modal) _renderEmailCards();
+  var badge = document.getElementById('emailCountBadge');
+  if (badge) badge.textContent = Object.keys(_apoderadoEmails).length + ' alumnos en planilla';
+  _renderEmailCards();
 }
-
-// ── Generar texto del correo para un alumno crítico ──────────────────────
 function _generarTextoEmail(al, nombreProfesor, nombreColegio) {
   var notas = al.notas || [];
   var instancias = al.instancias || [];
+  var rubricas = al.rubricas || [];
   var prom = al.promedio ? al.promedio.toFixed(1) : '?';
 
-  // Tabla de notas
+  // Tabla de notas con rúbrica
   var tablaNotas = '';
   notas.forEach(function(n, i) {
     var inst = instancias[i] || ('Evaluación ' + (i+1));
-    var nota = (typeof n === 'number') ? n.toFixed(1) : n;
-    var estado = n >= 6 ? 'Destacado' : n >= 4 ? 'Logrado' : 'No logrado';
-    tablaNotas += '   • ' + inst + ': ' + nota + ' (' + estado + ')\n';
+    var nota = (typeof n === 'number') ? n.toFixed(1) : String(n);
+    var estado = n >= 6 ? 'Destacado' : n >= 5 ? 'Logrado' : n >= 4 ? 'Suficiente' : 'No logrado';
+    var rub = rubricas[i] ? ' [' + rubricas[i] + ']' : '';
+    tablaNotas += '   • ' + inst + rub + ': ' + nota + ' — ' + estado + '\n';
   });
 
+  // Nombre del alumno: usar sólo el primer nombre para el texto interno
+  var primerNombre = al.nombre.split(' ').filter(function(p){ return p.length > 2; })[0] || al.nombre.split(' ')[0];
+
   var sugerencias = [
-    'Revise junto a su pupilo/a los trabajos y materiales evaluados.',
-    'Apoye en casa destinando un tiempo semanal a revisar los aprendizajes de Artes Visuales.',
-    'Si tiene dudas sobre las evaluaciones, puede solicitar una reunión con el/la docente.',
-    'Fomente que su pupilo/a traiga todos los materiales requeridos a cada clase.',
+    'Revise junto a su hijo/a los trabajos y materiales evaluados en Artes Visuales.',
+    'Fomente en casa la práctica del dibujo, pintura o cualquier actividad creativa.',
+    'Asegúrese de que ' + primerNombre + ' traiga todos los materiales requeridos a cada clase.',
+    'Si desea revisar las evaluaciones o tiene consultas, puede contactar al docente para una reunión.',
   ];
 
+  var fechaHoy = new Date().toLocaleDateString('es-CL', { day:'numeric', month:'long', year:'numeric' });
+
   return 'Estimado/a apoderado/a de ' + al.nombre + ':\n\n' +
-    'Me dirijo a usted para informarle sobre el rendimiento académico de su pupilo/a en la asignatura de Artes Visuales.\n\n' +
-    'Durante el período evaluado, ' + al.nombre.split(' ')[0] + ' ha obtenido las siguientes calificaciones:\n\n' +
+    fechaHoy + '\n\n' +
+    'Me dirijo a usted para informarle sobre la situación académica de ' + primerNombre +
+    ' en la asignatura de Artes Visuales, correspondiente al curso ' + al.curso + '.\n\n' +
+    'Durante el período evaluado, ' + primerNombre + ' ha obtenido las siguientes calificaciones:\n\n' +
     tablaNotas + '\n' +
-    'Promedio actual: ' + prom + ' — Situación: Rendimiento crítico (bajo 4,0)\n\n' +
-    'Para apoyar a su pupilo/a a mejorar su situación académica, le sugerimos:\n\n' +
+    'Promedio actual: ' + prom + ' (situación crítica — bajo 4,0)\n\n' +
+    'Esta situación requiere atención para que ' + primerNombre +
+    ' pueda revertir su rendimiento antes del cierre del período.\n\n' +
+    'Para apoyar desde el hogar, le sugerimos:\n\n' +
     sugerencias.map(function(s) { return '   • ' + s; }).join('\n') + '\n\n' +
-    'Quedamos a su disposición ante cualquier consulta.\n\n' +
+    'Quedamos atentos ante cualquier consulta.\n\n' +
     'Atentamente,\n' +
     (nombreProfesor || 'Docente de Artes Visuales') + '\n' +
-    (nombreColegio ? nombreColegio + '\n' : '') +
-    'Artes Visuales';
+    'Profesor/a de Artes Visuales\n' +
+    (nombreColegio || '');
 }
 
 // ── Abrir modal de correos ────────────────────────────────────────────────
@@ -8536,10 +8646,11 @@ function _renderEmailCards() {
       if (!key) return;
       if (!porAlumno[key]) porAlumno[key] = {
         nombre: r.nombre, curso: curso,
-        notas: [], instancias: [], pie: false
+        notas: [], instancias: [], rubricas: [], pie: false
       };
       porAlumno[key].notas.push(r.nota);
       porAlumno[key].instancias.push(r.instancia || 'Evaluación 1');
+      porAlumno[key].rubricas.push(r.rubricaNombre || r.rubrica || '');
       if (r.pie) porAlumno[key].pie = true;
     });
 
@@ -8599,11 +8710,11 @@ function _renderEmailCards() {
         '<input type="email" id="emailUTP_' + idx + '" placeholder="utp@colegio.cl" ' +
           'value="' + (localStorage.getItem('av_email_utp') || '') + '">' +
       '</div>' +
-      '<details style="margin-top:10px;">' +
-        '<summary style="font-size:12px;font-weight:600;color:var(--text3);cursor:pointer;' +
-          'user-select:none;padding:4px 0;">Ver texto del correo ▾</summary>' +
+      '<div style="margin-top:10px;">' +
+        '<div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;' +
+          'letter-spacing:0.5px;margin-bottom:6px;">Texto del correo</div>' +
         '<pre class="email-preview" id="emailTexto_' + idx + '">' + texto + '</pre>' +
-      '</details>' +
+      '</div>' +
       '<div class="email-acciones">' +
         '<button class="btn btn-sm" onclick="_abrirEnCorreo(' + idx + ')" ' +
           'style="background:var(--accent);color:#fff;border-color:var(--accent);min-height:36px;">' +
