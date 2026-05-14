@@ -1601,27 +1601,26 @@ media (prefers-color-scheme: dark) {
 }
 .dash-alerta-alumno {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 8px 12px; border-radius: 10px;
-  background: var(--bg2); cursor: pointer;
-  border: 1px solid var(--border);
-  transition: all 0.15s; gap: 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  padding: 14px 20px;
+  background: var(--ae-white, #fff); cursor: pointer;
+  border-top: 0.5px solid var(--ae-border, #E5E5EA);
+  transition: background 0.12s; gap: 10px;
 }
-.dash-alerta-alumno:hover {
-  background: var(--red-bg);
-  border-color: rgba(255,59,48,0.25);
-  transform: translateX(2px);
-}
+.dash-alerta-alumno:first-child { border-top: none; }
+.dash-alerta-alumno:hover { background: var(--bg3); }
 .dash-alerta-nombre {
-  font-size: 13px; font-weight: 600; color: var(--text);
+  font-size: 14px; font-weight: 600;
+  color: var(--ae-black, #1C1C1E);
   flex: 1; min-width: 0; overflow: hidden;
   text-overflow: ellipsis; white-space: nowrap;
-  display: flex; align-items: center; gap: 4px;
+  display: flex; align-items: center; gap: 6px;
 }
 .dash-alerta-nota {
-  font-size: 14px; font-weight: 800;
+  /* Pill de riesgo */
+  font-size: 12px; font-weight: 700;
   font-family: var(--font-mono);
-  flex-shrink: 0; letter-spacing: -0.5px;
+  flex-shrink: 0; letter-spacing: -0.3px;
+  padding: 3px 10px; border-radius: 20px;
 }
 
 /* ── Modal Correos Apoderados ─────────────────────────────────────────── */
@@ -1688,6 +1687,18 @@ media (prefers-color-scheme: dark) {
   box-shadow: 0 0 0 3px var(--accent-bg);
 }
 .email-preview {
+  background: var(--ae-gray-light, #F2F2F7);
+  border-radius: 12px; padding: 16px;
+  font-size: 12px; line-height: 1.8;
+  color: var(--ae-black, #1C1C1E);
+  white-space: pre-wrap; word-wrap: break-word;
+  border: 1px solid var(--ae-border, #E5E5EA);
+  margin-top: 8px; font-family: var(--font-ui);
+  width: 100%; box-sizing: border-box;
+  min-height: 150px; resize: vertical;
+  overflow-y: auto;
+  /* Eliminar estilos de <pre> */ 
+
   background: var(--bg2); border-radius: 10px;
   padding: 12px; font-size: 12px; line-height: 1.7;
   color: var(--text2); white-space: pre-wrap;
@@ -1730,6 +1741,29 @@ media (prefers-color-scheme: dark) {
 }
 .alexia-stat-lbl {
   font-size: 11px; color: var(--text3); margin-top: 2px;
+}
+
+/* ── Dashboard alumnos críticos — estilo iOS ──────────────────────────── */
+.dash-alerta-body {
+  background: var(--ae-white, #fff);
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04);
+  overflow: hidden;
+}
+.dash-alerta-wrap-inner {
+  max-height: 340px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.dash-alerta-curso {
+  margin-bottom: 0;
+}
+.dash-alerta-curso-nombre {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.6px; color: var(--ae-gray, #8E8E93);
+  padding: 12px 20px 8px;
+  background: var(--ae-gray-light, #F2F2F7);
 }
 </style>
 
@@ -6995,7 +7029,12 @@ function _renderDashAlertas(instFiltro) {
 
       const notaSpan = document.createElement('span');
       notaSpan.className = 'dash-alerta-nota';
+      // Pill: fondo suave según nivel de riesgo
+      var pillBg = al.promedio < 2.5
+        ? 'rgba(255,59,48,0.12)'   // rojo suave
+        : 'rgba(255,149,0,0.12)';  // naranja suave
       notaSpan.style.color = promColor;
+      notaSpan.style.background = pillBg;
       notaSpan.textContent = prom;
 
       row.appendChild(nombreSpan);
@@ -8443,6 +8482,8 @@ var _apoderadoEmails = (function() {
 function _saveApoderadoEmails() {
   try { localStorage.setItem('av_apoderado_emails', JSON.stringify(_apoderadoEmails)); }
   catch(e) {}
+  // Sincronizar a Drive cuando hay emails nuevos
+  if (typeof _driveSaveDebounced === 'function') _driveSaveDebounced();
 }
 
 // Obtener email de un alumno por nombre (búsqueda flexible)
@@ -8668,7 +8709,7 @@ function _renderCorreoTab(){
       +'<div style="font-size:13px;font-weight:500;color:var(--text);flex:1;">Email apoderado</div>'
       +'<input type="email" id="cEmailInp_'+idx+'" placeholder="correo@ejemplo.cl" value="'+email+'" style="max-width:240px;padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-family:var(--font-ui);text-align:right;"></div>'
       +'<details style="margin-bottom:10px;"><summary style="font-size:11px;font-weight:600;color:var(--text3);cursor:pointer;user-select:none;padding:4px 0;">Ver texto del correo \u25be</summary>'
-      +'<pre class="email-preview" id="cEmailTxt_'+idx+'">' + texto + '</pre></details>'
+      +'<textarea class="email-preview" id="cEmailTxt_'+idx+'" readonly>' + texto.replace(/&/g,'&amp;').replace(/</g,'&lt;') + '</textarea></details>'
       +'<div style="display:flex;gap:6px;flex-wrap:wrap;">'
       +'<button class="btn btn-primary" onclick="_abrirCorreoTab('+idx+')" style="display:inline-flex;align-items:center;gap:6px;min-height:36px;font-size:13px;border-radius:10px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Abrir en Gmail</button>'
       +'<button class="btn" onclick="_copiarCorreoTab('+idx+')" style="display:inline-flex;align-items:center;gap:6px;min-height:36px;font-size:13px;border-radius:10px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copiar</button>'
@@ -11912,6 +11953,7 @@ async function guardarYLiberarLocalStorage() {
       listaCursos:  JSON.parse(JSON.stringify(listaCursos)),
       rubricaActiva: rubricaActiva,
       alexiaDatos:  JSON.parse(JSON.stringify(alexiaDatos || {})),
+      apoderadoEmails: JSON.parse(JSON.stringify(_apoderadoEmails || {})),
     };
   } catch(snapErr) {
     toast('❌ Error al preparar datos: ' + snapErr.message, 'err', 6000);
@@ -12315,6 +12357,11 @@ async function syncFromDrive() {
       });
       try{localStorage.setItem('av_rubricas',JSON.stringify(rubricas));}catch(e){}
     })();
+    // FIX: restaurar emails de apoderados desde Drive
+    if (raw.apoderadoEmails && Object.keys(raw.apoderadoEmails).length) {
+      Object.assign(_apoderadoEmails, raw.apoderadoEmails);
+      try { localStorage.setItem('av_apoderado_emails', JSON.stringify(_apoderadoEmails)); } catch(e) {}
+    }
     listaCursos   = JSON.parse(JSON.stringify(raw.listaCursos  || {}));
     rubricaActiva = raw.rubricaActiva || 0;
 
