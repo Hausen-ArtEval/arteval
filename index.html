@@ -2367,7 +2367,7 @@ media (prefers-color-scheme: dark) {
           <button class="filtro-pie-btn" id="btnFiltroPie" onclick="toggleFiltroPie()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2"/><path d="M12 7v8"/><path d="m9 20 3-3 3 3"/><path d="M8 17H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h14"/></svg> PIE</button>
           <button class="btn" onclick="verDuplicados()" id="btnDuplicados" style="display:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Duplicados</button>
           <button class="btn" onclick="abrirExportMultiple()" id="btnExport" style="display:none">Exportar CSV</button>
-          <button class="btn" onclick="abrirExportAlexia(cursoSeleccionado)" id="btnExportAlexia" style="display:none" title="Exportar en formato Alexia (.xls)">📥 Alexia XLS</button>
+          <button class="btn" onclick="abrirExportAlexia()" id="btnExportAlexia" style="display:none" title="Exportar en formato Alexia (.xls)">📥 Alexia XLS</button>
           <button class="btn btn-primary" onclick="abrirExportUniversal()" id="btnExportUniversal" style="display:none;background:var(--accent);color:#fff;border-color:var(--accent);" title="Exportar para cualquier sistema escolar">📤 Exportar notas</button>
           <button class="btn" onclick="limpiarRegistrosDuplicados()" id="btnLimpiarDups" style="display:none;border-color:var(--amber);color:var(--amber);" title="Detectar y corregir rúbricas incorrectas y evaluaciones duplicadas">🔍 Limpiar duplicados</button>
           <button class="btn btn-danger" onclick="limpiarTodo()" id="btnLimpiarTodo" style="display:none">Limpiar todo</button>
@@ -3034,7 +3034,13 @@ function actualizarEstadoConfigDrive() {
 // ═══════════════════════════════════════════════════════
 //  ESTADO GLOBAL
 // ═══════════════════════════════════════════════════════
-let rubricas    = JSON.parse(localStorage.getItem('av_rubricas') || 'null') || getDefaultRubricas();
+let rubricas    = (function(){
+  try {
+    var saved = JSON.parse(localStorage.getItem('av_rubricas') || 'null');
+    if (Array.isArray(saved) && saved.length > 0) return saved;
+  } catch(e) { console.warn('[ArtEval] av_rubricas corrupto:', e.message); }
+  return getDefaultRubricas();
+})();
 let contextoGuardado = {}; // se carga en init desde localStorage
 // FIX QA v72: init protegido — JSON corrupto no congela la app
 let registros   = (function(){ try { return JSON.parse(localStorage.getItem('av_registros')||'[]')||[]; } catch(e){ console.error('[ArtEval] av_registros:',e.message); return []; } })();
@@ -3129,7 +3135,11 @@ function getDefaultRubricas() {
 
 function getRubrica() { return rubricas[rubricaActiva] || rubricas[0]; }
 function getCriterios() { return getRubrica().criterios; }
-function saveRubricas() { localStorage.setItem('av_rubricas', JSON.stringify(rubricas)); }
+function saveRubricas() {
+  localStorage.setItem('av_rubricas', JSON.stringify(rubricas));
+  localStorage.setItem('av_rubrica_activa', String(rubricaActiva));
+  actualizarRubricaSelect();
+}
 // ── BLOQUE 2: Estabilidad crítica ────────────────────────────────────────────
 
 // Monitor de tamaño localStorage — alerta si supera 4MB
@@ -6473,100 +6483,76 @@ function renderAlexiaPlantillasList() {
 
 // ── Modal de selección antes de exportar ───────────────────────────────────────
 function abrirExportAlexia(cursoDirecto) {
-  var cursoTarget = cursoDirecto || cursoSeleccionado || null;
-
+  var cursoTarget = cursoSeleccionado || cursoDirecto || null;
   if (typeof XLSX === 'undefined') {
-    toast('❌ Librería Excel no cargada. Recarga la página.', 'err', 4000); return;
+    toast('Libreria Excel no cargada. Recarga la pagina.', 'err', 4000); return;
   }
   var cursosDisp = cursosUnicos();
   if (!cursosDisp.length) { toast('No hay evaluaciones guardadas', 'err', 3000); return; }
 
-  // ── CASO 1: hay curso seleccionado ──────────────────────────────────────
+  // CASO 1: curso seleccionado con plantilla -> exportar directo
+  if (cursoTarget && alexiaDatos[alexiaNormCurso(cursoTarget)]) {
+    _exportAlexiaDiagnostico([cursoTarget]);
+    return;
+  }
+
+  // CASO 2: curso seleccionado sin plantilla
   if (cursoTarget) {
-    var keyT = alexiaNormCurso(cursoTarget);
-    if (alexiaDatos[keyT]) {
-      // Tiene plantilla → ir DIRECTO al diagnóstico y descarga, sin modal
-      _exportAlexiaDiagnostico([cursoTarget]);
-      return;
+    var otrosOK = cursosDisp.filter(function(c){ return !!alexiaDatos[alexiaNormCurso(c)]; });
+    var html = '<div class="modal-title">⚠️ Sin plantilla Alexia para ' + cursoTarget + '</div>'
+      + '<div style="background:rgba(255,149,0,0.10);border:1px solid rgba(255,149,0,0.35);border-radius:12px;padding:14px;margin-bottom:12px;">'
+      + '<div style="font-size:13px;color:var(--text2);line-height:1.6;">Sube el <strong>.xls vacio</strong> descargado desde Alexia para ' + cursoTarget + '.<br>Ve a <strong>Configurar → Plantillas Alexia</strong>.</div></div>';
+    if (otrosOK.length) {
+      html += '<div style="font-size:12px;color:var(--text3);margin-bottom:8px;">Exportar otro curso:</div>'
+        + '<div style="display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto;" id="alexiaCursosCheck">';
+      otrosOK.forEach(function(c) {
+        var n  = registros.filter(function(r){ return alexiaNormCurso(r.curso||'')===alexiaNormCurso(c); }).length;
+        var id = 'achk_' + alexiaNormCurso(c).replace(/[^a-z0-9]/gi,'_');
+        html += '<label style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rad);cursor:pointer;">'
+          + '<input type="checkbox" id="' + id + '" data-curso="' + c + '">'
+          + '<span style="flex:1;font-size:13px;font-weight:500;">' + c + '</span>'
+          + '<span style="font-size:11px;color:var(--green);font-family:var(--font-mono);">' + n + ' notas</span></label>';
+      });
+      html += '</div><div class="modal-footer">'
+        + '<button class="btn" onclick="cerrarModal()">Cancelar</button>'
+        + '<button class="btn btn-primary" onclick="confirmarExportAlexia()">Exportar seleccionados</button></div>';
+    } else {
+      html += '<div class="modal-footer"><button class="btn btn-primary" onclick="cerrarModal()">Entendido</button></div>';
     }
-    // Tiene curso pero SIN plantilla → modal pequeño solo para ese curso
-    var html = '<div class="modal-title">📥 Exportar ' + cursoTarget + ' para Alexia</div>'
-      + '<div style="background:rgba(255,149,0,0.10);border:1px solid rgba(255,149,0,0.3);'
-      + 'border-radius:12px;padding:14px 16px;margin-bottom:14px;">'
-      + '<div style="font-size:14px;font-weight:700;color:var(--amber);margin-bottom:6px;">⚠️ Sin plantilla Alexia para ' + cursoTarget + '</div>'
-      + '<div style="font-size:13px;color:var(--text2);line-height:1.5;">'
-      + 'Para exportar en formato Alexia necesitas subir el archivo <strong>.xls vacío</strong> '
-      + 'que descargaste desde Alexia para este curso.<br><br>'
-      + 'Ve a <strong>Configurar → Plantillas Alexia</strong> y sube el archivo.</div>'
-      + '</div>'
-      + '<div style="font-size:12px;color:var(--text3);margin-bottom:10px;">¿O prefieres exportar otro curso?</div>'
-      + '<div style="display:flex;flex-direction:column;gap:4px;max-height:220px;overflow-y:auto;" id="alexiaCursosCheck">';
-
-    cursosDisp.forEach(function(c) {
-      var key = alexiaNormCurso(c);
-      var p   = alexiaDatos[key];
-      if (!p) return; // solo mostrar los que tienen plantilla
-      var n = registros.filter(function(r){ return alexiaNormCurso(r.curso||'') === key; }).length;
-      var id = 'achk_' + key.replace(/[^a-z0-9]/gi,'_');
-      html += '<label style="display:flex;align-items:center;gap:10px;padding:8px 12px;'
-        + 'background:var(--bg3);border:1px solid var(--border);border-radius:var(--rad);cursor:pointer;">'
-        + '<input type="checkbox" id="' + id + '" data-curso="' + c + '">'
-        + '<span style="flex:1;font-size:13px;font-weight:500;">' + c + '</span>'
-        + '<span style="font-size:11px;color:var(--green);font-family:var(--font-mono);">' + n + ' notas</span>'
-        + '</label>';
-    });
-
-    html += '</div>'
-      + '<div class="modal-footer">'
-      + '<button class="btn" onclick="cerrarModal()">Cancelar</button>'
-      + '<button class="btn btn-primary" onclick="confirmarExportAlexia()">Exportar seleccionados →</button>'
-      + '</div>';
     abrirModal(html);
     return;
   }
 
-  // ── CASO 2: sin curso seleccionado → modal de selección múltiple ────────
+  // CASO 3: sin curso seleccionado
   var cursosInfo = cursosDisp.map(function(c) {
     var key = alexiaNormCurso(c);
     var p   = alexiaDatos[key];
-    var n   = registros.filter(function(r){ return alexiaNormCurso(r.curso||'') === key; }).length;
-    return { curso: c, key: key, p: p||null, n: n };
+    var n   = registros.filter(function(r){ return alexiaNormCurso(r.curso||'')===key; }).length;
+    return { curso:c, key:key, p:p||null, n:n };
   });
-  var conPlantilla  = cursosInfo.filter(function(ci){ return !!ci.p; });
-  var sinPlantilla  = cursosInfo.filter(function(ci){ return !ci.p; });
-
-  var html = '<div class="modal-title">📥 Exportar notas para Alexia</div>'
+  var sinPlant = cursosInfo.filter(function(ci){ return !ci.p; });
+  var html3 = '<div class="modal-title">Exportar notas para Alexia</div>'
     + '<div style="font-size:12px;color:var(--text2);margin-bottom:10px;">Selecciona los cursos a exportar:</div>'
-    + '<div style="display:flex;flex-direction:column;gap:5px;margin-bottom:14px;" id="alexiaCursosCheck">';
-
+    + '<div style="display:flex;flex-direction:column;gap:5px;max-height:340px;overflow-y:auto;margin-bottom:12px;" id="alexiaCursosCheck">';
   cursosInfo.forEach(function(ci) {
-    var id = 'achk_' + ci.key.replace(/[^a-z0-9]/gi,'_');
-    var badge = ci.p
-      ? ci.n + ' notas · ' + (ci.p.colsCON||[]).length + ' columnas en plantilla'
-      : '⚠️ sin plantilla Alexia';
-    html += '<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;'
-      + 'background:var(--bg3);border:1.5px solid ' + (ci.p ? 'var(--border)' : 'rgba(255,149,0,0.3)') + ';'
-      + 'border-radius:var(--rad);cursor:pointer;font-size:13px;">'
-      + '<input type="checkbox" id="' + id + '" '
-      + (ci.p ? 'checked' : 'disabled') + ' data-curso="' + ci.curso + '">'
-      + '<span style="flex:1;font-weight:500;color:' + (ci.p ? 'var(--text)' : 'var(--text3)') + ';">' + ci.curso + '</span>'
-      + '<span style="font-size:11px;color:' + (ci.p ? 'var(--green)' : 'var(--amber)') + ';font-family:var(--font-mono);">' + badge + '</span>'
-      + '</label>';
+    var id  = 'achk_' + ci.key.replace(/[^a-z0-9]/gi,'_');
+    var ok2 = !!ci.p;
+    var badge = ok2 ? ci.n + ' notas' : '⚠️ sin plantilla';
+    html3 += '<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg3);border:1.5px solid ' + (ok2?'var(--border)':' rgba(255,149,0,0.3)') + ';border-radius:var(--rad);cursor:pointer;opacity:' + (ok2?'1':'0.55') + ';">'
+      + '<input type="checkbox" id="' + id + '" ' + (ok2?'checked':'disabled') + ' data-curso="' + ci.curso + '">'
+      + '<span style="flex:1;font-size:13px;font-weight:500;">' + ci.curso + '</span>'
+      + '<span style="font-size:11px;color:' + (ok2?'var(--green)':'var(--amber)') + ';font-family:var(--font-mono);">' + badge + '</span></label>';
   });
-
-  html += '</div>';
-  if (sinPlantilla.length) {
-    html += '<div style="font-size:11px;color:var(--amber);margin-bottom:10px;">'
-      + '⚠️ ' + sinPlantilla.map(function(c){return c.curso;}).join(', ')
-      + ' sin plantilla — sube el .xls desde Configurar → Plantillas Alexia</div>';
+  html3 += '</div>';
+  if (sinPlant.length) {
+    html3 += '<div style="font-size:11px;color:var(--amber);margin-bottom:10px;">'
+      + sinPlant.map(function(c){return c.curso;}).join(', ') + ' sin plantilla.</div>';
   }
-  html += '<div class="modal-footer">'
+  html3 += '<div class="modal-footer">'
     + '<button class="btn" onclick="cerrarModal()">Cancelar</button>'
-    + '<button class="btn btn-primary" onclick="confirmarExportAlexia()">Ver diagnóstico y exportar →</button>'
-    + '</div>';
-  abrirModal(html);
+    + '<button class="btn btn-primary" onclick="confirmarExportAlexia()">Exportar →</button></div>';
+  abrirModal(html3);
 }
-
 
 // ── Generar diagnóstico y exportar para los cursos seleccionados ──────────
 function _exportAlexiaDiagnostico(cursos) {
@@ -6677,13 +6663,13 @@ function confirmarExportAlexia() {
 
 function alexiaDescargarResultados() {
   var resultados = window._alexiaResultadosPendientes || [];
-  if (!resultados.length) {
-    toast('⚠️ No hay resultados para descargar', 'err', 3000);
-    cerrarModal(); return;
-  }
+  if (!resultados.length) { toast('⚠️ No hay resultados para descargar', 'err', 3000); cerrarModal(); return; }
+
+  // Guard: verificar que la librería XLSX esté cargada (falla sin internet al inicio)
   if (typeof XLSX === 'undefined') {
-    toast('❌ Librería Excel no cargada. Verifica conexión y recarga.', 'err', 7000);
-    cerrarModal(); return;
+    toast('❌ La librería Excel no está cargada. Verifica tu conexión a internet y recarga la página.', 'err', 7000);
+    cerrarModal();
+    return;
   }
 
   var generados = 0;
@@ -6693,51 +6679,27 @@ function alexiaDescargarResultados() {
         toast('⚠️ ' + (item.curso || 'Curso') + ': sin datos para exportar', 'err', 4000);
         return;
       }
-
       var wb = XLSX.utils.book_new();
       var ws = XLSX.utils.aoa_to_sheet(item.res.wsData);
       XLSX.utils.book_append_sheet(wb, ws, 'Hoja1');
-      var nombreArchivo = 'Alexia_' + (item.res.curso || item.res.key || 'curso').replace(/[^a-zA-Z0-9_\-]/g, '_') + '.xls';
-
-      // FIX: usar XLSX.write() + Blob para .xls en browser
-      // type:'binary' solo aplica a write(), no a writeFile()
-      var wbout = XLSX.write(wb, { bookType: 'biff8', type: 'binary' });
-
-      // Convertir string binario a ArrayBuffer
-      var buf = new ArrayBuffer(wbout.length);
-      var view = new Uint8Array(buf);
-      for (var i = 0; i < wbout.length; i++) {
-        view[i] = wbout.charCodeAt(i) & 0xFF;
-      }
-
-      // Crear Blob y descargar
-      var blob = new Blob([buf], { type: 'application/vnd.ms-excel' });
-      var url  = URL.createObjectURL(blob);
-      var a    = document.createElement('a');
-      a.href        = url;
-      a.download    = nombreArchivo;
-      a.style.display = 'none';
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(function() {
-        URL.revokeObjectURL(url);
-        a.remove();
-      }, 1000);
-
+      var nombreArchivo = 'Alexia_' + (item.res.curso || item.res.key).replace(/[^a-zA-Z0-9_\-]/g, '_') + '.xls';
+      // FIX: usar bookType biff8 para compatibilidad con Alexia (.xls)
+      XLSX.writeFile(wb, nombreArchivo, { bookType: 'biff8', type: 'binary' });
       generados++;
     } catch(e) {
-      console.error('[Alexia] Error al escribir XLS:', e);
-      toast('❌ Error al generar ' + (item.curso || '') + ': ' + e.message, 'err', 6000);
+      toast('❌ Error al escribir ' + (item.curso || '') + ': ' + e.message, 'err', 5000);
     }
   });
-
   cerrarModal();
   window._alexiaResultadosPendientes = null;
-  if (generados > 0) {
-    toast('✅ ' + generados + ' archivo' + (generados !== 1 ? 's descargados' : ' descargado') + ' — listos para subir a Alexia', 'ok', 5000);
-  }
+  if (generados > 0)
+    toast('✅ ' + generados + ' archivo' + (generados !== 1 ? 's' : '') + ' descargado' + (generados !== 1 ? 's' : '') + ' — listos para subir a Alexia', 'ok', 4000);
 }
 
+
+// ═══════════════════════════════════════════════════════
+//  MODO PRESENTACIÓN
+// ═══════════════════════════════════════════════════════
 function modoPresentacion(idx) {
   const r = registros[idx]; if (!r) return;
 
@@ -12251,7 +12213,16 @@ async function syncFromDrive() {
 
     // Deep copy al aplicar — no mutar raw directamente
     registros     = JSON.parse(JSON.stringify(raw.registros    || []));
-    rubricas      = JSON.parse(JSON.stringify(raw.rubricas     || rubricas));
+    // FIX v80: fusionar rubricas Drive+local
+    (function(){
+      var driveRubs = (raw.rubricas && raw.rubricas.length) ? raw.rubricas : null;
+      if (!driveRubs) return;
+      var localNoms = rubricas.map(function(r){ return (r.nombre||'').trim().toLowerCase(); });
+      driveRubs.forEach(function(dr){
+        if (!localNoms.includes((dr.nombre||'').trim().toLowerCase())) rubricas.push(dr);
+      });
+      try { localStorage.setItem('av_rubricas', JSON.stringify(rubricas)); } catch(e){}
+    })();
     listaCursos   = JSON.parse(JSON.stringify(raw.listaCursos  || {}));
     rubricaActiva = raw.rubricaActiva || 0;
 
