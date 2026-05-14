@@ -1688,23 +1688,25 @@ media (prefers-color-scheme: dark) {
 }
 .email-preview {
   background: var(--ae-gray-light, #F2F2F7);
-  border-radius: 12px; padding: 16px;
-  font-size: 12px; line-height: 1.8;
+  border-radius: 12px;
+  padding: 16px 18px;
+  font-size: 13px;
+  line-height: 1.85;
   color: var(--ae-black, #1C1C1E);
-  white-space: pre-wrap; word-wrap: break-word;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  word-break: break-word;
   border: 1px solid var(--ae-border, #E5E5EA);
-  margin-top: 8px; font-family: var(--font-ui);
-  width: 100%; box-sizing: border-box;
-  min-height: 150px; resize: vertical;
+  margin-top: 10px;
+  font-family: var(--font-ui);
+  width: 100%;
+  box-sizing: border-box;
+  /* Altura generosa — muestra el correo completo sin scroll */
+  min-height: 360px;
+  height: auto;
+  max-height: 600px;
   overflow-y: auto;
-  /* Eliminar estilos de <pre> */ 
-
-  background: var(--bg2); border-radius: 10px;
-  padding: 12px; font-size: 12px; line-height: 1.7;
-  color: var(--text2); white-space: pre-wrap;
-  border: 1px solid var(--border); margin-top: 10px;
-  font-family: var(--font-ui); max-height: 180px;
-  overflow-y: auto;
+  resize: vertical;
 }
 .email-acciones {
   display: flex; gap: 8px; margin-top: 10px;
@@ -8708,7 +8710,7 @@ function _renderCorreoTab(){
       +'<div style="display:flex;align-items:center;padding:10px 0;border-top:0.5px solid var(--border);border-bottom:0.5px solid var(--border);margin-bottom:10px;gap:10px;">'
       +'<div style="font-size:13px;font-weight:500;color:var(--text);flex:1;">Email apoderado</div>'
       +'<input type="email" id="cEmailInp_'+idx+'" placeholder="correo@ejemplo.cl" value="'+email+'" style="max-width:240px;padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-family:var(--font-ui);text-align:right;"></div>'
-      +'<details style="margin-bottom:10px;"><summary style="font-size:11px;font-weight:600;color:var(--text3);cursor:pointer;user-select:none;padding:4px 0;">Ver texto del correo \u25be</summary>'
+      +'<details open style="margin-bottom:10px;"><summary style="font-size:12px;font-weight:600;color:var(--accent);cursor:pointer;user-select:none;padding:6px 0;">Texto del correo</summary>'
       +'<textarea class="email-preview" id="cEmailTxt_'+idx+'" readonly>' + texto.replace(/&/g,'&amp;').replace(/</g,'&lt;') + '</textarea></details>'
       +'<div style="display:flex;gap:6px;flex-wrap:wrap;">'
       +'<button class="btn btn-primary" onclick="_abrirCorreoTab('+idx+')" style="display:inline-flex;align-items:center;gap:6px;min-height:36px;font-size:13px;border-radius:10px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Abrir en Gmail</button>'
@@ -8716,7 +8718,25 @@ function _renderCorreoTab(){
       +'<button class="btn" data-idx="'+idx+'" data-nom="'+al.nombre.replace(/"/g,'&quot;')+'" onclick="_guardarCorreoTab(parseInt(this.dataset.idx),this.dataset.nom)" style="display:inline-flex;align-items:center;gap:6px;min-height:36px;font-size:13px;border-radius:10px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Guardar</button>'
       +'</div></div>';
   });
-  ct.innerHTML=html;window._correoTabCriticos=criticos;
+  ct.innerHTML=html;
+  window._correoTabCriticos=criticos;
+  // Auto-resize: ajustar altura de cada textarea al contenido real
+  setTimeout(function(){
+    ct.querySelectorAll('textarea.email-preview').forEach(function(ta){
+      ta.style.height='auto';
+      ta.style.height=Math.max(360, ta.scrollHeight+24)+'px';
+    });
+    // Reajustar cuando se abre un details
+    ct.querySelectorAll('details').forEach(function(det){
+      det.addEventListener('toggle', function(){
+        var ta=det.querySelector('textarea.email-preview');
+        if(ta && det.open){
+          ta.style.height='auto';
+          ta.style.height=Math.max(360, ta.scrollHeight+24)+'px';
+        }
+      });
+    });
+  }, 50);
 }
 function _abrirCorreoTab(idx){
   var criticos=window._correoTabCriticos||[],al=criticos[idx];if(!al)return;
