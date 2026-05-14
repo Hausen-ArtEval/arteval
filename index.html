@@ -4364,8 +4364,8 @@ function renderRegistros() {
   if (_btnAlexia2) {
     _btnAlexia2.style.display = 'inline-block';
     // Mostrar el nombre del curso en el botón para feedback inmediato
-    _btnAlexia2.textContent = '📥 Alexia — ' + curso;
-    _btnAlexia2.title = 'Exportar planilla Alexia para ' + curso;
+    _btnAlexia2.textContent = cursoSeleccionado ? '📥 Alexia — ' + cursoSeleccionado : '📥 Alexia XLS';
+    _btnAlexia2.title = cursoSeleccionado ? 'Exportar planilla Alexia para ' + cursoSeleccionado : 'Exportar en formato Alexia';
   }
   const _btnUniversal = document.getElementById('btnExportUniversal');
   if (_btnUniversal) _btnUniversal.style.display = 'inline-block';
