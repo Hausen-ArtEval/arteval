@@ -240,13 +240,14 @@ body {
 .btn {
   font-size: 13px; font-weight: 500;
   padding: 9px 16px;
+  min-height: 44px; /* táctil iOS */
   border: 0.5px solid var(--border); border-radius: var(--rad);
   cursor: pointer; background: var(--bg2); color: var(--text2);
   transition: all 0.12s; white-space: nowrap; font-family: var(--font-ui);
   min-height: 44px; display: inline-flex; align-items: center; gap: 6px;
   touch-action: manipulation;
 }
-.btn:hover { background: var(--bg3); color: var(--text); }
+.btn:hover { background: var(--bg3); color: var(--text); transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
 .btn:disabled { opacity: 0.35; cursor: not-allowed; }
 .btn-sm { font-size: 11px; padding: 4px 10px; min-height: 30px; }
 .btn-icon { padding: 8px 10px; }
@@ -494,8 +495,8 @@ input[type="text"]:focus, textarea:focus, select:focus {
 
 /* ── MODALS ──────────────────────────────────────────────── */
 .modal-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.35);
-  backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center;
+  position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(12px); display: flex; align-items: center; justify-content: center;
   z-index: 500; padding: 16px;
 }
 .modal-box {
@@ -1802,9 +1803,53 @@ media (prefers-color-scheme: dark) {
   font-size: 13px;
   font-weight: 700;
   font-family: 'DM Sans', -apple-system, sans-serif;
-  padding: 4px 12px;
+  padding: 5px 12px;
   border-radius: 20px;
   flex-shrink: 0;
+  min-width: 80px;
+  text-align: center;
+  transition: transform 0.15s ease;
+}
+
+/* ── ArtEval V.100 — Variables adicionales y micro-interacciones ────── */
+:root {
+  --ae-shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 0.5px var(--ae-border,#E5E5EA);
+  --ae-shadow-md: 0 4px 16px rgba(0,0,0,0.10), 0 1px 4px rgba(0,0,0,0.06);
+  --ae-shadow-lg: 0 16px 48px rgba(0,0,0,0.16), 0 4px 12px rgba(0,0,0,0.08);
+  --ae-radius-sm: 8px;
+  --ae-radius-md: 12px;
+  --ae-radius-lg: 16px;
+  --ae-radius-xl: 20px;
+  --ae-transition: all 0.2s ease;
+}
+/* Curso chip táctil */
+.curso-chip {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+}
+/* Botón icono táctil */
+.btn-icon {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+/* reg-card hover mejorado */
+.reg-card:active { transform: scale(0.995); }
+/* Modal box mejorado */
+.modal-box {
+  box-shadow: var(--ae-shadow-lg);
+  border-radius: var(--ae-radius-xl);
+}
+/* Config card hover */
+.config-card:hover {
+  box-shadow: var(--ae-shadow-md);
+}
+/* Transición global para elementos interactivos */
+button, .btn, .tab, .curso-chip, .reg-card, .config-card, input, select {
+  -webkit-tap-highlight-color: transparent;
 }
 </style>
 
@@ -12165,6 +12210,16 @@ async function guardarYLiberarLocalStorage() {
       rubricaActiva: rubricaActiva,
       alexiaDatos:  JSON.parse(JSON.stringify(alexiaDatos || {})),
       apoderadoEmails: JSON.parse(JSON.stringify(_apoderadoEmails || {})),
+      // Configuración de correo y preferencias del profesor
+      config: {
+        emailProf:         localStorage.getItem('av_email_prof')          || '',
+        emailColegio:      localStorage.getItem('av_email_colegio')       || '',
+        emailUTP:          localStorage.getItem('av_email_utp')           || '',
+        emailInstitucional:localStorage.getItem('av_email_institucional') || '',
+        gmailAcctIdx:      localStorage.getItem('av_gmail_acct_idx')      || '1',
+        rubricaActiva:     rubricaActiva,
+        geminiKey:         localStorage.getItem('av_gemini_key')          || '',
+      },
     };
   } catch(snapErr) {
     toast('❌ Error al preparar datos: ' + snapErr.message, 'err', 6000);
@@ -12572,6 +12627,16 @@ async function syncFromDrive() {
     if (raw.apoderadoEmails && Object.keys(raw.apoderadoEmails).length) {
       Object.assign(_apoderadoEmails, raw.apoderadoEmails);
       try { localStorage.setItem('av_apoderado_emails', JSON.stringify(_apoderadoEmails)); } catch(e) {}
+    }
+    // Restaurar configuración del profesor desde Drive
+    if (raw.config) {
+      var cfg = raw.config;
+      if (cfg.emailProf)          { localStorage.setItem('av_email_prof',          cfg.emailProf); }
+      if (cfg.emailColegio)       { localStorage.setItem('av_email_colegio',       cfg.emailColegio); }
+      if (cfg.emailUTP)           { localStorage.setItem('av_email_utp',           cfg.emailUTP); }
+      if (cfg.emailInstitucional) { localStorage.setItem('av_email_institucional', cfg.emailInstitucional); }
+      if (cfg.gmailAcctIdx)       { localStorage.setItem('av_gmail_acct_idx',      cfg.gmailAcctIdx); }
+      if (cfg.geminiKey)          { localStorage.setItem('av_gemini_key',          cfg.geminiKey); }
     }
     listaCursos   = JSON.parse(JSON.stringify(raw.listaCursos  || {}));
     rubricaActiva = raw.rubricaActiva || 0;
