@@ -405,11 +405,18 @@ input[type="text"]:focus, textarea:focus, select:focus {
 .search-input:focus { outline: none; border-color: var(--accent); width: 240px; box-shadow: 0 0 0 3px var(--accent-bg); }
 .reg-list { display: flex; flex-direction: column; gap: 5px; }
 .reg-card {
-  background: var(--bg2); border: 0.5px solid var(--border);
-  border-radius: var(--rad); padding: 13px 16px;
-  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-  transition: all 0.15s; box-shadow: var(--shadow-sm);
+  background: var(--ae-white, #fff);
+  border: none;
+  border-top: 0.5px solid var(--ae-border, #E5E5EA);
+  border-radius: 0;
+  padding: 14px 20px;
+  display: flex; align-items: center; gap: 12px;
+  flex-wrap: wrap; transition: background 0.12s;
 }
+.reg-card:first-child { border-top: none; border-radius: 12px 12px 0 0; }
+.reg-card:last-child  { border-radius: 0 0 12px 12px; }
+.reg-card:only-child  { border-radius: 12px; }
+.reg-card:hover { background: var(--ae-gray-light, #F2F2F7); }
 .reg-card:hover { border-color: rgba(255,149,0,0.35); box-shadow: 0 4px 16px rgba(255,149,0,0.08); }
 .reg-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; background: var(--accent-bg); color: var(--accent); }
 .reg-info { flex: 1; min-width: 0; }
@@ -1766,6 +1773,38 @@ media (prefers-color-scheme: dark) {
   letter-spacing: 0.6px; color: var(--ae-gray, #8E8E93);
   padding: 12px 20px 8px;
   background: var(--ae-gray-light, #F2F2F7);
+}
+
+/* ── Registros: wrapper iOS grouped list ─────────────────────────────── */
+#registrosList {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.reg-group {
+  background: var(--ae-white, #fff);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 0 0 0.5px var(--ae-border,#E5E5EA);
+}
+.reg-group-header {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.6px; color: var(--ae-gray, #8E8E93);
+  padding: 12px 20px 8px;
+  background: var(--ae-gray-light, #F2F2F7);
+}
+.reg-nombre {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ae-black, #1C1C1E);
+}
+.reg-badge {
+  font-size: 13px;
+  font-weight: 700;
+  font-family: 'DM Sans', -apple-system, sans-serif;
+  padding: 4px 12px;
+  border-radius: 20px;
+  flex-shrink: 0;
 }
 </style>
 
@@ -4395,10 +4434,20 @@ function renderRegistros() {
   list.style.display = 'block';
   list.innerHTML = '';
 
+  // FIX v90: empty state elegante si no hay resultados
+  if (!filtrados.length) {
+    list.innerHTML = '<div style="text-align:center;padding:60px 20px;">'  
+      + '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--border)" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:0 auto 14px;opacity:0.4;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>'
+      + '<div style="font-size:15px;font-weight:600;color:var(--text2);margin-bottom:6px;">Sin evaluaciones registradas</div>'
+      + '<div style="font-size:13px;color:var(--text3);">Selecciona otro curso o instancia</div>'
+      + '</div>';
+    return;
+  }
+
   filtrados.forEach(function(r) {
     if (!r) return;
     const idx = registros.indexOf(r);
-    const nota = r.nota || 1.0;
+    const nota = (typeof r.nota === 'number') ? r.nota : (parseFloat(r.nota) || 1.0);
     let bg, clr;
     if (nota >= 6.0)      { bg='var(--blue-bg)';  clr='var(--blue)';  }
     else if (nota >= 4.0) { bg='var(--green-bg)'; clr='var(--green)'; }
@@ -4423,7 +4472,20 @@ function renderRegistros() {
         <button class="btn btn-icon" title="Duplicar" onclick="duplicar(${idx})">⧉</button>
         <button class="btn btn-icon btn-danger" title="Eliminar" onclick="eliminar(${idx})"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>`;
-    list.appendChild(card);
+    // FIX v90: acumular en grupos por curso (iOS Grouped List)
+    const cardCurso = r.curso || 'Sin curso';
+    let grp = list.querySelector('.reg-group[data-curso="'+CSS.escape(cardCurso)+'"]');
+    if (!grp) {
+      grp = document.createElement('div');
+      grp.className = 'reg-group';
+      grp.setAttribute('data-curso', cardCurso);
+      const hdr = document.createElement('div');
+      hdr.className = 'reg-group-header';
+      hdr.textContent = cardCurso;
+      grp.appendChild(hdr);
+      list.appendChild(grp);
+    }
+    grp.appendChild(card);
   });
 }
 
@@ -4452,7 +4514,8 @@ function renderLibroClases(filtrados, container) {
       const n = (r.nombre||'Sin nombre').trim();
       if (!porAlumno[n]) porAlumno[n] = { nombre: n, pie: r.pie, notas: {}, noEntregado: {}, sinRegistro: false };
       const inst = r.instancia || 'Evaluación 1';
-      porAlumno[n].notas[inst] = r.nota || 1.0;
+      // FIX v90: preservar nota exacta (evitar 0 → 1.0)
+      porAlumno[n].notas[inst] = (typeof r.nota === 'number') ? r.nota : (parseFloat(r.nota) || 1.0);
       if (r.noEntregado) porAlumno[n].noEntregado[inst] = true;
     });
 
@@ -8749,13 +8812,78 @@ function _abrirCorreoTab(idx){
   var texto=_generarTextoEmail(al,prof,cole);
   var asunto='Situaci\u00f3n acad\u00e9mica Artes Visuales \u2014 '+al.nombre;
   if(email&&email.includes('@')){_apoderadoEmails[al.nombre.trim().toUpperCase()]=email.toLowerCase();_saveApoderadoEmails();}
-  if(inst&&inst.includes('@')){
-    var url='https://mail.google.com/mail/u/'+acctIdx+'/?authuser='+encodeURIComponent(inst)+'&view=cm&to='+encodeURIComponent(email)+'&su='+encodeURIComponent(asunto)+'&body='+encodeURIComponent(texto)+(utp?'&cc='+encodeURIComponent(utp):'');
-    window.open(url,'_blank');
-  }else{
-    window.location.href='mailto:'+encodeURIComponent(email)+(utp?'?cc='+encodeURIComponent(utp)+'&':'?')+'subject='+encodeURIComponent(asunto)+'&body='+encodeURIComponent(texto);
+
+  // Construir URL de Gmail institucional
+  function buildGmailUrl(aidx, authEmail){
+    var q=authEmail?'?authuser='+encodeURIComponent(authEmail)+'&':'?';
+    return 'https://mail.google.com/mail/u/'+aidx+'/'+q
+      +'view=cm&to='+encodeURIComponent(email)
+      +'&su='+encodeURIComponent(asunto)
+      +'&body='+encodeURIComponent(texto)
+      +(utp?'&cc='+encodeURIComponent(utp):'');
   }
+  var urlInst  = inst?buildGmailUrl(acctIdx,inst):null;
+  var urlPerso = buildGmailUrl(0,'');
+
+  // Mini-modal selector de cuenta — construido con DOM, sin innerHTML complejo
+  var overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,0.4);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:20px;';
+  overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});
+
+  var box=document.createElement('div');
+  box.style.cssText='background:#fff;border-radius:18px;width:100%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,0.25);overflow:hidden;';
+
+  // Cabecera
+  var hdr=document.createElement('div');
+  hdr.style.cssText='padding:20px 24px 12px;';
+  hdr.innerHTML='<div style="font-size:16px;font-weight:700;color:#1C1C1E;margin-bottom:4px;">Seleccionar cuenta</div>'
+    +'<div style="font-size:13px;color:#8E8E93;">\u00bfDesde qu\u00e9 cuenta de Gmail deseas enviar?</div>';
+  box.appendChild(hdr);
+
+  // Lista de opciones
+  var lista=document.createElement('div');
+  lista.style.cssText='border-top:0.5px solid #E5E5EA;';
+
+  function addBtn(label,sublabel,sublabelColor,action){
+    var btn=document.createElement('button');
+    btn.style.cssText='width:100%;padding:16px 24px;text-align:left;border:none;border-bottom:0.5px solid #E5E5EA;background:none;cursor:pointer;font-family:inherit;';
+    btn.innerHTML='<div style="font-size:14px;font-weight:600;color:#1C1C1E;">'+label+'</div>'
+      +'<div style="font-size:12px;color:'+sublabelColor+';margin-top:2px;">'+sublabel+'</div>';
+    btn.addEventListener('click',function(){overlay.remove();action();});
+    btn.addEventListener('mouseover',function(){btn.style.background='#F2F2F7';});
+    btn.addEventListener('mouseout',function(){btn.style.background='none';});
+    lista.appendChild(btn);
+  }
+
+  if(urlInst){
+    addBtn(inst,'Cuenta del colegio','#FF9500',function(){window.open(urlInst,'_blank');});
+  }
+  addBtn('Gmail (cuenta principal)','Abre en nueva pesta\u00f1a','#8E8E93',function(){window.open(urlPerso,'_blank');});
+  addBtn('Copiar texto del correo','P\u00e9galo en cualquier cliente de correo','#8E8E93',function(){
+    navigator.clipboard.writeText(texto).then(function(){
+      toast('\u2713 Texto copiado \u2014 p\u00e9galo en Gmail','ok',3000);
+    }).catch(function(){
+      var ta=document.createElement('textarea');ta.value=texto;
+      document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();
+      toast('\u2713 Copiado','ok',2500);
+    });
+  });
+  box.appendChild(lista);
+
+  // Botón cancelar
+  var footer=document.createElement('div');
+  footer.style.cssText='padding:12px 16px;';
+  var cancelBtn=document.createElement('button');
+  cancelBtn.style.cssText='width:100%;padding:12px;border-radius:10px;border:none;background:#F2F2F7;cursor:pointer;font-size:14px;font-weight:600;color:#8E8E93;font-family:inherit;';
+  cancelBtn.textContent='Cancelar';
+  cancelBtn.addEventListener('click',function(){overlay.remove();});
+  footer.appendChild(cancelBtn);
+  box.appendChild(footer);
+
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
 }
+
 function _copiarCorreoTab(idx){
   var criticos=window._correoTabCriticos||[],al=criticos[idx];if(!al)return;
   var prof=(document.getElementById('correoNombreProf')||{}).value||localStorage.getItem('av_email_prof')||'';
