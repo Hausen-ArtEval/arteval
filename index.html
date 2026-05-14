@@ -1625,170 +1625,95 @@ media (prefers-color-scheme: dark) {
 }
 
 /* ── Modal Correos Apoderados ─────────────────────────────────────────── */
-/* ── Módulo correos apoderados — rediseño v80 ─────────────────────────── */
 .email-modal-overlay {
   position: fixed; inset: 0; z-index: 3000;
-  background: rgba(0,0,0,0.45);
-  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
   display: flex; align-items: center; justify-content: center;
-  padding: 16px;
-  animation: fadeIn 0.2s ease;
+  padding: 20px;
 }
 .email-modal-box {
-  background: var(--ae-white,#fff); border-radius: 20px;
-  width: 100%; max-width: 660px; max-height: 90vh;
+  background: var(--bg2); border-radius: 20px;
+  width: 100%; max-width: 680px; max-height: 88vh;
   overflow: hidden; display: flex; flex-direction: column;
-  box-shadow: 0 24px 64px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.06);
-  animation: slideUp 0.28s cubic-bezier(.34,1.3,.64,1);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  animation: slideUp 0.25s cubic-bezier(.34,1.3,.64,1);
 }
 .email-modal-header {
-  padding: 18px 22px 14px;
-  border-bottom: 1px solid var(--ae-border,#E5E5EA);
+  padding: 20px 24px 14px;
+  border-bottom: 0.5px solid var(--border);
   display: flex; align-items: center;
   justify-content: space-between; gap: 12px;
   flex-shrink: 0;
-  background: var(--ae-white,#fff);
 }
 .email-modal-title {
-  font-size: 16px; font-weight: 700; color: var(--ae-black,#1C1C1E);
-  letter-spacing: -0.3px;
+  font-size: 17px; font-weight: 700; color: var(--text);
 }
-.email-modal-subtitle {
-  font-size: 12px; color: var(--ae-gray,#8E8E93); margin-top: 2px;
-}
-.email-modal-close {
-  width: 28px; height: 28px; border-radius: 50%;
-  background: var(--ae-gray-light,#F2F2F7); border: none;
-  cursor: pointer; display: flex; align-items: center; justify-content: center;
-  color: var(--ae-gray,#8E8E93); font-size: 16px; transition: all 0.15s;
-  flex-shrink: 0;
-}
-.email-modal-close:hover { background: var(--ae-border,#E5E5EA); color: var(--ae-black,#1C1C1E); }
 .email-modal-body {
-  overflow-y: auto; flex: 1; padding: 16px 22px;
-  background: var(--ae-gray-light,#F2F2F7);
+  overflow-y: auto; flex: 1; padding: 16px 24px;
 }
-/* Tira de importación */
-.email-import-strip {
-  background: var(--ae-white,#fff);
-  border: 1px solid var(--ae-border,#E5E5EA);
-  border-radius: 14px; padding: 12px 16px;
-  margin-bottom: 14px;
-  display: flex; align-items: center; gap: 10px;
-  font-size: 13px; color: var(--ae-black,#1C1C1E); font-weight: 500;
-}
-.email-import-strip input[type=file] { display: none; }
-.email-import-btn {
-  margin-left: auto; flex-shrink: 0;
-  background: var(--ae-orange,#FF9500); color: #fff;
-  border: none; border-radius: 10px;
-  padding: 7px 14px; font-size: 12px; font-weight: 700;
-  cursor: pointer; transition: background 0.15s;
-  font-family: var(--font-ui);
-}
-.email-import-btn:hover { background: var(--ae-orange-dark,#E67E00); }
-/* Cards de cada alumno */
 .email-alumno-card {
-  background: var(--ae-white,#fff);
-  border-radius: 16px; padding: 16px;
-  margin-bottom: 10px;
-  border: 1px solid var(--ae-border,#E5E5EA);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-  transition: box-shadow 0.15s;
+  background: var(--bg3); border-radius: 14px;
+  padding: 16px; margin-bottom: 12px;
+  border: 1px solid var(--border);
 }
-.email-alumno-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
 .email-alumno-header {
-  display: flex; align-items: flex-start;
-  justify-content: space-between; margin-bottom: 12px; gap: 10px;
+  display: flex; align-items: center;
+  justify-content: space-between; margin-bottom: 10px; gap: 8px;
 }
 .email-alumno-nombre {
-  font-size: 15px; font-weight: 700;
-  color: var(--ae-black,#1C1C1E); letter-spacing: -0.2px;
+  font-size: 14px; font-weight: 700; color: var(--text);
 }
 .email-alumno-prom {
-  font-size: 20px; font-weight: 800;
-  font-family: var(--font-mono); color: #FF3B30;
-  flex-shrink: 0; letter-spacing: -1px;
+  font-size: 16px; font-weight: 800;
+  font-family: var(--font-mono); color: var(--red);
+  flex-shrink: 0;
 }
-/* Campos de input */
 .email-campo {
-  display: flex; align-items: center; gap: 10px;
+  display: flex; align-items: center; gap: 8px;
   margin-bottom: 8px;
 }
 .email-campo label {
-  font-size: 10px; font-weight: 700; color: var(--ae-gray,#8E8E93);
-  text-transform: uppercase; letter-spacing: 0.6px;
-  min-width: 80px; flex-shrink: 0;
+  font-size: 11px; font-weight: 600; color: var(--text3);
+  text-transform: uppercase; letter-spacing: 0.5px;
+  min-width: 90px; flex-shrink: 0;
 }
 .email-campo input {
-  flex: 1; padding: 9px 12px; border-radius: 12px;
-  border: 1.5px solid var(--ae-border,#E5E5EA);
-  background: var(--ae-gray-light,#F2F2F7);
-  color: var(--ae-black,#1C1C1E); font-size: 13px;
-  font-family: var(--font-ui); transition: border-color 0.15s, box-shadow 0.15s;
+  flex: 1; padding: 7px 10px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--bg2);
+  color: var(--text); font-size: 13px; font-family: var(--font-ui);
 }
 .email-campo input:focus {
-  outline: none;
-  border-color: var(--ae-orange,#FF9500);
-  box-shadow: 0 0 0 3px rgba(255,149,0,0.15);
-  background: var(--ae-white,#fff);
+  outline: none; border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-bg);
 }
-/* Vista previa del correo */
 .email-preview {
-  background: var(--ae-gray-light,#F2F2F7);
-  border-radius: 12px; padding: 14px;
-  font-size: 12px; line-height: 1.75;
-  color: var(--ae-black,#1C1C1E); white-space: pre-wrap;
-  border: 1px solid var(--ae-border,#E5E5EA);
-  margin-top: 10px; font-family: var(--font-ui);
-  max-height: 200px; overflow-y: auto;
+  background: var(--bg2); border-radius: 10px;
+  padding: 12px; font-size: 12px; line-height: 1.7;
+  color: var(--text2); white-space: pre-wrap;
+  border: 1px solid var(--border); margin-top: 10px;
+  font-family: var(--font-ui); max-height: 180px;
+  overflow-y: auto;
 }
-/* Botones de acciones por alumno */
 .email-acciones {
-  display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap;
+  display: flex; gap: 8px; margin-top: 10px;
+  flex-wrap: wrap;
 }
-.email-btn-action {
-  display: inline-flex; align-items: center; gap: 5px;
-  padding: 8px 14px; border-radius: 10px; border: none;
-  font-size: 12px; font-weight: 600; cursor: pointer;
-  font-family: var(--font-ui); transition: all 0.15s;
-  touch-action: manipulation;
-}
-.email-btn-send {
-  background: var(--ae-orange,#FF9500); color: #fff;
-  box-shadow: 0 2px 8px rgba(255,149,0,0.25);
-}
-.email-btn-send:hover { background: var(--ae-orange-dark,#E67E00); transform: translateY(-1px); }
-.email-btn-copy {
-  background: var(--ae-gray-light,#F2F2F7);
-  color: var(--ae-black,#1C1C1E);
-  border: 1px solid var(--ae-border,#E5E5EA);
-}
-.email-btn-copy:hover { background: var(--ae-border,#E5E5EA); }
-.email-btn-save {
-  background: var(--ae-gray-light,#F2F2F7);
-  color: var(--ae-gray,#8E8E93);
-  border: 1px solid var(--ae-border,#E5E5EA);
-}
-/* Footer */
 .email-modal-footer {
-  padding: 14px 22px;
-  border-top: 1px solid var(--ae-border,#E5E5EA);
+  padding: 14px 24px; border-top: 0.5px solid var(--border);
   display: flex; align-items: center;
   justify-content: space-between; gap: 10px;
-  flex-shrink: 0; background: var(--ae-white,#fff);
+  flex-shrink: 0; background: var(--bg2);
 }
-.email-footer-count {
-  font-size: 12px; color: var(--ae-gray,#8E8E93);
+.email-import-strip {
+  background: var(--accent-bg); border-radius: 10px;
+  padding: 10px 14px; margin-bottom: 14px;
+  display: flex; align-items: center; gap: 10px;
+  font-size: 13px; color: var(--accent); font-weight: 600;
 }
-.email-btn-all {
-  background: var(--ae-orange,#FF9500); color: #fff;
-  border: none; border-radius: 12px; padding: 10px 18px;
-  font-size: 13px; font-weight: 700; cursor: pointer;
-  font-family: var(--font-ui); transition: background 0.15s;
-  display: flex; align-items: center; gap: 6px;
+.email-import-strip input[type=file] {
+  display: none;
 }
-.email-btn-all:hover { background: var(--ae-orange-dark,#E67E00); }
 
 /* ── Modal exportación Alexia ─────────────────────────────────────────── */
 .alexia-export-curso-activo {
@@ -1805,18 +1730,6 @@ media (prefers-color-scheme: dark) {
 }
 .alexia-stat-lbl {
   font-size: 11px; color: var(--text3); margin-top: 2px;
-}
-/* ── Tab Correo: page header ──────────────────────────────────────────── */
-.page-header {
-  display: flex; align-items: flex-start;
-  justify-content: space-between; gap: 12px; flex-wrap: wrap;
-}
-.page-title {
-  font-size: 20px; font-weight: 700;
-  color: var(--ae-black,#1C1C1E); letter-spacing: -0.4px;
-}
-.page-subtitle {
-  font-size: 13px; color: var(--ae-gray,#8E8E93); margin-top: 3px;
 }
 </style>
 
@@ -2535,50 +2448,89 @@ media (prefers-color-scheme: dark) {
     <!-- ══════════════ TAB: REPORTE ══════════════ -->
     <!-- ══ TAB CORREO ══════════════════════════════════════════════════════ -->
     <div id="tab-correo" style="display:none">
-      <div class="page-header" style="margin-bottom:18px;">
-        <div>
-          <div class="page-title">📧 Correos a apoderados</div>
-          <div class="page-subtitle">Alumnos con promedio crítico (bajo 4,0) — genera y envía correos desde aquí</div>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <label class="email-import-btn" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            Subir matrícula
-            <input type="file" accept=".xlsx,.xls,.csv,.txt" onchange="importarPlanillaApoderados(this.files[0]);this.value=''">
-          </label>
-          <span id="correoTabEmailBadge" style="font-size:12px;color:var(--ae-orange,#FF9500);font-weight:600;"></span>
+
+      <div class="config-card" style="border-left:3px solid var(--accent);margin-bottom:14px;">
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div style="width:44px;height:44px;background:var(--accent-bg);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          </div>
+          <div style="flex:1;">
+            <h3 style="margin-bottom:2px;">Correos a apoderados</h3>
+            <div style="font-size:13px;color:var(--text3);">Alumnos con promedio crítico (bajo 4,0)</div>
+          </div>
+          <span id="correoTabEmailBadge" style="font-size:11px;color:var(--accent);font-weight:600;background:var(--accent-bg);padding:4px 10px;border-radius:20px;white-space:nowrap;"></span>
         </div>
       </div>
 
-      <!-- Campos globales: profesor y colegio -->
-      <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
-        <div style="flex:1;min-width:200px;">
-          <label style="font-size:10px;font-weight:700;color:var(--ae-gray,#8E8E93);text-transform:uppercase;letter-spacing:0.6px;display:block;margin-bottom:5px;">Tu nombre</label>
-          <input id="correoNombreProf" type="text" placeholder="Nombre del profesor/a"
-            style="width:100%;padding:9px 12px;border-radius:12px;border:1.5px solid var(--ae-border,#E5E5EA);background:var(--ae-gray-light,#F2F2F7);color:var(--ae-black,#1C1C1E);font-size:13px;font-family:var(--font-ui);box-sizing:border-box;"
-            oninput="localStorage.setItem('av_email_prof',this.value);_renderCorreoTab()">
+      <div class="config-card" style="margin-bottom:14px;">
+        <h3 style="margin-bottom:14px;">Datos del remitente</h3>
+        <div style="display:flex;align-items:center;padding:12px 0;border-bottom:0.5px solid var(--border);">
+          <div style="display:flex;align-items:center;gap:10px;flex:1;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <div style="font-size:14px;font-weight:500;color:var(--text);">Tu nombre</div>
+          </div>
+          <input id="correoNombreProf" type="text" placeholder="Nombre del profesor/a" style="max-width:240px;padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-family:var(--font-ui);text-align:right;" oninput="localStorage.setItem('av_email_prof',this.value)">
         </div>
-        <div style="flex:1;min-width:200px;">
-          <label style="font-size:10px;font-weight:700;color:var(--ae-gray,#8E8E93);text-transform:uppercase;letter-spacing:0.6px;display:block;margin-bottom:5px;">Colegio</label>
-          <input id="correoNombreColegio" type="text" placeholder="Nombre del establecimiento"
-            style="width:100%;padding:9px 12px;border-radius:12px;border:1.5px solid var(--ae-border,#E5E5EA);background:var(--ae-gray-light,#F2F2F7);color:var(--ae-black,#1C1C1E);font-size:13px;font-family:var(--font-ui);box-sizing:border-box;"
-            oninput="localStorage.setItem('av_email_colegio',this.value);_renderCorreoTab()">
+        <div style="display:flex;align-items:center;padding:12px 0;border-bottom:0.5px solid var(--border);">
+          <div style="display:flex;align-items:center;gap:10px;flex:1;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><path d="M8 21h8M12 17v4"/></svg>
+            <div>
+              <div style="font-size:14px;font-weight:500;color:var(--text);">Correo institucional</div>
+              <div style="font-size:11px;color:var(--text3);">Gmail del colegio — abre esta cuenta al enviar</div>
+            </div>
+          </div>
+          <input id="correoInstitucional" type="email" placeholder="nombre@colegio.cl" style="max-width:240px;padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-family:var(--font-ui);text-align:right;" oninput="localStorage.setItem('av_email_institucional',this.value)">
         </div>
-        <div style="flex:1;min-width:200px;">
-          <label style="font-size:10px;font-weight:700;color:var(--ae-gray,#8E8E93);text-transform:uppercase;letter-spacing:0.6px;display:block;margin-bottom:5px;">CC a UTP</label>
-          <input id="correoEmailUTP" type="email" placeholder="utp@colegio.cl"
-            style="width:100%;padding:9px 12px;border-radius:12px;border:1.5px solid var(--ae-border,#E5E5EA);background:var(--ae-gray-light,#F2F2F7);color:var(--ae-black,#1C1C1E);font-size:13px;font-family:var(--font-ui);box-sizing:border-box;"
-            oninput="localStorage.setItem('av_email_utp',this.value)">
+        <div style="display:flex;align-items:center;padding:12px 0;border-bottom:0.5px solid var(--border);">
+          <div style="display:flex;align-items:center;gap:10px;flex:1;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <div style="font-size:14px;font-weight:500;color:var(--text);">Colegio</div>
+          </div>
+          <input id="correoNombreColegio" type="text" placeholder="Nombre del establecimiento" style="max-width:240px;padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-family:var(--font-ui);text-align:right;" oninput="localStorage.setItem('av_email_colegio',this.value)">
+        </div>
+        <div style="display:flex;align-items:center;padding:12px 0;">
+          <div style="display:flex;align-items:center;gap:10px;flex:1;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <div>
+              <div style="font-size:14px;font-weight:500;color:var(--text);">CC a UTP</div>
+              <div style="font-size:11px;color:var(--text3);">Copia en todos los correos</div>
+            </div>
+          </div>
+          <input id="correoEmailUTP" type="email" placeholder="utp@colegio.cl" style="max-width:240px;padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-family:var(--font-ui);text-align:right;" oninput="localStorage.setItem('av_email_utp',this.value)">
         </div>
       </div>
 
-      <!-- Lista de alumnos críticos -->
-      <div id="correoTabContainer">
-        <div style="text-align:center;padding:60px 20px;color:var(--ae-gray,#8E8E93);">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.3;margin-bottom:12px;display:block;margin-left:auto;margin-right:auto;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-          <div style="font-size:13px;">Cargando alumnos críticos...</div>
+      <div class="config-card" style="margin-bottom:14px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <div>
+            <div style="font-size:14px;font-weight:600;color:var(--text);">Importar planilla de matrícula</div>
+            <div style="font-size:12px;color:var(--text3);">Excel o CSV con emails de los apoderados</div>
+          </div>
+        </div>
+        <label style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;cursor:pointer;background:var(--accent);color:#fff;border-radius:12px;padding:12px 16px;font-size:14px;font-weight:600;font-family:var(--font-ui);box-shadow:0 2px 10px rgba(255,149,0,0.20);box-sizing:border-box;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Subir Excel / CSV con emails
+          <input type="file" accept=".xlsx,.xls,.csv,.txt" onchange="importarPlanillaApoderados(this.files[0]);this.value=''" style="display:none">
+        </label>
+      </div>
+
+      <div class="config-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+          <h3 style="margin-bottom:0;">Alumnos con promedio crítico</h3>
+          <button class="btn btn-primary" onclick="_enviarTodosCorreoTab()" style="display:inline-flex;align-items:center;gap:6px;min-height:36px;font-size:13px;border-radius:10px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            Abrir todos en Gmail
+          </button>
+        </div>
+        <div id="correoTabContainer">
+          <div style="text-align:center;padding:40px;color:var(--text3);">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="opacity:.2;display:block;margin:0 auto 10px;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <div style="font-size:13px;">Cargando alumnos críticos...</div>
+          </div>
         </div>
       </div>
+
     </div>
 
 
@@ -3064,7 +3016,7 @@ function doGet(e) {
 </div><!-- /app -->
 
 <script>
-// Wrapper de seguridad: showTab disponible globalmente desde el inicio
+// Wrapper seguro: showTab disponible antes de que el script cargue
 window._tabPendiente = null;
 if (typeof showTab === 'undefined') {
   window.showTab = function(name) { window._tabPendiente = name; };
@@ -6627,24 +6579,17 @@ function renderAlexiaPlantillasList() {
 // ── Modal de selección antes de exportar ───────────────────────────────────────
 function abrirExportAlexia(cursoDirecto) {
   var cursoTarget = cursoSeleccionado || cursoDirecto || null;
-  if (typeof XLSX === 'undefined') {
-    toast('Libreria Excel no cargada. Recarga la pagina.', 'err', 4000); return;
-  }
+  if (typeof XLSX === 'undefined') { toast('Libreria Excel no cargada.', 'err', 4000); return; }
   var cursosDisp = cursosUnicos();
   if (!cursosDisp.length) { toast('No hay evaluaciones guardadas', 'err', 3000); return; }
-
-  // CASO 1: curso seleccionado con plantilla -> exportar directo
   if (cursoTarget && alexiaDatos[alexiaNormCurso(cursoTarget)]) {
-    _exportAlexiaDiagnostico([cursoTarget]);
-    return;
+    _exportAlexiaDiagnostico([cursoTarget]); return;
   }
-
-  // CASO 2: curso seleccionado sin plantilla
   if (cursoTarget) {
     var otrosOK = cursosDisp.filter(function(c){ return !!alexiaDatos[alexiaNormCurso(c)]; });
     var html = '<div class="modal-title">⚠️ Sin plantilla Alexia para ' + cursoTarget + '</div>'
       + '<div style="background:rgba(255,149,0,0.10);border:1px solid rgba(255,149,0,0.35);border-radius:12px;padding:14px;margin-bottom:12px;">'
-      + '<div style="font-size:13px;color:var(--text2);line-height:1.6;">Sube el <strong>.xls vacio</strong> descargado desde Alexia para ' + cursoTarget + '.<br>Ve a <strong>Configurar → Plantillas Alexia</strong>.</div></div>';
+      + '<div style="font-size:13px;color:var(--text2);">Sube el <strong>.xls vacio</strong> desde Alexia para ' + cursoTarget + '.<br>Ve a <strong>Configurar → Plantillas Alexia</strong>.</div></div>';
     if (otrosOK.length) {
       html += '<div style="font-size:12px;color:var(--text3);margin-bottom:8px;">Exportar otro curso:</div>'
         + '<div style="display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto;" id="alexiaCursosCheck">';
@@ -6653,47 +6598,36 @@ function abrirExportAlexia(cursoDirecto) {
         var id = 'achk_' + alexiaNormCurso(c).replace(/[^a-z0-9]/gi,'_');
         html += '<label style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rad);cursor:pointer;">'
           + '<input type="checkbox" id="' + id + '" data-curso="' + c + '">'
-          + '<span style="flex:1;font-size:13px;font-weight:500;">' + c + '</span>'
-          + '<span style="font-size:11px;color:var(--green);font-family:var(--font-mono);">' + n + ' notas</span></label>';
+          + '<span style="flex:1;font-size:13px;">' + c + '</span>'
+          + '<span style="font-size:11px;color:var(--green);">' + n + ' notas</span></label>';
       });
       html += '</div><div class="modal-footer">'
         + '<button class="btn" onclick="cerrarModal()">Cancelar</button>'
-        + '<button class="btn btn-primary" onclick="confirmarExportAlexia()">Exportar seleccionados</button></div>';
+        + '<button class="btn btn-primary" onclick="confirmarExportAlexia()">Exportar</button></div>';
     } else {
       html += '<div class="modal-footer"><button class="btn btn-primary" onclick="cerrarModal()">Entendido</button></div>';
     }
-    abrirModal(html);
-    return;
+    abrirModal(html); return;
   }
-
-  // CASO 3: sin curso seleccionado
   var cursosInfo = cursosDisp.map(function(c) {
-    var key = alexiaNormCurso(c);
-    var p   = alexiaDatos[key];
-    var n   = registros.filter(function(r){ return alexiaNormCurso(r.curso||'')===key; }).length;
-    return { curso:c, key:key, p:p||null, n:n };
+    var key=alexiaNormCurso(c),p=alexiaDatos[key],n=registros.filter(function(r){return alexiaNormCurso(r.curso||'')===key;}).length;
+    return {curso:c,key:key,p:p||null,n:n};
   });
-  var sinPlant = cursosInfo.filter(function(ci){ return !ci.p; });
-  var html3 = '<div class="modal-title">Exportar notas para Alexia</div>'
-    + '<div style="font-size:12px;color:var(--text2);margin-bottom:10px;">Selecciona los cursos a exportar:</div>'
-    + '<div style="display:flex;flex-direction:column;gap:5px;max-height:340px;overflow-y:auto;margin-bottom:12px;" id="alexiaCursosCheck">';
-  cursosInfo.forEach(function(ci) {
-    var id  = 'achk_' + ci.key.replace(/[^a-z0-9]/gi,'_');
-    var ok2 = !!ci.p;
-    var badge = ok2 ? ci.n + ' notas' : '⚠️ sin plantilla';
-    html3 += '<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg3);border:1.5px solid ' + (ok2?'var(--border)':' rgba(255,149,0,0.3)') + ';border-radius:var(--rad);cursor:pointer;opacity:' + (ok2?'1':'0.55') + ';">'
-      + '<input type="checkbox" id="' + id + '" ' + (ok2?'checked':'disabled') + ' data-curso="' + ci.curso + '">'
-      + '<span style="flex:1;font-size:13px;font-weight:500;">' + ci.curso + '</span>'
-      + '<span style="font-size:11px;color:' + (ok2?'var(--green)':'var(--amber)') + ';font-family:var(--font-mono);">' + badge + '</span></label>';
+  var sinPlant=cursosInfo.filter(function(ci){return !ci.p;});
+  var html3='<div class="modal-title">Exportar notas para Alexia</div>'
+    +'<div style="font-size:12px;color:var(--text2);margin-bottom:10px;">Selecciona los cursos a exportar:</div>'
+    +'<div style="display:flex;flex-direction:column;gap:5px;max-height:340px;overflow-y:auto;margin-bottom:12px;" id="alexiaCursosCheck">';
+  cursosInfo.forEach(function(ci){
+    var id='achk_'+ci.key.replace(/[^a-z0-9]/gi,'_'),ok2=!!ci.p;
+    var badge=ok2?ci.n+' notas':'⚠️ sin plantilla';
+    html3+='<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg3);border:1.5px solid '+(ok2?'var(--border)':'rgba(255,149,0,0.3)')+';border-radius:var(--rad);cursor:pointer;opacity:'+(ok2?'1':'0.55')+';">'
+      +'<input type="checkbox" id="'+id+'" '+(ok2?'checked':'disabled')+' data-curso="'+ci.curso+'">'
+      +'<span style="flex:1;font-size:13px;">'+ci.curso+'</span>'
+      +'<span style="font-size:11px;color:'+(ok2?'var(--green)':'var(--amber)')+';font-family:var(--font-mono);">'+badge+'</span></label>';
   });
-  html3 += '</div>';
-  if (sinPlant.length) {
-    html3 += '<div style="font-size:11px;color:var(--amber);margin-bottom:10px;">'
-      + sinPlant.map(function(c){return c.curso;}).join(', ') + ' sin plantilla.</div>';
-  }
-  html3 += '<div class="modal-footer">'
-    + '<button class="btn" onclick="cerrarModal()">Cancelar</button>'
-    + '<button class="btn btn-primary" onclick="confirmarExportAlexia()">Exportar →</button></div>';
+  html3+='</div>';
+  if(sinPlant.length)html3+='<div style="font-size:11px;color:var(--amber);margin-bottom:10px;">'+sinPlant.map(function(c){return c.curso;}).join(', ')+' sin plantilla.</div>';
+  html3+='<div class="modal-footer"><button class="btn" onclick="cerrarModal()">Cancelar</button><button class="btn btn-primary" onclick="confirmarExportAlexia()">Exportar →</button></div>';
   abrirModal(html3);
 }
 
@@ -8726,178 +8660,132 @@ function _procesarPlanillaApoderadosRows(rows, fileName) {
   _renderEmailCards();
 }
 function _generarTextoEmail(al, nombreProfesor, nombreColegio) {
-  var notas     = al.notas     || [];
-  var instancias= al.instancias|| [];
-  var rubricas  = al.rubricas  || [];
-  var prom      = al.promedio  ? al.promedio.toFixed(1) : '?';
-  var fechaHoy  = new Date().toLocaleDateString('es-CL', { day:'numeric', month:'long', year:'numeric' });
+  var notas = al.notas || [];
+  var instancias = al.instancias || [];
+  var rubricas = al.rubricas || [];
+  var prom = al.promedio ? al.promedio.toFixed(1) : '?';
 
-  // Nombre completo: Nombre + Apellido (no solo apellido ni solo primer nombre)
-  var nombreCompleto = al.nombre || '';
-  // Las partes del nombre en la nómina vienen como APELLIDO APELLIDO NOMBRE NOMBRE
-  // Usar el nombre completo tal como está registrado
-  var partes = nombreCompleto.split(' ').filter(Boolean);
-  // Primer nombre = última parte que tenga 3+ chars (heurística para nómina chilena)
-  var primerNombre = partes.slice(-2).join(' ') || nombreCompleto;
-
-  // Detalle de evaluaciones
-  var detalleNotas = '';
+  // Tabla de notas con rúbrica
+  var tablaNotas = '';
   notas.forEach(function(n, i) {
-    var inst  = instancias[i] || ('Evaluación ' + (i+1));
-    var nota  = (typeof n === 'number') ? n.toFixed(1) : String(n);
-    var logro = n >= 6 ? 'Destacado' : n >= 5 ? 'Logrado' : n >= 4 ? 'Suficiente' : 'No logrado';
-    var rub   = rubricas[i] ? ' — ' + rubricas[i] : '';
-    detalleNotas += '  ' + inst + rub + ': ' + nota + ' (' + logro + ')\n';
+    var inst = instancias[i] || ('Evaluación ' + (i+1));
+    var nota = (typeof n === 'number') ? n.toFixed(1) : String(n);
+    var estado = n >= 6 ? 'Destacado' : n >= 5 ? 'Logrado' : n >= 4 ? 'Suficiente' : 'No logrado';
+    var rub = rubricas[i] ? ' [' + rubricas[i] + ']' : '';
+    tablaNotas += '   • ' + inst + rub + ': ' + nota + ' — ' + estado + '\n';
   });
 
-  var prof  = nombreProfesor || 'Docente de Artes Visuales';
-  var cole  = nombreColegio  || '';
+  // Nombre del alumno: usar sólo el primer nombre para el texto interno
+  var primerNombre = al.nombre.split(' ').filter(function(p){ return p.length > 2; })[0] || al.nombre.split(' ')[0];
 
-  // Plantilla ejecutiva — usar 'el/la estudiante' en acciones para evitar repetir el nombre
-  return fechaHoy + '\n\n'
-    + 'Estimado/a apoderado/a de ' + nombreCompleto + ':\n\n'
-    + 'Informo a usted el resultado de evaluación en Artes Visuales de '
-    + primerNombre + ', ' + al.curso + ':\n\n'
-    + detalleNotas
-    + '\nPromedio: ' + prom + ' — Situación crítica (bajo 4,0).'
-    + ' Se requiere apoyo para revertir este resultado antes del cierre del período.\n\n'
-    + 'Acciones sugeridas:\n'
-    + '  • Revisar junto a el/la estudiante los trabajos y materiales evaluados.\n'
-    + '  • Asegurarse de que el/la estudiante asista con los materiales requeridos a cada clase.\n'
-    + '  • Contactar al docente si desea revisar las evaluaciones o tiene consultas.\n\n'
-    + 'Atentamente,\n'
-    + prof + '\n'
-    + 'Artes Visuales' + (cole ? ' · ' + cole : '') + '\n'
-    + 'ArtEval';
+  var sugerencias = [
+    'Revise junto a su hijo/a los trabajos y materiales evaluados en Artes Visuales.',
+    'Fomente en casa la práctica del dibujo, pintura o cualquier actividad creativa.',
+    'Asegúrese de que ' + primerNombre + ' traiga todos los materiales requeridos a cada clase.',
+    'Si desea revisar las evaluaciones o tiene consultas, puede contactar al docente para una reunión.',
+  ];
+
+  var fechaHoy = new Date().toLocaleDateString('es-CL', { day:'numeric', month:'long', year:'numeric' });
+
+  return 'Estimado/a apoderado/a de ' + al.nombre + ':\n\n' +
+    fechaHoy + '\n\n' +
+    'Me dirijo a usted para informarle sobre la situación académica de ' + primerNombre +
+    ' en la asignatura de Artes Visuales, correspondiente al curso ' + al.curso + '.\n\n' +
+    'Durante el período evaluado, ' + primerNombre + ' ha obtenido las siguientes calificaciones:\n\n' +
+    tablaNotas + '\n' +
+    'Promedio actual: ' + prom + ' (situación crítica — bajo 4,0)\n\n' +
+    'Esta situación requiere atención para que ' + primerNombre +
+    ' pueda revertir su rendimiento antes del cierre del período.\n\n' +
+    'Para apoyar desde el hogar, le sugerimos:\n\n' +
+    sugerencias.map(function(s) { return '   • ' + s; }).join('\n') + '\n\n' +
+    'Quedamos atentos ante cualquier consulta.\n\n' +
+    'Atentamente,\n' +
+    'Profesor/a de Artes Visuales';
 }
 
 // ── Abrir modal de correos ────────────────────────────────────────────────
 
-// ── Tab Correo: renderizar el panel completo de correos a apoderados ──────
+// ── Tab Correo ──────────────────────────────────────────────────────────
 function _renderCorreoTab() {
   var container = document.getElementById('correoTabContainer');
   var badge     = document.getElementById('correoTabEmailBadge');
   if (!container) return;
-
-  // Restaurar valores guardados
   var profInp = document.getElementById('correoNombreProf');
   var coleInp = document.getElementById('correoNombreColegio');
   var utpInp  = document.getElementById('correoEmailUTP');
-  var profVal = localStorage.getItem('av_email_prof')    || '';
-  var coleVal = localStorage.getItem('av_email_colegio') || '';
-  var utpVal  = localStorage.getItem('av_email_utp')     || '';
-  if (profInp && !profInp.value) profInp.value = profVal;
-  if (coleInp && !coleInp.value) coleInp.value = coleVal;
-  if (utpInp  && !utpInp.value)  utpInp.value  = utpVal;
-
-  var prof = profInp ? profInp.value : profVal;
-  var cole = coleInp ? coleInp.value : coleVal;
-  var utp  = utpInp  ? utpInp.value  : utpVal;
-
-  // Badge de emails guardados
-  var totalEmails = Object.keys(_apoderadoEmails).length;
-  if (badge) badge.textContent = totalEmails ? totalEmails + ' emails en planilla' : '';
-
-  // Recopilar alumnos críticos
+  var instInp = document.getElementById('correoInstitucional');
+  if (profInp)  profInp.value  = localStorage.getItem('av_email_prof')          || '';
+  if (coleInp)  coleInp.value  = localStorage.getItem('av_email_colegio')       || '';
+  if (utpInp)   utpInp.value   = localStorage.getItem('av_email_utp')           || '';
+  if (instInp)  instInp.value  = localStorage.getItem('av_email_institucional') || '';
+  var prof = (profInp && profInp.value) || localStorage.getItem('av_email_prof') || '';
+  var cole = (coleInp && coleInp.value) || localStorage.getItem('av_email_colegio') || '';
+  if (badge) badge.textContent = Object.keys(_apoderadoEmails).length ? Object.keys(_apoderadoEmails).length + ' emails' : '';
   var criticos = [];
   TODOS_LOS_CURSOS.forEach(function(curso) {
-    var regsAll = registros.filter(function(r) {
-      return (r.curso||'') === curso && r.nota !== undefined && r.nota !== null;
-    });
+    var regsAll = registros.filter(function(r){ return (r.curso||'')===curso && r.nota!==undefined && r.nota!==null; });
     if (!regsAll.length) return;
     var porAlumno = {};
     regsAll.forEach(function(r) {
       var key = (r.nombre||'').trim().toUpperCase();
       if (!key) return;
-      if (!porAlumno[key]) porAlumno[key] = {
-        nombre: r.nombre, curso: curso, notas: [], instancias: [], rubricas: [], pie: false
-      };
+      if (!porAlumno[key]) porAlumno[key] = { nombre:r.nombre, curso:curso, notas:[], instancias:[], rubricas:[], pie:false };
       porAlumno[key].notas.push(r.nota);
-      porAlumno[key].instancias.push(r.instancia || 'Evaluación 1');
-      porAlumno[key].rubricas.push(r.rubricaNombre || '');
+      porAlumno[key].instancias.push(r.instancia||'Evaluación 1');
+      porAlumno[key].rubricas.push(r.rubricaNombre||'');
       if (r.pie) porAlumno[key].pie = true;
     });
     Object.values(porAlumno).forEach(function(al) {
       if (al.notas.length < 2) return;
-      al.promedio = al.notas.reduce(function(s,n){return s+n;},0) / al.notas.length;
+      al.promedio = al.notas.reduce(function(s,n){return s+n;},0)/al.notas.length;
       if (al.promedio < 4.0) criticos.push(al);
     });
   });
-  criticos.sort(function(a,b){ return a.promedio - b.promedio; });
-
+  criticos.sort(function(a,b){ return a.promedio-b.promedio; });
   if (!criticos.length) {
-    container.innerHTML = '<div style="text-align:center;padding:60px 20px;">'
-      + '<div style="font-size:40px;margin-bottom:12px;">✅</div>'
-      + '<div style="font-size:15px;font-weight:600;color:var(--ae-black,#1C1C1E);margin-bottom:6px;">Sin alumnos críticos</div>'
-      + '<div style="font-size:13px;color:var(--ae-gray,#8E8E93);">Todos los alumnos con 2+ evaluaciones tienen promedio ≥ 4,0</div></div>';
+    container.innerHTML = '<div style="text-align:center;padding:60px 20px;"><div style="font-size:40px;margin-bottom:12px;">\u2705</div><div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px;">Sin alumnos cr\u00edticos</div><div style="font-size:13px;color:var(--text3);">Todos los alumnos con 2+ evaluaciones tienen promedio \u2265 4,0</div></div>';
     return;
   }
-
-  // Cabecera con contador
-  var html = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">'
-    + '<div style="font-size:13px;font-weight:600;color:var(--ae-black,#1C1C1E);">'
-    + criticos.length + ' alumno' + (criticos.length!==1?'s':'') + ' con promedio crítico</div>'
-    + '<button class="email-btn-all" onclick="_enviarTodosCorreoTab()">'
-    + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>'
-    + 'Abrir todos</button></div>';
-
-  // Cards por alumno
+  var html = '<div style="font-size:12px;color:var(--text3);margin-bottom:12px;">' + criticos.length + ' alumno' + (criticos.length!==1?'s':'') + ' con promedio bajo 4,0</div>';
   criticos.forEach(function(al, idx) {
-    var email    = _getEmailApoderado(al.nombre);
-    var prom     = al.promedio.toFixed(1);
-    var promClr  = al.promedio < 2.5 ? '#FF3B30' : '#FF9500';
-    var texto    = _generarTextoEmail(al, prof, cole);
-    var notasStr = al.notas.map(function(n,i){
-      return (al.instancias[i]||'Ev.'+(i+1))+': '+n.toFixed(1);
-    }).join(' · ');
-    var pieIcon = al.pie
-      ? '<svg width="11" height="11" viewBox="0 0 100 100" fill="'+promClr+'" style="vertical-align:middle;margin-left:4px;" aria-label="PIE"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="'+promClr+'" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="'+promClr+'" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="'+promClr+'" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="'+promClr+'" stroke-width="8" stroke-linecap="round" fill="none"/></svg>'
-      : '';
-
-    html += '<div class="email-alumno-card">'
-      // Header alumno
-      + '<div class="email-alumno-header">'
+    var email   = _getEmailApoderado(al.nombre);
+    var prom    = al.promedio.toFixed(1);
+    var promClr = al.promedio < 2.5 ? '#FF3B30' : '#FF9500';
+    var texto   = _generarTextoEmail(al, prof, cole);
+    var notasStr= al.notas.map(function(n,i){ return (al.instancias[i]||'Ev.'+(i+1))+': '+n.toFixed(1); }).join(' \u00b7 ');
+    var pieIcon = al.pie ? '<svg width="11" height="11" viewBox="0 0 100 100" fill="'+promClr+'" style="vertical-align:middle;margin-left:4px;" aria-label="PIE"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="'+promClr+'" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="'+promClr+'" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="'+promClr+'" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="'+promClr+'" stroke-width="8" stroke-linecap="round" fill="none"/></svg>' : '';
+    html += '<div class="config-card" style="padding:16px 20px;margin-bottom:10px;">'
+      + '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;gap:10px;">'
       +   '<div>'
-      +     '<div class="email-alumno-nombre">' + al.nombre + pieIcon + '</div>'
-      +     '<div style="font-size:11px;color:var(--ae-gray,#8E8E93);margin-top:3px;">'
-      +       al.curso + ' · ' + notasStr
-      +     '</div>'
+      +     '<div style="font-size:15px;font-weight:700;color:var(--text);letter-spacing:-0.2px;">' + al.nombre + pieIcon + '</div>'
+      +     '<div style="font-size:11px;color:var(--text3);margin-top:3px;">' + al.curso + ' \u00b7 ' + notasStr + '</div>'
       +   '</div>'
       +   '<div style="text-align:right;">'
-      +     '<div class="email-alumno-prom" style="color:'+promClr+';">' + prom + '</div>'
-      +     '<div style="font-size:10px;color:var(--ae-gray,#8E8E93);">promedio</div>'
+      +     '<div style="font-size:20px;font-weight:800;font-family:var(--font-mono);color:'+promClr+';">' + prom + '</div>'
+      +     '<div style="font-size:10px;color:var(--text3);">promedio</div>'
       +   '</div>'
       + '</div>'
-      // Campo email apoderado
-      + '<div class="email-campo">'
-      +   '<label>Email apoderado</label>'
-      +   '<input type="email" id="cEmailInp_'+idx+'" placeholder="apoderado@email.cl" value="'+email+'"'
-      +   ' style="flex:1;padding:9px 12px;border-radius:12px;border:1.5px solid var(--ae-border,#E5E5EA);background:var(--ae-gray-light,#F2F2F7);color:var(--ae-black);font-size:13px;font-family:var(--font-ui);">'
+      + '<div style="display:flex;align-items:center;padding:10px 0;border-top:0.5px solid var(--border);border-bottom:0.5px solid var(--border);margin-bottom:10px;gap:10px;">'
+      +   '<div style="font-size:13px;font-weight:500;color:var(--text);flex:1;">Email apoderado</div>'
+      +   '<input type="email" id="cEmailInp_'+idx+'" placeholder="correo@ejemplo.cl" value="'+email+'" style="max-width:240px;padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-family:var(--font-ui);text-align:right;">'
       + '</div>'
-      // Vista previa del correo
-      + '<details style="margin-top:8px;">'
-      +   '<summary style="font-size:11px;font-weight:600;color:var(--ae-gray,#8E8E93);cursor:pointer;user-select:none;padding:4px 0;">'
-      +   'Ver texto del correo ▾</summary>'
+      + '<details style="margin-bottom:10px;">'
+      +   '<summary style="font-size:11px;font-weight:600;color:var(--text3);cursor:pointer;user-select:none;padding:4px 0;">Ver texto del correo \u25be</summary>'
       +   '<pre class="email-preview" id="cEmailTxt_'+idx+'">' + texto + '</pre>'
       + '</details>'
-      // Botones de acción
-      + '<div class="email-acciones">'
-      +   '<button class="email-btn-action email-btn-send" onclick="_abrirCorreoTab('+idx+')">'
+      + '<div style="display:flex;gap:6px;flex-wrap:wrap;">'
+      +   '<button class="btn btn-primary" onclick="_abrirCorreoTab('+idx+')" style="display:inline-flex;align-items:center;gap:6px;min-height:36px;font-size:13px;border-radius:10px;">'
       +     '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>'
-      +     ' Abrir en correo</button>'
-      +   '<button class="email-btn-action email-btn-copy" onclick="_copiarCorreoTab('+idx+')">'
+      +     ' Abrir en Gmail</button>'
+      +   '<button class="btn" onclick="_copiarCorreoTab('+idx+')" style="display:inline-flex;align-items:center;gap:6px;min-height:36px;font-size:13px;border-radius:10px;">'
       +     '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'
       +     ' Copiar</button>'
-      +   '<button class="email-btn-action email-btn-save" '
-      +   'data-nom="' + al.nombre.replace(/'/g,'&#39;') + '" '
-      +   'onclick="_guardarCorreoTab(parseInt(this.dataset.idx||' + idx + '),this.dataset.nom)" '
-      +   'data-idx="' + idx + '">'
+      +   '<button class="btn" data-idx="'+idx+'" data-nom="'+al.nombre.replace(/"/g,'&quot;')+'" onclick="_guardarCorreoTab(parseInt(this.dataset.idx),this.dataset.nom)" style="display:inline-flex;align-items:center;gap:6px;min-height:36px;font-size:13px;border-radius:10px;">'
       +     '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>'
-      +     ' Guardar email</button>'
+      +     ' Guardar</button>'
       + '</div>'
       + '</div>';
   });
-
   container.innerHTML = html;
   window._correoTabCriticos = criticos;
 }
@@ -8906,69 +8794,74 @@ function _abrirCorreoTab(idx) {
   var criticos = window._correoTabCriticos || [];
   var al = criticos[idx];
   if (!al) return;
-  var email   = (document.getElementById('cEmailInp_'+idx)||{}).value || '';
-  var utp     = (document.getElementById('correoEmailUTP')||{}).value || localStorage.getItem('av_email_utp')||'';
-  var prof    = (document.getElementById('correoNombreProf')||{}).value   || localStorage.getItem('av_email_prof')||'';
-  var cole    = (document.getElementById('correoNombreColegio')||{}).value || localStorage.getItem('av_email_colegio')||'';
-  var texto   = _generarTextoEmail(al, prof, cole);
-  var asunto  = 'Información académica Artes Visuales — ' + al.nombre;
-  var mailto  = 'mailto:' + encodeURIComponent(email)
-    + (utp ? '?cc=' + encodeURIComponent(utp) + '&' : '?')
-    + 'subject=' + encodeURIComponent(asunto)
-    + '&body='   + encodeURIComponent(texto);
+  var email = (document.getElementById('cEmailInp_'+idx)||{}).value || '';
+  var utp   = (document.getElementById('correoEmailUTP')||{}).value || localStorage.getItem('av_email_utp')||'';
+  var prof  = (document.getElementById('correoNombreProf')||{}).value || localStorage.getItem('av_email_prof')||'';
+  var cole  = (document.getElementById('correoNombreColegio')||{}).value || localStorage.getItem('av_email_colegio')||'';
+  var inst  = (document.getElementById('correoInstitucional')||{}).value || localStorage.getItem('av_email_institucional')||'';
+  var texto  = _generarTextoEmail(al, prof, cole);
+  var asunto = 'Situaci\u00f3n acad\u00e9mica Artes Visuales \u2014 ' + al.nombre;
   if (email && email.includes('@')) {
     _apoderadoEmails[al.nombre.trim().toUpperCase()] = email.toLowerCase();
     _saveApoderadoEmails();
   }
-  window.location.href = mailto;
+  if (inst && inst.includes('@')) {
+    var gmailUrl = 'https://mail.google.com/mail/?authuser=' + encodeURIComponent(inst)
+      + '&view=cm'
+      + '&to='   + encodeURIComponent(email)
+      + '&su='   + encodeURIComponent(asunto)
+      + '&body=' + encodeURIComponent(texto)
+      + (utp ? '&cc=' + encodeURIComponent(utp) : '');
+    window.open(gmailUrl, '_blank');
+  } else {
+    var mailto = 'mailto:' + encodeURIComponent(email)
+      + (utp ? '?cc='+encodeURIComponent(utp)+'&' : '?')
+      + 'subject=' + encodeURIComponent(asunto)
+      + '&body='   + encodeURIComponent(texto);
+    window.location.href = mailto;
+  }
 }
 
 function _copiarCorreoTab(idx) {
   var criticos = window._correoTabCriticos || [];
   var al = criticos[idx];
   if (!al) return;
-  var prof  = (document.getElementById('correoNombreProf')||{}).value   || localStorage.getItem('av_email_prof')||'';
+  var prof  = (document.getElementById('correoNombreProf')||{}).value || localStorage.getItem('av_email_prof')||'';
   var cole  = (document.getElementById('correoNombreColegio')||{}).value || localStorage.getItem('av_email_colegio')||'';
   var texto = _generarTextoEmail(al, prof, cole);
   navigator.clipboard.writeText(texto).then(function(){
-    toast('✓ Copiado — pégalo en tu correo', 'ok', 2500);
+    toast('\u2713 Copiado \u2014 p\u00e9galo en tu correo', 'ok', 2500);
   }).catch(function(){
     var ta = document.createElement('textarea');
     ta.value = texto; document.body.appendChild(ta);
     ta.select(); document.execCommand('copy'); ta.remove();
-    toast('✓ Texto copiado', 'ok', 2500);
+    toast('\u2713 Texto copiado', 'ok', 2500);
   });
 }
 
 function _guardarCorreoTab(idx, nombreAlumno) {
-  // Compatibilidad: nombreAlumno puede venir de dataset o argumento
-  var nom   = (nombreAlumno || '').replace(/&#39;/g, "'").trim();
-  var email = (document.getElementById('cEmailInp_'+idx)||{}).value || '';
-  if (!email || !email.includes('@')) { toast('⚠ Ingresa un email válido', 'err'); return; }
-  if (!nom) { toast('⚠ Error: nombre de alumno no encontrado', 'err'); return; }
+  var nom   = (nombreAlumno||'').replace(/&#39;/g,"'").trim();
+  var email = (document.getElementById('cEmailInp_'+idx)||{}).value||'';
+  if (!email||!email.includes('@')) { toast('\u26a0 Ingresa un email v\u00e1lido', 'err'); return; }
+  if (!nom) { toast('\u26a0 Error: nombre no encontrado', 'err'); return; }
   _apoderadoEmails[nom.toUpperCase()] = email.toLowerCase();
   _saveApoderadoEmails();
-  var badge = document.getElementById('correoTabEmailBadge');
-  if (badge) badge.textContent = Object.keys(_apoderadoEmails).length + ' emails en planilla';
-  toast('✓ Email guardado para ' + nom.split(' ')[0], 'ok', 2000);
+  var b = document.getElementById('correoTabEmailBadge');
+  if (b) b.textContent = Object.keys(_apoderadoEmails).length + ' emails';
+  toast('\u2713 Email guardado', 'ok', 2000);
 }
 
 function _enviarTodosCorreoTab() {
   var criticos = window._correoTabCriticos || [];
-  if (!criticos.length) return;
-  var sinEmail = criticos.filter(function(al,i){
-    return !(document.getElementById('cEmailInp_'+i)||{}).value;
-  });
-  if (sinEmail.length) {
-    toast('⚠ ' + sinEmail.length + ' alumno(s) sin email. Complétalos primero.', 'err', 5000);
-    return;
-  }
+  if (!criticos.length) { toast('No hay alumnos cr\u00edticos', 'info'); return; }
+  var inst = (document.getElementById('correoInstitucional')||{}).value || localStorage.getItem('av_email_institucional')||'';
+  if (!inst) { toast('\u26a0 Ingresa tu correo institucional primero', 'err', 5000); return; }
+  var sinEmail = criticos.filter(function(al,i){ return !(document.getElementById('cEmailInp_'+i)||{}).value; });
+  if (sinEmail.length) { toast('\u26a0 '+sinEmail.length+' alumno(s) sin email de apoderado', 'err', 5000); return; }
   _abrirCorreoTab(0);
-  if (criticos.length > 1) {
-    setTimeout(function(){
-      toast('Continúa con los siguientes usando "Abrir en correo"', 'info', 5000);
-    }, 1500);
-  }
+  if (criticos.length > 1) setTimeout(function(){
+    toast(criticos.length-1+' correo(s) restante(s) \u2014 usa \u201cAbrir en Gmail\u201d en cada alumno', 'info', 6000);
+  }, 1800);
 }
 
 function abrirModalCorreosApoderados() {
@@ -8982,8 +8875,7 @@ function abrirModalCorreosApoderados() {
     '<div class="email-modal-box">' +
       '<div class="email-modal-header">' +
         '<div>' +
-          '<div class="email-modal-title"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z\"/><polyline points=\"22,6 12,13 2,6\"/></svg> Correos a apoderados</div>'
-          + '<div class="email-modal-subtitle">Alumnos con 2+ evaluaciones y promedio &lt; 4,0</div>' +
+          '<div class="email-modal-title">📧 Correos a apoderados — Promedio crítico</div>' +
           '<div style="font-size:12px;color:var(--text3);margin-top:2px;">Alumnos con 2+ evaluaciones y promedio &lt; 4,0</div>' +
         '</div>' +
         '<button onclick="_cerrarEmailModal()" style="background:none;border:none;cursor:pointer;' +
