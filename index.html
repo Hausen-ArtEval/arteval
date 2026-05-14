@@ -2446,91 +2446,46 @@ media (prefers-color-scheme: dark) {
     </div>
 
     <!-- ══════════════ TAB: REPORTE ══════════════ -->
-    <!-- ══ TAB CORREO ══════════════════════════════════════════════════════ -->
+    <!-- ══ TAB CORREO ════════════════════════════════════════════════════ -->
     <div id="tab-correo" style="display:none">
-
       <div class="config-card" style="border-left:3px solid var(--accent);margin-bottom:14px;">
         <div style="display:flex;align-items:center;gap:14px;">
-          <div style="width:44px;height:44px;background:var(--accent-bg);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-          </div>
-          <div style="flex:1;">
-            <h3 style="margin-bottom:2px;">Correos a apoderados</h3>
-            <div style="font-size:13px;color:var(--text3);">Alumnos con promedio crítico (bajo 4,0)</div>
-          </div>
+          <div style="width:44px;height:44px;background:var(--accent-bg);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+          <div style="flex:1;"><h3 style="margin-bottom:2px;">Correos a apoderados</h3><div style="font-size:13px;color:var(--text3);">Alumnos con promedio crítico (bajo 4,0)</div></div>
           <span id="correoTabEmailBadge" style="font-size:11px;color:var(--accent);font-weight:600;background:var(--accent-bg);padding:4px 10px;border-radius:20px;white-space:nowrap;"></span>
         </div>
       </div>
-
       <div class="config-card" style="margin-bottom:14px;">
         <h3 style="margin-bottom:14px;">Datos del remitente</h3>
         <div style="display:flex;align-items:center;padding:12px 0;border-bottom:0.5px solid var(--border);">
-          <div style="display:flex;align-items:center;gap:10px;flex:1;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            <div style="font-size:14px;font-weight:500;color:var(--text);">Tu nombre</div>
-          </div>
+          <div style="display:flex;align-items:center;gap:10px;flex:1;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><div style="font-size:14px;font-weight:500;color:var(--text);">Tu nombre</div></div>
           <input id="correoNombreProf" type="text" placeholder="Nombre del profesor/a" style="max-width:240px;padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-family:var(--font-ui);text-align:right;" oninput="localStorage.setItem('av_email_prof',this.value)">
         </div>
         <div style="display:flex;align-items:center;padding:12px 0;border-bottom:0.5px solid var(--border);">
-          <div style="display:flex;align-items:center;gap:10px;flex:1;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><path d="M8 21h8M12 17v4"/></svg>
-            <div>
-              <div style="font-size:14px;font-weight:500;color:var(--text);">Correo institucional</div>
-              <div style="font-size:11px;color:var(--text3);">Gmail del colegio — abre esta cuenta al enviar</div>
-            </div>
-          </div>
+          <div style="display:flex;align-items:center;gap:10px;flex:1;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><path d="M8 21h8M12 17v4"/></svg><div><div style="font-size:14px;font-weight:500;color:var(--text);">Correo institucional</div><div style="font-size:11px;color:var(--text3);">Gmail del colegio — abre esta cuenta al enviar</div></div></div>
           <input id="correoInstitucional" type="email" placeholder="nombre@colegio.cl" style="max-width:240px;padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-family:var(--font-ui);text-align:right;" oninput="localStorage.setItem('av_email_institucional',this.value)">
         </div>
         <div style="display:flex;align-items:center;padding:12px 0;border-bottom:0.5px solid var(--border);">
-          <div style="display:flex;align-items:center;gap:10px;flex:1;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-            <div style="font-size:14px;font-weight:500;color:var(--text);">Colegio</div>
-          </div>
+          <div style="display:flex;align-items:center;gap:10px;flex:1;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><div><div style="font-size:14px;font-weight:500;color:var(--text);">Posición cuenta Gmail</div><div style="font-size:11px;color:var(--text3);">0=primera, 1=segunda, 2=tercera… (perfil Chrome institucional)</div></div></div>
+          <input id="correoGmailIdx" type="number" min="0" max="9" value="1" placeholder="1" style="max-width:80px;padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-family:var(--font-ui);text-align:right;" oninput="localStorage.setItem('av_gmail_acct_idx',this.value)">
+        </div>
+        <div style="display:flex;align-items:center;padding:12px 0;border-bottom:0.5px solid var(--border);">
+          <div style="display:flex;align-items:center;gap:10px;flex:1;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><div style="font-size:14px;font-weight:500;color:var(--text);">Colegio</div></div>
           <input id="correoNombreColegio" type="text" placeholder="Nombre del establecimiento" style="max-width:240px;padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-family:var(--font-ui);text-align:right;" oninput="localStorage.setItem('av_email_colegio',this.value)">
         </div>
         <div style="display:flex;align-items:center;padding:12px 0;">
-          <div style="display:flex;align-items:center;gap:10px;flex:1;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-            <div>
-              <div style="font-size:14px;font-weight:500;color:var(--text);">CC a UTP</div>
-              <div style="font-size:11px;color:var(--text3);">Copia en todos los correos</div>
-            </div>
-          </div>
+          <div style="display:flex;align-items:center;gap:10px;flex:1;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg><div><div style="font-size:14px;font-weight:500;color:var(--text);">CC a UTP</div><div style="font-size:11px;color:var(--text3);">Copia en todos los correos</div></div></div>
           <input id="correoEmailUTP" type="email" placeholder="utp@colegio.cl" style="max-width:240px;padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-family:var(--font-ui);text-align:right;" oninput="localStorage.setItem('av_email_utp',this.value)">
         </div>
       </div>
-
       <div class="config-card" style="margin-bottom:14px;">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          <div>
-            <div style="font-size:14px;font-weight:600;color:var(--text);">Importar planilla de matrícula</div>
-            <div style="font-size:12px;color:var(--text3);">Excel o CSV con emails de los apoderados</div>
-          </div>
-        </div>
-        <label style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;cursor:pointer;background:var(--accent);color:#fff;border-radius:12px;padding:12px 16px;font-size:14px;font-weight:600;font-family:var(--font-ui);box-shadow:0 2px 10px rgba(255,149,0,0.20);box-sizing:border-box;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          Subir Excel / CSV con emails
-          <input type="file" accept=".xlsx,.xls,.csv,.txt" onchange="importarPlanillaApoderados(this.files[0]);this.value=''" style="display:none">
-        </label>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><div><div style="font-size:14px;font-weight:600;color:var(--text);">Importar planilla de matrícula</div><div style="font-size:12px;color:var(--text3);">Excel o CSV con emails de los apoderados</div></div></div>
+        <label style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;cursor:pointer;background:var(--accent);color:#fff;border-radius:12px;padding:12px 16px;font-size:14px;font-weight:600;font-family:var(--font-ui);box-shadow:0 2px 10px rgba(255,149,0,0.20);box-sizing:border-box;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Subir Excel / CSV con emails<input type="file" accept=".xlsx,.xls,.csv,.txt" onchange="importarPlanillaApoderados(this.files[0]);this.value=''" style="display:none"></label>
       </div>
-
       <div class="config-card">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
-          <h3 style="margin-bottom:0;">Alumnos con promedio crítico</h3>
-          <button class="btn btn-primary" onclick="_enviarTodosCorreoTab()" style="display:inline-flex;align-items:center;gap:6px;min-height:36px;font-size:13px;border-radius:10px;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-            Abrir todos en Gmail
-          </button>
-        </div>
-        <div id="correoTabContainer">
-          <div style="text-align:center;padding:40px;color:var(--text3);">
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="opacity:.2;display:block;margin:0 auto 10px;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-            <div style="font-size:13px;">Cargando alumnos críticos...</div>
-          </div>
-        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;"><h3 style="margin-bottom:0;">Alumnos con promedio crítico</h3><button class="btn btn-primary" onclick="_enviarTodosCorreoTab()" style="display:inline-flex;align-items:center;gap:6px;min-height:36px;font-size:13px;border-radius:10px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>Abrir todos en Gmail</button></div>
+        <div id="correoTabContainer"><div style="text-align:center;padding:40px;color:var(--text3);"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="opacity:.2;display:block;margin:0 auto 10px;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg><div style="font-size:13px;">Cargando alumnos críticos...</div></div></div>
       </div>
-
     </div>
 
 
@@ -3016,10 +2971,10 @@ function doGet(e) {
 </div><!-- /app -->
 
 <script>
-// Wrapper seguro: showTab disponible antes de que el script cargue
-window._tabPendiente = null;
-if (typeof showTab === 'undefined') {
-  window.showTab = function(name) { window._tabPendiente = name; };
+// FIX: wrapper showTab seguro (clic antes de cargar JS)
+window._tabPendiente=null;
+if(typeof showTab==='undefined'){
+  window.showTab=function(name){window._tabPendiente=name;};
 }
 
 // ── Configuración del Client ID desde Configurar ──
@@ -3129,13 +3084,7 @@ function actualizarEstadoConfigDrive() {
 // ═══════════════════════════════════════════════════════
 //  ESTADO GLOBAL
 // ═══════════════════════════════════════════════════════
-let rubricas    = (function(){
-  try {
-    var saved = JSON.parse(localStorage.getItem('av_rubricas') || 'null');
-    if (Array.isArray(saved) && saved.length > 0) return saved;
-  } catch(e) { console.warn('[ArtEval] av_rubricas corrupto:', e.message); }
-  return getDefaultRubricas();
-})();
+let rubricas=(function(){try{var s=JSON.parse(localStorage.getItem('av_rubricas')||'null');if(Array.isArray(s)&&s.length>0)return s;}catch(e){}return getDefaultRubricas();})();
 let contextoGuardado = {}; // se carga en init desde localStorage
 // FIX QA v72: init protegido — JSON corrupto no congela la app
 let registros   = (function(){ try { return JSON.parse(localStorage.getItem('av_registros')||'[]')||[]; } catch(e){ console.error('[ArtEval] av_registros:',e.message); return []; } })();
@@ -3230,11 +3179,7 @@ function getDefaultRubricas() {
 
 function getRubrica() { return rubricas[rubricaActiva] || rubricas[0]; }
 function getCriterios() { return getRubrica().criterios; }
-function saveRubricas() {
-  localStorage.setItem('av_rubricas', JSON.stringify(rubricas));
-  localStorage.setItem('av_rubrica_activa', String(rubricaActiva));
-  actualizarRubricaSelect();
-}
+function saveRubricas(){localStorage.setItem('av_rubricas',JSON.stringify(rubricas));localStorage.setItem('av_rubrica_activa',String(rubricaActiva));actualizarRubricaSelect();}
 // ── BLOQUE 2: Estabilidad crítica ────────────────────────────────────────────
 
 // Monitor de tamaño localStorage — alerta si supera 4MB
@@ -6577,58 +6522,50 @@ function renderAlexiaPlantillasList() {
 }
 
 // ── Modal de selección antes de exportar ───────────────────────────────────────
-function abrirExportAlexia(cursoDirecto) {
-  var cursoTarget = cursoSeleccionado || cursoDirecto || null;
-  if (typeof XLSX === 'undefined') { toast('Libreria Excel no cargada.', 'err', 4000); return; }
-  var cursosDisp = cursosUnicos();
-  if (!cursosDisp.length) { toast('No hay evaluaciones guardadas', 'err', 3000); return; }
-  if (cursoTarget && alexiaDatos[alexiaNormCurso(cursoTarget)]) {
-    _exportAlexiaDiagnostico([cursoTarget]); return;
+function abrirExportAlexia(cursoDirecto){
+  var cursoTarget=cursoSeleccionado||cursoDirecto||null;
+  if(typeof XLSX==='undefined'){toast('Excel no cargada','err',4000);return;}
+  var cursosDisp=cursosUnicos();
+  if(!cursosDisp.length){toast('No hay evaluaciones','err',3000);return;}
+  if(cursoTarget&&alexiaDatos[alexiaNormCurso(cursoTarget)]){
+    _exportAlexiaDiagnostico([cursoTarget]);return;
   }
-  if (cursoTarget) {
-    var otrosOK = cursosDisp.filter(function(c){ return !!alexiaDatos[alexiaNormCurso(c)]; });
-    var html = '<div class="modal-title">⚠️ Sin plantilla Alexia para ' + cursoTarget + '</div>'
-      + '<div style="background:rgba(255,149,0,0.10);border:1px solid rgba(255,149,0,0.35);border-radius:12px;padding:14px;margin-bottom:12px;">'
-      + '<div style="font-size:13px;color:var(--text2);">Sube el <strong>.xls vacio</strong> desde Alexia para ' + cursoTarget + '.<br>Ve a <strong>Configurar → Plantillas Alexia</strong>.</div></div>';
-    if (otrosOK.length) {
-      html += '<div style="font-size:12px;color:var(--text3);margin-bottom:8px;">Exportar otro curso:</div>'
-        + '<div style="display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto;" id="alexiaCursosCheck">';
-      otrosOK.forEach(function(c) {
-        var n  = registros.filter(function(r){ return alexiaNormCurso(r.curso||'')===alexiaNormCurso(c); }).length;
-        var id = 'achk_' + alexiaNormCurso(c).replace(/[^a-z0-9]/gi,'_');
-        html += '<label style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rad);cursor:pointer;">'
-          + '<input type="checkbox" id="' + id + '" data-curso="' + c + '">'
-          + '<span style="flex:1;font-size:13px;">' + c + '</span>'
-          + '<span style="font-size:11px;color:var(--green);">' + n + ' notas</span></label>';
+  if(cursoTarget){
+    var otrosOK=cursosDisp.filter(function(c){return !!alexiaDatos[alexiaNormCurso(c)];});
+    var html='<div class="modal-title">⚠️ Sin plantilla para '+cursoTarget+'</div>'
+      +'<div style="background:rgba(255,149,0,0.10);border:1px solid rgba(255,149,0,0.35);border-radius:12px;padding:14px;margin-bottom:12px;font-size:13px;color:var(--text2);">Sube el .xls desde Alexia.<br>Ve a <strong>Configurar → Plantillas Alexia</strong>.</div>';
+    if(otrosOK.length){
+      html+='<div style="font-size:12px;margin-bottom:8px;">Exportar otro curso:</div>'
+        +'<div style="display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto;" id="alexiaCursosCheck">';
+      otrosOK.forEach(function(c){
+        var n=registros.filter(function(r){return alexiaNormCurso(r.curso||'')==alexiaNormCurso(c);}).length;
+        html+='<label style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rad);cursor:pointer;">'
+          +'<input type="checkbox" data-curso="'+c+'">'
+          +'<span style="flex:1;font-size:13px;">'+c+'</span>'
+          +'<span style="font-size:11px;color:var(--green);">'+n+' notas</span></label>';
       });
-      html += '</div><div class="modal-footer">'
-        + '<button class="btn" onclick="cerrarModal()">Cancelar</button>'
-        + '<button class="btn btn-primary" onclick="confirmarExportAlexia()">Exportar</button></div>';
-    } else {
-      html += '<div class="modal-footer"><button class="btn btn-primary" onclick="cerrarModal()">Entendido</button></div>';
+      html+='</div><div class="modal-footer"><button class="btn" onclick="cerrarModal()">Cancelar</button><button class="btn btn-primary" onclick="confirmarExportAlexia()">Exportar</button></div>';
+    }else{
+      html+='<div class="modal-footer"><button class="btn btn-primary" onclick="cerrarModal()">Entendido</button></div>';
     }
-    abrirModal(html); return;
+    abrirModal(html);return;
   }
-  var cursosInfo = cursosDisp.map(function(c) {
-    var key=alexiaNormCurso(c),p=alexiaDatos[key],n=registros.filter(function(r){return alexiaNormCurso(r.curso||'')===key;}).length;
-    return {curso:c,key:key,p:p||null,n:n};
-  });
-  var sinPlant=cursosInfo.filter(function(ci){return !ci.p;});
-  var html3='<div class="modal-title">Exportar notas para Alexia</div>'
-    +'<div style="font-size:12px;color:var(--text2);margin-bottom:10px;">Selecciona los cursos a exportar:</div>'
+  var ci=cursosDisp.map(function(c){var k=alexiaNormCurso(c),p=alexiaDatos[k],n=registros.filter(function(r){return alexiaNormCurso(r.curso||'')==k;}).length;return{curso:c,key:k,p:p||null,n:n};});
+  var sp=ci.filter(function(x){return !x.p;});
+  var h3='<div class="modal-title">Exportar para Alexia</div>'
+    +'<div style="font-size:12px;color:var(--text2);margin-bottom:10px;">Selecciona cursos:</div>'
     +'<div style="display:flex;flex-direction:column;gap:5px;max-height:340px;overflow-y:auto;margin-bottom:12px;" id="alexiaCursosCheck">';
-  cursosInfo.forEach(function(ci){
-    var id='achk_'+ci.key.replace(/[^a-z0-9]/gi,'_'),ok2=!!ci.p;
-    var badge=ok2?ci.n+' notas':'⚠️ sin plantilla';
-    html3+='<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg3);border:1.5px solid '+(ok2?'var(--border)':'rgba(255,149,0,0.3)')+';border-radius:var(--rad);cursor:pointer;opacity:'+(ok2?'1':'0.55')+';">'
-      +'<input type="checkbox" id="'+id+'" '+(ok2?'checked':'disabled')+' data-curso="'+ci.curso+'">'
-      +'<span style="flex:1;font-size:13px;">'+ci.curso+'</span>'
-      +'<span style="font-size:11px;color:'+(ok2?'var(--green)':'var(--amber)')+';font-family:var(--font-mono);">'+badge+'</span></label>';
+  ci.forEach(function(x){
+    var id='achk_'+x.key.replace(/[^a-z0-9]/gi,'_'),ok=!!x.p;
+    h3+='<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg3);border:1.5px solid '+(ok?'var(--border)':'rgba(255,149,0,0.3)')+';border-radius:var(--rad);cursor:pointer;opacity:'+(ok?'1':'0.55')+';">'
+      +'<input type="checkbox" '+(ok?'checked':'disabled')+' data-curso="'+x.curso+'">'
+      +'<span style="flex:1;font-size:13px;">'+x.curso+'</span>'
+      +'<span style="font-size:11px;color:'+(ok?'var(--green)':'var(--amber)')+';">'+x.n+(ok?' notas':' sin plantilla')+'</span></label>';
   });
-  html3+='</div>';
-  if(sinPlant.length)html3+='<div style="font-size:11px;color:var(--amber);margin-bottom:10px;">'+sinPlant.map(function(c){return c.curso;}).join(', ')+' sin plantilla.</div>';
-  html3+='<div class="modal-footer"><button class="btn" onclick="cerrarModal()">Cancelar</button><button class="btn btn-primary" onclick="confirmarExportAlexia()">Exportar →</button></div>';
-  abrirModal(html3);
+  h3+='</div>';
+  if(sp.length)h3+='<div style="font-size:11px;color:var(--amber);margin-bottom:10px;">'+sp.map(function(c){return c.curso;}).join(', ')+' sin plantilla.</div>';
+  h3+='<div class="modal-footer"><button class="btn" onclick="cerrarModal()">Cancelar</button><button class="btn btn-primary" onclick="confirmarExportAlexia()">Exportar →</button></div>';
+  abrirModal(h3);
 }
 
 // ── Generar diagnóstico y exportar para los cursos seleccionados ──────────
@@ -8660,210 +8597,129 @@ function _procesarPlanillaApoderadosRows(rows, fileName) {
   _renderEmailCards();
 }
 function _generarTextoEmail(al, nombreProfesor, nombreColegio) {
-  var notas = al.notas || [];
-  var instancias = al.instancias || [];
-  var rubricas = al.rubricas || [];
-  var prom = al.promedio ? al.promedio.toFixed(1) : '?';
-
-  // Tabla de notas con rúbrica
-  var tablaNotas = '';
-  notas.forEach(function(n, i) {
-    var inst = instancias[i] || ('Evaluación ' + (i+1));
-    var nota = (typeof n === 'number') ? n.toFixed(1) : String(n);
-    var estado = n >= 6 ? 'Destacado' : n >= 5 ? 'Logrado' : n >= 4 ? 'Suficiente' : 'No logrado';
-    var rub = rubricas[i] ? ' [' + rubricas[i] + ']' : '';
-    tablaNotas += '   • ' + inst + rub + ': ' + nota + ' — ' + estado + '\n';
+  var notas=al.notas||[],instancias=al.instancias||[],rubricas=al.rubricas||[];
+  var prom=al.promedio?al.promedio.toFixed(1):'?';
+  var fechaHoy=new Date().toLocaleDateString('es-CL',{day:'numeric',month:'long',year:'numeric'});
+  var detalleNotas='';
+  notas.forEach(function(n,i){
+    var inst=instancias[i]||('Evaluación '+(i+1));
+    var nota=(typeof n==='number')?n.toFixed(1):String(n);
+    var logro=n>=6?'Destacado':n>=5?'Logrado':n>=4?'Suficiente':'No logrado';
+    var rub=rubricas[i]?' ['+rubricas[i]+']':'';
+    detalleNotas+='   \u2022 '+inst+rub+': '+nota+' \u2014 '+logro+'\n';
   });
-
-  // Nombre del alumno: usar sólo el primer nombre para el texto interno
-  var primerNombre = al.nombre.split(' ').filter(function(p){ return p.length > 2; })[0] || al.nombre.split(' ')[0];
-
-  var sugerencias = [
-    'Revise junto a su hijo/a los trabajos y materiales evaluados en Artes Visuales.',
-    'Fomente en casa la práctica del dibujo, pintura o cualquier actividad creativa.',
-    'Asegúrese de que ' + primerNombre + ' traiga todos los materiales requeridos a cada clase.',
-    'Si desea revisar las evaluaciones o tiene consultas, puede contactar al docente para una reunión.',
-  ];
-
-  var fechaHoy = new Date().toLocaleDateString('es-CL', { day:'numeric', month:'long', year:'numeric' });
-
-  return 'Estimado/a apoderado/a de ' + al.nombre + ':\n\n' +
-    fechaHoy + '\n\n' +
-    'Me dirijo a usted para informarle sobre la situación académica de ' + primerNombre +
-    ' en la asignatura de Artes Visuales, correspondiente al curso ' + al.curso + '.\n\n' +
-    'Durante el período evaluado, ' + primerNombre + ' ha obtenido las siguientes calificaciones:\n\n' +
-    tablaNotas + '\n' +
-    'Promedio actual: ' + prom + ' (situación crítica — bajo 4,0)\n\n' +
-    'Esta situación requiere atención para que ' + primerNombre +
-    ' pueda revertir su rendimiento antes del cierre del período.\n\n' +
-    'Para apoyar desde el hogar, le sugerimos:\n\n' +
-    sugerencias.map(function(s) { return '   • ' + s; }).join('\n') + '\n\n' +
-    'Quedamos atentos ante cualquier consulta.\n\n' +
-    'Atentamente,\n' +
-    'Profesor/a de Artes Visuales';
+  return 'Estimado/a apoderado/a de '+al.nombre+':\n\n'
+    +fechaHoy+'\n\n'
+    +'Me dirijo a usted para informarle sobre la situaci\u00f3n acad\u00e9mica de su estudiante '
+    +'en la asignatura de Artes Visuales, correspondiente al curso '+al.curso+'.\n\n'
+    +'Durante el per\u00edodo evaluado, el/la estudiante ha obtenido las siguientes calificaciones:\n\n'
+    +detalleNotas
+    +'\nPromedio actual: '+prom+' (situaci\u00f3n cr\u00edtica \u2014 bajo 4,0)\n\n'
+    +'Esta situaci\u00f3n requiere atenci\u00f3n para revertir su rendimiento antes del cierre del per\u00edodo.\n\n'
+    +'Para apoyar desde el hogar, le sugerimos:\n\n'
+    +'   \u2022 Revise junto a su estudiante los trabajos y materiales evaluados en Artes Visuales.\n'
+    +'   \u2022 Fomente en casa la pr\u00e1ctica del dibujo, pintura o cualquier actividad creativa.\n'
+    +'   \u2022 Aseg\u00farese de que el educando traiga todos los materiales requeridos a cada clase.\n'
+    +'   \u2022 Si desea revisar las evaluaciones o tiene consultas, puede contactar al docente para una reuni\u00f3n y/o visitar la plataforma Classroom de la asignatura.\n\n'
+    +'Quedamos atentos ante cualquier consulta.\n\n'
+    +'Atentamente,\n'
+    +'Profesor de Artes Visuales.';
 }
-
-// ── Abrir modal de correos ────────────────────────────────────────────────
-
-// ── Tab Correo ──────────────────────────────────────────────────────────
-function _renderCorreoTab() {
-  var container = document.getElementById('correoTabContainer');
-  var badge     = document.getElementById('correoTabEmailBadge');
-  if (!container) return;
-  var profInp = document.getElementById('correoNombreProf');
-  var coleInp = document.getElementById('correoNombreColegio');
-  var utpInp  = document.getElementById('correoEmailUTP');
-  var instInp = document.getElementById('correoInstitucional');
-  if (profInp)  profInp.value  = localStorage.getItem('av_email_prof')          || '';
-  if (coleInp)  coleInp.value  = localStorage.getItem('av_email_colegio')       || '';
-  if (utpInp)   utpInp.value   = localStorage.getItem('av_email_utp')           || '';
-  if (instInp)  instInp.value  = localStorage.getItem('av_email_institucional') || '';
-  var prof = (profInp && profInp.value) || localStorage.getItem('av_email_prof') || '';
-  var cole = (coleInp && coleInp.value) || localStorage.getItem('av_email_colegio') || '';
-  if (badge) badge.textContent = Object.keys(_apoderadoEmails).length ? Object.keys(_apoderadoEmails).length + ' emails' : '';
-  var criticos = [];
-  TODOS_LOS_CURSOS.forEach(function(curso) {
-    var regsAll = registros.filter(function(r){ return (r.curso||'')===curso && r.nota!==undefined && r.nota!==null; });
-    if (!regsAll.length) return;
-    var porAlumno = {};
-    regsAll.forEach(function(r) {
-      var key = (r.nombre||'').trim().toUpperCase();
-      if (!key) return;
-      if (!porAlumno[key]) porAlumno[key] = { nombre:r.nombre, curso:curso, notas:[], instancias:[], rubricas:[], pie:false };
-      porAlumno[key].notas.push(r.nota);
-      porAlumno[key].instancias.push(r.instancia||'Evaluación 1');
-      porAlumno[key].rubricas.push(r.rubricaNombre||'');
-      if (r.pie) porAlumno[key].pie = true;
+function _renderCorreoTab(){
+  var ct=document.getElementById('correoTabContainer'),badge=document.getElementById('correoTabEmailBadge');
+  if(!ct)return;
+  ['correoNombreProf','correoNombreColegio','correoEmailUTP','correoInstitucional','correoGmailIdx'].forEach(function(id){
+    var el=document.getElementById(id),key={'correoNombreProf':'av_email_prof','correoNombreColegio':'av_email_colegio','correoEmailUTP':'av_email_utp','correoInstitucional':'av_email_institucional','correoGmailIdx':'av_gmail_acct_idx'}[id];
+    if(el)el.value=localStorage.getItem(key)||(id==='correoGmailIdx'?'1':'');
+  });
+  var prof=localStorage.getItem('av_email_prof')||'',cole=localStorage.getItem('av_email_colegio')||'';
+  if(badge)badge.textContent=Object.keys(_apoderadoEmails).length?(Object.keys(_apoderadoEmails).length+' emails'):'';
+  var criticos=[];
+  TODOS_LOS_CURSOS.forEach(function(curso){
+    var regs=registros.filter(function(r){return(r.curso||'')===curso&&r.nota!==undefined&&r.nota!==null;});
+    if(!regs.length)return;
+    var pa={};
+    regs.forEach(function(r){
+      var k=(r.nombre||'').trim().toUpperCase();if(!k)return;
+      if(!pa[k])pa[k]={nombre:r.nombre,curso:curso,notas:[],instancias:[],rubricas:[],pie:false};
+      pa[k].notas.push(r.nota);pa[k].instancias.push(r.instancia||'Evaluación 1');pa[k].rubricas.push(r.rubricaNombre||'');if(r.pie)pa[k].pie=true;
     });
-    Object.values(porAlumno).forEach(function(al) {
-      if (al.notas.length < 2) return;
-      al.promedio = al.notas.reduce(function(s,n){return s+n;},0)/al.notas.length;
-      if (al.promedio < 4.0) criticos.push(al);
+    Object.values(pa).forEach(function(al){
+      if(al.notas.length<2)return;
+      al.promedio=al.notas.reduce(function(s,n){return s+n;},0)/al.notas.length;
+      if(al.promedio<4.0)criticos.push(al);
     });
   });
-  criticos.sort(function(a,b){ return a.promedio-b.promedio; });
-  if (!criticos.length) {
-    container.innerHTML = '<div style="text-align:center;padding:60px 20px;"><div style="font-size:40px;margin-bottom:12px;">\u2705</div><div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px;">Sin alumnos cr\u00edticos</div><div style="font-size:13px;color:var(--text3);">Todos los alumnos con 2+ evaluaciones tienen promedio \u2265 4,0</div></div>';
-    return;
-  }
-  var html = '<div style="font-size:12px;color:var(--text3);margin-bottom:12px;">' + criticos.length + ' alumno' + (criticos.length!==1?'s':'') + ' con promedio bajo 4,0</div>';
-  criticos.forEach(function(al, idx) {
-    var email   = _getEmailApoderado(al.nombre);
-    var prom    = al.promedio.toFixed(1);
-    var promClr = al.promedio < 2.5 ? '#FF3B30' : '#FF9500';
-    var texto   = _generarTextoEmail(al, prof, cole);
-    var notasStr= al.notas.map(function(n,i){ return (al.instancias[i]||'Ev.'+(i+1))+': '+n.toFixed(1); }).join(' \u00b7 ');
-    var pieIcon = al.pie ? '<svg width="11" height="11" viewBox="0 0 100 100" fill="'+promClr+'" style="vertical-align:middle;margin-left:4px;" aria-label="PIE"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="'+promClr+'" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="'+promClr+'" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="'+promClr+'" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="'+promClr+'" stroke-width="8" stroke-linecap="round" fill="none"/></svg>' : '';
-    html += '<div class="config-card" style="padding:16px 20px;margin-bottom:10px;">'
-      + '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;gap:10px;">'
-      +   '<div>'
-      +     '<div style="font-size:15px;font-weight:700;color:var(--text);letter-spacing:-0.2px;">' + al.nombre + pieIcon + '</div>'
-      +     '<div style="font-size:11px;color:var(--text3);margin-top:3px;">' + al.curso + ' \u00b7 ' + notasStr + '</div>'
-      +   '</div>'
-      +   '<div style="text-align:right;">'
-      +     '<div style="font-size:20px;font-weight:800;font-family:var(--font-mono);color:'+promClr+';">' + prom + '</div>'
-      +     '<div style="font-size:10px;color:var(--text3);">promedio</div>'
-      +   '</div>'
-      + '</div>'
-      + '<div style="display:flex;align-items:center;padding:10px 0;border-top:0.5px solid var(--border);border-bottom:0.5px solid var(--border);margin-bottom:10px;gap:10px;">'
-      +   '<div style="font-size:13px;font-weight:500;color:var(--text);flex:1;">Email apoderado</div>'
-      +   '<input type="email" id="cEmailInp_'+idx+'" placeholder="correo@ejemplo.cl" value="'+email+'" style="max-width:240px;padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-family:var(--font-ui);text-align:right;">'
-      + '</div>'
-      + '<details style="margin-bottom:10px;">'
-      +   '<summary style="font-size:11px;font-weight:600;color:var(--text3);cursor:pointer;user-select:none;padding:4px 0;">Ver texto del correo \u25be</summary>'
-      +   '<pre class="email-preview" id="cEmailTxt_'+idx+'">' + texto + '</pre>'
-      + '</details>'
-      + '<div style="display:flex;gap:6px;flex-wrap:wrap;">'
-      +   '<button class="btn btn-primary" onclick="_abrirCorreoTab('+idx+')" style="display:inline-flex;align-items:center;gap:6px;min-height:36px;font-size:13px;border-radius:10px;">'
-      +     '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>'
-      +     ' Abrir en Gmail</button>'
-      +   '<button class="btn" onclick="_copiarCorreoTab('+idx+')" style="display:inline-flex;align-items:center;gap:6px;min-height:36px;font-size:13px;border-radius:10px;">'
-      +     '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'
-      +     ' Copiar</button>'
-      +   '<button class="btn" data-idx="'+idx+'" data-nom="'+al.nombre.replace(/"/g,'&quot;')+'" onclick="_guardarCorreoTab(parseInt(this.dataset.idx),this.dataset.nom)" style="display:inline-flex;align-items:center;gap:6px;min-height:36px;font-size:13px;border-radius:10px;">'
-      +     '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>'
-      +     ' Guardar</button>'
-      + '</div>'
-      + '</div>';
+  criticos.sort(function(a,b){return a.promedio-b.promedio;});
+  if(!criticos.length){ct.innerHTML='<div style="text-align:center;padding:60px 20px;"><div style="font-size:40px;margin-bottom:12px;">\u2705</div><div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px;">Sin alumnos cr\u00edticos</div><div style="font-size:13px;color:var(--text3);">Todos tienen promedio \u2265 4,0</div></div>';return;}
+  var html='<div style="font-size:12px;color:var(--text3);margin-bottom:12px;">'+criticos.length+' alumno'+(criticos.length!==1?'s':'')+' con promedio bajo 4,0</div>';
+  criticos.forEach(function(al,idx){
+    var email=_getEmailApoderado(al.nombre),prom=al.promedio.toFixed(1),pc=al.promedio<2.5?'#FF3B30':'#FF9500';
+    var texto=_generarTextoEmail(al,prof,cole);
+    var ns=al.notas.map(function(n,i){return(al.instancias[i]||'Ev.'+(i+1))+': '+n.toFixed(1);}).join(' \u00b7 ');
+    var pie=al.pie?'<svg width="11" height="11" viewBox="0 0 100 100" fill="'+pc+'" style="vertical-align:middle;margin-left:4px;"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="'+pc+'" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="'+pc+'" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="'+pc+'" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="'+pc+'" stroke-width="8" stroke-linecap="round" fill="none"/></svg>':'';
+    html+='<div class="config-card" style="padding:16px 20px;margin-bottom:10px;">'
+      +'<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;gap:10px;">'
+      +'<div><div style="font-size:15px;font-weight:700;color:var(--text);">'+al.nombre+pie+'</div>'
+      +'<div style="font-size:11px;color:var(--text3);margin-top:3px;">'+al.curso+' \u00b7 '+ns+'</div></div>'
+      +'<div style="text-align:right;"><div style="font-size:20px;font-weight:800;font-family:var(--font-mono);color:'+pc+';">'+prom+'</div>'
+      +'<div style="font-size:10px;color:var(--text3);">promedio</div></div></div>'
+      +'<div style="display:flex;align-items:center;padding:10px 0;border-top:0.5px solid var(--border);border-bottom:0.5px solid var(--border);margin-bottom:10px;gap:10px;">'
+      +'<div style="font-size:13px;font-weight:500;color:var(--text);flex:1;">Email apoderado</div>'
+      +'<input type="email" id="cEmailInp_'+idx+'" placeholder="correo@ejemplo.cl" value="'+email+'" style="max-width:240px;padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-family:var(--font-ui);text-align:right;"></div>'
+      +'<details style="margin-bottom:10px;"><summary style="font-size:11px;font-weight:600;color:var(--text3);cursor:pointer;user-select:none;padding:4px 0;">Ver texto del correo \u25be</summary>'
+      +'<pre class="email-preview" id="cEmailTxt_'+idx+'">' + texto + '</pre></details>'
+      +'<div style="display:flex;gap:6px;flex-wrap:wrap;">'
+      +'<button class="btn btn-primary" onclick="_abrirCorreoTab('+idx+')" style="display:inline-flex;align-items:center;gap:6px;min-height:36px;font-size:13px;border-radius:10px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Abrir en Gmail</button>'
+      +'<button class="btn" onclick="_copiarCorreoTab('+idx+')" style="display:inline-flex;align-items:center;gap:6px;min-height:36px;font-size:13px;border-radius:10px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copiar</button>'
+      +'<button class="btn" data-idx="'+idx+'" data-nom="'+al.nombre.replace(/"/g,'&quot;')+'" onclick="_guardarCorreoTab(parseInt(this.dataset.idx),this.dataset.nom)" style="display:inline-flex;align-items:center;gap:6px;min-height:36px;font-size:13px;border-radius:10px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Guardar</button>'
+      +'</div></div>';
   });
-  container.innerHTML = html;
-  window._correoTabCriticos = criticos;
+  ct.innerHTML=html;window._correoTabCriticos=criticos;
 }
-
-function _abrirCorreoTab(idx) {
-  var criticos = window._correoTabCriticos || [];
-  var al = criticos[idx];
-  if (!al) return;
-  var email = (document.getElementById('cEmailInp_'+idx)||{}).value || '';
-  var utp   = (document.getElementById('correoEmailUTP')||{}).value || localStorage.getItem('av_email_utp')||'';
-  var prof  = (document.getElementById('correoNombreProf')||{}).value || localStorage.getItem('av_email_prof')||'';
-  var cole  = (document.getElementById('correoNombreColegio')||{}).value || localStorage.getItem('av_email_colegio')||'';
-  var inst  = (document.getElementById('correoInstitucional')||{}).value || localStorage.getItem('av_email_institucional')||'';
-  var texto  = _generarTextoEmail(al, prof, cole);
-  var asunto = 'Situaci\u00f3n acad\u00e9mica Artes Visuales \u2014 ' + al.nombre;
-  if (email && email.includes('@')) {
-    _apoderadoEmails[al.nombre.trim().toUpperCase()] = email.toLowerCase();
-    _saveApoderadoEmails();
-  }
-  if (inst && inst.includes('@')) {
-    var gmailUrl = 'https://mail.google.com/mail/?authuser=' + encodeURIComponent(inst)
-      + '&view=cm'
-      + '&to='   + encodeURIComponent(email)
-      + '&su='   + encodeURIComponent(asunto)
-      + '&body=' + encodeURIComponent(texto)
-      + (utp ? '&cc=' + encodeURIComponent(utp) : '');
-    window.open(gmailUrl, '_blank');
-  } else {
-    var mailto = 'mailto:' + encodeURIComponent(email)
-      + (utp ? '?cc='+encodeURIComponent(utp)+'&' : '?')
-      + 'subject=' + encodeURIComponent(asunto)
-      + '&body='   + encodeURIComponent(texto);
-    window.location.href = mailto;
+function _abrirCorreoTab(idx){
+  var criticos=window._correoTabCriticos||[],al=criticos[idx];if(!al)return;
+  var email=(document.getElementById('cEmailInp_'+idx)||{}).value||'';
+  var utp=(document.getElementById('correoEmailUTP')||{}).value||localStorage.getItem('av_email_utp')||'';
+  var prof=(document.getElementById('correoNombreProf')||{}).value||localStorage.getItem('av_email_prof')||'';
+  var cole=(document.getElementById('correoNombreColegio')||{}).value||localStorage.getItem('av_email_colegio')||'';
+  var inst=(document.getElementById('correoInstitucional')||{}).value||localStorage.getItem('av_email_institucional')||'';
+  var acctIdx=parseInt(localStorage.getItem('av_gmail_acct_idx')||'1',10);
+  var texto=_generarTextoEmail(al,prof,cole);
+  var asunto='Situaci\u00f3n acad\u00e9mica Artes Visuales \u2014 '+al.nombre;
+  if(email&&email.includes('@')){_apoderadoEmails[al.nombre.trim().toUpperCase()]=email.toLowerCase();_saveApoderadoEmails();}
+  if(inst&&inst.includes('@')){
+    var url='https://mail.google.com/mail/u/'+acctIdx+'/?authuser='+encodeURIComponent(inst)+'&view=cm&to='+encodeURIComponent(email)+'&su='+encodeURIComponent(asunto)+'&body='+encodeURIComponent(texto)+(utp?'&cc='+encodeURIComponent(utp):'');
+    window.open(url,'_blank');
+  }else{
+    window.location.href='mailto:'+encodeURIComponent(email)+(utp?'?cc='+encodeURIComponent(utp)+'&':'?')+'subject='+encodeURIComponent(asunto)+'&body='+encodeURIComponent(texto);
   }
 }
-
-function _copiarCorreoTab(idx) {
-  var criticos = window._correoTabCriticos || [];
-  var al = criticos[idx];
-  if (!al) return;
-  var prof  = (document.getElementById('correoNombreProf')||{}).value || localStorage.getItem('av_email_prof')||'';
-  var cole  = (document.getElementById('correoNombreColegio')||{}).value || localStorage.getItem('av_email_colegio')||'';
-  var texto = _generarTextoEmail(al, prof, cole);
-  navigator.clipboard.writeText(texto).then(function(){
-    toast('\u2713 Copiado \u2014 p\u00e9galo en tu correo', 'ok', 2500);
-  }).catch(function(){
-    var ta = document.createElement('textarea');
-    ta.value = texto; document.body.appendChild(ta);
-    ta.select(); document.execCommand('copy'); ta.remove();
-    toast('\u2713 Texto copiado', 'ok', 2500);
-  });
+function _copiarCorreoTab(idx){
+  var criticos=window._correoTabCriticos||[],al=criticos[idx];if(!al)return;
+  var prof=(document.getElementById('correoNombreProf')||{}).value||localStorage.getItem('av_email_prof')||'';
+  var cole=(document.getElementById('correoNombreColegio')||{}).value||localStorage.getItem('av_email_colegio')||'';
+  var texto=_generarTextoEmail(al,prof,cole);
+  navigator.clipboard.writeText(texto).then(function(){toast('\u2713 Copiado','ok',2500);}).catch(function(){var ta=document.createElement('textarea');ta.value=texto;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast('\u2713 Texto copiado','ok',2500);});
 }
-
-function _guardarCorreoTab(idx, nombreAlumno) {
-  var nom   = (nombreAlumno||'').replace(/&#39;/g,"'").trim();
-  var email = (document.getElementById('cEmailInp_'+idx)||{}).value||'';
-  if (!email||!email.includes('@')) { toast('\u26a0 Ingresa un email v\u00e1lido', 'err'); return; }
-  if (!nom) { toast('\u26a0 Error: nombre no encontrado', 'err'); return; }
-  _apoderadoEmails[nom.toUpperCase()] = email.toLowerCase();
-  _saveApoderadoEmails();
-  var b = document.getElementById('correoTabEmailBadge');
-  if (b) b.textContent = Object.keys(_apoderadoEmails).length + ' emails';
-  toast('\u2713 Email guardado', 'ok', 2000);
+function _guardarCorreoTab(idx,nombreAlumno){
+  var nom=(nombreAlumno||'').replace(/&#39;/g,"'").trim();
+  var email=(document.getElementById('cEmailInp_'+idx)||{}).value||'';
+  if(!email||!email.includes('@')){toast('\u26a0 Email inv\u00e1lido','err');return;}
+  if(!nom){toast('\u26a0 Nombre no encontrado','err');return;}
+  _apoderadoEmails[nom.toUpperCase()]=email.toLowerCase();_saveApoderadoEmails();
+  var b=document.getElementById('correoTabEmailBadge');if(b)b.textContent=Object.keys(_apoderadoEmails).length+' emails';
+  toast('\u2713 Email guardado','ok',2000);
 }
-
-function _enviarTodosCorreoTab() {
-  var criticos = window._correoTabCriticos || [];
-  if (!criticos.length) { toast('No hay alumnos cr\u00edticos', 'info'); return; }
-  var inst = (document.getElementById('correoInstitucional')||{}).value || localStorage.getItem('av_email_institucional')||'';
-  if (!inst) { toast('\u26a0 Ingresa tu correo institucional primero', 'err', 5000); return; }
-  var sinEmail = criticos.filter(function(al,i){ return !(document.getElementById('cEmailInp_'+i)||{}).value; });
-  if (sinEmail.length) { toast('\u26a0 '+sinEmail.length+' alumno(s) sin email de apoderado', 'err', 5000); return; }
+function _enviarTodosCorreoTab(){
+  var criticos=window._correoTabCriticos||[];if(!criticos.length){toast('No hay alumnos cr\u00edticos','info');return;}
+  var inst=(document.getElementById('correoInstitucional')||{}).value||localStorage.getItem('av_email_institucional')||'';
+  if(!inst){toast('\u26a0 Ingresa tu correo institucional primero','err',5000);return;}
+  var sinEmail=criticos.filter(function(al,i){return !(document.getElementById('cEmailInp_'+i)||{}).value;});
+  if(sinEmail.length){toast('\u26a0 '+sinEmail.length+' alumno(s) sin email','err',5000);return;}
   _abrirCorreoTab(0);
-  if (criticos.length > 1) setTimeout(function(){
-    toast(criticos.length-1+' correo(s) restante(s) \u2014 usa \u201cAbrir en Gmail\u201d en cada alumno', 'info', 6000);
-  }, 1800);
+  if(criticos.length>1)setTimeout(function(){toast(criticos.length-1+' correo(s) restante(s) \u2014 usa "Abrir en Gmail" en cada alumno','info',6000);},1800);
 }
-
 function abrirModalCorreosApoderados() {
   var existing = document.getElementById('emailApoderadosModal');
   if (existing) existing.remove();
@@ -12449,15 +12305,15 @@ async function syncFromDrive() {
 
     // Deep copy al aplicar — no mutar raw directamente
     registros     = JSON.parse(JSON.stringify(raw.registros    || []));
-    // FIX v80: fusionar rubricas Drive+local
+    // FIX: fusionar rubricas Drive+local
     (function(){
-      var driveRubs = (raw.rubricas && raw.rubricas.length) ? raw.rubricas : null;
-      if (!driveRubs) return;
-      var localNoms = rubricas.map(function(r){ return (r.nombre||'').trim().toLowerCase(); });
+      var driveRubs=(raw.rubricas&&raw.rubricas.length)?raw.rubricas:null;
+      if(!driveRubs)return;
+      var localNoms=rubricas.map(function(r){return(r.nombre||'').trim().toLowerCase();});
       driveRubs.forEach(function(dr){
-        if (!localNoms.includes((dr.nombre||'').trim().toLowerCase())) rubricas.push(dr);
+        if(!localNoms.includes((dr.nombre||'').trim().toLowerCase()))rubricas.push(dr);
       });
-      try { localStorage.setItem('av_rubricas', JSON.stringify(rubricas)); } catch(e){}
+      try{localStorage.setItem('av_rubricas',JSON.stringify(rubricas));}catch(e){}
     })();
     listaCursos   = JSON.parse(JSON.stringify(raw.listaCursos  || {}));
     rubricaActiva = raw.rubricaActiva || 0;
