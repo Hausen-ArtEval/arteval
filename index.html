@@ -1625,95 +1625,170 @@ media (prefers-color-scheme: dark) {
 }
 
 /* ── Modal Correos Apoderados ─────────────────────────────────────────── */
+/* ── Módulo correos apoderados — rediseño v80 ─────────────────────────── */
 .email-modal-overlay {
   position: fixed; inset: 0; z-index: 3000;
-  background: rgba(0,0,0,0.6);
-  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
   display: flex; align-items: center; justify-content: center;
-  padding: 20px;
+  padding: 16px;
+  animation: fadeIn 0.2s ease;
 }
 .email-modal-box {
-  background: var(--bg2); border-radius: 20px;
-  width: 100%; max-width: 680px; max-height: 88vh;
+  background: var(--ae-white,#fff); border-radius: 20px;
+  width: 100%; max-width: 660px; max-height: 90vh;
   overflow: hidden; display: flex; flex-direction: column;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
-  animation: slideUp 0.25s cubic-bezier(.34,1.3,.64,1);
+  box-shadow: 0 24px 64px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.06);
+  animation: slideUp 0.28s cubic-bezier(.34,1.3,.64,1);
 }
 .email-modal-header {
-  padding: 20px 24px 14px;
-  border-bottom: 0.5px solid var(--border);
+  padding: 18px 22px 14px;
+  border-bottom: 1px solid var(--ae-border,#E5E5EA);
   display: flex; align-items: center;
   justify-content: space-between; gap: 12px;
   flex-shrink: 0;
+  background: var(--ae-white,#fff);
 }
 .email-modal-title {
-  font-size: 17px; font-weight: 700; color: var(--text);
+  font-size: 16px; font-weight: 700; color: var(--ae-black,#1C1C1E);
+  letter-spacing: -0.3px;
 }
-.email-modal-body {
-  overflow-y: auto; flex: 1; padding: 16px 24px;
+.email-modal-subtitle {
+  font-size: 12px; color: var(--ae-gray,#8E8E93); margin-top: 2px;
 }
-.email-alumno-card {
-  background: var(--bg3); border-radius: 14px;
-  padding: 16px; margin-bottom: 12px;
-  border: 1px solid var(--border);
-}
-.email-alumno-header {
-  display: flex; align-items: center;
-  justify-content: space-between; margin-bottom: 10px; gap: 8px;
-}
-.email-alumno-nombre {
-  font-size: 14px; font-weight: 700; color: var(--text);
-}
-.email-alumno-prom {
-  font-size: 16px; font-weight: 800;
-  font-family: var(--font-mono); color: var(--red);
+.email-modal-close {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--ae-gray-light,#F2F2F7); border: none;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  color: var(--ae-gray,#8E8E93); font-size: 16px; transition: all 0.15s;
   flex-shrink: 0;
 }
+.email-modal-close:hover { background: var(--ae-border,#E5E5EA); color: var(--ae-black,#1C1C1E); }
+.email-modal-body {
+  overflow-y: auto; flex: 1; padding: 16px 22px;
+  background: var(--ae-gray-light,#F2F2F7);
+}
+/* Tira de importación */
+.email-import-strip {
+  background: var(--ae-white,#fff);
+  border: 1px solid var(--ae-border,#E5E5EA);
+  border-radius: 14px; padding: 12px 16px;
+  margin-bottom: 14px;
+  display: flex; align-items: center; gap: 10px;
+  font-size: 13px; color: var(--ae-black,#1C1C1E); font-weight: 500;
+}
+.email-import-strip input[type=file] { display: none; }
+.email-import-btn {
+  margin-left: auto; flex-shrink: 0;
+  background: var(--ae-orange,#FF9500); color: #fff;
+  border: none; border-radius: 10px;
+  padding: 7px 14px; font-size: 12px; font-weight: 700;
+  cursor: pointer; transition: background 0.15s;
+  font-family: var(--font-ui);
+}
+.email-import-btn:hover { background: var(--ae-orange-dark,#E67E00); }
+/* Cards de cada alumno */
+.email-alumno-card {
+  background: var(--ae-white,#fff);
+  border-radius: 16px; padding: 16px;
+  margin-bottom: 10px;
+  border: 1px solid var(--ae-border,#E5E5EA);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  transition: box-shadow 0.15s;
+}
+.email-alumno-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+.email-alumno-header {
+  display: flex; align-items: flex-start;
+  justify-content: space-between; margin-bottom: 12px; gap: 10px;
+}
+.email-alumno-nombre {
+  font-size: 15px; font-weight: 700;
+  color: var(--ae-black,#1C1C1E); letter-spacing: -0.2px;
+}
+.email-alumno-prom {
+  font-size: 20px; font-weight: 800;
+  font-family: var(--font-mono); color: #FF3B30;
+  flex-shrink: 0; letter-spacing: -1px;
+}
+/* Campos de input */
 .email-campo {
-  display: flex; align-items: center; gap: 8px;
+  display: flex; align-items: center; gap: 10px;
   margin-bottom: 8px;
 }
 .email-campo label {
-  font-size: 11px; font-weight: 600; color: var(--text3);
-  text-transform: uppercase; letter-spacing: 0.5px;
-  min-width: 90px; flex-shrink: 0;
+  font-size: 10px; font-weight: 700; color: var(--ae-gray,#8E8E93);
+  text-transform: uppercase; letter-spacing: 0.6px;
+  min-width: 80px; flex-shrink: 0;
 }
 .email-campo input {
-  flex: 1; padding: 7px 10px; border-radius: 8px;
-  border: 1px solid var(--border); background: var(--bg2);
-  color: var(--text); font-size: 13px; font-family: var(--font-ui);
+  flex: 1; padding: 9px 12px; border-radius: 12px;
+  border: 1.5px solid var(--ae-border,#E5E5EA);
+  background: var(--ae-gray-light,#F2F2F7);
+  color: var(--ae-black,#1C1C1E); font-size: 13px;
+  font-family: var(--font-ui); transition: border-color 0.15s, box-shadow 0.15s;
 }
 .email-campo input:focus {
-  outline: none; border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-bg);
+  outline: none;
+  border-color: var(--ae-orange,#FF9500);
+  box-shadow: 0 0 0 3px rgba(255,149,0,0.15);
+  background: var(--ae-white,#fff);
 }
+/* Vista previa del correo */
 .email-preview {
-  background: var(--bg2); border-radius: 10px;
-  padding: 12px; font-size: 12px; line-height: 1.7;
-  color: var(--text2); white-space: pre-wrap;
-  border: 1px solid var(--border); margin-top: 10px;
-  font-family: var(--font-ui); max-height: 180px;
-  overflow-y: auto;
+  background: var(--ae-gray-light,#F2F2F7);
+  border-radius: 12px; padding: 14px;
+  font-size: 12px; line-height: 1.75;
+  color: var(--ae-black,#1C1C1E); white-space: pre-wrap;
+  border: 1px solid var(--ae-border,#E5E5EA);
+  margin-top: 10px; font-family: var(--font-ui);
+  max-height: 200px; overflow-y: auto;
 }
+/* Botones de acciones por alumno */
 .email-acciones {
-  display: flex; gap: 8px; margin-top: 10px;
-  flex-wrap: wrap;
+  display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap;
 }
+.email-btn-action {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 8px 14px; border-radius: 10px; border: none;
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  font-family: var(--font-ui); transition: all 0.15s;
+  touch-action: manipulation;
+}
+.email-btn-send {
+  background: var(--ae-orange,#FF9500); color: #fff;
+  box-shadow: 0 2px 8px rgba(255,149,0,0.25);
+}
+.email-btn-send:hover { background: var(--ae-orange-dark,#E67E00); transform: translateY(-1px); }
+.email-btn-copy {
+  background: var(--ae-gray-light,#F2F2F7);
+  color: var(--ae-black,#1C1C1E);
+  border: 1px solid var(--ae-border,#E5E5EA);
+}
+.email-btn-copy:hover { background: var(--ae-border,#E5E5EA); }
+.email-btn-save {
+  background: var(--ae-gray-light,#F2F2F7);
+  color: var(--ae-gray,#8E8E93);
+  border: 1px solid var(--ae-border,#E5E5EA);
+}
+/* Footer */
 .email-modal-footer {
-  padding: 14px 24px; border-top: 0.5px solid var(--border);
+  padding: 14px 22px;
+  border-top: 1px solid var(--ae-border,#E5E5EA);
   display: flex; align-items: center;
   justify-content: space-between; gap: 10px;
-  flex-shrink: 0; background: var(--bg2);
+  flex-shrink: 0; background: var(--ae-white,#fff);
 }
-.email-import-strip {
-  background: var(--accent-bg); border-radius: 10px;
-  padding: 10px 14px; margin-bottom: 14px;
-  display: flex; align-items: center; gap: 10px;
-  font-size: 13px; color: var(--accent); font-weight: 600;
+.email-footer-count {
+  font-size: 12px; color: var(--ae-gray,#8E8E93);
 }
-.email-import-strip input[type=file] {
-  display: none;
+.email-btn-all {
+  background: var(--ae-orange,#FF9500); color: #fff;
+  border: none; border-radius: 12px; padding: 10px 18px;
+  font-size: 13px; font-weight: 700; cursor: pointer;
+  font-family: var(--font-ui); transition: background 0.15s;
+  display: flex; align-items: center; gap: 6px;
 }
+.email-btn-all:hover { background: var(--ae-orange-dark,#E67E00); }
 
 /* ── Modal exportación Alexia ─────────────────────────────────────────── */
 .alexia-export-curso-activo {
@@ -8582,49 +8657,49 @@ function _procesarPlanillaApoderadosRows(rows, fileName) {
   _renderEmailCards();
 }
 function _generarTextoEmail(al, nombreProfesor, nombreColegio) {
-  var notas = al.notas || [];
-  var instancias = al.instancias || [];
-  var rubricas = al.rubricas || [];
-  var prom = al.promedio ? al.promedio.toFixed(1) : '?';
+  var notas     = al.notas     || [];
+  var instancias= al.instancias|| [];
+  var rubricas  = al.rubricas  || [];
+  var prom      = al.promedio  ? al.promedio.toFixed(1) : '?';
+  var fechaHoy  = new Date().toLocaleDateString('es-CL', { day:'numeric', month:'long', year:'numeric' });
 
-  // Tabla de notas con rúbrica
-  var tablaNotas = '';
+  // Nombre completo: Nombre + Apellido (no solo apellido ni solo primer nombre)
+  var nombreCompleto = al.nombre || '';
+  // Las partes del nombre en la nómina vienen como APELLIDO APELLIDO NOMBRE NOMBRE
+  // Usar el nombre completo tal como está registrado
+  var partes = nombreCompleto.split(' ').filter(Boolean);
+  // Primer nombre = última parte que tenga 3+ chars (heurística para nómina chilena)
+  var primerNombre = partes.slice(-2).join(' ') || nombreCompleto;
+
+  // Detalle de evaluaciones
+  var detalleNotas = '';
   notas.forEach(function(n, i) {
-    var inst = instancias[i] || ('Evaluación ' + (i+1));
-    var nota = (typeof n === 'number') ? n.toFixed(1) : String(n);
-    var estado = n >= 6 ? 'Destacado' : n >= 5 ? 'Logrado' : n >= 4 ? 'Suficiente' : 'No logrado';
-    var rub = rubricas[i] ? ' [' + rubricas[i] + ']' : '';
-    tablaNotas += '   • ' + inst + rub + ': ' + nota + ' — ' + estado + '\n';
+    var inst  = instancias[i] || ('Evaluación ' + (i+1));
+    var nota  = (typeof n === 'number') ? n.toFixed(1) : String(n);
+    var logro = n >= 6 ? 'Destacado' : n >= 5 ? 'Logrado' : n >= 4 ? 'Suficiente' : 'No logrado';
+    var rub   = rubricas[i] ? ' — ' + rubricas[i] : '';
+    detalleNotas += '  ' + inst + rub + ': ' + nota + ' (' + logro + ')\n';
   });
 
-  // Nombre del alumno: usar sólo el primer nombre para el texto interno
-  var primerNombre = al.nombre.split(' ').filter(function(p){ return p.length > 2; })[0] || al.nombre.split(' ')[0];
+  var prof  = nombreProfesor || 'Docente de Artes Visuales';
+  var cole  = nombreColegio  || '';
 
-  var sugerencias = [
-    'Revise junto a su hijo/a los trabajos y materiales evaluados en Artes Visuales.',
-    'Fomente en casa la práctica del dibujo, pintura o cualquier actividad creativa.',
-    'Asegúrese de que ' + primerNombre + ' traiga todos los materiales requeridos a cada clase.',
-    'Si desea revisar las evaluaciones o tiene consultas, puede contactar al docente para una reunión.',
-  ];
-
-  var fechaHoy = new Date().toLocaleDateString('es-CL', { day:'numeric', month:'long', year:'numeric' });
-
-  return 'Estimado/a apoderado/a de ' + al.nombre + ':\n\n' +
-    fechaHoy + '\n\n' +
-    'Me dirijo a usted para informarle sobre la situación académica de ' + primerNombre +
-    ' en la asignatura de Artes Visuales, correspondiente al curso ' + al.curso + '.\n\n' +
-    'Durante el período evaluado, ' + primerNombre + ' ha obtenido las siguientes calificaciones:\n\n' +
-    tablaNotas + '\n' +
-    'Promedio actual: ' + prom + ' (situación crítica — bajo 4,0)\n\n' +
-    'Esta situación requiere atención para que ' + primerNombre +
-    ' pueda revertir su rendimiento antes del cierre del período.\n\n' +
-    'Para apoyar desde el hogar, le sugerimos:\n\n' +
-    sugerencias.map(function(s) { return '   • ' + s; }).join('\n') + '\n\n' +
-    'Quedamos atentos ante cualquier consulta.\n\n' +
-    'Atentamente,\n' +
-    (nombreProfesor || 'Docente de Artes Visuales') + '\n' +
-    'Profesor/a de Artes Visuales\n' +
-    (nombreColegio || '');
+  // Plantilla ejecutiva y minimalista
+  return fechaHoy + '\n\n'
+    + 'Estimado/a apoderado/a de ' + nombreCompleto + ':\n\n'
+    + 'Informo a usted el resultado de evaluación en Artes Visuales de '
+    + primerNombre + ', ' + al.curso + ':\n\n'
+    + detalleNotas
+    + '\nPromedio: ' + prom + ' — Situación crítica (bajo 4,0).'
+    + ' Se requiere apoyo para revertir este resultado antes del cierre del período.\n\n'
+    + 'Acciones sugeridas:\n'
+    + '  • Revisar junto a ' + primerNombre + ' los trabajos evaluados.\n'
+    + '  • Verificar que ' + primerNombre + ' asista con los materiales requeridos.\n'
+    + '  • Contactar al docente para reunión si tiene consultas.\n\n'
+    + 'Atentamente,\n'
+    + prof + '\n'
+    + 'Artes Visuales' + (cole ? ' · ' + cole : '') + '\n'
+    + 'ArtEval';
 }
 
 // ── Abrir modal de correos ────────────────────────────────────────────────
@@ -8639,7 +8714,8 @@ function abrirModalCorreosApoderados() {
     '<div class="email-modal-box">' +
       '<div class="email-modal-header">' +
         '<div>' +
-          '<div class="email-modal-title">📧 Correos a apoderados — Promedio crítico</div>' +
+          '<div class="email-modal-title"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z\"/><polyline points=\"22,6 12,13 2,6\"/></svg> Correos a apoderados</div>'
+          + '<div class="email-modal-subtitle">Alumnos con 2+ evaluaciones y promedio &lt; 4,0</div>' +
           '<div style="font-size:12px;color:var(--text3);margin-top:2px;">Alumnos con 2+ evaluaciones y promedio &lt; 4,0</div>' +
         '</div>' +
         '<button onclick="_cerrarEmailModal()" style="background:none;border:none;cursor:pointer;' +
