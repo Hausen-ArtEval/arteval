@@ -8589,6 +8589,38 @@ var _apoderadoEmails = (function() {
   catch(e) { return {}; }
 })();
 
+// Historial de correos enviados: { 'NOMBRE_KEY': { fecha, email, curso, promedio } }
+var _historialCorreos = (function() {
+  try { return JSON.parse(localStorage.getItem('av_historial_correos') || '{}') || {}; }
+  catch(e) { return {}; }
+})();
+
+function _saveHistorialCorreos() {
+  try { localStorage.setItem('av_historial_correos', JSON.stringify(_historialCorreos)); }
+  catch(e) {}
+  if (typeof _driveSaveDebounced === 'function') _driveSaveDebounced();
+}
+
+function _marcarCorreoEnviado(nombreAlumno, emailApod, curso, promedio) {
+  var key = (nombreAlumno || '').trim().toUpperCase();
+  if (!key) return;
+  _historialCorreos[key] = {
+    fecha:    new Date().toISOString(),
+    email:    emailApod || '',
+    curso:    curso || '',
+    promedio: promedio || 0
+  };
+  _saveHistorialCorreos();
+}
+
+function _fueEnviado(nombreAlumno) {
+  return !!_historialCorreos[(nombreAlumno || '').trim().toUpperCase()];
+}
+
+function _getEnvio(nombreAlumno) {
+  return _historialCorreos[(nombreAlumno || '').trim().toUpperCase()] || null;
+}
+
 function _saveApoderadoEmails() {
   try { localStorage.setItem('av_apoderado_emails', JSON.stringify(_apoderadoEmails)); }
   catch(e) {}
@@ -8803,17 +8835,49 @@ function _renderCorreoTab(){
   });
   criticos.sort(function(a,b){return a.promedio-b.promedio;});
   if(!criticos.length){ct.innerHTML='<div style="text-align:center;padding:60px 20px;"><div style="font-size:40px;margin-bottom:12px;">\u2705</div><div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px;">Sin alumnos cr\u00edticos</div><div style="font-size:13px;color:var(--text3);">Todos tienen promedio \u2265 4,0</div></div>';return;}
-  var html='<div style="font-size:12px;color:var(--text3);margin-bottom:12px;">'+criticos.length+' alumno'+(criticos.length!==1?'s':'')+' con promedio bajo 4,0</div>';
+  // Contadores
+  var nEnviados  = criticos.filter(function(a){ return _fueEnviado(a.nombre); }).length;
+  var nPendientes = criticos.length - nEnviados;
+
+  var html='<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px;">'
+    +'<div style="display:flex;gap:10px;">'
+    +'<div style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:#F2F2F7;border-radius:20px;">'
+    +'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#34C759" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+    +'<span style="font-size:12px;font-weight:600;color:#34C759;">'+nEnviados+' enviados</span></div>'
+    +'<div style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:#F2F2F7;border-radius:20px;">'
+    +'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
+    +'<span style="font-size:12px;font-weight:600;color:#FF9500;">'+nPendientes+' pendientes</span></div>'
+    +'</div>'
+    +'</div>';
+
   criticos.forEach(function(al,idx){
     var email=_getEmailApoderado(al.nombre),prom=al.promedio.toFixed(1),pc=al.promedio<2.5?'#FF3B30':'#FF9500';
     var texto=_generarTextoEmail(al,prof,cole);
     var ns=al.notas.map(function(n,i){return(al.instancias[i]||'Ev.'+(i+1))+': '+n.toFixed(1);}).join(' \u00b7 ');
     var pie=al.pie?'<svg width="11" height="11" viewBox="0 0 100 100" fill="'+pc+'" style="vertical-align:middle;margin-left:4px;"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="'+pc+'" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="'+pc+'" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="'+pc+'" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="'+pc+'" stroke-width="8" stroke-linecap="round" fill="none"/></svg>':'';
+    var enviado=_getEnvio(al.nombre);
+    var badgeEnvio=enviado
+      ? '<div style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;'
+        +'background:rgba(52,199,89,0.12);border:1px solid rgba(52,199,89,0.25);'
+        +'border-radius:20px;margin-top:5px;">'
+        +'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#34C759" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+        +'<span style="font-size:11px;font-weight:600;color:#34C759;">Enviado '
+        +new Date(enviado.fecha).toLocaleDateString('es-CL',{day:'numeric',month:'short'})
+        +'</span></div>'
+      : '<div style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;'
+        +'background:rgba(255,149,0,0.10);border:1px solid rgba(255,149,0,0.25);'
+        +'border-radius:20px;margin-top:5px;">'
+        +'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
+        +'<span style="font-size:11px;font-weight:600;color:#FF9500;">Pendiente</span></div>';
     html+='<div class="config-card" style="padding:16px 20px;margin-bottom:10px;">'
       +'<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;gap:10px;">'
-      +'<div><div style="font-size:15px;font-weight:700;color:var(--text);">'+al.nombre+pie+'</div>'
-      +'<div style="font-size:11px;color:var(--text3);margin-top:3px;">'+al.curso+' \u00b7 '+ns+'</div></div>'
-      +'<div style="text-align:right;"><div style="font-size:20px;font-weight:800;font-family:var(--font-mono);color:'+pc+';">'+prom+'</div>'
+      +'<div>'
+      +'<div style="font-size:15px;font-weight:700;color:var(--text);">'+al.nombre+pie+'</div>'
+      +'<div style="font-size:11px;color:var(--text3);margin-top:3px;">'+al.curso+' \u00b7 '+ns+'</div>'
+      +badgeEnvio
+      +'</div>'
+      +'<div style="text-align:right;">'
+      +'<div style="font-size:20px;font-weight:800;font-family:var(--font-mono);color:'+pc+';">'+prom+'</div>'
       +'<div style="font-size:10px;color:var(--text3);">promedio</div></div></div>'
       +'<div style="display:flex;align-items:center;padding:10px 0;border-top:0.5px solid var(--border);border-bottom:0.5px solid var(--border);margin-bottom:10px;gap:10px;">'
       +'<div style="font-size:13px;font-weight:500;color:var(--text);flex:1;">Email apoderado</div>'
@@ -8824,6 +8888,20 @@ function _renderCorreoTab(){
       +'<button class="btn btn-primary" onclick="_abrirCorreoTab('+idx+')" style="display:inline-flex;align-items:center;gap:6px;min-height:36px;font-size:13px;border-radius:10px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Abrir en Gmail</button>'
       +'<button class="btn" onclick="_copiarCorreoTab('+idx+')" style="display:inline-flex;align-items:center;gap:6px;min-height:36px;font-size:13px;border-radius:10px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copiar</button>'
       +'<button class="btn" data-idx="'+idx+'" data-nom="'+al.nombre.replace(/"/g,'&quot;')+'" onclick="_guardarCorreoTab(parseInt(this.dataset.idx),this.dataset.nom)" style="display:inline-flex;align-items:center;gap:6px;min-height:36px;font-size:13px;border-radius:10px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Guardar</button>'
+      // Botón Marcar/Desmarcar — usa data-attributes para evitar comillas anidadas
+      +(enviado
+        ? '<button class="btn" data-nom="'+al.nombre.replace(/"/g,'&quot;')+'"'
+          +' onclick="var k=this.dataset.nom.toUpperCase();delete _historialCorreos[k];_saveHistorialCorreos();_renderCorreoTab()"'
+          +' style="display:inline-flex;align-items:center;gap:5px;min-height:36px;font-size:12px;border-radius:10px;color:#8E8E93;border-color:rgba(142,142,147,0.3);">'    
+          +'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#8E8E93" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+          +'<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
+          +' Desmarcar</button>'
+        : '<button class="btn" data-nom="'+al.nombre.replace(/"/g,'&quot;')+'" data-curso="'+al.curso+'" data-prom="'+prom+'"'
+          +' onclick="_marcarCorreoEnviado(this.dataset.nom,this.dataset.email||String(),this.dataset.curso,parseFloat(this.dataset.prom)||0);_renderCorreoTab()"'
+          +' style="display:inline-flex;align-items:center;gap:5px;min-height:36px;font-size:12px;border-radius:10px;color:#34C759;border-color:rgba(52,199,89,0.3);background:rgba(52,199,89,0.08);">'   
+          +'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#34C759" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">'
+          +'<polyline points="20 6 9 17 4 12"/></svg>'
+          +' Marcar enviado</button>')
       +'</div></div>';
   });
   ct.innerHTML=html;
@@ -8941,17 +9019,20 @@ function _abrirCorreoTab(idx){
   // Opción 1: cuenta institucional (si está configurada)
   if(inst && inst.includes('@')){
     mkBtn(SVG_MAIL, inst, 'Abre Gmail y selecciona esta cuenta', '#FF9500', function(){
-      // Copiar texto al portapapeles primero (por si Gmail no rellena el body)
       try { navigator.clipboard.writeText(texto); } catch(e){}
       window.open(buildGmailCompose(inst), '_blank');
+      // Marcar como enviado
+      _marcarCorreoEnviado(al.nombre, email, al.curso, al.promedio);
+      _renderCorreoTab(); // actualizar badge en la UI
     });
   }
 
-  // Opción 2: Gmail sin especificar cuenta (el usuario elige en Gmail)
+  // Opción 2: Gmail sin especificar cuenta
   mkBtn(SVG_MAIL, 'Abrir Gmail y elegir cuenta', 'Se abre Gmail — puedes cambiar la cuenta ahí', '#8E8E93', function(){
     try { navigator.clipboard.writeText(texto); } catch(e){}
-    // URL sin authuser — Gmail mostrará el selector de cuenta si hay varias
     window.open(buildGmailCompose(''), '_blank');
+    _marcarCorreoEnviado(al.nombre, email, al.curso, al.promedio);
+    _renderCorreoTab();
   });
 
   // Opción 3: Copiar texto
@@ -12209,7 +12290,8 @@ async function guardarYLiberarLocalStorage() {
       listaCursos:  JSON.parse(JSON.stringify(listaCursos)),
       rubricaActiva: rubricaActiva,
       alexiaDatos:  JSON.parse(JSON.stringify(alexiaDatos || {})),
-      apoderadoEmails: JSON.parse(JSON.stringify(_apoderadoEmails || {})),
+      apoderadoEmails:  JSON.parse(JSON.stringify(_apoderadoEmails  || {})),
+      historialCorreos: JSON.parse(JSON.stringify(_historialCorreos || {})),
       // Configuración de correo y preferencias del profesor
       config: {
         emailProf:         localStorage.getItem('av_email_prof')          || '',
@@ -12627,6 +12709,11 @@ async function syncFromDrive() {
     if (raw.apoderadoEmails && Object.keys(raw.apoderadoEmails).length) {
       Object.assign(_apoderadoEmails, raw.apoderadoEmails);
       try { localStorage.setItem('av_apoderado_emails', JSON.stringify(_apoderadoEmails)); } catch(e) {}
+    }
+    // Restaurar historial de correos enviados
+    if (raw.historialCorreos && Object.keys(raw.historialCorreos).length) {
+      Object.assign(_historialCorreos, raw.historialCorreos);
+      try { localStorage.setItem('av_historial_correos', JSON.stringify(_historialCorreos)); } catch(e) {}
     }
     // Restaurar configuración del profesor desde Drive
     if (raw.config) {
