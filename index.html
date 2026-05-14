@@ -1806,6 +1806,18 @@ media (prefers-color-scheme: dark) {
 .alexia-stat-lbl {
   font-size: 11px; color: var(--text3); margin-top: 2px;
 }
+/* ── Tab Correo: page header ──────────────────────────────────────────── */
+.page-header {
+  display: flex; align-items: flex-start;
+  justify-content: space-between; gap: 12px; flex-wrap: wrap;
+}
+.page-title {
+  font-size: 20px; font-weight: 700;
+  color: var(--ae-black,#1C1C1E); letter-spacing: -0.4px;
+}
+.page-subtitle {
+  font-size: 13px; color: var(--ae-gray,#8E8E93); margin-top: 3px;
+}
 </style>
 
 <script>
@@ -2115,6 +2127,7 @@ media (prefers-color-scheme: dark) {
     <button class="tab" data-tab="cursos" onclick="showTab('cursos')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>Cursos</button>
     <button class="tab" data-tab="estadisticas" onclick="showTab('estadisticas')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Estadísticas</button>
     <button class="tab" data-tab="progreso" onclick="showTab('progreso')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 1 17"/><polyline points="16 7 22 7 22 13"/></svg>Progreso</button>
+    <button class="tab" data-tab="correo" onclick="showTab('correo')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Correo</button>
     <button class="tab" data-tab="reporte" onclick="showTab('reporte')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Reporte</button>
     <button class="tab" data-tab="rubricas" onclick="showTab('rubricas')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Rúbricas</button>
     <button class="tab" data-tab="config" onclick="showTab('config')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>Ajustes</button>
@@ -2137,7 +2150,7 @@ media (prefers-color-scheme: dark) {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             <div id="dashAlertaTitulo" style="font-size:13px;font-weight:700;color:var(--red);">Alumnos con promedio crítico (&lt; 4.0)</div>
           </div>
-          <div style="display:flex;gap:8px;align-items:center;"><div style="font-size:11px;color:var(--text3);cursor:pointer;" onclick="this.closest('#dashAlertaWrap').querySelector('.dash-alerta-body').style.display=this.closest('#dashAlertaWrap').querySelector('.dash-alerta-body').style.display==='none'?'block':'none'">mostrar/ocultar</div><button onclick="abrirModalCorreosApoderados()" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;font-family:var(--font-ui);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>📧 Avisar apoderados</button></div>
+          <div style="display:flex;gap:8px;align-items:center;"><div style="font-size:11px;color:var(--text3);cursor:pointer;" onclick="this.closest('#dashAlertaWrap').querySelector('.dash-alerta-body').style.display=this.closest('#dashAlertaWrap').querySelector('.dash-alerta-body').style.display==='none'?'block':'none'">mostrar/ocultar</div><button onclick="showTab('correo')" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;font-family:var(--font-ui);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>📧 Avisar apoderados</button></div>
         </div>
         <div class="dash-alerta-body">
           <div class="dash-alerta-wrap-inner"><div id="dashAlertaCursos"></div></div>
@@ -2520,6 +2533,55 @@ media (prefers-color-scheme: dark) {
     </div>
 
     <!-- ══════════════ TAB: REPORTE ══════════════ -->
+    <!-- ══ TAB CORREO ══════════════════════════════════════════════════════ -->
+    <div id="tab-correo" style="display:none">
+      <div class="page-header" style="margin-bottom:18px;">
+        <div>
+          <div class="page-title">📧 Correos a apoderados</div>
+          <div class="page-subtitle">Alumnos con promedio crítico (bajo 4,0) — genera y envía correos desde aquí</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <label class="email-import-btn" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Subir matrícula
+            <input type="file" accept=".xlsx,.xls,.csv,.txt" onchange="importarPlanillaApoderados(this.files[0]);this.value=''">
+          </label>
+          <span id="correoTabEmailBadge" style="font-size:12px;color:var(--ae-orange,#FF9500);font-weight:600;"></span>
+        </div>
+      </div>
+
+      <!-- Campos globales: profesor y colegio -->
+      <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:200px;">
+          <label style="font-size:10px;font-weight:700;color:var(--ae-gray,#8E8E93);text-transform:uppercase;letter-spacing:0.6px;display:block;margin-bottom:5px;">Tu nombre</label>
+          <input id="correoNombreProf" type="text" placeholder="Nombre del profesor/a"
+            style="width:100%;padding:9px 12px;border-radius:12px;border:1.5px solid var(--ae-border,#E5E5EA);background:var(--ae-gray-light,#F2F2F7);color:var(--ae-black,#1C1C1E);font-size:13px;font-family:var(--font-ui);box-sizing:border-box;"
+            oninput="localStorage.setItem('av_email_prof',this.value);_renderCorreoTab()">
+        </div>
+        <div style="flex:1;min-width:200px;">
+          <label style="font-size:10px;font-weight:700;color:var(--ae-gray,#8E8E93);text-transform:uppercase;letter-spacing:0.6px;display:block;margin-bottom:5px;">Colegio</label>
+          <input id="correoNombreColegio" type="text" placeholder="Nombre del establecimiento"
+            style="width:100%;padding:9px 12px;border-radius:12px;border:1.5px solid var(--ae-border,#E5E5EA);background:var(--ae-gray-light,#F2F2F7);color:var(--ae-black,#1C1C1E);font-size:13px;font-family:var(--font-ui);box-sizing:border-box;"
+            oninput="localStorage.setItem('av_email_colegio',this.value);_renderCorreoTab()">
+        </div>
+        <div style="flex:1;min-width:200px;">
+          <label style="font-size:10px;font-weight:700;color:var(--ae-gray,#8E8E93);text-transform:uppercase;letter-spacing:0.6px;display:block;margin-bottom:5px;">CC a UTP</label>
+          <input id="correoEmailUTP" type="email" placeholder="utp@colegio.cl"
+            style="width:100%;padding:9px 12px;border-radius:12px;border:1.5px solid var(--ae-border,#E5E5EA);background:var(--ae-gray-light,#F2F2F7);color:var(--ae-black,#1C1C1E);font-size:13px;font-family:var(--font-ui);box-sizing:border-box;"
+            oninput="localStorage.setItem('av_email_utp',this.value)">
+        </div>
+      </div>
+
+      <!-- Lista de alumnos críticos -->
+      <div id="correoTabContainer">
+        <div style="text-align:center;padding:60px 20px;color:var(--ae-gray,#8E8E93);">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.3;margin-bottom:12px;display:block;margin-left:auto;margin-right:auto;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <div style="font-size:13px;">Cargando alumnos críticos...</div>
+        </div>
+      </div>
+    </div>
+
+
     <div id="tab-reporte" style="display:none">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
         <div class="search-wrap">
@@ -3002,6 +3064,12 @@ function doGet(e) {
 </div><!-- /app -->
 
 <script>
+// Wrapper de seguridad: showTab disponible globalmente desde el inicio
+window._tabPendiente = null;
+if (typeof showTab === 'undefined') {
+  window.showTab = function(name) { window._tabPendiente = name; };
+}
+
 // ── Configuración del Client ID desde Configurar ──
 function guardarGoogClientId() {
   var v = document.getElementById('googClientIdInput')?.value.trim();
@@ -8113,7 +8181,7 @@ function copiarScript() {
 }
 
 function showTab(name) {
-  ['inicio','evaluar','registros','cursos','estadisticas','progreso','reporte','rubricas','config'].forEach(t => {
+  ['inicio','evaluar','registros','cursos','estadisticas','progreso','correo','reporte','rubricas','config'].forEach(t => {
     const el = document.getElementById('tab-'+t);
     if (el) el.style.display = t===name ? 'block' : 'none';
   });
@@ -8127,6 +8195,7 @@ function showTab(name) {
   if (name==='inicio')       renderDashboard();
   if (name==='progreso')     renderProgreso();
   if (name==='reporte')      renderReporte();
+  if (name==='correo')        _renderCorreoTab();
   if (name==='rubricas')     renderRubricas();
   // FIX QA v72: detener stream de cámara al salir del tab evaluar
   if (name !== 'evaluar' && typeof stream !== 'undefined' && stream) {
@@ -8684,7 +8753,7 @@ function _generarTextoEmail(al, nombreProfesor, nombreColegio) {
   var prof  = nombreProfesor || 'Docente de Artes Visuales';
   var cole  = nombreColegio  || '';
 
-  // Plantilla ejecutiva y minimalista
+  // Plantilla ejecutiva — usar 'el/la estudiante' en acciones para evitar repetir el nombre
   return fechaHoy + '\n\n'
     + 'Estimado/a apoderado/a de ' + nombreCompleto + ':\n\n'
     + 'Informo a usted el resultado de evaluación en Artes Visuales de '
@@ -8693,9 +8762,9 @@ function _generarTextoEmail(al, nombreProfesor, nombreColegio) {
     + '\nPromedio: ' + prom + ' — Situación crítica (bajo 4,0).'
     + ' Se requiere apoyo para revertir este resultado antes del cierre del período.\n\n'
     + 'Acciones sugeridas:\n'
-    + '  • Revisar junto a ' + primerNombre + ' los trabajos evaluados.\n'
-    + '  • Verificar que ' + primerNombre + ' asista con los materiales requeridos.\n'
-    + '  • Contactar al docente para reunión si tiene consultas.\n\n'
+    + '  • Revisar junto a el/la estudiante los trabajos y materiales evaluados.\n'
+    + '  • Asegurarse de que el/la estudiante asista con los materiales requeridos a cada clase.\n'
+    + '  • Contactar al docente si desea revisar las evaluaciones o tiene consultas.\n\n'
     + 'Atentamente,\n'
     + prof + '\n'
     + 'Artes Visuales' + (cole ? ' · ' + cole : '') + '\n'
@@ -8703,6 +8772,205 @@ function _generarTextoEmail(al, nombreProfesor, nombreColegio) {
 }
 
 // ── Abrir modal de correos ────────────────────────────────────────────────
+
+// ── Tab Correo: renderizar el panel completo de correos a apoderados ──────
+function _renderCorreoTab() {
+  var container = document.getElementById('correoTabContainer');
+  var badge     = document.getElementById('correoTabEmailBadge');
+  if (!container) return;
+
+  // Restaurar valores guardados
+  var profInp = document.getElementById('correoNombreProf');
+  var coleInp = document.getElementById('correoNombreColegio');
+  var utpInp  = document.getElementById('correoEmailUTP');
+  var profVal = localStorage.getItem('av_email_prof')    || '';
+  var coleVal = localStorage.getItem('av_email_colegio') || '';
+  var utpVal  = localStorage.getItem('av_email_utp')     || '';
+  if (profInp && !profInp.value) profInp.value = profVal;
+  if (coleInp && !coleInp.value) coleInp.value = coleVal;
+  if (utpInp  && !utpInp.value)  utpInp.value  = utpVal;
+
+  var prof = profInp ? profInp.value : profVal;
+  var cole = coleInp ? coleInp.value : coleVal;
+  var utp  = utpInp  ? utpInp.value  : utpVal;
+
+  // Badge de emails guardados
+  var totalEmails = Object.keys(_apoderadoEmails).length;
+  if (badge) badge.textContent = totalEmails ? totalEmails + ' emails en planilla' : '';
+
+  // Recopilar alumnos críticos
+  var criticos = [];
+  TODOS_LOS_CURSOS.forEach(function(curso) {
+    var regsAll = registros.filter(function(r) {
+      return (r.curso||'') === curso && r.nota !== undefined && r.nota !== null;
+    });
+    if (!regsAll.length) return;
+    var porAlumno = {};
+    regsAll.forEach(function(r) {
+      var key = (r.nombre||'').trim().toUpperCase();
+      if (!key) return;
+      if (!porAlumno[key]) porAlumno[key] = {
+        nombre: r.nombre, curso: curso, notas: [], instancias: [], rubricas: [], pie: false
+      };
+      porAlumno[key].notas.push(r.nota);
+      porAlumno[key].instancias.push(r.instancia || 'Evaluación 1');
+      porAlumno[key].rubricas.push(r.rubricaNombre || '');
+      if (r.pie) porAlumno[key].pie = true;
+    });
+    Object.values(porAlumno).forEach(function(al) {
+      if (al.notas.length < 2) return;
+      al.promedio = al.notas.reduce(function(s,n){return s+n;},0) / al.notas.length;
+      if (al.promedio < 4.0) criticos.push(al);
+    });
+  });
+  criticos.sort(function(a,b){ return a.promedio - b.promedio; });
+
+  if (!criticos.length) {
+    container.innerHTML = '<div style="text-align:center;padding:60px 20px;">'
+      + '<div style="font-size:40px;margin-bottom:12px;">✅</div>'
+      + '<div style="font-size:15px;font-weight:600;color:var(--ae-black,#1C1C1E);margin-bottom:6px;">Sin alumnos críticos</div>'
+      + '<div style="font-size:13px;color:var(--ae-gray,#8E8E93);">Todos los alumnos con 2+ evaluaciones tienen promedio ≥ 4,0</div></div>';
+    return;
+  }
+
+  // Cabecera con contador
+  var html = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">'
+    + '<div style="font-size:13px;font-weight:600;color:var(--ae-black,#1C1C1E);">'
+    + criticos.length + ' alumno' + (criticos.length!==1?'s':'') + ' con promedio crítico</div>'
+    + '<button class="email-btn-all" onclick="_enviarTodosCorreoTab()">'
+    + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>'
+    + 'Abrir todos</button></div>';
+
+  // Cards por alumno
+  criticos.forEach(function(al, idx) {
+    var email    = _getEmailApoderado(al.nombre);
+    var prom     = al.promedio.toFixed(1);
+    var promClr  = al.promedio < 2.5 ? '#FF3B30' : '#FF9500';
+    var texto    = _generarTextoEmail(al, prof, cole);
+    var notasStr = al.notas.map(function(n,i){
+      return (al.instancias[i]||'Ev.'+(i+1))+': '+n.toFixed(1);
+    }).join(' · ');
+    var pieIcon = al.pie
+      ? '<svg width="11" height="11" viewBox="0 0 100 100" fill="'+promClr+'" style="vertical-align:middle;margin-left:4px;" aria-label="PIE"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="'+promClr+'" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="'+promClr+'" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="'+promClr+'" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="'+promClr+'" stroke-width="8" stroke-linecap="round" fill="none"/></svg>'
+      : '';
+
+    html += '<div class="email-alumno-card">'
+      // Header alumno
+      + '<div class="email-alumno-header">'
+      +   '<div>'
+      +     '<div class="email-alumno-nombre">' + al.nombre + pieIcon + '</div>'
+      +     '<div style="font-size:11px;color:var(--ae-gray,#8E8E93);margin-top:3px;">'
+      +       al.curso + ' · ' + notasStr
+      +     '</div>'
+      +   '</div>'
+      +   '<div style="text-align:right;">'
+      +     '<div class="email-alumno-prom" style="color:'+promClr+';">' + prom + '</div>'
+      +     '<div style="font-size:10px;color:var(--ae-gray,#8E8E93);">promedio</div>'
+      +   '</div>'
+      + '</div>'
+      // Campo email apoderado
+      + '<div class="email-campo">'
+      +   '<label>Email apoderado</label>'
+      +   '<input type="email" id="cEmailInp_'+idx+'" placeholder="apoderado@email.cl" value="'+email+'"'
+      +   ' style="flex:1;padding:9px 12px;border-radius:12px;border:1.5px solid var(--ae-border,#E5E5EA);background:var(--ae-gray-light,#F2F2F7);color:var(--ae-black);font-size:13px;font-family:var(--font-ui);">'
+      + '</div>'
+      // Vista previa del correo
+      + '<details style="margin-top:8px;">'
+      +   '<summary style="font-size:11px;font-weight:600;color:var(--ae-gray,#8E8E93);cursor:pointer;user-select:none;padding:4px 0;">'
+      +   'Ver texto del correo ▾</summary>'
+      +   '<pre class="email-preview" id="cEmailTxt_'+idx+'">' + texto + '</pre>'
+      + '</details>'
+      // Botones de acción
+      + '<div class="email-acciones">'
+      +   '<button class="email-btn-action email-btn-send" onclick="_abrirCorreoTab('+idx+')">'
+      +     '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>'
+      +     ' Abrir en correo</button>'
+      +   '<button class="email-btn-action email-btn-copy" onclick="_copiarCorreoTab('+idx+')">'
+      +     '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'
+      +     ' Copiar</button>'
+      +   '<button class="email-btn-action email-btn-save" '
+      +   'data-nom="' + al.nombre.replace(/'/g,'&#39;') + '" '
+      +   'onclick="_guardarCorreoTab(parseInt(this.dataset.idx||' + idx + '),this.dataset.nom)" '
+      +   'data-idx="' + idx + '">'
+      +     '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>'
+      +     ' Guardar email</button>'
+      + '</div>'
+      + '</div>';
+  });
+
+  container.innerHTML = html;
+  window._correoTabCriticos = criticos;
+}
+
+function _abrirCorreoTab(idx) {
+  var criticos = window._correoTabCriticos || [];
+  var al = criticos[idx];
+  if (!al) return;
+  var email   = (document.getElementById('cEmailInp_'+idx)||{}).value || '';
+  var utp     = (document.getElementById('correoEmailUTP')||{}).value || localStorage.getItem('av_email_utp')||'';
+  var prof    = (document.getElementById('correoNombreProf')||{}).value   || localStorage.getItem('av_email_prof')||'';
+  var cole    = (document.getElementById('correoNombreColegio')||{}).value || localStorage.getItem('av_email_colegio')||'';
+  var texto   = _generarTextoEmail(al, prof, cole);
+  var asunto  = 'Información académica Artes Visuales — ' + al.nombre;
+  var mailto  = 'mailto:' + encodeURIComponent(email)
+    + (utp ? '?cc=' + encodeURIComponent(utp) + '&' : '?')
+    + 'subject=' + encodeURIComponent(asunto)
+    + '&body='   + encodeURIComponent(texto);
+  if (email && email.includes('@')) {
+    _apoderadoEmails[al.nombre.trim().toUpperCase()] = email.toLowerCase();
+    _saveApoderadoEmails();
+  }
+  window.location.href = mailto;
+}
+
+function _copiarCorreoTab(idx) {
+  var criticos = window._correoTabCriticos || [];
+  var al = criticos[idx];
+  if (!al) return;
+  var prof  = (document.getElementById('correoNombreProf')||{}).value   || localStorage.getItem('av_email_prof')||'';
+  var cole  = (document.getElementById('correoNombreColegio')||{}).value || localStorage.getItem('av_email_colegio')||'';
+  var texto = _generarTextoEmail(al, prof, cole);
+  navigator.clipboard.writeText(texto).then(function(){
+    toast('✓ Copiado — pégalo en tu correo', 'ok', 2500);
+  }).catch(function(){
+    var ta = document.createElement('textarea');
+    ta.value = texto; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy'); ta.remove();
+    toast('✓ Texto copiado', 'ok', 2500);
+  });
+}
+
+function _guardarCorreoTab(idx, nombreAlumno) {
+  // Compatibilidad: nombreAlumno puede venir de dataset o argumento
+  var nom   = (nombreAlumno || '').replace(/&#39;/g, "'").trim();
+  var email = (document.getElementById('cEmailInp_'+idx)||{}).value || '';
+  if (!email || !email.includes('@')) { toast('⚠ Ingresa un email válido', 'err'); return; }
+  if (!nom) { toast('⚠ Error: nombre de alumno no encontrado', 'err'); return; }
+  _apoderadoEmails[nom.toUpperCase()] = email.toLowerCase();
+  _saveApoderadoEmails();
+  var badge = document.getElementById('correoTabEmailBadge');
+  if (badge) badge.textContent = Object.keys(_apoderadoEmails).length + ' emails en planilla';
+  toast('✓ Email guardado para ' + nom.split(' ')[0], 'ok', 2000);
+}
+
+function _enviarTodosCorreoTab() {
+  var criticos = window._correoTabCriticos || [];
+  if (!criticos.length) return;
+  var sinEmail = criticos.filter(function(al,i){
+    return !(document.getElementById('cEmailInp_'+i)||{}).value;
+  });
+  if (sinEmail.length) {
+    toast('⚠ ' + sinEmail.length + ' alumno(s) sin email. Complétalos primero.', 'err', 5000);
+    return;
+  }
+  _abrirCorreoTab(0);
+  if (criticos.length > 1) {
+    setTimeout(function(){
+      toast('Continúa con los siguientes usando "Abrir en correo"', 'info', 5000);
+    }, 1500);
+  }
+}
+
 function abrirModalCorreosApoderados() {
   var existing = document.getElementById('emailApoderadosModal');
   if (existing) existing.remove();
