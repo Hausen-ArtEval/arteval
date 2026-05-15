@@ -2847,6 +2847,43 @@ button, .btn, .tab, .curso-chip, .reg-card, .config-card, input, select {
           Restaurar desde Drive
         </button>
       </div>
+      <!-- ══ Cuenta institucional ══ -->
+      <div class="config-card" style="margin-top:14px;">
+        <h3 style="margin-bottom:14px;">Cuenta institucional Google</h3>
+
+        <div style="display:flex;align-items:center;padding:12px 0;border-bottom:0.5px solid var(--border);">
+          <div style="display:flex;align-items:center;gap:10px;flex:1;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+            <div>
+              <div style="font-size:14px;font-weight:500;color:var(--text);">Correo institucional</div>
+              <div style="font-size:11px;color:var(--text3);margin-top:2px;">Se usa para autenticar Drive y enviar correos del colegio</div>
+            </div>
+          </div>
+          <input id="configEmailInstitucional" type="email" placeholder="nombre@colegio.cl"
+            style="max-width:240px;padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-family:var(--font-ui);text-align:right;"
+            oninput="localStorage.setItem('av_email_institucional',this.value);localStorage.setItem('ae_institutional_email',this.value)">
+        </div>
+
+        <div style="padding:12px 0;border-bottom:0.5px solid var(--border);">
+          <div style="font-size:12px;color:var(--text3);line-height:1.6;margin-bottom:8px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Asegúrate de ejecutar ArtEval desde la ventana de Chrome de tu cuenta institucional para un rendimiento óptimo.
+          </div>
+          <button class="btn btn-primary" onclick="_reconectarConCuentaInstitucional()"
+            style="display:inline-flex;align-items:center;gap:6px;border-radius:10px;min-height:40px;font-size:13px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M21 13a9 9 0 1 1-3-7.7L21 8"/></svg>
+            Reconectar con cuenta del colegio
+          </button>
+        </div>
+
+        <div style="padding:12px 0;">
+          <div style="font-size:11px;color:var(--text3);line-height:1.6;">
+            Al presionar "Reconectar", Google abrirá el selector de cuentas donde podrás elegir tu correo institucional. Los respaldos en Drive se vincularán a esa cuenta.
+          </div>
+        </div>
+      </div>
+
+
 
       <!-- ══════ PLANTILLAS ALEXIA ══════ -->
       <div class="config-card">
@@ -3403,7 +3440,8 @@ function _checkPendingQueue() {
 function saveRegistros() {
   try {
     localStorage.setItem('av_registros', JSON.stringify(registros));
-    localStorage.setItem('av_local_count', String(registros.length)); // FIX SYNC: conteo local siempre actualizado
+    localStorage.setItem('av_local_count', String(registros.length));
+    localStorage.setItem('av_last_edit_ts', new Date().toISOString());
     _invalidarCandidatos();
     _flashAutoSave();
     _checkStorageSize();
@@ -5062,6 +5100,14 @@ function confirmarEdicion(idx) {
     }
   }
   setTimeout(actualizarTodaLaApp, 80);
+  // Sync Drive en 500ms post-edición
+  if (typeof _driveToken !== 'undefined' && _driveToken && Date.now() < _driveTokenExp) {
+    clearTimeout(window._driveSaveTimer);
+    window._driveSaveTimer = setTimeout(function() {
+      if (typeof syncToDrive === 'function') syncToDrive().catch(function(){});
+    }, 500);
+  }
+  localStorage.setItem('av_last_edit_ts', new Date().toISOString());
 }
 
 function duplicar(idx) {
@@ -5665,30 +5711,8 @@ function renderCursosChips() {
 function toggleCurso(curso, checked) {
   if (checked) cursosSeleccionados.add(curso);
   else cursosSeleccionados.delete(curso);
-
-  // FIX: sincronizar cursoSeleccionado con el checkbox activo en Registros
-  // 1 curso marcado -> cursoSeleccionado = ese curso -> boton Alexia correcto
-  // 0 o varios     -> cursoSeleccionado = null       -> boton generico
-  if (cursosSeleccionados.size === 1) {
-    cursoSeleccionado = Array.from(cursosSeleccionados)[0];
-  } else {
-    cursoSeleccionado = null;
-  }
-
   renderCursosChips();
   renderRegistros();
-
-  // Actualizar el boton Alexia directamente (sin esperar renderRegistros)
-  var _btn = document.getElementById('btnExportAlexia');
-  if (_btn) {
-    _btn.textContent = cursoSeleccionado
-      ? '📥 Alexia — ' + cursoSeleccionado
-      : '📥 Alexia XLS';
-    _btn.title = cursoSeleccionado
-      ? 'Exportar planilla Alexia para ' + cursoSeleccionado
-      : 'Selecciona un curso para exportar directamente';
-    _btn.style.display = 'inline-block';
-  }
 }
 
 function limpiarCursos() {
@@ -8246,6 +8270,11 @@ function showTab(name) {
     } catch(e) { /* silencioso */ }
   }
   if (name==='config') {
+    // FIX v92: restaurar correo institucional al abrir Ajustes
+    setTimeout(function() {
+      var cfgEl = document.getElementById('configEmailInstitucional');
+      if (cfgEl) cfgEl.value = localStorage.getItem('av_email_institucional') || '';
+    }, 50);
     const k = getKey();
     const inp = document.getElementById('apiKeyInput');
     if (inp && k) inp.value = k;
@@ -8512,7 +8541,11 @@ function actualizarCtxResumen() {
     if (banner) banner.style.display = 'none';
   }
   // Fusionar automáticamente SIN NÓMINA con sus entradas oficiales
-  setTimeout(function() { deduplicarYFusionarTodos(); }, 100);
+  setTimeout(function() {
+    var _le = localStorage.getItem('av_last_edit_ts')    || '';
+    var _ls = localStorage.getItem('av_last_drive_sync') || '';
+    if (!_le || !_ls || _le <= _ls) deduplicarYFusionarTodos();
+  }, 100);
   // Verificar notas pendientes offline
   setTimeout(function() { if(typeof _checkPendingQueue==='function') _checkPendingQueue(); }, 500);
   // FIX SYNC: verificar si el cierre anterior dejó datos sin subir
@@ -8575,17 +8608,19 @@ function _guardiaCierre() {
                    Date.now() < (typeof _driveTokenExp !== 'undefined' ? _driveTokenExp : 0);
 
   // Si hay diferencia Y hay token activo → intentar sync síncrona (best-effort)
-  if (localCount > driveCount && tieneToken) {
-    // Marcar que hay datos pendientes de subir
+  // Detectar ediciones por timestamp (no solo por conteo)
+  var lastEdit = localStorage.getItem('av_last_edit_ts')    || '';
+  var lastSync = localStorage.getItem('av_last_drive_sync') || '';
+  var hayEdicion = lastEdit && lastSync && lastEdit > lastSync;
+
+  if ((localCount > driveCount || hayEdicion) && tieneToken) {
     try {
       localStorage.setItem('av_sync_pending', JSON.stringify({
         count:     localCount,
         timestamp: new Date().toISOString(),
-        reason:    'cierre_antes_sync'
+        reason:    hayEdicion ? 'edicion_sin_sync' : 'cierre_antes_sync'
       }));
     } catch(e) {}
-    // Intentar sync en background (el browser puede no esperar a que termine)
-    // pero al menos la cola de pendientes queda guardada
     if (typeof syncToDrive === 'function') {
       syncToDrive().catch(function(){});
     }
@@ -8618,10 +8653,8 @@ var _historialCorreos = (function() {
 })();
 
 function _saveHistorialCorreos() {
-  // Escritura síncrona a localStorage (nunca se pierde)
   try { localStorage.setItem('av_historial_correos', JSON.stringify(_historialCorreos)); }
-  catch(e) { console.warn('[ArtEval] No se pudo guardar historial:', e); }
-  // Sync async a Drive con debounce
+  catch(e) {}
   if (typeof _driveSaveDebounced === 'function') _driveSaveDebounced();
 }
 
@@ -8632,12 +8665,9 @@ function _marcarCorreoEnviado(nombreAlumno, emailApod, curso, promedio) {
     fecha:    new Date().toISOString(),
     email:    emailApod || '',
     curso:    curso || '',
-    promedio: typeof promedio === 'number' ? promedio : (parseFloat(promedio) || 0)
+    promedio: promedio || 0
   };
-  // Guardar en localStorage inmediatamente (antes del debounce de Drive)
-  try { localStorage.setItem('av_historial_correos', JSON.stringify(_historialCorreos)); } catch(e) {}
-  // Sync a Drive
-  if (typeof _driveSaveDebounced === 'function') _driveSaveDebounced();
+  _saveHistorialCorreos();
 }
 
 function _fueEnviado(nombreAlumno) {
@@ -8649,10 +8679,9 @@ function _getEnvio(nombreAlumno) {
 }
 
 function _saveApoderadoEmails() {
-  // Escritura síncrona a localStorage
   try { localStorage.setItem('av_apoderado_emails', JSON.stringify(_apoderadoEmails)); }
-  catch(e) { console.warn('[ArtEval] No se pudo guardar emails:', e); }
-  // Sync async a Drive
+  catch(e) {}
+  // Sincronizar a Drive cuando hay emails nuevos
   if (typeof _driveSaveDebounced === 'function') _driveSaveDebounced();
 }
 
@@ -8837,22 +8866,6 @@ function _generarTextoEmail(al, nombreProfesor, nombreColegio) {
     +'Profesor de Artes Visuales.';
 }
 function _renderCorreoTab(){
-  // FIX: recargar desde localStorage por si hubo sync de Drive
-  try {
-    var _lsHist = JSON.parse(localStorage.getItem('av_historial_correos') || '{}');
-    var _lsEmails = JSON.parse(localStorage.getItem('av_apoderado_emails') || '{}');
-    // Fusionar con el objeto en memoria (local en memoria puede tener datos nuevos)
-    Object.keys(_lsHist).forEach(function(k) {
-      if (!_historialCorreos[k]) _historialCorreos[k] = _lsHist[k];
-      else if (_lsHist[k].fecha && _historialCorreos[k].fecha &&
-               new Date(_lsHist[k].fecha) > new Date(_historialCorreos[k].fecha)) {
-        _historialCorreos[k] = _lsHist[k];
-      }
-    });
-    Object.keys(_lsEmails).forEach(function(k) {
-      if (!_apoderadoEmails[k]) _apoderadoEmails[k] = _lsEmails[k];
-    });
-  } catch(e) {}
   var ct=document.getElementById('correoTabContainer'),badge=document.getElementById('correoTabEmailBadge');
   if(!ct)return;
   ['correoNombreProf','correoNombreColegio','correoEmailUTP','correoInstitucional','correoGmailIdx'].forEach(function(id){
@@ -12052,9 +12065,43 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+// Reconectar Drive forzando selección de cuenta institucional
+function _reconectarConCuentaInstitucional() {
+  var inst = localStorage.getItem('av_email_institucional') || '';
+  if (!inst) {
+    toast('⚠ Ingresa primero tu correo institucional en Ajustes', 'err', 4000);
+    return;
+  }
+  if (!_gisTokenClient) {
+    toast('⚠ Google Drive no está inicializado', 'err', 3000);
+    return;
+  }
+  // Forzar selector de cuenta con login_hint para priorizar la institucional
+  _driveToken = null; _driveTokenExp = 0; // Limpiar token actual
+  _gisTokenClient.requestAccessToken({
+    prompt: 'select_account',
+    login_hint: inst
+  });
+  toast('💡 Selecciona tu cuenta del colegio en la ventana de Google', 'info', 5000);
+}
+
 </script>
 
+<!-- Service Worker disabled: app runs as single HTML file -->
+<!-- Banner de instalación PWA -->
+<div id="installBanner" style="display:none;">
+  <span style="font-size:24px;">📱</span>
+  <div>
+    <div style="font-weight:700;color:var(--text);">Instalar ArtEval como app</div>
+    <div style="font-size:11px;color:var(--text3);margin-top:2px;" id="installHint"></div>
+  </div>
+  <button id="installBtn" class="btn btn-primary" style="white-space:nowrap;flex-shrink:0;">Instalar</button>
+  <button onclick="document.getElementById('installBanner').style.display='none';localStorage.setItem('av_install_dismissed','1');"
+    style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:20px;padding:4px;">×</button>
+</div>
+
 <script>
+
 // ══════════════════════════════════════════════════════════════════
 //  GOOGLE DRIVE SYNC — GIS (Google Identity Services)
 //  Token silencioso, syncToDrive, syncFromDrive, merge por fecha
@@ -12098,14 +12145,17 @@ function initGoogleAuth() {
     auto_select: true,
   });
 
-  _gisTokenClient = google.accounts.oauth2.initTokenClient({
+  // FIX v92: select_account + login_hint para cuenta institucional
+  var _instHint = localStorage.getItem('av_email_institucional') || '';
+  var _tcCfg = {
     client_id: GOOG_CLIENT_ID,
     scope: DRIVE_SCOPE,
     callback: _onAccessToken,
-    error_callback: function(err) {
-      _updateCloudUI('error');
-    }
-  });
+    error_callback: function(err) { _updateCloudUI('error'); },
+    prompt: 'select_account',
+  };
+  if (_instHint) _tcCfg.login_hint = _instHint;
+  _gisTokenClient = google.accounts.oauth2.initTokenClient(_tcCfg);
 
   // Renderizar botón de One Tap
   google.accounts.id.renderButton(
@@ -12183,7 +12233,8 @@ function _requestToken() {
 
 function _requestTokenSilent() {
   if (_gisTokenClient) {
-    _gisTokenClient.requestAccessToken({ prompt: '' });
+    var _ie = localStorage.getItem('av_email_institucional') || '';
+    _gisTokenClient.requestAccessToken(_ie ? { prompt: '', login_hint: _ie } : { prompt: '' });
     // Ocultar aviso mientras el token se renueva en background
     var warnEl = document.getElementById('storageWarning');
     if (warnEl && _driveToken) warnEl.style.display = 'none';
@@ -12749,45 +12800,14 @@ async function syncFromDrive() {
       });
       try{localStorage.setItem('av_rubricas',JSON.stringify(rubricas));}catch(e){}
     })();
-    // FIX v7: fusionar historialCorreos — Drive aporta, local nunca pierde
-    if (raw.historialCorreos && Object.keys(raw.historialCorreos).length) {
-      Object.keys(raw.historialCorreos).forEach(function(k) {
-        if (!_historialCorreos[k]) {
-          _historialCorreos[k] = raw.historialCorreos[k];
-        } else if (raw.historialCorreos[k].fecha && _historialCorreos[k].fecha &&
-                   new Date(raw.historialCorreos[k].fecha) > new Date(_historialCorreos[k].fecha)) {
-          _historialCorreos[k] = raw.historialCorreos[k];
-        }
-      });
-      try { localStorage.setItem('av_historial_correos', JSON.stringify(_historialCorreos)); } catch(e) {}
-    }
-    // FIX: fusionar apoderadoEmails — unión de Drive + local (ninguno pierde)
+    // FIX: restaurar emails de apoderados desde Drive
     if (raw.apoderadoEmails && Object.keys(raw.apoderadoEmails).length) {
-      var driveEmails = raw.apoderadoEmails;
-      // Añadir de Drive los que no existan en local
-      Object.keys(driveEmails).forEach(function(k) {
-        if (!_apoderadoEmails[k]) {
-          _apoderadoEmails[k] = driveEmails[k];
-        }
-      });
+      Object.assign(_apoderadoEmails, raw.apoderadoEmails);
       try { localStorage.setItem('av_apoderado_emails', JSON.stringify(_apoderadoEmails)); } catch(e) {}
     }
-    // FIX: fusionar historialCorreos — local prevalece, Drive aporta lo que falta
+    // Restaurar historial de correos enviados
     if (raw.historialCorreos && Object.keys(raw.historialCorreos).length) {
-      var driveHist = raw.historialCorreos;
-      // Solo añadir entradas de Drive que NO existan en local
-      // Si local ya tiene el dato (fue enviado recientemente), se conserva
-      Object.keys(driveHist).forEach(function(k) {
-        if (!_historialCorreos[k]) {
-          _historialCorreos[k] = driveHist[k];
-        }
-        // Si ambos existen, conservar el más reciente
-        else if (driveHist[k].fecha && _historialCorreos[k].fecha) {
-          if (new Date(driveHist[k].fecha) > new Date(_historialCorreos[k].fecha)) {
-            _historialCorreos[k] = driveHist[k];
-          }
-        }
-      });
+      Object.assign(_historialCorreos, raw.historialCorreos);
       try { localStorage.setItem('av_historial_correos', JSON.stringify(_historialCorreos)); } catch(e) {}
     }
     // Restaurar configuración del profesor desde Drive
@@ -12847,19 +12867,7 @@ if (document.readyState === 'loading') {
 
 
 
-</script>
 
-<!-- Service Worker disabled: app runs as single HTML file -->
-<!-- Banner de instalación PWA -->
-<div id="installBanner" style="display:none;">
-  <span style="font-size:24px;">📱</span>
-  <div>
-    <div style="font-weight:700;color:var(--text);">Instalar ArtEval como app</div>
-    <div style="font-size:11px;color:var(--text3);margin-top:2px;" id="installHint"></div>
-  </div>
-  <button id="installBtn" class="btn btn-primary" style="white-space:nowrap;flex-shrink:0;">Instalar</button>
-  <button onclick="document.getElementById('installBanner').style.display='none';localStorage.setItem('av_install_dismissed','1');"
-    style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:20px;padding:4px;">×</button>
-</div>
+</script>
 </body>
 </html>
