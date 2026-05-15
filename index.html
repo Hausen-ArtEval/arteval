@@ -2847,43 +2847,6 @@ button, .btn, .tab, .curso-chip, .reg-card, .config-card, input, select {
           Restaurar desde Drive
         </button>
       </div>
-      <!-- ══ Cuenta institucional ══ -->
-      <div class="config-card" style="margin-top:14px;">
-        <h3 style="margin-bottom:14px;">Cuenta institucional Google</h3>
-
-        <div style="display:flex;align-items:center;padding:12px 0;border-bottom:0.5px solid var(--border);">
-          <div style="display:flex;align-items:center;gap:10px;flex:1;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-            <div>
-              <div style="font-size:14px;font-weight:500;color:var(--text);">Correo institucional</div>
-              <div style="font-size:11px;color:var(--text3);margin-top:2px;">Se usa para autenticar Drive y enviar correos del colegio</div>
-            </div>
-          </div>
-          <input id="configEmailInstitucional" type="email" placeholder="nombre@colegio.cl"
-            style="max-width:240px;padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-family:var(--font-ui);text-align:right;"
-            oninput="localStorage.setItem('av_email_institucional',this.value);localStorage.setItem('ae_institutional_email',this.value)">
-        </div>
-
-        <div style="padding:12px 0;border-bottom:0.5px solid var(--border);">
-          <div style="font-size:12px;color:var(--text3);line-height:1.6;margin-bottom:8px;">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            Asegúrate de ejecutar ArtEval desde la ventana de Chrome de tu cuenta institucional para un rendimiento óptimo.
-          </div>
-          <button class="btn btn-primary" onclick="_reconectarConCuentaInstitucional()"
-            style="display:inline-flex;align-items:center;gap:6px;border-radius:10px;min-height:40px;font-size:13px;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M21 13a9 9 0 1 1-3-7.7L21 8"/></svg>
-            Reconectar con cuenta del colegio
-          </button>
-        </div>
-
-        <div style="padding:12px 0;">
-          <div style="font-size:11px;color:var(--text3);line-height:1.6;">
-            Al presionar "Reconectar", Google abrirá el selector de cuentas donde podrás elegir tu correo institucional. Los respaldos en Drive se vincularán a esa cuenta.
-          </div>
-        </div>
-      </div>
-
-
 
       <!-- ══════ PLANTILLAS ALEXIA ══════ -->
       <div class="config-card">
@@ -5100,14 +5063,13 @@ function confirmarEdicion(idx) {
     }
   }
   setTimeout(actualizarTodaLaApp, 80);
-  // Sync Drive en 500ms post-edición
-  if (typeof _driveToken !== 'undefined' && _driveToken && Date.now() < _driveTokenExp) {
+  if(typeof _driveToken!=='undefined'&&_driveToken&&Date.now()<_driveTokenExp){
     clearTimeout(window._driveSaveTimer);
-    window._driveSaveTimer = setTimeout(function() {
-      if (typeof syncToDrive === 'function') syncToDrive().catch(function(){});
-    }, 500);
+    window._driveSaveTimer=setTimeout(function(){
+      if(typeof syncToDrive==='function')syncToDrive().catch(function(){});
+    },500);
   }
-  localStorage.setItem('av_last_edit_ts', new Date().toISOString());
+  localStorage.setItem('av_last_edit_ts',new Date().toISOString());
 }
 
 function duplicar(idx) {
@@ -8270,11 +8232,6 @@ function showTab(name) {
     } catch(e) { /* silencioso */ }
   }
   if (name==='config') {
-    // FIX v92: restaurar correo institucional al abrir Ajustes
-    setTimeout(function() {
-      var cfgEl = document.getElementById('configEmailInstitucional');
-      if (cfgEl) cfgEl.value = localStorage.getItem('av_email_institucional') || '';
-    }, 50);
     const k = getKey();
     const inp = document.getElementById('apiKeyInput');
     if (inp && k) inp.value = k;
@@ -8542,9 +8499,9 @@ function actualizarCtxResumen() {
   }
   // Fusionar automáticamente SIN NÓMINA con sus entradas oficiales
   setTimeout(function() {
-    var _le = localStorage.getItem('av_last_edit_ts')    || '';
-    var _ls = localStorage.getItem('av_last_drive_sync') || '';
-    if (!_le || !_ls || _le <= _ls) deduplicarYFusionarTodos();
+    var _le=localStorage.getItem('av_last_edit_ts')||'';
+    var _ls=localStorage.getItem('av_last_drive_sync')||'';
+    if(!_le||!_ls||_le<=_ls) deduplicarYFusionarTodos();
   }, 100);
   // Verificar notas pendientes offline
   setTimeout(function() { if(typeof _checkPendingQueue==='function') _checkPendingQueue(); }, 500);
@@ -8608,19 +8565,20 @@ function _guardiaCierre() {
                    Date.now() < (typeof _driveTokenExp !== 'undefined' ? _driveTokenExp : 0);
 
   // Si hay diferencia Y hay token activo → intentar sync síncrona (best-effort)
-  // Detectar ediciones por timestamp (no solo por conteo)
-  var lastEdit = localStorage.getItem('av_last_edit_ts')    || '';
-  var lastSync = localStorage.getItem('av_last_drive_sync') || '';
-  var hayEdicion = lastEdit && lastSync && lastEdit > lastSync;
-
-  if ((localCount > driveCount || hayEdicion) && tieneToken) {
+  var lastEdit2 = localStorage.getItem('av_last_edit_ts')    || '';
+  var lastSync2 = localStorage.getItem('av_last_drive_sync') || '';
+  var hayEdicion2 = lastEdit2 && lastSync2 && lastEdit2 > lastSync2;
+  if ((localCount > driveCount || hayEdicion2) && tieneToken) {
+    // Marcar que hay datos pendientes de subir
     try {
       localStorage.setItem('av_sync_pending', JSON.stringify({
         count:     localCount,
         timestamp: new Date().toISOString(),
-        reason:    hayEdicion ? 'edicion_sin_sync' : 'cierre_antes_sync'
+        reason:    'cierre_antes_sync'
       }));
     } catch(e) {}
+    // Intentar sync en background (el browser puede no esperar a que termine)
+    // pero al menos la cola de pendientes queda guardada
     if (typeof syncToDrive === 'function') {
       syncToDrive().catch(function(){});
     }
@@ -12065,43 +12023,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// Reconectar Drive forzando selección de cuenta institucional
-function _reconectarConCuentaInstitucional() {
-  var inst = localStorage.getItem('av_email_institucional') || '';
-  if (!inst) {
-    toast('⚠ Ingresa primero tu correo institucional en Ajustes', 'err', 4000);
-    return;
-  }
-  if (!_gisTokenClient) {
-    toast('⚠ Google Drive no está inicializado', 'err', 3000);
-    return;
-  }
-  // Forzar selector de cuenta con login_hint para priorizar la institucional
-  _driveToken = null; _driveTokenExp = 0; // Limpiar token actual
-  _gisTokenClient.requestAccessToken({
-    prompt: 'select_account',
-    login_hint: inst
-  });
-  toast('💡 Selecciona tu cuenta del colegio en la ventana de Google', 'info', 5000);
-}
-
 </script>
 
-<!-- Service Worker disabled: app runs as single HTML file -->
-<!-- Banner de instalación PWA -->
-<div id="installBanner" style="display:none;">
-  <span style="font-size:24px;">📱</span>
-  <div>
-    <div style="font-weight:700;color:var(--text);">Instalar ArtEval como app</div>
-    <div style="font-size:11px;color:var(--text3);margin-top:2px;" id="installHint"></div>
-  </div>
-  <button id="installBtn" class="btn btn-primary" style="white-space:nowrap;flex-shrink:0;">Instalar</button>
-  <button onclick="document.getElementById('installBanner').style.display='none';localStorage.setItem('av_install_dismissed','1');"
-    style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:20px;padding:4px;">×</button>
-</div>
-
 <script>
-
 // ══════════════════════════════════════════════════════════════════
 //  GOOGLE DRIVE SYNC — GIS (Google Identity Services)
 //  Token silencioso, syncToDrive, syncFromDrive, merge por fecha
@@ -12120,12 +12044,128 @@ var _autoBackupEnabled    = localStorage.getItem('av_auto_backup_enabled') !== '
 var _autoBackupRunning    = false; // evitar ejecuciones paralelas
 
 // ── Estado de sesión ──
-var _gisTokenClient  = null;
-var _driveToken      = null;
+var _gisTokenClient   = null;  // OAuth Drive
+var _gmailTokenClient = null;  // OAuth Gmail institucional
+var _gmailToken       = null;
+var _gmailTokenExp    = 0;
+var _gmailLinkedEmail = localStorage.getItem('ae_linked_work_email')||'';
+var _driveToken       = null;
 var _driveTokenExp   = 0;   // timestamp ms de expiración
 var _driveTokenTimer = null; // timer de renovación silenciosa
 
 // ── Inicializar GIS al cargar la página ──
+
+// ── AUTENTICACIÓN DUAL: Gmail institucional (token separado de Drive) ─────
+function _manejarTokenGmail(tokenResponse) {
+  if (!tokenResponse || tokenResponse.error) {
+    _actualizarEstadoGmailUI(false); return;
+  }
+  _gmailToken = tokenResponse.access_token;
+  _gmailTokenExp = Date.now() + (tokenResponse.expires_in - 60) * 1000;
+  fetch('https://www.googleapis.com/oauth2/v3/userinfo',
+    { headers: { Authorization: 'Bearer ' + _gmailToken } })
+  .then(function(r){ return r.json(); })
+  .then(function(info){
+    _gmailLinkedEmail = info.email || '';
+    localStorage.setItem('ae_linked_work_email', _gmailLinkedEmail);
+    _actualizarEstadoGmailUI(true);
+    toast('✅ Vinculado: ' + _gmailLinkedEmail, 'ok', 4000);
+  })
+  .catch(function(){ _actualizarEstadoGmailUI(true); });
+}
+
+function _vincularCorreoInstitucional() {
+  if (!window.google || !window.google.accounts || !GOOG_CLIENT_ID) {
+    toast('⚠ Google no disponible o Client ID no configurado', 'err', 4000); return;
+  }
+  var instEmail = localStorage.getItem('av_email_institucional') || '';
+  var cfg = {
+    client_id: GOOG_CLIENT_ID,
+    scope: 'https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/userinfo.email',
+    callback: _manejarTokenGmail,
+    error_callback: function(e){ toast('⚠ Error al vincular Gmail: '+e.type,'err',4000); },
+    prompt: 'select_account',
+  };
+  if (instEmail) cfg.login_hint = instEmail;
+  _gmailTokenClient = google.accounts.oauth2.initTokenClient(cfg);
+  _gmailTokenClient.requestAccessToken();
+}
+
+function _desconectarGmail() {
+  if (_gmailToken && window.google && window.google.accounts) {
+    google.accounts.oauth2.revoke(_gmailToken, function(){});
+  }
+  _gmailToken=null; _gmailTokenExp=0; _gmailLinkedEmail='';
+  localStorage.removeItem('ae_linked_work_email');
+  _actualizarEstadoGmailUI(false);
+  toast('Cuenta institucional desvinculada','info',2500);
+}
+
+function _getGmailToken() {
+  if (_gmailToken && Date.now() < _gmailTokenExp) return _gmailToken;
+  if (_gmailTokenClient) _gmailTokenClient.requestAccessToken({ prompt:'' });
+  return null;
+}
+
+function _actualizarEstadoGmailUI(conectado) {
+  var badge=document.getElementById('gmailStatusBadge');
+  var btnV=document.getElementById('btnVincularGmail');
+  var btnD=document.getElementById('btnDesconectarGmail');
+  if (!badge) return;
+  if (conectado && _gmailLinkedEmail) {
+    badge.textContent='Conectado: '+_gmailLinkedEmail;
+    badge.style.cssText='font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px;color:#FF9500;background:rgba(255,149,0,0.10);border:1px solid rgba(255,149,0,0.30);';
+    if(btnV)btnV.style.display='none';
+    if(btnD)btnD.style.display='inline-flex';
+  } else {
+    badge.textContent='Usando cuenta global por defecto';
+    badge.style.cssText='font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px;color:#8E8E93;background:#F2F2F7;border:1px solid #E5E5EA;';
+    if(btnV)btnV.style.display='inline-flex';
+    if(btnD)btnD.style.display='none';
+  }
+}
+
+// Envío directo via Gmail API (token institucional activo)
+function _enviarViaGmailAPI(tok, toEmail, asunto, cuerpo, ccEmail, nombreAlumno) {
+  var CRLF = '\r\n';
+  var from = _gmailLinkedEmail ? ('From: ' + _gmailLinkedEmail + CRLF) : '';
+  var headers = from
+    + 'To: ' + toEmail + CRLF
+    + (ccEmail ? ('Cc: ' + ccEmail + CRLF) : '')
+    + ('Subject: =?UTF-8?B?' + btoa(unescape(encodeURIComponent(asunto))) + '?=' + CRLF)
+    + 'MIME-Version: 1.0' + CRLF
+    + 'Content-Type: text/plain; charset=UTF-8' + CRLF
+    + 'Content-Transfer-Encoding: base64' + CRLF;
+  var body = CRLF + btoa(unescape(encodeURIComponent(cuerpo)));
+  var raw  = btoa(headers + body).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ raw: raw })
+  })
+  .then(function(r){ if (!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+  .then(function(){
+    toast('\u2705 Enviado desde '+(_gmailLinkedEmail||'cuenta institucional'), 'ok', 4000);
+    if (typeof _marcarCorreoEnviado === 'function' && nombreAlumno)
+      _marcarCorreoEnviado(nombreAlumno, toEmail, '', 0);
+    if (typeof _renderCorreoTab === 'function') _renderCorreoTab();
+    if (typeof _apoderadoEmails !== 'undefined' && nombreAlumno) {
+      _apoderadoEmails[nombreAlumno.trim().toUpperCase()] = toEmail.toLowerCase();
+      if (typeof _saveApoderadoEmails === 'function') _saveApoderadoEmails();
+    }
+  })
+  .catch(function(err){
+    console.error('[ArtEval] Gmail API:', err);
+    toast('\u26a0 Error al enviar \u2014 abriendo Gmail en browser', 'err', 5000);
+    var url = 'https://mail.google.com/mail/?view=cm'
+      + '&to='   + encodeURIComponent(toEmail)
+      + '&su='   + encodeURIComponent(asunto)
+      + '&body=' + encodeURIComponent(cuerpo)
+      + (ccEmail ? '&cc=' + encodeURIComponent(ccEmail) : '');
+    window.open(url, '_blank');
+  });
+}
+
 function initGoogleAuth() {
   if (!window.google || !window.google.accounts) {
     // GIS aún no cargó — reintenta en 500ms
@@ -12145,17 +12185,14 @@ function initGoogleAuth() {
     auto_select: true,
   });
 
-  // FIX v92: select_account + login_hint para cuenta institucional
-  var _instHint = localStorage.getItem('av_email_institucional') || '';
-  var _tcCfg = {
-    client_id: GOOG_CLIENT_ID,
-    scope: DRIVE_SCOPE,
-    callback: _onAccessToken,
-    error_callback: function(err) { _updateCloudUI('error'); },
-    prompt: 'select_account',
+  var _instHint=localStorage.getItem('av_email_institucional')||'';
+  var _tcCfg={
+    client_id:GOOG_CLIENT_ID, scope:DRIVE_SCOPE, callback:_onAccessToken,
+    error_callback:function(err){_updateCloudUI('error');},
+    prompt:'select_account',
   };
-  if (_instHint) _tcCfg.login_hint = _instHint;
-  _gisTokenClient = google.accounts.oauth2.initTokenClient(_tcCfg);
+  if(_instHint)_tcCfg.login_hint=_instHint;
+  _gisTokenClient=google.accounts.oauth2.initTokenClient(_tcCfg);
 
   // Renderizar botón de One Tap
   google.accounts.id.renderButton(
@@ -12233,8 +12270,7 @@ function _requestToken() {
 
 function _requestTokenSilent() {
   if (_gisTokenClient) {
-    var _ie = localStorage.getItem('av_email_institucional') || '';
-    _gisTokenClient.requestAccessToken(_ie ? { prompt: '', login_hint: _ie } : { prompt: '' });
+    _gisTokenClient.requestAccessToken({ prompt: '' });
     // Ocultar aviso mientras el token se renueva en background
     var warnEl = document.getElementById('storageWarning');
     if (warnEl && _driveToken) warnEl.style.display = 'none';
@@ -12492,6 +12528,12 @@ async function guardarYLiberarLocalStorage() {
 // ── SYNC INTELIGENTE al reconectar Drive ─────────────────────────────────
 // Compara conteo local vs Drive y resuelve la desincronización automáticamente.
 // LOCAL SIEMPRE GANA si tiene más registros (push-priority).
+function _hayEdicionSinSync() {
+  var lastEdit = localStorage.getItem('av_last_edit_ts')    || '';
+  var lastSync = localStorage.getItem('av_last_drive_sync') || '';
+  return lastEdit && lastSync && lastEdit > lastSync;
+}
+
 async function _smartSyncOnConnect() {
   if (!_driveToken || Date.now() >= _driveTokenExp) return;
   try {
@@ -12525,7 +12567,7 @@ async function _smartSyncOnConnect() {
 
     if (localCount >= driveCount) {
       // LOCAL ES MAESTRO: subir a Drive (siempre que haya diferencia o sea primera vez)
-      if (localCount > driveCount || !fileRef) {
+      if (localCount > driveCount || !fileRef || _hayEdicionSinSync()) {
         console.info('[ArtEval] SmartSync: local tiene más (' + localCount + ' vs ' + driveCount + ') → subiendo a Drive');
         _updateCloudUI('saving');
         await syncToDrive();
@@ -12580,7 +12622,25 @@ async function syncToDrive() {
       rubricas:     JSON.parse(JSON.stringify(rubricas)),
       listaCursos:  JSON.parse(JSON.stringify(listaCursos)),
       rubricaActiva: rubricaActiva,
-      alexiaDatos:  JSON.parse(JSON.stringify(alexiaDatos || {})),
+      alexiaDatos:   JSON.parse(JSON.stringify(alexiaDatos || {})),
+      apoderadoEmails:  JSON.parse(JSON.stringify(
+        (typeof _apoderadoEmails!=='undefined')?(_apoderadoEmails||{}):
+        (JSON.parse(localStorage.getItem('av_apoderado_emails')||'{}'))
+      )),
+      historialCorreos: JSON.parse(JSON.stringify(
+        (typeof _historialCorreos!=='undefined')?(_historialCorreos||{}):
+        (JSON.parse(localStorage.getItem('av_historial_correos')||'{}'))
+      )),
+      config: {
+        emailProf:          localStorage.getItem('av_email_prof')          || '',
+        emailColegio:       localStorage.getItem('av_email_colegio')       || '',
+        emailUTP:           localStorage.getItem('av_email_utp')           || '',
+        emailInstitucional: localStorage.getItem('av_email_institucional') || '',
+        gmailAcctIdx:       localStorage.getItem('av_gmail_acct_idx')      || '1',
+        rubricaActiva:      rubricaActiva,
+        geminiKey:          localStorage.getItem('av_gemini_key')          || '',
+        linkedWorkEmail:    localStorage.getItem('ae_linked_work_email')   || '',
+      },
     };
 
     if (snapshot.registros.length === 0 && registros.length === 0) {
@@ -12609,6 +12669,7 @@ async function syncToDrive() {
 
     var _syncTs = new Date().toISOString();
     localStorage.setItem('av_last_drive_sync', _syncTs);
+    localStorage.setItem('av_last_edit_ts',    _syncTs);
     localStorage.setItem('av_drive_last_count', String(snapshot.registros.length));
     localStorage.setItem('av_drive_sync_ts', _syncTs);
     localStorage.removeItem('av_sync_pending'); // FIX SYNC: cierre limpio confirmado
@@ -12800,10 +12861,33 @@ async function syncFromDrive() {
       });
       try{localStorage.setItem('av_rubricas',JSON.stringify(rubricas));}catch(e){}
     })();
-    // FIX: restaurar emails de apoderados desde Drive
+    // Fusionar apoderadoEmails (Drive aporta, local prevalece)
     if (raw.apoderadoEmails && Object.keys(raw.apoderadoEmails).length) {
-      Object.assign(_apoderadoEmails, raw.apoderadoEmails);
+      Object.keys(raw.apoderadoEmails).forEach(function(k){
+        if(!_apoderadoEmails[k]) _apoderadoEmails[k]=raw.apoderadoEmails[k];
+      });
       try { localStorage.setItem('av_apoderado_emails', JSON.stringify(_apoderadoEmails)); } catch(e) {}
+    }
+    // Fusionar historialCorreos (conservar más reciente)
+    if (raw.historialCorreos && Object.keys(raw.historialCorreos).length) {
+      Object.keys(raw.historialCorreos).forEach(function(k){
+        if(!_historialCorreos[k]) _historialCorreos[k]=raw.historialCorreos[k];
+        else if(raw.historialCorreos[k].fecha&&_historialCorreos[k].fecha&&
+          new Date(raw.historialCorreos[k].fecha)>new Date(_historialCorreos[k].fecha))
+          _historialCorreos[k]=raw.historialCorreos[k];
+      });
+      try { localStorage.setItem('av_historial_correos', JSON.stringify(_historialCorreos)); } catch(e) {}
+    }
+    // Restaurar config del profesor
+    if (raw.config) {
+      var cfg=raw.config;
+      if(cfg.emailProf)          localStorage.setItem('av_email_prof',cfg.emailProf);
+      if(cfg.emailColegio)       localStorage.setItem('av_email_colegio',cfg.emailColegio);
+      if(cfg.emailUTP)           localStorage.setItem('av_email_utp',cfg.emailUTP);
+      if(cfg.emailInstitucional) localStorage.setItem('av_email_institucional',cfg.emailInstitucional);
+      if(cfg.gmailAcctIdx)       localStorage.setItem('av_gmail_acct_idx',cfg.gmailAcctIdx);
+      if(cfg.geminiKey)          localStorage.setItem('av_gemini_key',cfg.geminiKey);
+      if(cfg.linkedWorkEmail)    { localStorage.setItem('ae_linked_work_email',cfg.linkedWorkEmail); }
     }
     // Restaurar historial de correos enviados
     if (raw.historialCorreos && Object.keys(raw.historialCorreos).length) {
@@ -12867,7 +12951,19 @@ if (document.readyState === 'loading') {
 
 
 
-
 </script>
+
+<!-- Service Worker disabled: app runs as single HTML file -->
+<!-- Banner de instalación PWA -->
+<div id="installBanner" style="display:none;">
+  <span style="font-size:24px;">📱</span>
+  <div>
+    <div style="font-weight:700;color:var(--text);">Instalar ArtEval como app</div>
+    <div style="font-size:11px;color:var(--text3);margin-top:2px;" id="installHint"></div>
+  </div>
+  <button id="installBtn" class="btn btn-primary" style="white-space:nowrap;flex-shrink:0;">Instalar</button>
+  <button onclick="document.getElementById('installBanner').style.display='none';localStorage.setItem('av_install_dismissed','1');"
+    style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:20px;padding:4px;">×</button>
+</div>
 </body>
 </html>
