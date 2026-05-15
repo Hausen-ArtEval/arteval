@@ -5665,8 +5665,30 @@ function renderCursosChips() {
 function toggleCurso(curso, checked) {
   if (checked) cursosSeleccionados.add(curso);
   else cursosSeleccionados.delete(curso);
+
+  // FIX: sincronizar cursoSeleccionado con el checkbox activo en Registros
+  // 1 curso marcado -> cursoSeleccionado = ese curso -> boton Alexia correcto
+  // 0 o varios     -> cursoSeleccionado = null       -> boton generico
+  if (cursosSeleccionados.size === 1) {
+    cursoSeleccionado = Array.from(cursosSeleccionados)[0];
+  } else {
+    cursoSeleccionado = null;
+  }
+
   renderCursosChips();
   renderRegistros();
+
+  // Actualizar el boton Alexia directamente (sin esperar renderRegistros)
+  var _btn = document.getElementById('btnExportAlexia');
+  if (_btn) {
+    _btn.textContent = cursoSeleccionado
+      ? '📥 Alexia — ' + cursoSeleccionado
+      : '📥 Alexia XLS';
+    _btn.title = cursoSeleccionado
+      ? 'Exportar planilla Alexia para ' + cursoSeleccionado
+      : 'Selecciona un curso para exportar directamente';
+    _btn.style.display = 'inline-block';
+  }
 }
 
 function limpiarCursos() {
