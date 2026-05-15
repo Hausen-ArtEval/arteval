@@ -8618,8 +8618,10 @@ var _historialCorreos = (function() {
 })();
 
 function _saveHistorialCorreos() {
+  // Escritura síncrona a localStorage (nunca se pierde)
   try { localStorage.setItem('av_historial_correos', JSON.stringify(_historialCorreos)); }
-  catch(e) {}
+  catch(e) { console.warn('[ArtEval] No se pudo guardar historial:', e); }
+  // Sync async a Drive con debounce
   if (typeof _driveSaveDebounced === 'function') _driveSaveDebounced();
 }
 
@@ -8630,9 +8632,12 @@ function _marcarCorreoEnviado(nombreAlumno, emailApod, curso, promedio) {
     fecha:    new Date().toISOString(),
     email:    emailApod || '',
     curso:    curso || '',
-    promedio: promedio || 0
+    promedio: typeof promedio === 'number' ? promedio : (parseFloat(promedio) || 0)
   };
-  _saveHistorialCorreos();
+  // Guardar en localStorage inmediatamente (antes del debounce de Drive)
+  try { localStorage.setItem('av_historial_correos', JSON.stringify(_historialCorreos)); } catch(e) {}
+  // Sync a Drive
+  if (typeof _driveSaveDebounced === 'function') _driveSaveDebounced();
 }
 
 function _fueEnviado(nombreAlumno) {
@@ -8644,9 +8649,10 @@ function _getEnvio(nombreAlumno) {
 }
 
 function _saveApoderadoEmails() {
+  // Escritura síncrona a localStorage
   try { localStorage.setItem('av_apoderado_emails', JSON.stringify(_apoderadoEmails)); }
-  catch(e) {}
-  // Sincronizar a Drive cuando hay emails nuevos
+  catch(e) { console.warn('[ArtEval] No se pudo guardar emails:', e); }
+  // Sync async a Drive
   if (typeof _driveSaveDebounced === 'function') _driveSaveDebounced();
 }
 
@@ -8831,6 +8837,22 @@ function _generarTextoEmail(al, nombreProfesor, nombreColegio) {
     +'Profesor de Artes Visuales.';
 }
 function _renderCorreoTab(){
+  // FIX: recargar desde localStorage por si hubo sync de Drive
+  try {
+    var _lsHist = JSON.parse(localStorage.getItem('av_historial_correos') || '{}');
+    var _lsEmails = JSON.parse(localStorage.getItem('av_apoderado_emails') || '{}');
+    // Fusionar con el objeto en memoria (local en memoria puede tener datos nuevos)
+    Object.keys(_lsHist).forEach(function(k) {
+      if (!_historialCorreos[k]) _historialCorreos[k] = _lsHist[k];
+      else if (_lsHist[k].fecha && _historialCorreos[k].fecha &&
+               new Date(_lsHist[k].fecha) > new Date(_historialCorreos[k].fecha)) {
+        _historialCorreos[k] = _lsHist[k];
+      }
+    });
+    Object.keys(_lsEmails).forEach(function(k) {
+      if (!_apoderadoEmails[k]) _apoderadoEmails[k] = _lsEmails[k];
+    });
+  } catch(e) {}
   var ct=document.getElementById('correoTabContainer'),badge=document.getElementById('correoTabEmailBadge');
   if(!ct)return;
   ['correoNombreProf','correoNombreColegio','correoEmailUTP','correoInstitucional','correoGmailIdx'].forEach(function(id){
@@ -12727,14 +12749,45 @@ async function syncFromDrive() {
       });
       try{localStorage.setItem('av_rubricas',JSON.stringify(rubricas));}catch(e){}
     })();
-    // FIX: restaurar emails de apoderados desde Drive
+    // FIX v7: fusionar historialCorreos — Drive aporta, local nunca pierde
+    if (raw.historialCorreos && Object.keys(raw.historialCorreos).length) {
+      Object.keys(raw.historialCorreos).forEach(function(k) {
+        if (!_historialCorreos[k]) {
+          _historialCorreos[k] = raw.historialCorreos[k];
+        } else if (raw.historialCorreos[k].fecha && _historialCorreos[k].fecha &&
+                   new Date(raw.historialCorreos[k].fecha) > new Date(_historialCorreos[k].fecha)) {
+          _historialCorreos[k] = raw.historialCorreos[k];
+        }
+      });
+      try { localStorage.setItem('av_historial_correos', JSON.stringify(_historialCorreos)); } catch(e) {}
+    }
+    // FIX: fusionar apoderadoEmails — unión de Drive + local (ninguno pierde)
     if (raw.apoderadoEmails && Object.keys(raw.apoderadoEmails).length) {
-      Object.assign(_apoderadoEmails, raw.apoderadoEmails);
+      var driveEmails = raw.apoderadoEmails;
+      // Añadir de Drive los que no existan en local
+      Object.keys(driveEmails).forEach(function(k) {
+        if (!_apoderadoEmails[k]) {
+          _apoderadoEmails[k] = driveEmails[k];
+        }
+      });
       try { localStorage.setItem('av_apoderado_emails', JSON.stringify(_apoderadoEmails)); } catch(e) {}
     }
-    // Restaurar historial de correos enviados
+    // FIX: fusionar historialCorreos — local prevalece, Drive aporta lo que falta
     if (raw.historialCorreos && Object.keys(raw.historialCorreos).length) {
-      Object.assign(_historialCorreos, raw.historialCorreos);
+      var driveHist = raw.historialCorreos;
+      // Solo añadir entradas de Drive que NO existan en local
+      // Si local ya tiene el dato (fue enviado recientemente), se conserva
+      Object.keys(driveHist).forEach(function(k) {
+        if (!_historialCorreos[k]) {
+          _historialCorreos[k] = driveHist[k];
+        }
+        // Si ambos existen, conservar el más reciente
+        else if (driveHist[k].fecha && _historialCorreos[k].fecha) {
+          if (new Date(driveHist[k].fecha) > new Date(_historialCorreos[k].fecha)) {
+            _historialCorreos[k] = driveHist[k];
+          }
+        }
+      });
       try { localStorage.setItem('av_historial_correos', JSON.stringify(_historialCorreos)); } catch(e) {}
     }
     // Restaurar configuración del profesor desde Drive
