@@ -2575,6 +2575,64 @@ button, .btn, .tab, .curso-chip, .reg-card, .config-card, input, select {
           <span id="correoTabEmailBadge" style="font-size:11px;color:var(--accent);font-weight:600;background:var(--accent-bg);padding:4px 10px;border-radius:20px;white-space:nowrap;"></span>
         </div>
       </div>
+      <!-- ══ Card: Iniciar sesión Gmail institucional ══ -->
+      <div class="config-card" style="margin-bottom:14px;border:1.5px solid rgba(255,149,0,0.25);">
+
+        <!-- Estado: no conectado -->
+        <div id="gmailLoginSection">
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+            <div style="width:44px;height:44px;background:rgba(255,149,0,0.08);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            </div>
+            <div style="flex:1;">
+              <div style="font-size:15px;font-weight:700;color:var(--ae-black,#1C1C1E);">Cuenta de correo</div>
+              <div id="gmailStatusBadge" style="font-size:12px;color:#8E8E93;margin-top:3px;">Sin sesión iniciada — los correos se abren en el navegador</div>
+            </div>
+          </div>
+
+          <!-- Botón iniciar sesión (visible cuando NO hay sesión) -->
+          <div id="gmailBtnLogin" style="display:block;">
+            <button id="btnVincularGmail" onclick="_vincularCorreoInstitucional()"
+              style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;
+                     padding:13px 20px;background:#fff;border:1.5px solid #dadce0;border-radius:12px;
+                     cursor:pointer;font-family:inherit;font-size:14px;font-weight:500;color:#3c4043;
+                     box-shadow:0 1px 3px rgba(0,0,0,0.08);transition:box-shadow 0.15s,background 0.15s;"
+              onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.15)';this.style.background='#f8f9fa';"
+              onmouseout="this.style.boxShadow='0 1px 3px rgba(0,0,0,0.08)';this.style.background='#fff';">
+              <!-- Logo Google SVG -->
+              <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.36-8.16 2.36-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
+              Iniciar sesión con Google Workspace
+            </button>
+            <div style="margin-top:10px;font-size:11px;color:#8E8E93;text-align:center;line-height:1.5;">
+              Inicia sesión con tu correo institucional del colegio.<br>
+              Google abrirá el selector de cuentas para que elijas la correcta.
+            </div>
+          </div>
+
+          <!-- Estado: conectado (oculto por defecto) -->
+          <div id="gmailBtnConectado" style="display:none;">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div style="width:32px;height:32px;background:rgba(52,199,89,0.12);border-radius:50%;display:flex;align-items:center;justify-content:center;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34C759" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <div>
+                  <div style="font-size:13px;font-weight:600;color:#1C1C1E;" id="gmailEmailLabel">cuenta@colegio.cl</div>
+                  <div style="font-size:11px;color:#34C759;">Sesión activa — correos se envían directamente</div>
+                </div>
+              </div>
+              <button id="btnDesconectarGmail" onclick="_desconectarGmail()"
+                style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;
+                       background:none;border:1px solid #E5E5EA;border-radius:8px;
+                       cursor:pointer;font-family:inherit;font-size:12px;color:#8E8E93;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                Cerrar sesión
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="config-card" style="margin-bottom:14px;">
         <h3 style="margin-bottom:14px;">Datos del remitente</h3>
         <div style="display:flex;align-items:center;padding:12px 0;border-bottom:0.5px solid var(--border);">
@@ -12108,20 +12166,22 @@ function _getGmailToken() {
 }
 
 function _actualizarEstadoGmailUI(conectado) {
-  var badge=document.getElementById('gmailStatusBadge');
-  var btnV=document.getElementById('btnVincularGmail');
-  var btnD=document.getElementById('btnDesconectarGmail');
+  var badge    = document.getElementById('gmailStatusBadge');
+  var secLogin = document.getElementById('gmailBtnLogin');
+  var secCon   = document.getElementById('gmailBtnConectado');
+  var emailLbl = document.getElementById('gmailEmailLabel');
   if (!badge) return;
   if (conectado && _gmailLinkedEmail) {
-    badge.textContent='Conectado: '+_gmailLinkedEmail;
-    badge.style.cssText='font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px;color:#FF9500;background:rgba(255,149,0,0.10);border:1px solid rgba(255,149,0,0.30);';
-    if(btnV)btnV.style.display='none';
-    if(btnD)btnD.style.display='inline-flex';
+    badge.textContent = 'Conectado como: ' + _gmailLinkedEmail;
+    badge.style.color = '#34C759';
+    if (secLogin) secLogin.style.display = 'none';
+    if (secCon)   secCon.style.display   = 'block';
+    if (emailLbl) emailLbl.textContent    = _gmailLinkedEmail;
   } else {
-    badge.textContent='Usando cuenta global por defecto';
-    badge.style.cssText='font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px;color:#8E8E93;background:#F2F2F7;border:1px solid #E5E5EA;';
-    if(btnV)btnV.style.display='inline-flex';
-    if(btnD)btnD.style.display='none';
+    badge.textContent = 'Sin sesión iniciada — los correos se abren en el navegador';
+    badge.style.color = '#8E8E93';
+    if (secLogin) secLogin.style.display = 'block';
+    if (secCon)   secCon.style.display   = 'none';
   }
 }
 
