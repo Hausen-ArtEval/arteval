@@ -3151,6 +3151,16 @@ function doGet(e) {
 </div><!-- /app -->
 
 <script>
+
+// ── Chart.js cargado dinámicamente al inicio ──────────────────────────────
+(function() {
+  if (window.Chart) return; // ya cargado
+  var s = document.createElement('script');
+  s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+  s.async = true;
+  s.onload = function() { console.log('[ArtEval] Chart.js v4 cargado'); };
+  document.head.appendChild(s);
+})();
 // FIX: wrapper showTab seguro (clic antes de cargar JS)
 window._tabPendiente=null;
 if(typeof showTab==='undefined'){
@@ -3804,16 +3814,37 @@ async function toggleCamara() {
   } catch(e) { setStatus('Error de cámara: ' + e.message); }
 }
 
+// FIX v110: compresión WebP 0.6 + max 800px → imagen ultra-liviana
 function capturarFrame() {
   const video = document.getElementById('videoEl');
   const canvas = document.getElementById('canvasEl');
   if (!video || !canvas) return '';
-  const MAX_WIDTH = 800;
-  let w = video.videoWidth || 640, h = video.videoHeight || 480;
-  if (w > MAX_WIDTH) { h = Math.floor(h * MAX_WIDTH / w); w = MAX_WIDTH; }
-  canvas.width = w; canvas.height = h;
-  canvas.getContext('2d').drawImage(video, 0, 0, w, h);
-  return canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
+  const MAX_DIM = 800;
+  let w = video.videoWidth || 640, vh = video.videoHeight || 480;
+  const ratio = Math.min(MAX_DIM / w, MAX_DIM / vh, 1);
+  w = Math.floor(w * ratio); vh = Math.floor(vh * ratio);
+  canvas.width = w; canvas.height = vh;
+  canvas.getContext('2d').drawImage(video, 0, 0, w, vh);
+  // Intentar WebP (menor peso), fallback a JPEG
+  const webp = canvas.toDataURL('image/webp', 0.6);
+  const fmt  = webp.startsWith('data:image/webp') ? webp : canvas.toDataURL('image/jpeg', 0.65);
+  return fmt.split(',')[1];
+}
+
+// Guardar foto comprimida en portafolio del estudiante (localStorage)
+function _guardarFotoPortafolio(nombre, curso, base64) {
+  if (!nombre || !base64) return;
+  var key = 'av_foto_' + (nombre||'').trim().toUpperCase().replace(/\s+/g,'_') + '_' + (curso||'');
+  try {
+    localStorage.setItem(key, JSON.stringify({
+      foto:   base64,
+      fecha:  new Date().toISOString(),
+      nombre: nombre,
+      curso:  curso
+    }));
+  } catch(e) {
+    console.warn('[ArtEval] Portafolio lleno:', e.message);
+  }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -3946,10 +3977,19 @@ async function analizarAhora() {
   const ba = document.getElementById('btnAnalizar'); if (ba) ba.disabled = true;
   const lb = document.getElementById('liveBadge');
   if (lb) { lb.textContent = '● ANALIZANDO'; lb.className = 'cam-badge analizando'; }
-  setStatus('Capturando imagen y enviando a Gemini...');
+  setStatus('✦ Analizando en segundo plano...');
   setDebug('');
+  // Activity indicator iOS sutil
+  const _actEl = document.getElementById('aiActivityIndicator');
+  if (_actEl) _actEl.style.display = 'inline-block';
 
+  // FIX v110: captura y guarda la foto INSTANTÁNEAMENTE antes de llamar IA
   const imageData = capturarFrame();
+  // Guardar en portafolio sin esperar la IA
+  const _nomEst = (document.getElementById('inputNombre')?.value||'').trim();
+  const _crsEst = (document.getElementById('inputCurso')?.value||'').trim();
+  if (imageData && _nomEst) _guardarFotoPortafolio(_nomEst, _crsEst, imageData);
+
   const crits = getCriterios();
   const n = crits.length;
   const criteriosTxt = crits.map((c,i) => `${i}. ${c}`).join('\n');
@@ -4017,14 +4057,37 @@ Incluye los ${n} criterios, desde idx 0 hasta idx ${n-1}. Usa exactamente "MB","
   }
 
   try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${key}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    // FIX v110: timeout 5s + fallback manual si Gemini no responde
+    const _ctrl    = new AbortController();
+    const _timeout = setTimeout(() => _ctrl.abort(), 5000);
+    let res;
+    try {
+      res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${key}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: _ctrl.signal,
+        body: JSON.stringify({
         contents,
         generationConfig: { temperature: exigEfectiva.temp, maxOutputTokens: 2048, responseMimeType: 'application/json' }
       })
     });
+      clearTimeout(_timeout);
+    } catch (_abortErr) {
+      clearTimeout(_timeout);
+      if (_abortErr.name === 'AbortError') {
+        toast('⏱ Análisis demorado. Modo manual activo', 'info', 5000);
+      } else {
+        toast('⚠ IA no disponible. Evalúa manualmente los criterios', 'err', 5000);
+      }
+      // Liberar UI para evaluación manual
+      analizando = false;
+      const ba2 = document.getElementById('btnAnalizar');
+      if (ba2) ba2.disabled = false;
+      const lb2 = document.getElementById('liveBadge');
+      if (lb2) { lb2.textContent = '● MODO MANUAL'; lb2.className = 'cam-badge'; }
+      setStatus('Modo manual — presiona los niveles de la rúbrica');
+      return; // salir sin crash
+    }
     const data = await res.json();
     setDebug(JSON.stringify(data, null, 2));
     if (data.error) {
@@ -7297,6 +7360,265 @@ function _renderDashCriterios(instFiltro) {
       <div class="criterio-falla-pct">${item.pct}%</div>
     </div>`;
   }).join('');
+}
+
+
+// ── Radar de Competencias por Estudiante ─────────────────────────────────
+function renderRadarEstudiante(nombreAlumno, containerId) {
+  var cont = document.getElementById(containerId);
+  if (!cont) return;
+
+  // Obtener evaluaciones del alumno
+  var regsAl = registros.filter(function(r) {
+    return mismoEstudiante(r.nombre||'', nombreAlumno) && r.evaluacion;
+  });
+  if (!regsAl.length) {
+    cont.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text3);font-size:12px;">Sin evaluaciones con detalle de criterios</div>';
+    return;
+  }
+
+  // Mapear criterios a ejes del radar
+  var EJES = [
+    { label: 'Técnica y Oficio',        keys: ['tecnica','oficio','material','procedimiento','manejo'] },
+    { label: 'Creatividad y Expresión', keys: ['creatividad','expresion','original','idea','composicion'] },
+    { label: 'Contenido y Concepto',    keys: ['contenido','concepto','tema','narrativa','significado'] },
+    { label: 'Proceso y Cumplimiento',  keys: ['proceso','cumplimiento','entrega','presentacion','orden'] },
+  ];
+
+  // Calcular promedio por eje a partir de los criterios
+  var scores = EJES.map(function(eje) {
+    var total = 0, count = 0;
+    regsAl.forEach(function(r) {
+      if (!r.evaluacion) return;
+      Object.keys(r.evaluacion).forEach(function(k) {
+        var kl = k.toLowerCase();
+        if (eje.keys.some(function(key){ return kl.includes(key); })) {
+          var pts = r.evaluacion[k]?.pts || 0;
+          var max = r.evaluacion[k]?.max || 3;
+          total += (pts / max) * 7; // normalizar a escala 1-7
+          count++;
+        }
+      });
+    });
+    // Si no hay criterios mapeados, usar promedio general
+    if (!count && regsAl.length) {
+      total = regsAl.reduce(function(s,r){ return s+(r.nota||1); },0)/regsAl.length * count;
+      count = 1;
+    }
+    return count ? Math.min(7, Math.max(1, total/count)) : 4;
+  });
+
+  // Crear canvas para el radar
+  cont.innerHTML = '';
+  var canvas = document.createElement('canvas');
+  canvas.width = 260; canvas.height = 260;
+  canvas.style.cssText = 'max-width:100%;display:block;margin:0 auto;';
+  cont.appendChild(canvas);
+
+  if (!window.Chart) {
+    cont.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px;">Cargando Chart.js...</div>';
+    setTimeout(function(){ renderRadarEstudiante(nombreAlumno, containerId); }, 1500);
+    return;
+  }
+
+  // Destruir chart previo si existe
+  if (cont._radarChart) { cont._radarChart.destroy(); }
+
+  cont._radarChart = new Chart(canvas, {
+    type: 'radar',
+    data: {
+      labels: EJES.map(function(e){ return e.label; }),
+      datasets: [{
+        label: nombreAlumno,
+        data: scores,
+        backgroundColor: 'rgba(255,149,0,0.20)',
+        borderColor:     '#FF9500',
+        borderWidth: 2.5,
+        pointBackgroundColor: '#FF9500',
+        pointBorderColor:     '#fff',
+        pointBorderWidth: 2,
+        pointRadius: 5,
+      }]
+    },
+    options: {
+      responsive: false,
+      scales: {
+        r: {
+          min: 1, max: 7,
+          ticks: {
+            stepSize: 2,
+            font: { size: 9, family: '-apple-system, DM Sans, sans-serif' },
+            color: '#8E8E93',
+            backdropColor: 'transparent',
+          },
+          grid:        { color: 'rgba(142,142,147,0.2)' },
+          angleLines:  { color: 'rgba(142,142,147,0.2)' },
+          pointLabels: {
+            font: { size: 10, family: '-apple-system, DM Sans, sans-serif', weight: '600' },
+            color: '#1C1C1E',
+          }
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: function(ctx) {
+              return ' ' + ctx.label + ': ' + ctx.raw.toFixed(1);
+            }
+          }
+        }
+      },
+      animation: { duration: 400, easing: 'easeInOutQuart' }
+    }
+  });
+}
+
+// ── Objetivos de Aprendizaje MINEDUC — Artes Visuales 3°-6° Básico ───────
+const OA_ARTES_VISUALES = {
+  '3': [
+    { id:'3-OA1', label:'OA1', desc:'Crear trabajos de arte usando línea, figura, forma, color, textura, valor y espacio como elementos expresivos.' },
+    { id:'3-OA2', label:'OA2', desc:'Experimentar con diversos materiales, soportes y técnicas para expresar ideas y emociones.' },
+    { id:'3-OA3', label:'OA3', desc:'Observar y describir obras de arte de diversas culturas, épocas y estilos, expresando opiniones fundamentadas.' },
+    { id:'3-OA4', label:'OA4', desc:'Comunicar ideas, emociones y experiencias a través de producciones visuales.' },
+    { id:'3-OA5', label:'OA5', desc:'Reconocer y valorar el patrimonio artístico y cultural local, nacional y universal.' },
+  ],
+  '4': [
+    { id:'4-OA1', label:'OA1', desc:'Crear trabajos de arte usando elementos visuales con mayor dominio técnico y propósito expresivo.' },
+    { id:'4-OA2', label:'OA2', desc:'Experimentar con materiales y técnicas bidimensionales y tridimensionales, evaluando sus posibilidades expresivas.' },
+    { id:'4-OA3', label:'OA3', desc:'Analizar y fundamentar apreciaciones sobre obras de arte de diversas culturas y períodos.' },
+    { id:'4-OA4', label:'OA4', desc:'Desarrollar proyectos visuales que integren conceptos, técnicas y materiales variados.' },
+    { id:'4-OA5', label:'OA5', desc:'Identificar y valorar la diversidad cultural a través de manifestaciones artísticas.' },
+  ],
+  '5': [
+    { id:'5-OA1', label:'OA1', desc:'Crear trabajos de arte aplicando elementos y principios del diseño con intención estética y comunicativa.' },
+    { id:'5-OA2', label:'OA2', desc:'Explorar y desarrollar habilidades técnicas en medios visuales tradicionales y digitales.' },
+    { id:'5-OA3', label:'OA3', desc:'Investigar y analizar obras de arte reconociendo contextos históricos, culturales y sociales.' },
+    { id:'5-OA4', label:'OA4', desc:'Fundamentar decisiones creativas en proyectos artísticos individuales y colaborativos.' },
+    { id:'5-OA5', label:'OA5', desc:'Reconocer la función social y comunicativa de las artes visuales en distintos contextos.' },
+  ],
+  '6': [
+    { id:'6-OA1', label:'OA1', desc:'Crear trabajos de arte usando elementos visuales con propósito expresivo y comunicativo desarrollado.' },
+    { id:'6-OA2', label:'OA2', desc:'Aplicar procesos de diseño y planificación en la creación de proyectos artísticos.' },
+    { id:'6-OA3', label:'OA3', desc:'Evaluar críticamente obras de arte y producciones propias usando criterios estéticos y culturales.' },
+    { id:'6-OA4', label:'OA4', desc:'Desarrollar proyectos visuales integrando investigación, experimentación y reflexión.' },
+    { id:'6-OA5', label:'OA5', desc:'Valorar el arte como expresión de identidad cultural y comprender su rol en la sociedad contemporánea.' },
+  ]
+};
+
+// Obtener OAs para un nivel de curso dado (ej: "5°C" → "5")
+function _getOAsPorNivel(cursoStr) {
+  var nivel = (cursoStr||'').replace(/[^0-9]/g,'').charAt(0);
+  return OA_ARTES_VISUALES[nivel] || [];
+}
+
+// Generar selector de OA para un criterio de rúbrica (retorna HTML string)
+function _renderOASelector(criterioIdx, oasAsignados) {
+  var niveles = ['3','4','5','6'];
+  var asignados = oasAsignados || [];
+  var html = '<div class="oa-selector" data-crit="'+criterioIdx+'">'
+    + '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">OA vinculados</div>'
+    + '<div style="display:flex;flex-wrap:wrap;gap:4px;">';
+  niveles.forEach(function(niv) {
+    (OA_ARTES_VISUALES[niv]||[]).forEach(function(oa) {
+      var sel = asignados.includes(oa.id);
+      html += '<button type="button" class="oa-tag'+(sel?' oa-tag-sel':'')+'" '
+        + 'data-oaid="'+oa.id+'" '
+        + 'onclick="_toggleOATag(this,'+criterioIdx+')" '
+        + 'title="'+oa.desc+'" '
+        + 'style="font-size:10px;padding:3px 8px;border-radius:20px;border:1px solid '
+        + (sel?'#FF9500':'var(--border)')
+        + ';background:'+(sel?'rgba(255,149,0,0.12)':'var(--bg3)')
+        + ';color:'+(sel?'#FF9500':'var(--text3)')+';cursor:pointer;transition:all 0.15s;">'
+        + niv+'°·'+oa.label
+        + '</button>';
+    });
+  });
+  html += '</div></div>';
+  return html;
+}
+
+function _toggleOATag(btn, criterioIdx) {
+  var oaId = btn.dataset.oaid;
+  var isSel = btn.classList.contains('oa-tag-sel');
+  btn.classList.toggle('oa-tag-sel', !isSel);
+  btn.style.borderColor   = !isSel ? '#FF9500' : 'var(--border)';
+  btn.style.background    = !isSel ? 'rgba(255,149,0,0.12)' : 'var(--bg3)';
+  btn.style.color         = !isSel ? '#FF9500' : 'var(--text3)';
+
+  // Persistir en la rúbrica activa
+  var rub = rubricas[rubricaActiva];
+  if (!rub) return;
+  if (!rub.oaMap) rub.oaMap = {};
+  if (!rub.oaMap[criterioIdx]) rub.oaMap[criterioIdx] = [];
+  var arr = rub.oaMap[criterioIdx];
+  if (!isSel) { if (!arr.includes(oaId)) arr.push(oaId); }
+  else { rub.oaMap[criterioIdx] = arr.filter(function(x){ return x!==oaId; }); }
+  saveRubricas();
+}
+
+// Calcular logro por OA en un curso (para reportes UTP)
+function calcularLogroOA(curso) {
+  var regs = registros.filter(function(r){
+    return (r.curso||'')===(curso||'') && r.nota !== undefined && r.nota !== null;
+  });
+  if (!regs.length) return [];
+
+  var oaStats = {};
+  regs.forEach(function(r) {
+    var rub = rubricas.find(function(rb){ return rb.nombre===(r.rubricaNombre||''); });
+    if (!rub || !rub.oaMap) return;
+    Object.keys(rub.oaMap).forEach(function(critIdx) {
+      (rub.oaMap[critIdx]||[]).forEach(function(oaId) {
+        if (!oaStats[oaId]) oaStats[oaId] = { total:0, logrado:0, count:0 };
+        oaStats[oaId].count++;
+        oaStats[oaId].total += r.nota || 0;
+        if ((r.nota||0) >= 4) oaStats[oaId].logrado++;
+      });
+    });
+  });
+
+  return Object.keys(oaStats).map(function(oaId) {
+    var s = oaStats[oaId];
+    // Buscar descripción del OA
+    var niv = oaId.charAt(0);
+    var oa  = (OA_ARTES_VISUALES[niv]||[]).find(function(o){ return o.id===oaId; });
+    return {
+      oaId:      oaId,
+      label:     oa ? oa.label : oaId,
+      desc:      oa ? oa.desc  : '',
+      promedio:  s.count ? (s.total/s.count).toFixed(1) : '—',
+      pctLogro:  s.count ? Math.round(s.logrado/s.count*100) : 0,
+      nEval:     s.count,
+    };
+  }).sort(function(a,b){ return b.pctLogro - a.pctLogro; });
+}
+
+// Renderizar reporte de logro por OA (para estadísticas o exportar)
+function renderReporteOA(curso, containerId) {
+  var cont = document.getElementById(containerId);
+  if (!cont) return;
+  var datos = calcularLogroOA(curso);
+  if (!datos.length) {
+    cont.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px;">Sin OA vinculados en las rúbricas de este curso</div>';
+    return;
+  }
+  var html = '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Logro por Objetivo de Aprendizaje — '+curso+'</div>';
+  datos.forEach(function(d) {
+    var clr = d.pctLogro >= 70 ? '#34C759' : d.pctLogro >= 50 ? '#FF9500' : '#FF3B30';
+    html += '<div style="margin-bottom:8px;">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">'
+      + '<div style="font-size:12px;font-weight:600;color:var(--ae-black,#1C1C1E);">'+d.label+'</div>'
+      + '<div style="font-size:12px;font-weight:700;color:'+clr+';">'+d.pctLogro+'%</div>'
+      + '</div>'
+      + '<div style="font-size:10px;color:var(--text3);margin-bottom:4px;">'+d.desc+'</div>'
+      + '<div style="height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;">'
+      + '<div style="height:100%;width:'+d.pctLogro+'%;background:'+clr+';border-radius:3px;transition:width 0.4s ease;"></div>'
+      + '</div>'
+      + '<div style="font-size:10px;color:var(--text3);margin-top:2px;">Promedio: '+d.promedio+' · '+d.nEval+' evaluaciones</div>'
+      + '</div>';
+  });
+  cont.innerHTML = html;
 }
 
 function _renderDashChart(instFiltro) {
