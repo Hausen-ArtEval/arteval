@@ -1851,7 +1851,19 @@ media (prefers-color-scheme: dark) {
 button, .btn, .tab, .curso-chip, .reg-card, .config-card, input, select {
   -webkit-tap-highlight-color: transparent;
 }
-p-highlight-color: transparent;
+
+/* ── v115 extras ─────────────────────────────────────────────────── */
+.no-entregado-cell.ne-editable { cursor:pointer; transition:background 0.15s; }
+.no-entregado-cell.ne-editable:hover { background:rgba(255,59,48,0.12)!important; }
+@keyframes fadeInUp { from{opacity:0;transform:translateY(8px) scale(0.97)} to{opacity:1;transform:none} }
+.btn-sm { font-size:11px; padding:6px 12px; min-height:36px; }
+.config-card { background:var(--ae-white,#FFFFFF)!important; border-radius:var(--ae-radius-lg,16px)!important; box-shadow:0 4px 20px rgba(0,0,0,0.05),0 0 0 0.5px var(--ae-border,#E5E5EA)!important; }
+@media (pointer:coarse) { .btn,button:not(.btn-icon),select,.tab { min-height:44px!important; } }
+:root {
+  --ae-shadow-sm: 0 1px 4px rgba(0,0,0,0.06);
+  --ae-shadow-md: 0 4px 16px rgba(0,0,0,0.10);
+  --ae-shadow-lg: 0 16px 48px rgba(0,0,0,0.16);
+  --ae-radius-sm:8px; --ae-radius-md:12px; --ae-radius-lg:16px; --ae-radius-xl:20px;
 }
 </style>
 
@@ -2577,59 +2589,30 @@ p-highlight-color: transparent;
           <span id="correoTabEmailBadge" style="font-size:11px;color:var(--accent);font-weight:600;background:var(--accent-bg);padding:4px 10px;border-radius:20px;white-space:nowrap;"></span>
         </div>
       </div>
-      <!-- ══ Card: Iniciar sesión Gmail institucional ══ -->
+      <!-- Card: Sesión Gmail institucional -->
       <div class="config-card" style="margin-bottom:14px;border:1.5px solid rgba(255,149,0,0.25);">
-
-        <!-- Estado: no conectado -->
         <div id="gmailLoginSection">
           <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
-            <div style="width:44px;height:44px;background:rgba(255,149,0,0.08);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-            </div>
+            <div style="width:44px;height:44px;background:rgba(255,149,0,0.08);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
             <div style="flex:1;">
               <div style="font-size:15px;font-weight:700;color:var(--ae-black,#1C1C1E);">Cuenta de correo</div>
-              <div id="gmailStatusBadge" style="font-size:12px;color:#8E8E93;margin-top:3px;">Sin sesión iniciada — los correos se abren en el navegador</div>
+              <div id="gmailStatusBadge" style="font-size:12px;color:#8E8E93;margin-top:3px;">Sin sesión — los correos se abren en el navegador</div>
             </div>
           </div>
-
-          <!-- Botón iniciar sesión (visible cuando NO hay sesión) -->
           <div id="gmailBtnLogin" style="display:block;">
-            <button id="btnVincularGmail" onclick="_vincularCorreoInstitucional()"
-              style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;
-                     padding:13px 20px;background:#fff;border:1.5px solid #dadce0;border-radius:12px;
-                     cursor:pointer;font-family:inherit;font-size:14px;font-weight:500;color:#3c4043;
-                     box-shadow:0 1px 3px rgba(0,0,0,0.08);transition:box-shadow 0.15s,background 0.15s;"
-              onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.15)';this.style.background='#f8f9fa';"
-              onmouseout="this.style.boxShadow='0 1px 3px rgba(0,0,0,0.08)';this.style.background='#fff';">
-              <!-- Logo Google SVG -->
-              <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.36-8.16 2.36-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
+            <button id="btnVincularGmail" onclick="_vincularCorreoInstitucional()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:13px 20px;background:#fff;border:1.5px solid #dadce0;border-radius:12px;cursor:pointer;font-family:inherit;font-size:14px;font-weight:500;color:#3c4043;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+              <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.36-8.16 2.36-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
               Iniciar sesión con Google Workspace
             </button>
-            <div style="margin-top:10px;font-size:11px;color:#8E8E93;text-align:center;line-height:1.5;">
-              Inicia sesión con tu correo institucional del colegio.<br>
-              Google abrirá el selector de cuentas para que elijas la correcta.
-            </div>
+            <div style="margin-top:10px;font-size:11px;color:#8E8E93;text-align:center;line-height:1.5;">Inicia sesión con tu correo institucional del colegio.</div>
           </div>
-
-          <!-- Estado: conectado (oculto por defecto) -->
           <div id="gmailBtnConectado" style="display:none;">
             <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
               <div style="display:flex;align-items:center;gap:8px;">
-                <div style="width:32px;height:32px;background:rgba(52,199,89,0.12);border-radius:50%;display:flex;align-items:center;justify-content:center;">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34C759" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                </div>
-                <div>
-                  <div style="font-size:13px;font-weight:600;color:#1C1C1E;" id="gmailEmailLabel">cuenta@colegio.cl</div>
-                  <div style="font-size:11px;color:#34C759;">Sesión activa — correos se envían directamente</div>
-                </div>
+                <div style="width:32px;height:32px;background:rgba(52,199,89,0.12);border-radius:50%;display:flex;align-items:center;justify-content:center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34C759" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+                <div><div style="font-size:13px;font-weight:600;color:#1C1C1E;" id="gmailEmailLabel">cuenta@colegio.cl</div><div style="font-size:11px;color:#34C759;">Sesión activa — correos se envían directamente</div></div>
               </div>
-              <button id="btnDesconectarGmail" onclick="_desconectarGmail()"
-                style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;
-                       background:none;border:1px solid #E5E5EA;border-radius:8px;
-                       cursor:pointer;font-family:inherit;font-size:12px;color:#8E8E93;">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                Cerrar sesión
-              </button>
+              <button id="btnDesconectarGmail" onclick="_desconectarGmail()" style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:none;border:1px solid #E5E5EA;border-radius:8px;cursor:pointer;font-family:inherit;font-size:12px;color:#8E8E93;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Cerrar sesión</button>
             </div>
           </div>
         </div>
@@ -3151,17 +3134,15 @@ function doGet(e) {
 </div><!-- /app -->
 
 <script>
-
-// ── Chart.js cargado dinámicamente al inicio ──────────────────────────────
-(function() {
-  if (window.Chart) return; // ya cargado
-  var s = document.createElement('script');
-  s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
-  s.async = true;
-  s.onload = function() { console.log('[ArtEval] Chart.js v4 cargado'); };
+// FIX: wrapper showTab seguro (clic antes de cargar JS)
+// Chart.js cargado dinámicamente
+(function(){
+  if(window.Chart)return;
+  var s=document.createElement('script');
+  s.src='https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+  s.async=true;
   document.head.appendChild(s);
 })();
-// FIX: wrapper showTab seguro (clic antes de cargar JS)
 window._tabPendiente=null;
 if(typeof showTab==='undefined'){
   window.showTab=function(name){window._tabPendiente=name;};
@@ -3814,37 +3795,18 @@ async function toggleCamara() {
   } catch(e) { setStatus('Error de cámara: ' + e.message); }
 }
 
-// FIX v110: compresión WebP 0.6 + max 800px → imagen ultra-liviana
 function capturarFrame() {
   const video = document.getElementById('videoEl');
   const canvas = document.getElementById('canvasEl');
   if (!video || !canvas) return '';
-  const MAX_DIM = 800;
-  let w = video.videoWidth || 640, vh = video.videoHeight || 480;
-  const ratio = Math.min(MAX_DIM / w, MAX_DIM / vh, 1);
-  w = Math.floor(w * ratio); vh = Math.floor(vh * ratio);
+  const MAX = 800;
+  let w = video.videoWidth||640, vh = video.videoHeight||480;
+  const ratio = Math.min(MAX/w, MAX/vh, 1);
+  w = Math.floor(w*ratio); vh = Math.floor(vh*ratio);
   canvas.width = w; canvas.height = vh;
   canvas.getContext('2d').drawImage(video, 0, 0, w, vh);
-  // Intentar WebP (menor peso), fallback a JPEG
   const webp = canvas.toDataURL('image/webp', 0.6);
-  const fmt  = webp.startsWith('data:image/webp') ? webp : canvas.toDataURL('image/jpeg', 0.65);
-  return fmt.split(',')[1];
-}
-
-// Guardar foto comprimida en portafolio del estudiante (localStorage)
-function _guardarFotoPortafolio(nombre, curso, base64) {
-  if (!nombre || !base64) return;
-  var key = 'av_foto_' + (nombre||'').trim().toUpperCase().replace(/\s+/g,'_') + '_' + (curso||'');
-  try {
-    localStorage.setItem(key, JSON.stringify({
-      foto:   base64,
-      fecha:  new Date().toISOString(),
-      nombre: nombre,
-      curso:  curso
-    }));
-  } catch(e) {
-    console.warn('[ArtEval] Portafolio lleno:', e.message);
-  }
+  return (webp.startsWith('data:image/webp') ? webp : canvas.toDataURL('image/jpeg', 0.65)).split(',')[1];
 }
 
 // ═══════════════════════════════════════════════════════
@@ -3977,19 +3939,10 @@ async function analizarAhora() {
   const ba = document.getElementById('btnAnalizar'); if (ba) ba.disabled = true;
   const lb = document.getElementById('liveBadge');
   if (lb) { lb.textContent = '● ANALIZANDO'; lb.className = 'cam-badge analizando'; }
-  setStatus('✦ Analizando en segundo plano...');
+  setStatus('Capturando imagen y enviando a Gemini...');
   setDebug('');
-  // Activity indicator iOS sutil
-  const _actEl = document.getElementById('aiActivityIndicator');
-  if (_actEl) _actEl.style.display = 'inline-block';
 
-  // FIX v110: captura y guarda la foto INSTANTÁNEAMENTE antes de llamar IA
   const imageData = capturarFrame();
-  // Guardar en portafolio sin esperar la IA
-  const _nomEst = (document.getElementById('inputNombre')?.value||'').trim();
-  const _crsEst = (document.getElementById('inputCurso')?.value||'').trim();
-  if (imageData && _nomEst) _guardarFotoPortafolio(_nomEst, _crsEst, imageData);
-
   const crits = getCriterios();
   const n = crits.length;
   const criteriosTxt = crits.map((c,i) => `${i}. ${c}`).join('\n');
@@ -4057,36 +4010,28 @@ Incluye los ${n} criterios, desde idx 0 hasta idx ${n-1}. Usa exactamente "MB","
   }
 
   try {
-    // FIX v110: timeout 5s + fallback manual si Gemini no responde
-    const _ctrl    = new AbortController();
-    const _timeout = setTimeout(() => _ctrl.abort(), 5000);
+    const _ctrl=new AbortController();
+    const _tmo=setTimeout(()=>_ctrl.abort(), 5000);
     let res;
     try {
       res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${key}`, {
-        method: 'POST',
+        method: 'POST', signal: _ctrl.signal,
         headers: { 'Content-Type': 'application/json' },
-        signal: _ctrl.signal,
         body: JSON.stringify({
         contents,
         generationConfig: { temperature: exigEfectiva.temp, maxOutputTokens: 2048, responseMimeType: 'application/json' }
       })
     });
-      clearTimeout(_timeout);
-    } catch (_abortErr) {
-      clearTimeout(_timeout);
-      if (_abortErr.name === 'AbortError') {
-        toast('⏱ Análisis demorado. Modo manual activo', 'info', 5000);
-      } else {
-        toast('⚠ IA no disponible. Evalúa manualmente los criterios', 'err', 5000);
-      }
-      // Liberar UI para evaluación manual
-      analizando = false;
-      const ba2 = document.getElementById('btnAnalizar');
-      if (ba2) ba2.disabled = false;
-      const lb2 = document.getElementById('liveBadge');
-      if (lb2) { lb2.textContent = '● MODO MANUAL'; lb2.className = 'cam-badge'; }
+      clearTimeout(_tmo);
+    } catch(_ae) {
+      clearTimeout(_tmo);
+      analizando=false;
+      const ba2=document.getElementById('btnAnalizar'); if(ba2)ba2.disabled=false;
+      const lb2=document.getElementById('liveBadge');
+      if(lb2){lb2.textContent='● MODO MANUAL';lb2.className='cam-badge';}
       setStatus('Modo manual — presiona los niveles de la rúbrica');
-      return; // salir sin crash
+      toast(_ae.name==='AbortError'?'\u23f1 Análisis demorado. Modo manual activo':'\u26a0 IA no disponible. Evalúa manualmente','info',5000);
+      return;
     }
     const data = await res.json();
     setDebug(JSON.stringify(data, null, 2));
@@ -4368,6 +4313,98 @@ function toggleVistaLibro() {
 
 
 // ── Editar nota rápida desde Registros (inline popover) ──
+// ── Menú NE contextual iOS ─────────────────────────────────────────────
+function abrirMenuNE(idx,evt){var r=registros[idx];if(!r)return;evt&&evt.stopPropagation();
+  _mostrarMenuNE(idx,r.nombre,r.instancia||'Evaluación 1',r.curso||'',evt);}
+function abrirMenuNEPorNombre(n,inst,cur,evt){
+  evt&&evt.stopPropagation();var ri=-1;
+  registros.forEach(function(rx,i){if(mismoEstudiante(rx.nombre||'',n)&&(rx.instancia||'Evaluación 1')===inst&&(rx.curso||'')===cur&&rx.noEntregado)ri=i;});
+  _mostrarMenuNE(ri,n,inst,cur,evt);}
+function _mostrarMenuNE(ri,nombre,inst,cur,evt){
+  var p=document.getElementById('menuNE');if(p)p.remove();
+  var m=document.createElement('div');m.id='menuNE';
+  m.style.cssText='position:fixed;z-index:10000;background:#fff;border-radius:16px;'
+    +'box-shadow:0 8px 32px rgba(0,0,0,0.18),0 0 0 0.5px rgba(0,0,0,0.08);'
+    +'min-width:260px;overflow:hidden;animation:fadeInUp 0.18s ease-out;';
+  if(evt){var x=Math.min(evt.clientX,window.innerWidth-270),y=Math.min(evt.clientY+8,window.innerHeight-300);
+    m.style.left=x+'px';m.style.top=y+'px';
+  }else{m.style.top='50%';m.style.left='50%';m.style.transform='translate(-50%,-50%)';}
+  var hdr='<div style="padding:14px 16px 10px;border-bottom:0.5px solid #E5E5EA;">'
+    +'<div style="font-size:13px;font-weight:700;color:#1C1C1E;">'+nombre+'</div>'
+    +'<div style="font-size:11px;color:#8E8E93;margin-top:2px;">'+inst+' \u00b7 '+cur
+    +' \u00b7 <span style="color:#FF3B30;font-weight:600;">NE</span></div></div>';
+  var opt1='<div style="padding:12px 16px;border-bottom:0.5px solid #F2F2F7;">'
+    +'<div style="font-size:11px;font-weight:700;color:#8E8E93;text-transform:uppercase;'
+    +'letter-spacing:0.5px;margin-bottom:8px;">Ingresar nota directa</div>'
+    +'<div style="display:flex;gap:8px;align-items:center;">'
+    +'<input id="neNotaInput" type="number" min="1" max="7" step="0.1" value="1.0" '
+    +'style="width:80px;padding:8px 10px;border:1.5px solid #E5E5EA;border-radius:10px;'
+    +'font-size:20px;font-weight:700;text-align:center;color:#1C1C1E;outline:none;"'
+    +' onkeydown="if(event.key===\'Enter\')_confirmarNotaNE('+ri+');">'
+    +'<button onclick="_confirmarNotaNE('+ri+')" '
+    +'style="flex:1;padding:9px 14px;background:#FF9500;color:#fff;border:none;'
+    +'border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">'
+    +'Registrar nota</button></div>'
+    +'<div style="font-size:10px;color:#8E8E93;margin-top:6px;">'
+    +'Nota m\u00ednima por no entrega: 1.0</div></div>';
+  var opt2=ri>-1
+    ?'<button onclick="_evaluarDesdeNEMenu('+ri+')" '
+      +'style="width:100%;padding:14px 16px;text-align:left;border:none;background:none;'
+      +'cursor:pointer;border-bottom:0.5px solid #F2F2F7;display:flex;align-items:center;gap:10px;">'
+      +'<div style="width:36px;height:36px;background:rgba(255,149,0,0.10);border-radius:10px;'
+      +'display:flex;align-items:center;justify-content:center;">'
+      +'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="2" stroke-linecap="round">'
+      +'<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>'
+      +'<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>'
+      +'<div style="flex:1;"><div style="font-size:13px;font-weight:600;color:#1C1C1E;">'
+      +'Evaluar con r\u00fabrica</div>'
+      +'<div style="font-size:11px;color:#8E8E93;">Abre la r\u00fabrica para entrega atrasada</div>'
+      +'</div></button>':'';
+  var can='<button onclick="document.getElementById(\'menuNE\').remove()" '
+    +'style="width:100%;padding:14px 16px;text-align:center;border:none;background:none;'
+    +'cursor:pointer;font-size:15px;font-weight:600;color:#8E8E93;font-family:inherit;">'
+    +'Cancelar</button>';
+  m.innerHTML=hdr+opt1+opt2+can;
+  document.body.appendChild(m);
+  setTimeout(function(){var i=document.getElementById('neNotaInput');if(i)i.select();},50);
+  setTimeout(function(){
+    var fn=function(e){var m2=document.getElementById('menuNE');if(m2&&!m2.contains(e.target)){
+      m2.remove();document.removeEventListener('mousedown',fn);document.removeEventListener('touchstart',fn);};};
+    document.addEventListener('mousedown',fn);document.addEventListener('touchstart',fn);
+  },100);}
+function _confirmarNotaNE(ri){
+  var inp=document.getElementById('neNotaInput');
+  var nota=inp?parseFloat(inp.value):NaN;
+  if(isNaN(nota)||nota<1||nota>7){if(inp)inp.style.borderColor='#FF3B30';
+    toast('\u26a0 Nota inv\u00e1lida (1.0 \u2013 7.0)','err',2500);return;}
+  if(ri>-1&&registros[ri]){
+    registros[ri].nota=Math.round(nota*10)/10;
+    registros[ri].noEntregado=false;
+    saveRegistros();actualizarConteo();
+    renderLibroClases();renderRegistros();
+    if(cursoSeleccionado)renderCursoMain();
+    toast('\u2705 Nota '+nota.toFixed(1)+' registrada','ok',2500);}
+  var m=document.getElementById('menuNE');if(m)m.remove();}
+function _evaluarDesdeNEMenu(ri){
+  var r=registros[ri];if(!r)return;
+  var m=document.getElementById('menuNE');if(m)m.remove();
+  window._neIdxPendiente=ri;
+  showTab('evaluar');
+  setTimeout(function(){
+    var inp=document.getElementById('inputNombre');
+    var sel=document.getElementById('inputCurso');
+    var is=document.getElementById('instanciaSelect');
+    if(inp)inp.value=r.nombre||'';
+    if(sel)sel.value=r.curso||'';
+    if(is)is.value=r.instancia||'Evaluación 1';
+    var ri2=rubricas.findIndex(function(rb){return rb.nombre===(r.rubricaNombre||'');});
+    if(ri2>-1){rubricaActiva=ri2;
+      var rs=document.getElementById('rubricaSelect');if(rs)rs.value=ri2;
+      renderCriterios();}
+    if(inp)inp.focus();
+    toast('\u270f\ufe0f Completa la evaluaci\u00f3n \u2014 el NE se reemplazar\u00e1 al guardar','info',5000);
+  },200);}
+
 function editarNotaRapida(idx, btnEl) {
   const r = registros[idx];
   if (!r) return;
@@ -4720,7 +4757,21 @@ function renderLibroClases(filtrados, container) {
       const notasCols = instancias.map(function(inst) {
         const n = al.notas[inst];
         if (n === undefined) return '<td class="sin-nota">—</td>';
-        if (al.noEntregado && al.noEntregado[inst]) return '<td class="no-entregado-cell" title="Trabajo no entregado">NE</td>';
+        if (al.noEntregado && al.noEntregado[inst]) {
+          var _neI=-1;
+          registros.forEach(function(rx,ri){
+            if((rx.curso||'')===curso&&mismoEstudiante(rx.nombre||'',al.nombre)
+               &&(rx.instancia||'Evaluación 1')===inst&&rx.noEntregado) _neI=ri;
+          });
+          var _neOC=_neI>-1
+            ?'abrirMenuNE('+_neI+',event)'
+            :'abrirMenuNEPorNombre(\''+al.nombre.replace(/\'/g,"\\'")+'\'\,\''+inst+'\'\,\''+curso+'\',event)';
+          return '<td class="no-entregado-cell ne-editable" onclick="'+_neOC+'" '
+            +'title="NE · Toca para editar" style="cursor:pointer;">'
+            +'<span style="font-weight:700;font-size:11px;color:#FF3B30;">NE</span>'
+            +'<span style="font-size:9px;color:#FF9500;margin-left:3px;">✎</span>'
+            +'</td>';
+        }
         const clr = n>=6.0?'var(--blue)':n>=4.0?'var(--green)':'var(--red)';
         // Buscar TODOS los registros de este alumno+instancia (puede haber conflicto de rubrica)
         const regsMatch = [];
@@ -7363,262 +7414,91 @@ function _renderDashCriterios(instFiltro) {
 }
 
 
-// ── Radar de Competencias por Estudiante ─────────────────────────────────
-function renderRadarEstudiante(nombreAlumno, containerId) {
-  var cont = document.getElementById(containerId);
-  if (!cont) return;
-
-  // Obtener evaluaciones del alumno
-  var regsAl = registros.filter(function(r) {
-    return mismoEstudiante(r.nombre||'', nombreAlumno) && r.evaluacion;
-  });
-  if (!regsAl.length) {
-    cont.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text3);font-size:12px;">Sin evaluaciones con detalle de criterios</div>';
-    return;
-  }
-
-  // Mapear criterios a ejes del radar
-  var EJES = [
-    { label: 'Técnica y Oficio',        keys: ['tecnica','oficio','material','procedimiento','manejo'] },
-    { label: 'Creatividad y Expresión', keys: ['creatividad','expresion','original','idea','composicion'] },
-    { label: 'Contenido y Concepto',    keys: ['contenido','concepto','tema','narrativa','significado'] },
-    { label: 'Proceso y Cumplimiento',  keys: ['proceso','cumplimiento','entrega','presentacion','orden'] },
-  ];
-
-  // Calcular promedio por eje a partir de los criterios
-  var scores = EJES.map(function(eje) {
-    var total = 0, count = 0;
-    regsAl.forEach(function(r) {
-      if (!r.evaluacion) return;
-      Object.keys(r.evaluacion).forEach(function(k) {
-        var kl = k.toLowerCase();
-        if (eje.keys.some(function(key){ return kl.includes(key); })) {
-          var pts = r.evaluacion[k]?.pts || 0;
-          var max = r.evaluacion[k]?.max || 3;
-          total += (pts / max) * 7; // normalizar a escala 1-7
-          count++;
-        }
-      });
-    });
-    // Si no hay criterios mapeados, usar promedio general
-    if (!count && regsAl.length) {
-      total = regsAl.reduce(function(s,r){ return s+(r.nota||1); },0)/regsAl.length * count;
-      count = 1;
-    }
-    return count ? Math.min(7, Math.max(1, total/count)) : 4;
-  });
-
-  // Crear canvas para el radar
-  cont.innerHTML = '';
-  var canvas = document.createElement('canvas');
-  canvas.width = 260; canvas.height = 260;
-  canvas.style.cssText = 'max-width:100%;display:block;margin:0 auto;';
-  cont.appendChild(canvas);
-
-  if (!window.Chart) {
-    cont.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px;">Cargando Chart.js...</div>';
-    setTimeout(function(){ renderRadarEstudiante(nombreAlumno, containerId); }, 1500);
-    return;
-  }
-
-  // Destruir chart previo si existe
-  if (cont._radarChart) { cont._radarChart.destroy(); }
-
-  cont._radarChart = new Chart(canvas, {
-    type: 'radar',
-    data: {
-      labels: EJES.map(function(e){ return e.label; }),
-      datasets: [{
-        label: nombreAlumno,
-        data: scores,
-        backgroundColor: 'rgba(255,149,0,0.20)',
-        borderColor:     '#FF9500',
-        borderWidth: 2.5,
-        pointBackgroundColor: '#FF9500',
-        pointBorderColor:     '#fff',
-        pointBorderWidth: 2,
-        pointRadius: 5,
-      }]
-    },
-    options: {
-      responsive: false,
-      scales: {
-        r: {
-          min: 1, max: 7,
-          ticks: {
-            stepSize: 2,
-            font: { size: 9, family: '-apple-system, DM Sans, sans-serif' },
-            color: '#8E8E93',
-            backdropColor: 'transparent',
-          },
-          grid:        { color: 'rgba(142,142,147,0.2)' },
-          angleLines:  { color: 'rgba(142,142,147,0.2)' },
-          pointLabels: {
-            font: { size: 10, family: '-apple-system, DM Sans, sans-serif', weight: '600' },
-            color: '#1C1C1E',
-          }
-        }
-      },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            label: function(ctx) {
-              return ' ' + ctx.label + ': ' + ctx.raw.toFixed(1);
-            }
-          }
-        }
-      },
-      animation: { duration: 400, easing: 'easeInOutQuart' }
-    }
-  });
-}
-
-// ── Objetivos de Aprendizaje MINEDUC — Artes Visuales 3°-6° Básico ───────
 const OA_ARTES_VISUALES = {
   '3': [
-    { id:'3-OA1', label:'OA1', desc:'Crear trabajos de arte usando línea, figura, forma, color, textura, valor y espacio como elementos expresivos.' },
-    { id:'3-OA2', label:'OA2', desc:'Experimentar con diversos materiales, soportes y técnicas para expresar ideas y emociones.' },
-    { id:'3-OA3', label:'OA3', desc:'Observar y describir obras de arte de diversas culturas, épocas y estilos, expresando opiniones fundamentadas.' },
-    { id:'3-OA4', label:'OA4', desc:'Comunicar ideas, emociones y experiencias a través de producciones visuales.' },
-    { id:'3-OA5', label:'OA5', desc:'Reconocer y valorar el patrimonio artístico y cultural local, nacional y universal.' },
-  ],
-  '4': [
-    { id:'4-OA1', label:'OA1', desc:'Crear trabajos de arte usando elementos visuales con mayor dominio técnico y propósito expresivo.' },
-    { id:'4-OA2', label:'OA2', desc:'Experimentar con materiales y técnicas bidimensionales y tridimensionales, evaluando sus posibilidades expresivas.' },
-    { id:'4-OA3', label:'OA3', desc:'Analizar y fundamentar apreciaciones sobre obras de arte de diversas culturas y períodos.' },
-    { id:'4-OA4', label:'OA4', desc:'Desarrollar proyectos visuales que integren conceptos, técnicas y materiales variados.' },
-    { id:'4-OA5', label:'OA5', desc:'Identificar y valorar la diversidad cultural a través de manifestaciones artísticas.' },
-  ],
-  '5': [
-    { id:'5-OA1', label:'OA1', desc:'Crear trabajos de arte aplicando elementos y principios del diseño con intención estética y comunicativa.' },
-    { id:'5-OA2', label:'OA2', desc:'Explorar y desarrollar habilidades técnicas en medios visuales tradicionales y digitales.' },
-    { id:'5-OA3', label:'OA3', desc:'Investigar y analizar obras de arte reconociendo contextos históricos, culturales y sociales.' },
-    { id:'5-OA4', label:'OA4', desc:'Fundamentar decisiones creativas en proyectos artísticos individuales y colaborativos.' },
-    { id:'5-OA5', label:'OA5', desc:'Reconocer la función social y comunicativa de las artes visuales en distintos contextos.' },
-  ],
-  '6': [
-    { id:'6-OA1', label:'OA1', desc:'Crear trabajos de arte usando elementos visuales con propósito expresivo y comunicativo desarrollado.' },
-    { id:'6-OA2', label:'OA2', desc:'Aplicar procesos de diseño y planificación en la creación de proyectos artísticos.' },
-    { id:'6-OA3', label:'OA3', desc:'Evaluar críticamente obras de arte y producciones propias usando criterios estéticos y culturales.' },
-    { id:'6-OA4', label:'OA4', desc:'Desarrollar proyectos visuales integrando investigación, experimentación y reflexión.' },
-    { id:'6-OA5', label:'OA5', desc:'Valorar el arte como expresión de identidad cultural y comprender su rol en la sociedad contemporánea.' },
+    {id:'3-OA1',label:'OA1',desc:'Crear trabajos de arte usando línea, figura, forma, color, textura y espacio.'},
+    {id:'3-OA2',label:'OA2',desc:'Experimentar con materiales y técnicas para expresar ideas y emociones.'},
+    {id:'3-OA3',label:'OA3',desc:'Observar y describir obras de arte de diversas culturas y épocas.'},
+    {id:'3-OA4',label:'OA4',desc:'Comunicar ideas y emociones a través de producciones visuales.'},
+    {id:'3-OA5',label:'OA5',desc:'Reconocer y valorar el patrimonio artístico y cultural.'},
+  ],'4': [
+    {id:'4-OA1',label:'OA1',desc:'Crear trabajos con mayor dominio técnico y propósito expresivo.'},
+    {id:'4-OA2',label:'OA2',desc:'Experimentar con técnicas 2D y 3D evaluando sus posibilidades.'},
+    {id:'4-OA3',label:'OA3',desc:'Analizar obras de arte de diversas culturas y períodos.'},
+    {id:'4-OA4',label:'OA4',desc:'Desarrollar proyectos visuales integrando conceptos y técnicas.'},
+    {id:'4-OA5',label:'OA5',desc:'Identificar y valorar la diversidad cultural artística.'},
+  ],'5': [
+    {id:'5-OA1',label:'OA1',desc:'Crear trabajos aplicando diseño con intención estética y comunicativa.'},
+    {id:'5-OA2',label:'OA2',desc:'Explorar medios visuales tradicionales y digitales.'},
+    {id:'5-OA3',label:'OA3',desc:'Investigar obras de arte reconociendo contextos históricos.'},
+    {id:'5-OA4',label:'OA4',desc:'Fundamentar decisiones creativas en proyectos artísticos.'},
+    {id:'5-OA5',label:'OA5',desc:'Reconocer la función social de las artes visuales.'},
+  ],'6': [
+    {id:'6-OA1',label:'OA1',desc:'Crear trabajos con propósito expresivo y comunicativo desarrollado.'},
+    {id:'6-OA2',label:'OA2',desc:'Aplicar procesos de diseño en proyectos artísticos.'},
+    {id:'6-OA3',label:'OA3',desc:'Evaluar críticamente obras usando criterios estéticos y culturales.'},
+    {id:'6-OA4',label:'OA4',desc:'Desarrollar proyectos integrando investigación y reflexión.'},
+    {id:'6-OA5',label:'OA5',desc:'Valorar el arte como expresión de identidad cultural.'},
   ]
 };
-
-// Obtener OAs para un nivel de curso dado (ej: "5°C" → "5")
-function _getOAsPorNivel(cursoStr) {
-  var nivel = (cursoStr||'').replace(/[^0-9]/g,'').charAt(0);
-  return OA_ARTES_VISUALES[nivel] || [];
-}
-
-// Generar selector de OA para un criterio de rúbrica (retorna HTML string)
-function _renderOASelector(criterioIdx, oasAsignados) {
-  var niveles = ['3','4','5','6'];
-  var asignados = oasAsignados || [];
-  var html = '<div class="oa-selector" data-crit="'+criterioIdx+'">'
-    + '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">OA vinculados</div>'
-    + '<div style="display:flex;flex-wrap:wrap;gap:4px;">';
-  niveles.forEach(function(niv) {
-    (OA_ARTES_VISUALES[niv]||[]).forEach(function(oa) {
-      var sel = asignados.includes(oa.id);
-      html += '<button type="button" class="oa-tag'+(sel?' oa-tag-sel':'')+'" '
-        + 'data-oaid="'+oa.id+'" '
-        + 'onclick="_toggleOATag(this,'+criterioIdx+')" '
-        + 'title="'+oa.desc+'" '
-        + 'style="font-size:10px;padding:3px 8px;border-radius:20px;border:1px solid '
-        + (sel?'#FF9500':'var(--border)')
-        + ';background:'+(sel?'rgba(255,149,0,0.12)':'var(--bg3)')
-        + ';color:'+(sel?'#FF9500':'var(--text3)')+';cursor:pointer;transition:all 0.15s;">'
-        + niv+'°·'+oa.label
-        + '</button>';
-    });
-  });
-  html += '</div></div>';
-  return html;
-}
-
-function _toggleOATag(btn, criterioIdx) {
-  var oaId = btn.dataset.oaid;
-  var isSel = btn.classList.contains('oa-tag-sel');
-  btn.classList.toggle('oa-tag-sel', !isSel);
-  btn.style.borderColor   = !isSel ? '#FF9500' : 'var(--border)';
-  btn.style.background    = !isSel ? 'rgba(255,149,0,0.12)' : 'var(--bg3)';
-  btn.style.color         = !isSel ? '#FF9500' : 'var(--text3)';
-
-  // Persistir en la rúbrica activa
-  var rub = rubricas[rubricaActiva];
-  if (!rub) return;
-  if (!rub.oaMap) rub.oaMap = {};
-  if (!rub.oaMap[criterioIdx]) rub.oaMap[criterioIdx] = [];
-  var arr = rub.oaMap[criterioIdx];
-  if (!isSel) { if (!arr.includes(oaId)) arr.push(oaId); }
-  else { rub.oaMap[criterioIdx] = arr.filter(function(x){ return x!==oaId; }); }
-  saveRubricas();
-}
-
-// Calcular logro por OA en un curso (para reportes UTP)
+function _getOAsPorNivel(c){return OA_ARTES_VISUALES[(c||'').replace(/[^0-9]/g,'').charAt(0)]||[];}
 function calcularLogroOA(curso) {
-  var regs = registros.filter(function(r){
-    return (r.curso||'')===(curso||'') && r.nota !== undefined && r.nota !== null;
-  });
-  if (!regs.length) return [];
-
-  var oaStats = {};
-  regs.forEach(function(r) {
-    var rub = rubricas.find(function(rb){ return rb.nombre===(r.rubricaNombre||''); });
-    if (!rub || !rub.oaMap) return;
-    Object.keys(rub.oaMap).forEach(function(critIdx) {
-      (rub.oaMap[critIdx]||[]).forEach(function(oaId) {
-        if (!oaStats[oaId]) oaStats[oaId] = { total:0, logrado:0, count:0 };
-        oaStats[oaId].count++;
-        oaStats[oaId].total += r.nota || 0;
-        if ((r.nota||0) >= 4) oaStats[oaId].logrado++;
+  var regs=registros.filter(function(r){return (r.curso||'')===curso&&r.nota!=null;});
+  if(!regs.length)return [];
+  var st={};
+  regs.forEach(function(r){
+    var rb=rubricas.find(function(rb2){return rb2.nombre===(r.rubricaNombre||'');});
+    if(!rb||!rb.oaMap)return;
+    Object.keys(rb.oaMap).forEach(function(ci){
+      (rb.oaMap[ci]||[]).forEach(function(oid){
+        if(!st[oid])st[oid]={total:0,logrado:0,count:0};
+        st[oid].count++;st[oid].total+=r.nota||0;
+        if((r.nota||0)>=4)st[oid].logrado++;
       });
     });
   });
-
-  return Object.keys(oaStats).map(function(oaId) {
-    var s = oaStats[oaId];
-    // Buscar descripción del OA
-    var niv = oaId.charAt(0);
-    var oa  = (OA_ARTES_VISUALES[niv]||[]).find(function(o){ return o.id===oaId; });
-    return {
-      oaId:      oaId,
-      label:     oa ? oa.label : oaId,
-      desc:      oa ? oa.desc  : '',
-      promedio:  s.count ? (s.total/s.count).toFixed(1) : '—',
-      pctLogro:  s.count ? Math.round(s.logrado/s.count*100) : 0,
-      nEval:     s.count,
-    };
-  }).sort(function(a,b){ return b.pctLogro - a.pctLogro; });
+  return Object.keys(st).map(function(oid){
+    var s=st[oid],niv=oid.charAt(0);
+    var oa=(OA_ARTES_VISUALES[niv]||[]).find(function(o){return o.id===oid;});
+    return {oaId:oid,label:oa?oa.label:oid,desc:oa?oa.desc:'',
+      promedio:s.count?(s.total/s.count).toFixed(1):'—',
+      pctLogro:s.count?Math.round(s.logrado/s.count*100):0,nEval:s.count};
+  }).sort(function(a,b){return b.pctLogro-a.pctLogro;});
 }
-
-// Renderizar reporte de logro por OA (para estadísticas o exportar)
-function renderReporteOA(curso, containerId) {
-  var cont = document.getElementById(containerId);
-  if (!cont) return;
-  var datos = calcularLogroOA(curso);
-  if (!datos.length) {
-    cont.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px;">Sin OA vinculados en las rúbricas de este curso</div>';
-    return;
-  }
-  var html = '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Logro por Objetivo de Aprendizaje — '+curso+'</div>';
-  datos.forEach(function(d) {
-    var clr = d.pctLogro >= 70 ? '#34C759' : d.pctLogro >= 50 ? '#FF9500' : '#FF3B30';
-    html += '<div style="margin-bottom:8px;">'
-      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">'
-      + '<div style="font-size:12px;font-weight:600;color:var(--ae-black,#1C1C1E);">'+d.label+'</div>'
-      + '<div style="font-size:12px;font-weight:700;color:'+clr+';">'+d.pctLogro+'%</div>'
-      + '</div>'
-      + '<div style="font-size:10px;color:var(--text3);margin-bottom:4px;">'+d.desc+'</div>'
-      + '<div style="height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;">'
-      + '<div style="height:100%;width:'+d.pctLogro+'%;background:'+clr+';border-radius:3px;transition:width 0.4s ease;"></div>'
-      + '</div>'
-      + '<div style="font-size:10px;color:var(--text3);margin-top:2px;">Promedio: '+d.promedio+' · '+d.nEval+' evaluaciones</div>'
-      + '</div>';
+function renderReporteOA(curso,containerId){
+  var cont=document.getElementById(containerId);if(!cont)return;
+  var datos=calcularLogroOA(curso);
+  if(!datos.length){cont.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px;">Sin OA vinculados en este curso</div>';return;}
+  var html='<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Logro OA — '+curso+'</div>';
+  datos.forEach(function(d){
+    var clr=d.pctLogro>=70?'#34C759':d.pctLogro>=50?'#FF9500':'#FF3B30';
+    html+='<div style="margin-bottom:8px;"><div style="display:flex;justify-content:space-between;">'
+      +'<div style="font-size:12px;font-weight:600;color:#1C1C1E;">'+d.label+'</div>'
+      +'<div style="font-size:12px;font-weight:700;color:'+clr+';">'+d.pctLogro+'%</div></div>'
+      +'<div style="font-size:10px;color:var(--text3);margin:2px 0;">'+d.desc+'</div>'
+      +'<div style="height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;">'
+      +'<div style="height:100%;width:'+d.pctLogro+'%;background:'+clr+';border-radius:3px;transition:width 0.4s;"></div>'
+      +'</div></div>';
   });
-  cont.innerHTML = html;
+  cont.innerHTML=html;
+}
+function renderRadarEstudiante(nombreAlumno,containerId){
+  var cont=document.getElementById(containerId);if(!cont)return;
+  if(!window.Chart){cont.innerHTML='<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px;">Cargando Chart.js...</div>';setTimeout(function(){renderRadarEstudiante(nombreAlumno,containerId);},1500);return;}
+  var regsAl=registros.filter(function(r){return mismoEstudiante(r.nombre||'',nombreAlumno)&&r.evaluacion;});
+  if(!regsAl.length){cont.innerHTML='<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px;">Sin evaluaciones con criterios</div>';return;}
+  var EJES=[{label:'Técnica y Oficio',keys:['tecnica','oficio','material','procedimiento']},{label:'Creatividad y Expresión',keys:['creatividad','expresion','original','idea']},{label:'Contenido y Concepto',keys:['contenido','concepto','tema','narrativa']},{label:'Proceso y Cumplimiento',keys:['proceso','cumplimiento','entrega','presentacion']}];
+  var scores=EJES.map(function(eje){
+    var t=0,c=0;
+    regsAl.forEach(function(r){Object.keys(r.evaluacion).forEach(function(k){var kl=k.toLowerCase();if(eje.keys.some(function(key){return kl.includes(key);})){var e=r.evaluacion[k];var pts=e&&e.pts!=null?e.pts:0,max=e&&e.max?e.max:3;t+=(pts/max)*7;c++;}});});
+    if(!c&&regsAl.length){t=regsAl.reduce(function(s,r){return s+(r.nota||1);},0)/regsAl.length;c=1;}
+    return c?Math.min(7,Math.max(1,t/c)):4;
+  });
+  cont.innerHTML='';var canvas=document.createElement('canvas');
+  canvas.width=260;canvas.height=260;canvas.style.cssText='max-width:100%;display:block;margin:0 auto;';
+  cont.appendChild(canvas);
+  if(cont._radarChart)cont._radarChart.destroy();
+  cont._radarChart=new Chart(canvas,{type:'radar',data:{labels:EJES.map(function(e){return e.label;}),datasets:[{label:nombreAlumno,data:scores,backgroundColor:'rgba(255,149,0,0.20)',borderColor:'#FF9500',borderWidth:2.5,pointBackgroundColor:'#FF9500',pointBorderColor:'#fff',pointBorderWidth:2,pointRadius:5}]},options:{responsive:false,scales:{r:{min:1,max:7,ticks:{stepSize:2,font:{size:9},color:'#8E8E93',backdropColor:'transparent'},grid:{color:'rgba(142,142,147,0.2)'},angleLines:{color:'rgba(142,142,147,0.2)'},pointLabels:{font:{size:10,weight:'600'},color:'#1C1C1E'}}},plugins:{legend:{display:false}},animation:{duration:400}}});
 }
 
 function _renderDashChart(instFiltro) {
@@ -8947,10 +8827,10 @@ function _guardiaCierre() {
                    Date.now() < (typeof _driveTokenExp !== 'undefined' ? _driveTokenExp : 0);
 
   // Si hay diferencia Y hay token activo → intentar sync síncrona (best-effort)
-  var lastEdit2 = localStorage.getItem('av_last_edit_ts')    || '';
-  var lastSync2 = localStorage.getItem('av_last_drive_sync') || '';
-  var hayEdicion2 = lastEdit2 && lastSync2 && lastEdit2 > lastSync2;
-  if ((localCount > driveCount || hayEdicion2) && tieneToken) {
+  var _le=localStorage.getItem('av_last_edit_ts')||'';
+  var _ls=localStorage.getItem('av_last_drive_sync')||'';
+  var _hayEd=_le&&_ls&&_le>_ls;
+  if ((localCount > driveCount || _hayEd) && tieneToken) {
     // Marcar que hay datos pendientes de subir
     try {
       localStorage.setItem('av_sync_pending', JSON.stringify({
@@ -9309,10 +9189,8 @@ function _renderCorreoTab(){
       ta.style.height='auto';
       ta.style.height=Math.max(360, ta.scrollHeight+24)+'px';
     });
-    // Reajustar cuando se abre un details — flag evita duplicar listeners
+    // Reajustar cuando se abre un details
     ct.querySelectorAll('details').forEach(function(det){
-      if (det._toggleBound) return; // ya tiene listener
-      det._toggleBound = true;
       det.addEventListener('toggle', function(){
         var ta=det.querySelector('textarea.email-preview');
         if(ta && det.open){
@@ -12428,8 +12306,8 @@ var _autoBackupEnabled    = localStorage.getItem('av_auto_backup_enabled') !== '
 var _autoBackupRunning    = false; // evitar ejecuciones paralelas
 
 // ── Estado de sesión ──
-var _gisTokenClient   = null;  // OAuth Drive
-var _gmailTokenClient = null;  // OAuth Gmail institucional
+var _gisTokenClient   = null;
+var _gmailTokenClient = null;
 var _gmailToken       = null;
 var _gmailTokenExp    = 0;
 var _gmailLinkedEmail = localStorage.getItem('ae_linked_work_email')||'';
@@ -12438,120 +12316,79 @@ var _driveTokenExp   = 0;   // timestamp ms de expiración
 var _driveTokenTimer = null; // timer de renovación silenciosa
 
 // ── Inicializar GIS al cargar la página ──
+var _gmailTokenClient = null;
+var _gmailToken       = null;
+var _gmailTokenExp    = 0;
+var _gmailLinkedEmail = localStorage.getItem('ae_linked_work_email')||'';
 
-// ── AUTENTICACIÓN DUAL: Gmail institucional (token separado de Drive) ─────
-function _manejarTokenGmail(tokenResponse) {
-  if (!tokenResponse || tokenResponse.error) {
-    _actualizarEstadoGmailUI(false); return;
-  }
-  _gmailToken = tokenResponse.access_token;
-  _gmailTokenExp = Date.now() + (tokenResponse.expires_in - 60) * 1000;
-  fetch('https://www.googleapis.com/oauth2/v3/userinfo',
-    { headers: { Authorization: 'Bearer ' + _gmailToken } })
-  .then(function(r){ return r.json(); })
-  .then(function(info){
-    _gmailLinkedEmail = info.email || '';
-    localStorage.setItem('ae_linked_work_email', _gmailLinkedEmail);
-    _actualizarEstadoGmailUI(true);
-    toast('✅ Vinculado: ' + _gmailLinkedEmail, 'ok', 4000);
-  })
-  .catch(function(){ _actualizarEstadoGmailUI(true); });
+function _manejarTokenGmail(tokenResponse){
+  if(!tokenResponse||tokenResponse.error){_actualizarEstadoGmailUI(false);return;}
+  _gmailToken=tokenResponse.access_token;
+  _gmailTokenExp=Date.now()+(tokenResponse.expires_in-60)*1000;
+  fetch('https://www.googleapis.com/oauth2/v3/userinfo',{headers:{Authorization:'Bearer '+_gmailToken}})
+  .then(function(r){return r.json();})
+  .then(function(info){_gmailLinkedEmail=info.email||'';localStorage.setItem('ae_linked_work_email',_gmailLinkedEmail);_actualizarEstadoGmailUI(true);toast('\u2705 Vinculado: '+_gmailLinkedEmail,'ok',4000);})
+  .catch(function(){_actualizarEstadoGmailUI(true);});
 }
-
-function _vincularCorreoInstitucional() {
-  if (!window.google || !window.google.accounts || !GOOG_CLIENT_ID) {
-    toast('⚠ Google no disponible o Client ID no configurado', 'err', 4000); return;
-  }
-  var instEmail = localStorage.getItem('av_email_institucional') || '';
-  var cfg = {
-    client_id: GOOG_CLIENT_ID,
-    scope: 'https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/userinfo.email',
-    callback: _manejarTokenGmail,
-    error_callback: function(e){ toast('⚠ Error al vincular Gmail: '+e.type,'err',4000); },
-    prompt: 'select_account',
-  };
-  if (instEmail) cfg.login_hint = instEmail;
-  _gmailTokenClient = google.accounts.oauth2.initTokenClient(cfg);
+function _vincularCorreoInstitucional(){
+  if(!window.google||!window.google.accounts||!GOOG_CLIENT_ID){toast('\u26a0 Google no disponible o Client ID no configurado','err',4000);return;}
+  var ie=localStorage.getItem('av_email_institucional')||'';
+  var cfg={client_id:GOOG_CLIENT_ID,scope:'https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/userinfo.email',callback:_manejarTokenGmail,error_callback:function(e){toast('\u26a0 Error: '+e.type,'err',4000);},prompt:'select_account'};
+  if(ie)cfg.login_hint=ie;
+  _gmailTokenClient=google.accounts.oauth2.initTokenClient(cfg);
   _gmailTokenClient.requestAccessToken();
 }
-
-function _desconectarGmail() {
-  if (_gmailToken && window.google && window.google.accounts) {
-    google.accounts.oauth2.revoke(_gmailToken, function(){});
-  }
-  _gmailToken=null; _gmailTokenExp=0; _gmailLinkedEmail='';
-  localStorage.removeItem('ae_linked_work_email');
-  _actualizarEstadoGmailUI(false);
-  toast('Cuenta institucional desvinculada','info',2500);
+function _desconectarGmail(){
+  if(_gmailToken&&window.google&&window.google.accounts)google.accounts.oauth2.revoke(_gmailToken,function(){});
+  _gmailToken=null;_gmailTokenExp=0;_gmailLinkedEmail='';
+  localStorage.removeItem('ae_linked_work_email');_actualizarEstadoGmailUI(false);
+  toast('Cuenta desvinculada','info',2500);
 }
-
-function _getGmailToken() {
-  if (_gmailToken && Date.now() < _gmailTokenExp) return _gmailToken;
-  if (_gmailTokenClient) _gmailTokenClient.requestAccessToken({ prompt:'' });
+function _getGmailToken(){
+  if(_gmailToken&&Date.now()<_gmailTokenExp)return _gmailToken;
+  if(_gmailTokenClient)_gmailTokenClient.requestAccessToken({prompt:''});
   return null;
 }
-
-function _actualizarEstadoGmailUI(conectado) {
-  var badge    = document.getElementById('gmailStatusBadge');
-  var secLogin = document.getElementById('gmailBtnLogin');
-  var secCon   = document.getElementById('gmailBtnConectado');
-  var emailLbl = document.getElementById('gmailEmailLabel');
-  if (!badge) return;
-  if (conectado && _gmailLinkedEmail) {
-    badge.textContent = 'Conectado como: ' + _gmailLinkedEmail;
-    badge.style.color = '#34C759';
-    if (secLogin) secLogin.style.display = 'none';
-    if (secCon)   secCon.style.display   = 'block';
-    if (emailLbl) emailLbl.textContent    = _gmailLinkedEmail;
-  } else {
-    badge.textContent = 'Sin sesión iniciada — los correos se abren en el navegador';
-    badge.style.color = '#8E8E93';
-    if (secLogin) secLogin.style.display = 'block';
-    if (secCon)   secCon.style.display   = 'none';
+function _actualizarEstadoGmailUI(conectado){
+  var badge=document.getElementById('gmailStatusBadge');
+  var secL=document.getElementById('gmailBtnLogin');
+  var secC=document.getElementById('gmailBtnConectado');
+  var emailLbl=document.getElementById('gmailEmailLabel');
+  if(!badge)return;
+  if(conectado&&_gmailLinkedEmail){
+    badge.textContent='Conectado: '+_gmailLinkedEmail;badge.style.color='#34C759';
+    if(secL)secL.style.display='none';if(secC)secC.style.display='block';
+    if(emailLbl)emailLbl.textContent=_gmailLinkedEmail;
+  }else{
+    badge.textContent='Sin sesión — los correos se abren en el navegador';badge.style.color='#8E8E93';
+    if(secL)secL.style.display='block';if(secC)secC.style.display='none';
   }
 }
-
-// Envío directo via Gmail API (token institucional activo)
-function _enviarViaGmailAPI(tok, toEmail, asunto, cuerpo, ccEmail, nombreAlumno) {
-  var CRLF = '\r\n';
-  var from = _gmailLinkedEmail ? ('From: ' + _gmailLinkedEmail + CRLF) : '';
-  var headers = from
-    + 'To: ' + toEmail + CRLF
-    + (ccEmail ? ('Cc: ' + ccEmail + CRLF) : '')
-    + ('Subject: =?UTF-8?B?' + btoa(unescape(encodeURIComponent(asunto))) + '?=' + CRLF)
-    + 'MIME-Version: 1.0' + CRLF
-    + 'Content-Type: text/plain; charset=UTF-8' + CRLF
-    + 'Content-Transfer-Encoding: base64' + CRLF;
-  var body = CRLF + btoa(unescape(encodeURIComponent(cuerpo)));
-  var raw  = btoa(headers + body).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-  fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
-    method: 'POST',
-    headers: { 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ raw: raw })
-  })
-  .then(function(r){ if (!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+function _enviarViaGmailAPI(tok,toEmail,asunto,cuerpo,ccEmail,nombreAlumno){
+  var CRLF='\r\n';
+  var from=_gmailLinkedEmail?'From: '+_gmailLinkedEmail+CRLF:'';
+  var hdrs=from+'To: '+toEmail+CRLF+(ccEmail?'Cc: '+ccEmail+CRLF:'')
+    +'Subject: =?UTF-8?B?'+btoa(unescape(encodeURIComponent(asunto)))+'?='+CRLF
+    +'MIME-Version: 1.0'+CRLF+'Content-Type: text/plain; charset=UTF-8'+CRLF
+    +'Content-Transfer-Encoding: base64'+CRLF;
+  var body=CRLF+btoa(unescape(encodeURIComponent(cuerpo)));
+  var raw=btoa(hdrs+body).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send',{method:'POST',
+    headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
+    body:JSON.stringify({raw:raw})})
+  .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
   .then(function(){
-    toast('\u2705 Enviado desde '+(_gmailLinkedEmail||'cuenta institucional'), 'ok', 4000);
-    if (typeof _marcarCorreoEnviado === 'function' && nombreAlumno)
-      _marcarCorreoEnviado(nombreAlumno, toEmail, '', 0);
-    if (typeof _renderCorreoTab === 'function') _renderCorreoTab();
-    if (typeof _apoderadoEmails !== 'undefined' && nombreAlumno) {
-      _apoderadoEmails[nombreAlumno.trim().toUpperCase()] = toEmail.toLowerCase();
-      if (typeof _saveApoderadoEmails === 'function') _saveApoderadoEmails();
-    }
+    toast('\u2705 Enviado desde '+(_gmailLinkedEmail||'cuenta institucional'),'ok',4000);
+    if(typeof _marcarCorreoEnviado==='function'&&nombreAlumno)_marcarCorreoEnviado(nombreAlumno,toEmail,'',0);
+    if(typeof _renderCorreoTab==='function')_renderCorreoTab();
+    if(typeof _apoderadoEmails!=='undefined'&&nombreAlumno){_apoderadoEmails[nombreAlumno.trim().toUpperCase()]=toEmail.toLowerCase();if(typeof _saveApoderadoEmails==='function')_saveApoderadoEmails();}
   })
   .catch(function(err){
-    console.error('[ArtEval] Gmail API:', err);
-    toast('\u26a0 Error al enviar \u2014 abriendo Gmail en browser', 'err', 5000);
-    var url = 'https://mail.google.com/mail/?view=cm'
-      + '&to='   + encodeURIComponent(toEmail)
-      + '&su='   + encodeURIComponent(asunto)
-      + '&body=' + encodeURIComponent(cuerpo)
-      + (ccEmail ? '&cc=' + encodeURIComponent(ccEmail) : '');
-    window.open(url, '_blank');
+    toast('\u26a0 Error al enviar \u2014 abriendo Gmail en browser','err',5000);
+    var url='https://mail.google.com/mail/?view=cm&to='+encodeURIComponent(toEmail)+'&su='+encodeURIComponent(asunto)+'&body='+encodeURIComponent(cuerpo)+(ccEmail?'&cc='+encodeURIComponent(ccEmail):'');
+    window.open(url,'_blank');
   });
 }
-
 function initGoogleAuth() {
   if (!window.google || !window.google.accounts) {
     // GIS aún no cargó — reintenta en 500ms
@@ -12571,14 +12408,11 @@ function initGoogleAuth() {
     auto_select: true,
   });
 
-  var _instHint=localStorage.getItem('av_email_institucional')||'';
-  var _tcCfg={
-    client_id:GOOG_CLIENT_ID, scope:DRIVE_SCOPE, callback:_onAccessToken,
-    error_callback:function(err){_updateCloudUI('error');},
-    prompt:'select_account',
-  };
-  if(_instHint)_tcCfg.login_hint=_instHint;
-  _gisTokenClient=google.accounts.oauth2.initTokenClient(_tcCfg);
+  var _ih=localStorage.getItem('av_email_institucional')||'';
+  var _tc={client_id:GOOG_CLIENT_ID,scope:DRIVE_SCOPE,callback:_onAccessToken,
+    error_callback:function(e){_updateCloudUI('error');},prompt:'select_account'};
+  if(_ih)_tc.login_hint=_ih;
+  _gisTokenClient=google.accounts.oauth2.initTokenClient(_tc);
 
   // Renderizar botón de One Tap
   google.accounts.id.renderButton(
@@ -12818,7 +12652,6 @@ async function guardarYLiberarLocalStorage() {
         gmailAcctIdx:      localStorage.getItem('av_gmail_acct_idx')      || '1',
         rubricaActiva:     rubricaActiva,
         geminiKey:         localStorage.getItem('av_gemini_key')          || '',
-        linkedWorkEmail:   localStorage.getItem('ae_linked_work_email')   || '',
       },
     };
   } catch(snapErr) {
@@ -12916,9 +12749,9 @@ async function guardarYLiberarLocalStorage() {
 // Compara conteo local vs Drive y resuelve la desincronización automáticamente.
 // LOCAL SIEMPRE GANA si tiene más registros (push-priority).
 function _hayEdicionSinSync() {
-  var lastEdit = localStorage.getItem('av_last_edit_ts')    || '';
-  var lastSync = localStorage.getItem('av_last_drive_sync') || '';
-  return lastEdit && lastSync && lastEdit > lastSync;
+  var le=localStorage.getItem('av_last_edit_ts')||'';
+  var ls=localStorage.getItem('av_last_drive_sync')||'';
+  return le&&ls&&le>ls;
 }
 
 async function _smartSyncOnConnect() {
@@ -13248,15 +13081,13 @@ async function syncFromDrive() {
       });
       try{localStorage.setItem('av_rubricas',JSON.stringify(rubricas));}catch(e){}
     })();
-    // Fusionar apoderadoEmails (Drive aporta, local prevalece)
     if (raw.apoderadoEmails && Object.keys(raw.apoderadoEmails).length) {
       Object.keys(raw.apoderadoEmails).forEach(function(k){
         if(!_apoderadoEmails[k]) _apoderadoEmails[k]=raw.apoderadoEmails[k];
       });
       try { localStorage.setItem('av_apoderado_emails', JSON.stringify(_apoderadoEmails)); } catch(e) {}
     }
-    // Fusionar historialCorreos (conservar más reciente)
-    if (raw.historialCorreos && Object.keys(raw.historialCorreos).length) {
+    if (raw.historialCorreos && Object.keys(raw.historialCorreos||{}).length) {
       Object.keys(raw.historialCorreos).forEach(function(k){
         if(!_historialCorreos[k]) _historialCorreos[k]=raw.historialCorreos[k];
         else if(raw.historialCorreos[k].fecha&&_historialCorreos[k].fecha&&
@@ -13265,16 +13096,14 @@ async function syncFromDrive() {
       });
       try { localStorage.setItem('av_historial_correos', JSON.stringify(_historialCorreos)); } catch(e) {}
     }
-    // Restaurar config del profesor
     if (raw.config) {
-      var cfg=raw.config;
-      if(cfg.emailProf)          localStorage.setItem('av_email_prof',cfg.emailProf);
-      if(cfg.emailColegio)       localStorage.setItem('av_email_colegio',cfg.emailColegio);
-      if(cfg.emailUTP)           localStorage.setItem('av_email_utp',cfg.emailUTP);
-      if(cfg.emailInstitucional) localStorage.setItem('av_email_institucional',cfg.emailInstitucional);
-      if(cfg.gmailAcctIdx)       localStorage.setItem('av_gmail_acct_idx',cfg.gmailAcctIdx);
-      if(cfg.geminiKey)          localStorage.setItem('av_gemini_key',cfg.geminiKey);
-      if(cfg.linkedWorkEmail)    { localStorage.setItem('ae_linked_work_email',cfg.linkedWorkEmail); }
+      var _cfg=raw.config;
+      if(_cfg.emailProf)          localStorage.setItem('av_email_prof',_cfg.emailProf);
+      if(_cfg.emailColegio)       localStorage.setItem('av_email_colegio',_cfg.emailColegio);
+      if(_cfg.emailUTP)           localStorage.setItem('av_email_utp',_cfg.emailUTP);
+      if(_cfg.emailInstitucional) localStorage.setItem('av_email_institucional',_cfg.emailInstitucional);
+      if(_cfg.geminiKey)          localStorage.setItem('av_gemini_key',_cfg.geminiKey);
+      if(_cfg.linkedWorkEmail)    localStorage.setItem('ae_linked_work_email',_cfg.linkedWorkEmail);
     }
     // Restaurar historial de correos enviados
     if (raw.historialCorreos && Object.keys(raw.historialCorreos).length) {
