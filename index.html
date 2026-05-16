@@ -1851,6 +1851,8 @@ media (prefers-color-scheme: dark) {
 button, .btn, .tab, .curso-chip, .reg-card, .config-card, input, select {
   -webkit-tap-highlight-color: transparent;
 }
+p-highlight-color: transparent;
+}
 </style>
 
 <script>
@@ -8985,8 +8987,10 @@ function _renderCorreoTab(){
       ta.style.height='auto';
       ta.style.height=Math.max(360, ta.scrollHeight+24)+'px';
     });
-    // Reajustar cuando se abre un details
+    // Reajustar cuando se abre un details — flag evita duplicar listeners
     ct.querySelectorAll('details').forEach(function(det){
+      if (det._toggleBound) return; // ya tiene listener
+      det._toggleBound = true;
       det.addEventListener('toggle', function(){
         var ta=det.querySelector('textarea.email-preview');
         if(ta && det.open){
@@ -12492,6 +12496,7 @@ async function guardarYLiberarLocalStorage() {
         gmailAcctIdx:      localStorage.getItem('av_gmail_acct_idx')      || '1',
         rubricaActiva:     rubricaActiva,
         geminiKey:         localStorage.getItem('av_gemini_key')          || '',
+        linkedWorkEmail:   localStorage.getItem('ae_linked_work_email')   || '',
       },
     };
   } catch(snapErr) {
