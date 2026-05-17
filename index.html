@@ -2302,6 +2302,62 @@ button, .btn, .tab, .curso-chip, .reg-card, .config-card, input, select {
   font-size: 11px; font-family: var(--font-mono);
   padding: 3px 10px; border-radius: 20px;
 }
+/* ══════════════════════════════════════════════════════════
+   ArtEval v.147 — Layout stability fixes
+   Prevents content sections from collapsing when empty,
+   causing toolbars/bars to float at bottom of viewport.
+   ══════════════════════════════════════════════════════════ */
+
+/* Minimum height for all main tab sections */
+#tab-estudio,
+#tab-progreso,
+#tab-comunica,
+#tab-sistema {
+  min-height: calc(100vh - 160px);
+}
+
+/* Minimum height for sub-sections too */
+#progreso-sec-estadisticas,
+#progreso-sec-progreso-oa,
+#estudio-sec-cursos,
+#estudio-sec-registros,
+#estudio-sec-duplicados,
+#estudio-sec-inicio,
+#estudio-sec-evaluar,
+#sistema-sec-drive,
+#sistema-sec-rubricas,
+#sistema-sec-config {
+  min-height: calc(100vh - 220px);
+}
+
+/* statsContent and progresoContent: show empty state when no data */
+#statsContent:empty::after,
+#progresoContent:empty::after {
+  content: '';
+  display: block;
+  min-height: 200px;
+}
+
+/* Empty state styling for content areas */
+.content-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  color: var(--text3);
+  min-height: 200px;
+}
+.content-empty-state svg { opacity: 0.25; margin-bottom: 12px; }
+.content-empty-state p { font-size: 14px; margin-bottom: 4px; }
+.content-empty-state small { font-size: 12px; opacity: 0.7; }
+
+/* Sticky context bar for estadisticas — visible always under subnav */
+#progreso-sec-estadisticas > div[style*="position:sticky"] {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
 </style>
 
 <script>
@@ -3209,38 +3265,44 @@ button, .btn, .tab, .curso-chip, .reg-card, .config-card, input, select {
 
   <div id="tab-progreso" style="display:none;opacity:0;transition:opacity 0.2s ease;">
     <div id="progreso-sec-estadisticas" style="display:none;">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;">
-        <div class="search-wrap">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input class="search-input" type="text" id="buscarEstadisticas" placeholder="Buscar estudiante..." oninput="renderEstadisticas()">
-        </div>
-        <select class="filter-select" id="statsRubrica" onchange="renderEstadisticas()" style="font-size:13px;padding:7px 12px;">
-          <option value="">Todas las rúbricas</option>
-        </select>
-        <select class="filter-select" id="statsCurso" onchange="renderEstadisticas()" style="font-size:13px;padding:7px 12px;">
-          <option value="">Todos los cursos</option>
-        </select>
-        <select class="filter-select" id="statsInstancia" onchange="renderEstadisticas()" style="font-size:13px;padding:7px 12px;">
-          <option value="">Todas las instancias</option>
-        </select>
-      </div>
-      <!-- Controles editables de contexto del curso -->
-      <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;background:var(--bg2);border:1px solid var(--border);border-radius:var(--rad-lg);padding:12px 16px;align-items:center;">
-        <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:180px;">
-          <label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.4px;font-family:'DM Mono',monospace;white-space:nowrap;">Total estudiantes del curso</label>
+      <!-- ── Barra de contexto siempre visible arriba ─────────────── -->
+      <div style="
+        display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;
+        background:var(--bg2);border:0.5px solid var(--border);
+        border-radius:var(--rad-lg);padding:10px 16px;align-items:center;
+        position:sticky;top:156px;z-index:80;">
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+          <label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;font-family:'DM Mono',monospace;white-space:nowrap;">Total del curso</label>
           <input type="number" id="totalAlumnosCurso" min="1" max="60" value="45"
-            style="width:70px;font-size:16px;font-weight:700;font-family:'DM Mono',monospace;padding:4px 8px;border:1px solid var(--border2);border-radius:var(--rad);background:var(--bg3);color:var(--text);text-align:center;"
+            style="width:58px;font-size:15px;font-weight:700;font-family:'DM Mono',monospace;padding:3px 6px;border:0.5px solid var(--border2);border-radius:var(--rad);background:var(--bg3);color:var(--text);text-align:center;"
             oninput="renderEstadisticas()">
         </div>
-        <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:180px;">
-          <label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.4px;font-family:'DM Mono',monospace;white-space:nowrap;">Trabajos entregados</label>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+          <label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;font-family:'DM Mono',monospace;white-space:nowrap;">Entregados</label>
           <input type="number" id="trabajosEntregados" min="0" max="60" value=""
             placeholder="auto"
-            style="width:70px;font-size:16px;font-weight:700;font-family:'DM Mono',monospace;padding:4px 8px;border:1px solid var(--border2);border-radius:var(--rad);background:var(--bg3);color:var(--text);text-align:center;"
+            style="width:58px;font-size:15px;font-weight:700;font-family:'DM Mono',monospace;padding:3px 6px;border:0.5px solid var(--border2);border-radius:var(--rad);background:var(--bg3);color:var(--text);text-align:center;"
             oninput="renderEstadisticas()">
-          <span style="font-size:10px;color:var(--text3);font-style:italic;">vacío = usar evaluados</span>
+          <span style="font-size:10px;color:var(--text3);font-style:italic;">vacío=auto</span>
+        </div>
+        <!-- Filtros compactos en la misma barra -->
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-left:auto;">
+          <div class="search-wrap" style="min-width:140px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input class="search-input" type="text" id="buscarEstadisticas" placeholder="Buscar..." oninput="renderEstadisticas()">
+          </div>
+          <select class="filter-select" id="statsRubrica" onchange="renderEstadisticas()" style="font-size:12px;padding:5px 10px;">
+            <option value="">Todas las rúbricas</option>
+          </select>
+          <select class="filter-select" id="statsCurso" onchange="renderEstadisticas()" style="font-size:12px;padding:5px 10px;">
+            <option value="">Todos los cursos</option>
+          </select>
+          <select class="filter-select" id="statsInstancia" onchange="renderEstadisticas()" style="font-size:12px;padding:5px 10px;">
+            <option value="">Todas las instancias</option>
+          </select>
         </div>
       </div>
+      <!-- Contenido dinámico de estadísticas -->
       <div id="statsContent"></div>
     </div>
     <div id="progreso-sec-progreso-oa" style="display:none;">
@@ -9427,7 +9489,15 @@ function showTab(name) {
   } else if (mappedName === 'progreso') {
     // Registros ya no está en progreso; mostrar estadísticas por defecto
     try { if(_progresoSubTab==='registros') _progresoSubTab='estadisticas'; } catch(e) {}
-    try { actualizarConteo(); if(typeof _renderDashChart==='function')_renderDashChart('todo'); } catch(e) {}
+    try { actualizarConteo(); } catch(e) {}
+    // Renderizar la sub-sección activa inmediatamente
+    try {
+      if (_progresoSubTab === 'estadisticas' || !_progresoSubTab) {
+        if (typeof renderEstadisticas === 'function') renderEstadisticas();
+      } else if (_progresoSubTab === 'progreso-oa') {
+        if (typeof renderProgreso === 'function') renderProgreso();
+      }
+    } catch(e) { console.warn('[ArtEval] progreso render:', e.message); }
   } else if (mappedName === 'comunica') {
     try { renderComunica(); } catch(e) { console.warn('[ArtEval] renderComunica:', e.message); }
   } else if (mappedName === 'sistema') {
@@ -9513,8 +9583,11 @@ function showProgresoSub(sub) {
     if (sec) sec.style.display = isA ? 'block' : 'none';
   });
   try {
-    if (sub === 'estadisticas')  { actualizarConteo(); if(typeof _renderDashChart==='function')_renderDashChart('todo'); }
-    if (sub === 'progreso-oa')   { if(typeof renderProgreso==='function')renderProgreso(); }
+    if (sub === 'estadisticas') {
+      actualizarConteo();
+      if (typeof renderEstadisticas === 'function') renderEstadisticas();
+    }
+    if (sub === 'progreso-oa') { if(typeof renderProgreso==='function')renderProgreso(); }
   } catch(e) { console.warn('[ArtEval] showProgresoSub:', e.message); }
 }
 function showSistemaSub(sub) {
