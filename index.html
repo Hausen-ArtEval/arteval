@@ -2468,7 +2468,7 @@ button, .btn, .tab, .curso-chip, .reg-card, .config-card, input, select {
           class="global-search-input"
           type="text"
           placeholder="Buscar estudiante en 3°–6° básico…"
-          oninput="mostrarAutocompletado(this.value)"
+          oninput="mostrarAutocompletado(this.value);_limpiarCanvasParaNuevoAlumno();"
           onkeydown="navAutocompletado(event)"
           onfocus="mostrarAutocompletado(this.value)"
           onblur="setTimeout(ocultarAutocompletado,180)"
@@ -3886,6 +3886,8 @@ let _acIdx = -1;
 let evaluacion  = {};
 let fotoRefData  = null; // base64 de imagen referencial
 let stream      = null;
+let _captureForNombre = ''; // tracks which student the current canvas belongs to
+let _captureTimestamp = 0;  // ms timestamp of last capture
 let autoMode    = false;
 let autoInterval = null;
 let analizando  = false;
@@ -4381,7 +4383,29 @@ function siguienteAlumnoPendiente() {
 }
 
 
-function limpiarEvaluacion() { evaluacion = {}; renderCriterios(); }
+function limpiarEvaluacion() { evaluacion = {}; renderCriterios(); _limpiarCanvasParaNuevoAlumno(); }
+
+// Limpia el canvas cuando se cambia de alumno — previene cruce de imágenes
+function _limpiarCanvasParaNuevoAlumno() {
+  try {
+    const canvas = document.getElementById('canvasEl');
+    if (canvas && canvas.width > 1) {
+      // Sólo limpiar si el nombre actual es diferente al de la última captura
+      var nombreActual = (document.getElementById('inputNombre')?.value||'').trim().toUpperCase();
+      if (nombreActual && _captureForNombre && nombreActual !== _captureForNombre) {
+        canvas.width = 1; canvas.height = 1;
+        _captureForNombre = '';
+        _captureTimestamp = 0;
+        // También limpiar el badge de análisis si existe
+        var liveBadge = document.getElementById('liveBadge');
+        if (liveBadge && liveBadge.textContent !== '● EN VIVO') {
+          liveBadge.textContent = '● EN VIVO';
+          liveBadge.className = 'cam-badge live';
+        }
+      }
+    }
+  } catch(e) {}
+}
 
 // ═══════════════════════════════════════════════════════
 //  CÁMARA
@@ -4466,6 +4490,11 @@ function capturarFrame() {
   w = Math.floor(w*ratio); vh = Math.floor(vh*ratio);
   canvas.width = w; canvas.height = vh;
   canvas.getContext('2d').drawImage(video, 0, 0, w, vh);
+  // ── Registrar a qué alumno pertenece esta captura ─────────
+  const nombreActual = (document.getElementById('inputNombre')?.value||'').trim().toUpperCase();
+  _captureForNombre = nombreActual;
+  _captureTimestamp = Date.now();
+  // ─────────────────────────────────────────────────────────
   const webp = canvas.toDataURL('image/webp', 0.6);
   return (webp.startsWith('data:image/webp') ? webp : canvas.toDataURL('image/jpeg', 0.65)).split(',')[1];
 }
@@ -4842,13 +4871,28 @@ function guardar() {
     localStorage.setItem('av_pending_queue', JSON.stringify(_queue));
   } catch(e) { /* silencioso si localStorage lleno */ }
   enviarASheets(nuevoReg);
-  // Intentar capturar imagen del canvas si hay trabajo visible
+  // Guardar imagen SOLO si fue capturada para ESTE alumno (evita cruce de imágenes)
   try {
     const canvas = document.getElementById('canvasEl');
-    if (canvas && canvas.width > 0 && canvas.height > 0) {
+    const nombreGuardado = (nuevoReg.nombre||'').trim().toUpperCase();
+    const capturaFresca = _captureTimestamp > 0 && (Date.now() - _captureTimestamp) < 300000; // max 5 min
+    const capturaEsDeEsteAlumno = _captureForNombre && (
+      _captureForNombre === nombreGuardado ||
+      // Tolerancia fuzzy: 80% de los caracteres coinciden (mismo apellido, diferente orden)
+      (nombreGuardado.length > 0 && _captureForNombre.length > 0 &&
+       nombreGuardado.split(' ').some(function(p){ return _captureForNombre.includes(p) && p.length > 2; }))
+    );
+    if (canvas && canvas.width > 0 && canvas.height > 0 && capturaFresca && capturaEsDeEsteAlumno) {
       nuevoReg.imagenBase64 = canvas.toDataURL('image/jpeg', 0.4);
+    } else if (canvas && canvas.width > 0 && !capturaEsDeEsteAlumno && _captureForNombre) {
+      // La imagen en canvas pertenece a otro alumno — NO contaminar
+      console.warn('[ArtEval] Canvas descartado: pertenece a "' + _captureForNombre + '", no a "' + nombreGuardado + '"');
     }
-  } catch(e) {}
+    // Limpiar canvas después de guardar (evita que el siguiente alumno herede la imagen)
+    if (canvas) { canvas.width = 1; canvas.height = 1; }
+    _captureForNombre = '';
+    _captureTimestamp = 0;
+  } catch(e) { console.warn('[ArtEval] canvas save error:', e); }
   // Auto-agregar a listaCursos si no existe
   sincronizarRegistrosACursos();
   evaluacion = {};
@@ -4880,6 +4924,12 @@ function guardar() {
 
 // ── Guardar trabajo NO ENTREGADO ──
 function guardarNoEntregado() {
+  // Asegurar que el canvas no contamine registros NE
+  try {
+    const cv = document.getElementById('canvasEl');
+    if (cv) { cv.width = 1; cv.height = 1; }
+    _captureForNombre = ''; _captureTimestamp = 0;
+  } catch(e) {}
   const nombre = document.getElementById('inputNombre')?.value.trim();
   const curso  = document.getElementById('inputCurso')?.value.trim();
   if (!nombre) {
