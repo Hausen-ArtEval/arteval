@@ -3246,20 +3246,30 @@ button, .btn, .tab, .curso-chip, .reg-card, .config-card, input, select {
     
   </div>
 
-    <div id="estudio-sec-duplicados" style="display:none;padding:16px;" style="display:none;padding:16px;">
-      <div class="config-card">
-        <h3 style="margin-bottom:14px;display:flex;align-items:center;gap:8px;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          Limpieza de Duplicados
-        </h3>
-        <div style="font-size:12px;color:var(--text3);margin-bottom:14px;line-height:1.6;">
-          Detecta registros con nombres similares (≥90%) en el mismo curso y permite fusionarlos manteniendo el más reciente.
+    <div id="estudio-sec-duplicados" style="display:none;padding:16px;">
+      <!-- Panel de Duplicados — escaneado automático al abrir -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+        <div>
+          <div style="font-size:16px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            Centro de Resolución de Conflictos
+          </div>
+          <div style="font-size:12px;color:var(--text3);margin-top:3px;">
+            Detecta y fusiona nombres duplicados (≥90% similitud) en el mismo curso.
+          </div>
         </div>
-        <button class="btn btn-primary" onclick="renderPanelDuplicados('panelDuplicadosContainer')" style="margin-bottom:14px;">
-          🔍 Buscar duplicados ahora
-        </button>
-        <div id="panelDuplicadosContainer"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn" onclick="renderPanelDuplicados('panelDuplicadosContainer')" style="font-size:13px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            Reescanear
+          </button>
+          <button class="btn btn-primary" onclick="deduplicarYFusionarTodos()" style="font-size:13px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Fusionar todos automáticamente
+          </button>
+        </div>
       </div>
+      <div id="panelDuplicadosContainer"></div>
     </div>
   </div>
 
@@ -5284,8 +5294,27 @@ function renderRegistros() {
     nombreCount[k] = (nombreCount[k]||0) + 1;
   });
   const hayDuplicados = Object.values(nombreCount).some(function(v){ return v > 1; });
+  // btnDuplicados en Registros — siempre oculto (los dups van a su sección)
   const btnDup = document.getElementById('btnDuplicados');
-  if (btnDup) btnDup.style.display = hayDuplicados ? 'inline-block' : 'none';
+  if (btnDup) btnDup.style.display = 'none';
+  // Actualizar badge contador en el botón de subnav Duplicados
+  var dupSubBtn = document.querySelector('[data-sub="duplicados"]');
+  if (dupSubBtn) {
+    var existingBadge = dupSubBtn.querySelector('.dup-count-badge');
+    if (hayDuplicados) {
+      var dupCount = Object.values(nombreCount).filter(function(v){ return v > 1; }).length;
+      if (!existingBadge) {
+        var badge = document.createElement('span');
+        badge.className = 'dup-count-badge';
+        badge.style.cssText = 'background:#FF3B30;color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:20px;font-family:var(--font-mono);margin-left:3px;';
+        dupSubBtn.appendChild(badge);
+        existingBadge = badge;
+      }
+      existingBadge.textContent = dupCount;
+    } else if (existingBadge) {
+      existingBadge.remove();
+    }
+  }
 
   // ── Vista Libro de Clases ──
   if (_vistaLibroActiva) {
@@ -5325,7 +5354,7 @@ function renderRegistros() {
     card.innerHTML = `
       <div class="reg-avatar">${iniciales(r.nombre)}</div>
       <div class="reg-info">
-        <div class="reg-nombre">${r.nombre||'Sin nombre'}${esDup?'<span class="dup-badge">DUP</span>':''}${r.pie?'<span class="pie-badge"><svg width="12" height="12" viewBox="0 0 100 100" fill="#FF9500" style="flex-shrink:0;vertical-align:middle;display:inline-block" aria-label="PIE"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="#FF9500" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/></svg>PIE</span>':''} <span class="instancia-badge" onclick="event.stopPropagation();filtrarPorInstancia('${instancia}')" title="Filtrar por ${instancia}" style="cursor:pointer;">${instancia}</span>${r.noEntregado?'<span class="no-entregado-badge">✕ No entregado</span>':''}</div>
+        <div class="reg-nombre">${r.nombre||'Sin nombre'}${r.pie?'<span class="pie-badge"><svg width="12" height="12" viewBox="0 0 100 100" fill="#FF9500" style="flex-shrink:0;vertical-align:middle;display:inline-block" aria-label="PIE"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="#FF9500" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/></svg>PIE</span>':''} <span class="instancia-badge" onclick="event.stopPropagation();filtrarPorInstancia('${instancia}')" title="Filtrar por ${instancia}" style="cursor:pointer;">${instancia}</span>${r.noEntregado?'<span class="no-entregado-badge">✕ No entregado</span>':''}</div>
         <div class="reg-meta">${r.fecha||''}${r.curso?' · '+r.curso:''}${r.instancia&&r.instancia!=='Evaluación 1'?' · '+r.instancia:''}${r.rubricaNombre?' · '+r.rubricaNombre:''} · ${r.pts??'?'}/${r.maxPts??'?'} pts</div>
       </div>
       <span class="reg-badge" style="background:${bg};color:${clr}">${nota.toFixed(1)} — ${nLabel}</span>
@@ -5559,7 +5588,11 @@ function actualizarFiltros() {
 //  GESTIÓN DE DUPLICADOS
 // ═══════════════════════════════════════════════════════
 function verDuplicados() {
-  // Agrupar por nombre + rúbrica: solo es duplicado si coinciden ambos
+  // Redirige a la sección independiente de Duplicados en la subbarra de Estudio
+  // (ya no abre modal — la resolución se hace en el panel dedicado)
+  _activarTab(document.getElementById('tabBtnEstudio'), 'estudio', 'duplicados');
+  return; // el panel se renderiza via showEstudioSub('duplicados')
+  // ── Legacy code below kept for compat (unreachable) ──
   const grupos = {};
   registros.forEach((r, idx) => {
     const k = (r.nombre||'').trim().toUpperCase() + '|' + (r.rubricaNombre||'').trim().toUpperCase();
@@ -5614,11 +5647,9 @@ async function eliminarDesdeDup(idx) {
   actualizarConteo();
   cerrarModal();
   renderRegistros();
-  // Reabrir si quedan más duplicados
-  setTimeout(() => {
-    const grupos = {};
-    registros.forEach(r => { const k=(r.nombre||'').trim().toUpperCase()+'|'+(r.rubricaNombre||'').trim().toUpperCase(); grupos[k]=(grupos[k]||0)+1; });
-    if (Object.values(grupos).some(v=>v>1)) verDuplicados();
+  // Actualizar el panel de duplicados (ya estamos en esa sección)
+  setTimeout(function() {
+    renderPanelDuplicados('panelDuplicadosContainer');
   }, 100);
 }
 
@@ -13160,8 +13191,8 @@ function renderPanelDuplicados(containerId) {
   if (!cont) return;
   var grupos = auditarDuplicados();
   if (!grupos.length) {
-    cont.innerHTML = '<div style="text-align:center;padding:30px;color:#34C759;">'
-      + '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#34C759" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:0 auto 10px;"><polyline points="20 6 9 17 4 12"/></svg>'
+    cont.innerHTML = '<div style="text-align:center;padding:48px 30px;color:#34C759;background:rgba(52,199,89,0.06);border-radius:12px;border:0.5px solid rgba(52,199,89,0.25);">'
+      + '<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#34C759" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:0 auto 12px;"><polyline points="20 6 9 17 4 12"/></svg>'
       + '<div style="font-size:15px;font-weight:700;">Sin duplicados detectados</div>'
       + '<div style="font-size:12px;color:#8E8E93;margin-top:4px;">Todos los registros son únicos</div></div>';
     return;
@@ -14476,7 +14507,21 @@ function _activarTab(btnEl, tabName, subTab) {
     try { showEstudioSub(subTab); } catch(e) {}
   }
 
-  // 5. Mostrar subnav: Inicio y Evaluar NO muestran subnav.
+  // 5. Resetear filtro de aula al cambiar de tab principal
+  //    evita que "Pendientes" o "PIE" queden activos al volver a Estudio
+  if (typeof _aulaFiltro !== 'undefined' && tabName !== 'estudio') {
+    _aulaFiltro = 'todos';
+    var segCtrl = document.getElementById('aulaSegCtrl');
+    if (segCtrl) {
+      segCtrl.querySelectorAll('button').forEach(function(b) {
+        var isT = b.dataset.seg === 'todos';
+        b.classList.toggle('seg-active', isT);
+        b.removeAttribute('style');
+      });
+    }
+  }
+
+  // 6. Mostrar subnav: Inicio y Evaluar NO muestran subnav.
   //    Solo Estudio (data-maintab='cursos') muestra estudioSubNav.
   var maintab = btnEl ? (btnEl.dataset.maintab || tabName) : tabName;
   _mostrarSubnav(tabName, maintab);
