@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v63">
+<meta name="arteval-version" content="v146">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -123,6 +123,28 @@
 
 /* ── RESET ──────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── RESET GLOBAL DE BOTONES ─────────────────────────────────
+   Elimina el borde y aspecto nativo del navegador en TODOS los
+   <button> del documento. Esto es la base para que cualquier
+   CSS posterior pueda definir el aspecto sin luchar contra el
+   user-agent stylesheet.                                       */
+button {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  border: none;
+  outline: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+}
 html { scroll-behavior: smooth; }
 body {
   font-family: var(--font-ui);
@@ -1032,7 +1054,7 @@ select#inputCurso:focus, select.curso-select:focus { outline: none; border-color
   .pres-nav-btn:disabled { opacity: 0.25; cursor: not-allowed; }
 
   .pres-nav-pos { font-size: 12px; color: #a08060; font-family: var(--font-mono); }
-keyframes presEntrada {
+@keyframes presEntrada {
     from { opacity: 0; transform: translateY(12px); }
     to   { opacity: 1; transform: translateY(0); }
   }
@@ -1439,7 +1461,7 @@ select:focus:not(:focus-visible) { outline: none; }
 }
 
 #autoSaveIndicator.visible { opacity: 1; }
-media (max-width: 768px) {
+@media (max-width: 768px) {
   body { font-size: 15px; }
 
   /* Topbar: ocultar elementos secundarios */
@@ -1480,7 +1502,7 @@ media (max-width: 768px) {
   /* Grid de cursos en dashboard: 2 columnas */
   .dash-grid { grid-template-columns: repeat(2, 1fr) !important; }
 }
-media (max-width: 1024px) and (min-width: 769px) {
+@media (max-width: 1024px) and (min-width: 769px) {
   .sidebar { width: 180px; }
   .content { padding: 16px 20px; }
 
@@ -1490,8 +1512,6 @@ media (max-width: 1024px) and (min-width: 769px) {
   /* Grid dashboard: 3 columnas */
   .dash-grid { grid-template-columns: repeat(3, 1fr) !important; }
 }
-media (prefers-color-scheme: dark) {
-
 @media (prefers-color-scheme: dark) {
   :root {
     --bg:        #141210;
@@ -1865,6 +1885,423 @@ button, .btn, .tab, .curso-chip, .reg-card, .config-card, input, select {
   --ae-shadow-lg: 0 16px 48px rgba(0,0,0,0.16);
   --ae-radius-sm:8px; --ae-radius-md:12px; --ae-radius-lg:16px; --ae-radius-xl:20px;
 }
+
+/* ══════════════════════════════════════════════════════════════
+   ArtEval v.142 — SISTEMA DE NAVEGACIÓN CANÓNICO
+   Única fuente de verdad para toda la navegación:
+   · Barra principal (.tabs / .tab)
+   · Sub-barras (#estudioSubNav etc. / .sub-tab)
+   · Filtros de aula (.seg-ctrl)
+   · Estados: activo / inactivo / hover
+   · Responsive: iPad portrait · iPad landscape · MacBook
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── TOPBAR ─────────────────────────────────────────────────── */
+.topbar {
+  background: rgba(255,255,255,0.97) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border-bottom: 0.5px solid rgba(0,0,0,0.06) !important;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.04) !important;
+}
+
+/* ── BARRA PRINCIPAL: contenedor ────────────────────────────── */
+.tabs {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0 !important;
+  padding: 6px 16px !important;
+  height: 50px !important;
+  background: rgba(255,255,255,0.97) !important;
+  backdrop-filter: blur(24px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+  border-bottom: 0.5px solid rgba(0,0,0,0.07) !important;
+  overflow-x: auto !important;
+  scrollbar-width: none !important;
+  position: sticky !important;
+  top: 56px !important;
+  z-index: 99 !important;
+}
+.tabs::-webkit-scrollbar { display: none !important; }
+
+.tabs-inner {
+  display: flex !important;
+  align-items: center !important;
+  flex: 1 !important;
+  gap: 2px !important;
+  background: transparent !important;
+  overflow-x: auto !important;
+  scrollbar-width: none !important;
+}
+.tabs-inner::-webkit-scrollbar { display: none !important; }
+
+/* ── TAB: botón de la barra principal ───────────────────────── */
+.tab {
+  flex: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  padding: 0 10px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  font-family: -apple-system, 'DM Sans', sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: rgba(60,60,67,0.60) !important;
+  background: transparent !important;
+  border: none !important;
+  border-bottom: none !important;
+  border-radius: 10px !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  min-width: 0 !important;
+  transition: background-color 0.18s ease, color 0.18s ease !important;
+  -webkit-tap-highlight-color: transparent !important;
+  touch-action: manipulation !important;
+  user-select: none !important;
+}
+.tab svg {
+  width: 15px !important;
+  height: 15px !important;
+  flex-shrink: 0 !important;
+  stroke: currentColor !important;
+  stroke-width: 1.5 !important;
+}
+.tab:hover:not(.active) {
+  color: rgba(60,60,67,0.90) !important;
+  background: rgba(0,0,0,0.04) !important;
+}
+
+/* TAB ACTIVO — naranja sólido, texto blanco */
+.tab.active {
+  background-color: #FF9500 !important;
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+  border-radius: 10px !important;
+  border: none !important;
+  border-bottom: none !important;
+  box-shadow: 0 1px 6px rgba(255,149,0,0.30) !important;
+}
+.tab.active svg { stroke: #FFFFFF !important; }
+.tab.active:hover { background-color: #E67E00 !important; }
+
+/* ══════════════════════════════════════════════════════════════
+   SUB-BARRA DE NAVEGACIÓN — Estilo Apple iOS pill-strip
+   
+   Diseño: franja blanca/glass debajo de la barra principal.
+   Los botones son rectángulos con bordes redondeados (pills).
+   Inactivo: gris suave. Activo: naranja #FF9500.
+   Aplica a: Estudio (Cursos|Registros), Progreso, Sistema.
+   ══════════════════════════════════════════════════════════════ */
+
+/* Contenedor de la sub-barra */
+#estudioSubNav,
+#progresoSubNav,
+#sistemaSubNav {
+  display: none !important;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 8px 20px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  width: 100%;
+  box-sizing: border-box;
+  background: transparent;
+}
+#estudioSubNav::-webkit-scrollbar,
+#progresoSubNav::-webkit-scrollbar,
+#sistemaSubNav::-webkit-scrollbar { display: none; }
+
+#estudioSubNav.subnav-visible,
+#progresoSubNav.subnav-visible,
+#sistemaSubNav.subnav-visible {
+  display: flex !important;
+}
+
+/* ── SUBNAV LAYER ── */
+#subnavLayer {
+  position: sticky;
+  top: 106px;
+  z-index: 88;
+  width: 100%;
+  background: #FFFFFF;
+  border-bottom: 0.5px solid rgba(0,0,0,0.08);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.03);
+}
+
+/* ── PILL BUTTON — estado inactivo ─────────────────────────────
+   Rectángulo con esquinas redondeadas (border-radius: 8px).
+   Fondo gris muy suave, visible sobre el blanco de la barra.   */
+.sub-tab {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  padding: 6px 14px !important;
+  font-family: -apple-system, 'DM Sans', sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: #3A3A3C !important;
+  /* Fondo gris visible sobre blanco — el "recuadro" */
+  background: rgba(116,116,128,0.12) !important;
+  border: 0.5px solid rgba(0,0,0,0.06) !important;
+  outline: none !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  min-height: 32px !important;
+  flex-shrink: 0 !important;
+  transition: background-color 0.15s ease, color 0.15s ease,
+              border-color 0.15s ease !important;
+  -webkit-tap-highlight-color: transparent !important;
+  touch-action: manipulation !important;
+  user-select: none !important;
+  letter-spacing: -0.1px !important;
+}
+.sub-tab svg {
+  width: 13px !important;
+  height: 13px !important;
+  flex-shrink: 0 !important;
+  stroke: currentColor !important;
+  stroke-width: 1.8 !important;
+  fill: none !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+}
+.sub-tab:hover:not(.sub-active):not(.active) {
+  background: rgba(116,116,128,0.20) !important;
+  color: #1C1C1E !important;
+  border-color: rgba(0,0,0,0.10) !important;
+}
+
+/* ── PILL BUTTON — estado ACTIVO ───────────────────────────────
+   Fondo naranja sólido #FF9500, texto blanco, sombra sutil.    */
+.sub-tab.sub-active,
+.sub-tab.active {
+  background: #FF9500 !important;
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+  border-color: #FF9500 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 1px 4px rgba(255,149,0,0.35) !important;
+}
+.sub-tab.sub-active svg,
+.sub-tab.active svg { stroke: #FFFFFF !important; }
+.sub-tab.sub-active:hover,
+.sub-tab.active:hover {
+  background: #E67E00 !important;
+  border-color: #E67E00 !important;
+}
+
+/* ── SEG-CTRL: filtro Todos / Pendientes / PIE ──────────────── */
+.seg-ctrl {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  overflow-x: auto !important;
+  scrollbar-width: none !important;
+}
+.seg-ctrl::-webkit-scrollbar { display: none !important; }
+/* Mismo estilo pill que .sub-tab para coherencia visual */
+.seg-ctrl button {
+  font-family: -apple-system, 'DM Sans', sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  padding: 6px 14px !important;
+  min-height: 32px !important;
+  border: 0.5px solid rgba(0,0,0,0.06) !important;
+  border-radius: 8px !important;
+  background: rgba(116,116,128,0.12) !important;
+  color: #3A3A3C !important;
+  cursor: pointer !important;
+  transition: background-color 0.15s ease, color 0.15s ease,
+              border-color 0.15s ease !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  -webkit-tap-highlight-color: transparent !important;
+  touch-action: manipulation !important;
+}
+.seg-ctrl button.seg-active {
+  background: #FF9500 !important;
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+  border-color: #FF9500 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 1px 4px rgba(255,149,0,0.35) !important;
+}
+.seg-ctrl button:not(.seg-active):hover {
+  background: rgba(116,116,128,0.20) !important;
+  color: #1C1C1E !important;
+  border-color: rgba(0,0,0,0.10) !important;
+}
+
+/* ── NE MODAL: Glassmorphism ────────────────────────────────── */
+#menuNE {
+  border-radius: 16px !important;
+  background: rgba(255,255,255,0.92) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.14), 0 0 0 0.5px rgba(0,0,0,0.06) !important;
+  border: none !important;
+  animation: fadeInUp 0.18s ease-out !important;
+}
+
+/* ── CONTENT ────────────────────────────────────────────────── */
+.content {
+  padding: 0 20px 24px !important;
+  max-width: 1100px !important;
+  margin: 0 auto !important;
+  width: 100% !important;
+}
+
+/* Todos los subnavs visibles con estilo pill */
+
+/* El tab-estudio no necesita padding top — la subnav sticky da la separación */
+#tab-estudio { padding-top: 0 !important; }
+
+/* Secciones de estudio: padding lateral coherente con el content */
+#estudio-sec-inicio,
+#estudio-sec-cursos,
+#estudio-sec-evaluar,
+#estudio-sec-registros {
+  padding: 16px 0 0 !important;
+}
+
+/* ── RESPONSIVE ─────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .tabs { padding: 6px 12px !important; height: 48px !important; }
+  .tab { font-size: 12px !important; padding: 0 8px !important; }
+  .tab svg { width: 14px !important; height: 14px !important; }
+  .content { padding: 0 14px 20px !important; }
+}
+@media (max-width: 480px) {
+  .tab span { display: none !important; }
+  .tab { padding: 0 12px !important; flex: 0 0 auto !important; }
+  .sub-tab { font-size: 12px !important; padding: 6px 10px !important; }
+}
+@media (pointer: coarse) {
+  .tab { min-height: 44px !important; }
+  .sub-tab { min-height: 40px !important; padding: 8px 14px !important; }
+  .seg-ctrl button { min-height: 38px !important; padding: 8px 14px !important; }
+}
+
+/* ── DASHBOARD / INICIO ─────────────────────────────────────── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+@media (max-width: 600px) { .stats-grid { grid-template-columns: repeat(2,1fr); } }
+
+.stat-card {
+  background: var(--bg2);
+  border: 0.5px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--rad-lg);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+.stat-val {
+  font-size: 28px; font-weight: 800;
+  color: var(--text); font-family: var(--font-mono);
+  letter-spacing: -1px;
+}
+.stat-lbl {
+  font-size: 10px; color: var(--text3);
+  margin-top: 4px; text-transform: uppercase; letter-spacing: 0.8px;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.dash-card {
+  background: var(--bg2); border: 0.5px solid var(--border);
+  border-radius: var(--rad-lg); padding: 14px 16px;
+  box-shadow: var(--shadow-sm); cursor: pointer;
+  transition: all 0.15s;
+}
+.dash-card:hover {
+  border-color: rgba(255,149,0,0.3);
+  box-shadow: 0 4px 16px rgba(255,149,0,0.08);
+}
+.dash-val {
+  font-size: 28px; font-weight: 700;
+  font-family: var(--font-mono); color: var(--text);
+  line-height: 1; margin-bottom: 4px;
+}
+.dash-lbl {
+  font-size: 11px; color: var(--text3);
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+/* Dashboard course cards */
+.dash-curso-card {
+  background: var(--bg2); border: 0.5px solid var(--border);
+  border-radius: var(--rad-lg); padding: 14px 16px;
+  cursor: pointer; transition: all 0.15s;
+  box-shadow: var(--shadow-sm);
+}
+.dash-curso-card:hover {
+  border-color: var(--accent); box-shadow: var(--shadow);
+  transform: translateY(-1px);
+}
+.dash-curso-card.completo  { border-left: 3px solid var(--green); }
+.dash-curso-card.parcial   { border-left: 3px solid var(--amber); }
+.dash-curso-card.pendiente { border-left: 3px solid var(--red); }
+.dash-curso-card.vacio     { border-left: 3px solid var(--border2); opacity: .6; }
+
+.dash-curso-nombre {
+  font-size: 18px; font-weight: 800;
+  font-family: var(--font-mono); color: var(--text);
+}
+.dash-curso-meta {
+  font-size: 11px; color: var(--text3); margin-top: 4px;
+}
+.dash-progreso-bar {
+  height: 4px; background: var(--bg3);
+  border-radius: 4px; margin: 10px 0 6px; overflow: hidden;
+}
+.dash-progreso-fill {
+  height: 100%; border-radius: 4px; transition: width .4s ease;
+}
+.dash-nota-prom {
+  font-size: 22px; font-weight: 700; font-family: var(--font-mono);
+}
+.dash-estado-badge {
+  display: inline-block; font-size: 9px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  padding: 2px 7px; border-radius: 20px; margin-bottom: 8px;
+}
+.riesgo-list { display: flex; flex-direction: column; gap: 6px; }
+.chart-comparativo svg { display: block; width: 100%; }
+.dash-alerta-wrap-inner { overflow: auto; max-height: 300px; }
+.dash-alerta-curso { margin-bottom: 10px; }
+.dash-alerta-curso-nombre {
+  font-size: 11px; font-weight: 700; color: var(--red);
+  text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px;
+}
+.dash-alerta-alumnos { display: flex; flex-direction: column; }
+.dash-alerta-alumno {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 0; border-top: 0.5px solid var(--border); font-size: 13px;
+}
+.dash-alerta-alumno:first-child { border-top: none; }
+.dash-alerta-alumno:hover { background: var(--bg3); }
+.dashboard-chip {
+  font-size: 11px; font-family: var(--font-mono);
+  padding: 3px 10px; border-radius: 20px;
+}
 </style>
 
 <script>
@@ -1912,6 +2349,7 @@ button, .btn, .tab, .curso-chip, .reg-card, .config-card, input, select {
 })();
 </script>
 </head>
+
 <body>
   <!-- ── SPLASH SCREEN — shows briefly while app initializes ── -->
   <div id="avSplash" style="
@@ -1996,6 +2434,19 @@ button, .btn, .tab, .curso-chip, .reg-card, .config-card, input, select {
         +0 hoy
       </span>
       <button class="btn btn-icon no-print" title="Atajos de teclado (?)" onclick="mostrarShortcuts()" style="font-size:14px;padding:5px 9px;" title="Atajos de teclado"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="M6 8h.001M10 8h.001M14 8h.001M18 8h.001M8 12h.001M12 12h.001M16 12h.001M7 16h10"/></svg></button>
+      <span id="versionBadge" title="Versión actual de ArtEval" style="
+        font-size:10px;font-weight:700;letter-spacing:0.4px;
+        font-family:var(--font-mono);
+        color:var(--text3);
+        padding:3px 8px;
+        border:0.5px solid var(--border);
+        border-radius:6px;
+        background:var(--bg2);
+        white-space:nowrap;
+        cursor:default;
+        user-select:none;
+        opacity:0.7;
+      ">v146</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -2167,82 +2618,224 @@ button, .btn, .tab, .curso-chip, .reg-card, .config-card, input, select {
   </div>
 
   <!-- TABS -->
-  <div class="tabs">
-    <button class="tab" data-tab="inicio" onclick="showTab('inicio')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Inicio</button>
-    <button class="tab active" data-tab="evaluar" onclick="showTab('evaluar')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>Evaluar</button>
-    <button class="tab" data-tab="registros" onclick="showTab('registros')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Registros</button>
-    <button class="tab" data-tab="cursos" onclick="showTab('cursos')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>Cursos</button>
-    <button class="tab" data-tab="estadisticas" onclick="showTab('estadisticas')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Estadísticas</button>
-    <button class="tab" data-tab="progreso" onclick="showTab('progreso')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 1 17"/><polyline points="16 7 22 7 22 13"/></svg>Progreso</button>
-    <button class="tab" data-tab="correo" onclick="showTab('correo')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Correo</button>
-    <button class="tab" data-tab="reporte" onclick="showTab('reporte')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Reporte</button>
-    <button class="tab" data-tab="rubricas" onclick="showTab('rubricas')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Rúbricas</button>
-    <button class="tab" data-tab="config" onclick="showTab('config')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>Ajustes</button>
+  <div class="tabs" id="mainTabs">
+    <div class="tabs-inner">
+    <button class="tab" data-tab="estudio" data-maintab="inicio" id="tabBtnInicio" onclick="_activarTab(this,'estudio','inicio');" title="Resumen general">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.2"/><rect x="14" y="3" width="7" height="7" rx="1.2"/><rect x="3" y="14" width="7" height="7" rx="1.2"/><rect x="14" y="14" width="7" height="7" rx="1.2"/></svg>
+      Inicio
+    </button>
+    <button class="tab" data-tab="estudio" data-maintab="evaluar" id="tabBtnEvaluar" onclick="_activarTab(this,'estudio','evaluar');" title="Evaluar con cámara e IA">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+      Evaluar
+    </button>
+    <button class="tab active" data-tab="estudio" data-maintab="cursos" id="tabBtnEstudio" onclick="_activarTab(this,'estudio','cursos');" title="Cursos y registros">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Estudio
+    </button>
+    <button class="tab" data-tab="progreso" data-maintab="progreso" id="tabBtnProgreso" onclick="_activarTab(this,'progreso',null);" title="Estadísticas y progreso">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Progreso
+    </button>
+    <button class="tab" data-tab="comunica" data-maintab="comunica" onclick="_activarTab(this,'comunica',null);" title="Correo a apoderados">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      Correo
+    </button>
+    <button class="tab" data-tab="sistema" data-maintab="sistema" onclick="_activarTab(this,'sistema',null);" title="Drive, rúbricas y ajustes">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+      Sistema
+    </button>
+    </div>
+
+  </div>
+
+  <!-- ══ SUBNAV LAYER — fuera de .content, ancho completo ══ -->
+  <div id="subnavLayer">
+    <!-- Estudio: Cursos | Registros -->
+    <div id="estudioSubNav" class="ae-subnav">
+      <button data-sub="cursos" onclick="showEstudioSub('cursos')" class="sub-tab sub-active ios-segment-btn active">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        Cursos
+      </button>
+      <button data-sub="registros" onclick="showEstudioSub('registros')" class="sub-tab ios-segment-btn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        Registros
+      </button>
+      <button data-sub="duplicados" onclick="showEstudioSub('duplicados')" class="sub-tab ios-segment-btn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Duplicados
+      </button>
+    </div>
+    <!-- Progreso: Estadísticas | OA/Progreso -->
+    <div id="progresoSubNav" class="ae-subnav">
+      <button data-sub="estadisticas" onclick="showProgresoSub('estadisticas')" class="sub-tab sub-active ios-segment-btn active">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Estadísticas
+      </button>
+      <button data-sub="progreso-oa" onclick="showProgresoSub('progreso-oa')" class="sub-tab ios-segment-btn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        OA / Progreso
+      </button>
+    </div>
+    <!-- Sistema: Drive | Rúbricas | Duplicados | Ajustes -->
+    <div id="sistemaSubNav" class="ae-subnav">
+      <button data-sub="drive" onclick="showSistemaSub('drive')" class="sub-tab sub-active ios-segment-btn active">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>
+        Drive
+      </button>
+      <button data-sub="rubricas" onclick="showSistemaSub('rubricas')" class="sub-tab ios-segment-btn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+        Rúbricas
+      </button>
+
+      <button data-sub="config" onclick="showSistemaSub('config')" class="sub-tab ios-segment-btn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        Ajustes
+      </button>
+    </div>
   </div>
 
   <div class="content">
 
     <!-- ══════════════ TAB: INICIO (DASHBOARD) ══════════════ -->
-    <div id="tab-inicio" style="display:none">
-      <!-- RESUMEN DEL DÍA -->
-      <div id="dashSesionHoy" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
-        <div style="font-size:11px;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.5px;">Resumen de hoy</div>
-        <div id="dashHoyStat" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
-      </div>
-
-      <!-- SEMÁFORO ALERTA CURSOS -->
-      <div id="dashAlertaWrap" style="display:none;margin-bottom:16px;padding:14px 16px;background:var(--red-bg);border:1px solid rgba(255,59,48,0.18);border-radius:var(--rad-lg);">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-            <div id="dashAlertaTitulo" style="font-size:13px;font-weight:700;color:var(--red);">Alumnos con promedio crítico (&lt; 4.0)</div>
-          </div>
-          <div style="display:flex;gap:8px;align-items:center;"><div style="font-size:11px;color:var(--text3);cursor:pointer;" onclick="this.closest('#dashAlertaWrap').querySelector('.dash-alerta-body').style.display=this.closest('#dashAlertaWrap').querySelector('.dash-alerta-body').style.display==='none'?'block':'none'">mostrar/ocultar</div><button onclick="showTab('correo')" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;font-family:var(--font-ui);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>📧 Avisar apoderados</button></div>
-        </div>
-        <div class="dash-alerta-body">
-          <div class="dash-alerta-wrap-inner"><div id="dashAlertaCursos"></div></div>
-        </div>
-      </div>
-
-      <!-- GRID DE CURSOS -->
-      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;font-family:var(--font-mono);margin-bottom:10px;">
-        Estado por curso <span id="dashInstanciaLabel" style="color:var(--accent);"></span>
-        <select id="dashInstanciaFiltro" class="filter-select" style="margin-left:10px;font-size:11px;padding:3px 8px;" onchange="renderDashboard()">
-          <option value="">Todas las instancias</option>
-        </select>
-      </div>
-      <div class="dashboard-grid" id="dashCursosGrid"></div>
-
-      <!-- FILA INFERIOR: Riesgo + Criterios fallados + Gráfico comparativo -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:4px;" id="dashBottomRow">
-
-        <!-- Estudiantes en riesgo -->
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--rad-lg);padding:16px;">
-          <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:6px;">
-            🚨 Estudiantes en riesgo
-            <span style="font-size:10px;font-weight:400;color:var(--text3);">(2+ evaluaciones bajo 4.0)</span>
-          </div>
-          <div id="dashRiesgoList" class="riesgo-list"></div>
-        </div>
-
-        <!-- Criterios más fallados -->
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--rad-lg);padding:16px;">
-          <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:10px;">
-            🎯 Criterios con más dificultad
-          </div>
-          <div id="dashCriteriosFallados"></div>
-        </div>
-      </div>
-
-      <!-- GRÁFICO COMPARATIVO CURSOS -->
-      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--rad-lg);padding:16px;margin-top:14px;">
-        <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:12px;">📊 Promedio comparativo por curso</div>
-        <div class="chart-comparativo" id="dashChartComparativo"></div>
+    <div id="tab-estudio" style="display:block;opacity:1;transition:opacity 0.2s ease;">
+    <div id="estudio-sec-cursos" style="display:block;">
+    <!-- Segmented Control de filtrado rápido -->
+    <div style="padding:12px 16px 0;">
+      <div class="seg-ctrl" id="aulaSegCtrl" role="group" aria-label="Filtro de aula">
+        <button class="seg-active" data-seg="todos" onclick="_setAulaFiltro('todos',this)">Todos</button>
+        <button data-seg="pendientes" onclick="_setAulaFiltro('pendientes',this)" >Pendientes</button>
+        <button data-seg="pie" onclick="_setAulaFiltro('pie',this)" >PIE</button>
       </div>
     </div>
+      <div class="curso-panel">
 
-    <!-- ══════════════ TAB: EVALUAR ══════════════ -->
-    <div id="tab-evaluar">
+        <!-- GRID DE CURSOS por nivel -->
+        <div id="cursoSidebar">
+          <!-- Selector de instancia global en sidebar -->
+          <div style="padding:8px 4px 12px 4px;border-bottom:1px solid var(--border);margin-bottom:10px;">
+            <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;font-family:var(--font-mono);margin-bottom:4px;">Instancia evaluativa</div>
+            <select id="instanciaSidebarCursos" class="filter-select" style="width:100%;font-size:12px;padding:5px 8px;" onchange="cambiarInstanciaSidebar(this.value)">
+              <option value="">Todas</option>
+              <option value="Evaluación 1">Evaluación 1</option>
+              <option value="Evaluación 2">Evaluación 2</option>
+              <option value="Evaluación 3">Evaluación 3</option>
+              <option value="Diagnóstico">Diagnóstico</option>
+              <option value="Proceso">Proceso</option>
+              <option value="Final">Final</option>
+            </select>
+          </div>
+          <div class="cursos-grid-section">
+            <div class="cursos-nivel-titulo">3° Básico</div>
+            <div class="cursos-grid">
+              <button class="curso-sidebar-btn" data-curso="3°A" id="csb-3A">3°A<span class="cs-count" id="csc-3A"></span></button>
+              <button class="curso-sidebar-btn" data-curso="3°B" id="csb-3B">3°B<span class="cs-count" id="csc-3B"></span></button>
+              <button class="curso-sidebar-btn" data-curso="3°C" id="csb-3C">3°C<span class="cs-count" id="csc-3C"></span></button>
+              <button class="curso-sidebar-btn" data-curso="3°D" id="csb-3D">3°D<span class="cs-count" id="csc-3D"></span></button>
+            </div>
+          </div>
+          <div class="cursos-grid-section">
+            <div class="cursos-nivel-titulo">4° Básico</div>
+            <div class="cursos-grid">
+              <button class="curso-sidebar-btn" data-curso="4°A" id="csb-4A">4°A<span class="cs-count" id="csc-4A"></span></button>
+              <button class="curso-sidebar-btn" data-curso="4°B" id="csb-4B">4°B<span class="cs-count" id="csc-4B"></span></button>
+              <button class="curso-sidebar-btn" data-curso="4°C" id="csb-4C">4°C<span class="cs-count" id="csc-4C"></span></button>
+              <button class="curso-sidebar-btn" data-curso="4°D" id="csb-4D">4°D<span class="cs-count" id="csc-4D"></span></button>
+            </div>
+          </div>
+          <div class="cursos-grid-section">
+            <div class="cursos-nivel-titulo">5° Básico</div>
+            <div class="cursos-grid">
+              <button class="curso-sidebar-btn" data-curso="5°A" id="csb-5A">5°A<span class="cs-count" id="csc-5A"></span></button>
+              <button class="curso-sidebar-btn" data-curso="5°B" id="csb-5B">5°B<span class="cs-count" id="csc-5B"></span></button>
+              <button class="curso-sidebar-btn" data-curso="5°C" id="csb-5C">5°C<span class="cs-count" id="csc-5C"></span></button>
+              <button class="curso-sidebar-btn" data-curso="5°D" id="csb-5D">5°D<span class="cs-count" id="csc-5D"></span></button>
+            </div>
+          </div>
+          <div class="cursos-grid-section">
+            <div class="cursos-nivel-titulo">6° Básico</div>
+            <div class="cursos-grid">
+              <button class="curso-sidebar-btn" data-curso="6°A" id="csb-6A">6°A<span class="cs-count" id="csc-6A"></span></button>
+              <button class="curso-sidebar-btn" data-curso="6°B" id="csb-6B">6°B<span class="cs-count" id="csc-6B"></span></button>
+              <button class="curso-sidebar-btn" data-curso="6°C" id="csb-6C">6°C<span class="cs-count" id="csc-6C"></span></button>
+              <button class="curso-sidebar-btn" data-curso="6°D" id="csb-6D">6°D<span class="cs-count" id="csc-6D"></span></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- MAIN: detalle del curso seleccionado -->
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:0;">
+          <!-- Buscador universal de estudiantes en Cursos -->
+          <div style="position:relative;margin-bottom:10px;">
+            <div class="search-bar" style="max-width:400px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input class="search-input" type="text" id="buscarCursos"
+                placeholder="Buscar estudiante en todos los cursos..."
+                autocomplete="off"
+                oninput="buscarEnCursos(this.value)"
+                onkeydown="navBuscarCursos(event)"
+                onblur="setTimeout(ocultarResultadosCursos,200)">
+            </div>
+            <div id="resultadosBuscarCursos" style="display:none;position:absolute;top:100%;left:0;width:400px;max-width:90vw;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--rad);box-shadow:var(--shadow);z-index:500;max-height:240px;overflow-y:auto;"></div>
+          </div>
+          <!-- ══ PANEL ALEXIA ══ -->
+          <div id="alexiaPanelWrap" style="background:var(--bg2);border:1.5px solid var(--accent-border);border-radius:var(--rad-lg);margin-bottom:14px;overflow:hidden;">
+            <!-- Header del panel -->
+            <div style="background:var(--accent-bg);padding:10px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;cursor:pointer;" onclick="toggleAlexiaPanel()">
+              <span style="font-size:13px;font-weight:700;color:var(--accent);">📥 Planillas Alexia</span>
+              <span style="font-size:11px;color:var(--text2);">Sube los XLS de Alexia por curso → evalúa en ArtEval → exporta con notas actualizadas</span>
+              <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+                <span id="alexiaPanelResumen" style="font-size:11px;color:var(--accent);font-family:var(--font-mono);font-weight:600;"></span>
+                <span id="alexiaPanelChevron" style="font-size:13px;color:var(--accent);">▼</span>
+              </div>
+            </div>
+            <!-- Contenido del panel -->
+            <div id="alexiaPanelBody" style="padding:14px;display:flex;flex-direction:column;gap:10px;">
+              <!-- Instrucción rápida -->
+              <div style="font-size:11px;color:var(--text3);line-height:1.8;padding:8px 12px;background:var(--bg3);border-radius:var(--rad);border-left:3px solid var(--accent);">
+                <strong style="color:var(--text2);">Flujo por curso:</strong>
+                &nbsp;① Descarga el XLS de Alexia (plantilla vacía o con datos del curso)
+                &nbsp;→ ② Súbelo aquí <em>(ya importa nómina + guarda plantilla para exportar)</em>
+                &nbsp;→ ③ Evalúa con ArtEval
+                &nbsp;→ ④ Exporta el XLS para subir a Alexia con las notas
+              </div>
+              <!-- Grid de niveles con estado -->
+              <div id="alexiaGridNiveles" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;">
+                <!-- Se rellena por JS -->
+              </div>
+              <!-- Botón importar rápido -->
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-top:4px;border-top:1px solid var(--border);">
+                <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
+                  <input type="file" id="importListaFile" accept=".txt,.csv,.xls,.xlsx" style="display:none" onchange="importarListaArchivo(this)">
+                  <button class="btn btn-primary" style="font-size:12px;padding:5px 14px;" onclick="document.getElementById('importListaFile').click()">📂 Subir planilla Alexia (.xls/.xlsx)</button>
+                </label>
+                <span style="font-size:11px;color:var(--text3);">También acepta TXT y CSV con nombres</span>
+                <span id="importListaStatus" style="font-size:11px;color:var(--text3);font-family:var(--font-mono);margin-left:auto;"></span>
+                <!-- Exportar todos los cursos que tienen plantilla -->
+                <button class="btn btn-success" style="font-size:12px;padding:5px 14px;" onclick="exportarTodosAlexia()" id="btnExportarTodosAlexia" title="Exportar XLS de todos los cursos con plantilla cargada">⬇ Exportar todos los XLS</button>
+              </div>
+            </div>
+          </div>
+          <!-- Importar lista PIE -->
+          <div style="background:var(--pie-bg);border:1px solid var(--pie-border);border-radius:var(--rad);padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <span style="font-size:12px;color:var(--pie);font-weight:700;"><svg width="12" height="12" viewBox="0 0 100 100" fill="#FF9500" style="flex-shrink:0;vertical-align:middle;display:inline-block" aria-label="PIE"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="#FF9500" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/></svg> Importar lista PIE</span>
+            <span style="font-size:11px;color:var(--text3);">TXT, CSV o XLS con nombres — se marcan automáticamente como PIE en todos los cursos</span>
+            <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;margin-left:auto;">
+              <input type="file" id="importPIEFile" accept=".txt,.csv,.xls,.xlsx" style="display:none" onchange="importarListaPIE(this)">
+              <button class="btn" style="font-size:12px;padding:5px 14px;background:var(--pie);color:white;border-color:var(--pie);" onclick="document.getElementById('importPIEFile').click()"><svg width="12" height="12" viewBox="0 0 100 100" fill="#FF9500" style="flex-shrink:0;vertical-align:middle;display:inline-block" aria-label="PIE"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="#FF9500" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/></svg> Elegir archivo PIE</button>
+            </label>
+            <span id="importPIEStatus" style="font-size:11px;color:var(--pie);font-family:var(--font-mono);font-weight:600;"></span>
+          </div>
+          <div class="curso-main" id="cursoMain">
+          <div class="cursos-empty">
+            <div class="ce-icon">🏫</div>
+            <div class="ce-title">Selecciona un curso</div>
+            <div class="ce-sub">Elige un curso de la lista izquierda para ver<br>sus estudiantes, pendientes y estado PIE.</div>
+          </div>
+        </div>
+          </div>
+        </div>
+    </div>
+    <div id="estudio-sec-evaluar" style="display:none;">
       <div class="info-banner show" id="infoBanner">
         <strong>Primer uso:</strong> Ve a <strong>Configurar</strong> para ingresar tu API Key de Gemini. Luego selecciona una rúbrica en <strong>Rúbricas</strong> y comienza a evaluar.
       </div>
@@ -2346,8 +2939,8 @@ button, .btn, .tab, .curso-chip, .reg-card, .config-card, input, select {
             </div>
           </div>
           <div class="cam-actions">
-            <button class="btn btn-primary" id="btnCam" onclick="toggleCamara()">Iniciar cámara</button>
-            <button class="btn" id="btnAnalizar" onclick="analizarAhora()" disabled>Analizar con IA</button>
+            <button class="btn btn-primary ios-btn" id="btnCam" onclick="toggleCamara()">Iniciar cámara</button>
+            <button class="btn ios-btn" id="btnAnalizar" onclick="analizarAhora()" disabled>Analizar con IA</button>
             <button class="btn" id="btnAuto" onclick="toggleAuto()" style="display:none">Auto: OFF</button>
           </div>
           <div class="exigencia-wrap">
@@ -2478,10 +3071,84 @@ button, .btn, .tab, .curso-chip, .reg-card, .config-card, input, select {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+  <!-- Barra de Navegación en Serie — Modo Evaluación en Aula -->
+  <div class="eval-nav" id="evalNavBar" style="display:none;">
+    <button class="eval-nav-btn ios-btn" id="btnEvalAnterior" onclick="_evalSerie(-1)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      Anterior
+    </button>
+    <div class="eval-nav-label" id="evalNavLabel">—</div>
+    <button class="eval-nav-btn ios-btn" id="btnEvalSiguiente" onclick="_evalSerie(1)">
+      Siguiente
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+  </div>
 
-    <!-- ══════════════ TAB: REGISTROS ══════════════ -->
-    <div id="tab-registros" style="display:none">
+    <div id="estudio-sec-inicio" style="display:none;">
+
+      <!-- ── KPIs GLOBALES ─────────────────────────────────────── -->
+      <div class="stats-grid" id="dashKpiGlobal" style="margin-bottom:16px;">
+        <!-- Renderizado dinámicamente por renderDashboard() -->
+      </div>
+
+      <!-- RESUMEN DEL DÍA -->
+      <div id="dashSesionHoy" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+        <div style="font-size:11px;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.5px;">Resumen de hoy</div>
+        <div id="dashHoyStat" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+      </div>
+
+      <!-- SEMÁFORO ALERTA CURSOS -->
+      <div id="dashAlertaWrap" style="display:none;margin-bottom:16px;padding:14px 16px;background:var(--red-bg);border:1px solid rgba(255,59,48,0.18);border-radius:var(--rad-lg);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div id="dashAlertaTitulo" style="font-size:13px;font-weight:700;color:var(--red);">Alumnos con promedio crítico (&lt; 4.0)</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;"><div style="font-size:11px;color:var(--text3);cursor:pointer;" onclick="this.closest('#dashAlertaWrap').querySelector('.dash-alerta-body').style.display=this.closest('#dashAlertaWrap').querySelector('.dash-alerta-body').style.display==='none'?'block':'none'">mostrar/ocultar</div><button onclick="showTab('correo')" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;font-family:var(--font-ui);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>📧 Avisar apoderados</button></div>
+        </div>
+        <div class="dash-alerta-body">
+          <div class="dash-alerta-wrap-inner"><div id="dashAlertaCursos"></div></div>
+        </div>
+      </div>
+
+      <!-- GRID DE CURSOS -->
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;font-family:var(--font-mono);margin-bottom:10px;">
+        Estado por curso <span id="dashInstanciaLabel" style="color:var(--accent);"></span>
+        <select id="dashInstanciaFiltro" class="filter-select" style="margin-left:10px;font-size:11px;padding:3px 8px;" onchange="renderDashboard()">
+          <option value="">Todas las instancias</option>
+        </select>
+      </div>
+      <div class="dashboard-grid" id="dashCursosGrid"></div>
+
+      <!-- FILA INFERIOR: Riesgo + Criterios fallados + Gráfico comparativo -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:4px;" id="dashBottomRow">
+
+        <!-- Estudiantes en riesgo -->
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--rad-lg);padding:16px;">
+          <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+            🚨 Estudiantes en riesgo
+            <span style="font-size:10px;font-weight:400;color:var(--text3);">(2+ evaluaciones bajo 4.0)</span>
+          </div>
+          <div id="dashRiesgoList" class="riesgo-list"></div>
+        </div>
+
+        <!-- Criterios más fallados -->
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--rad-lg);padding:16px;">
+          <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:10px;">
+            🎯 Criterios con más dificultad
+          </div>
+          <div id="dashCriteriosFallados"></div>
+        </div>
+      </div>
+
+      <!-- GRÁFICO COMPARATIVO CURSOS -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--rad-lg);padding:16px;margin-top:14px;">
+        <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:12px;">📊 Promedio comparativo por curso</div>
+        <div class="chart-comparativo" id="dashChartComparativo"></div>
+      </div>
+    </div>
+    <div id="estudio-sec-registros" style="display:none;" style="display:block;">
       <div class="reg-toolbar">
         <div class="reg-toolbar-left">
           <span class="reg-title" id="regTitulo">Sin registros</span>
@@ -2520,9 +3187,28 @@ button, .btn, .tab, .curso-chip, .reg-card, .config-card, input, select {
       <!-- Vista Libro de Clases (tabla por curso) -->
       <div id="libroClasesView" style="display:none;overflow-x:auto;"></div>
     </div>
+    
+  </div>
 
-    <!-- ══════════════ TAB: ESTADÍSTICAS ══════════════ -->
-    <div id="tab-estadisticas" style="display:none">
+    <div id="estudio-sec-duplicados" style="display:none;padding:16px;" style="display:none;padding:16px;">
+      <div class="config-card">
+        <h3 style="margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Limpieza de Duplicados
+        </h3>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:14px;line-height:1.6;">
+          Detecta registros con nombres similares (≥90%) en el mismo curso y permite fusionarlos manteniendo el más reciente.
+        </div>
+        <button class="btn btn-primary" onclick="renderPanelDuplicados('panelDuplicadosContainer')" style="margin-bottom:14px;">
+          🔍 Buscar duplicados ahora
+        </button>
+        <div id="panelDuplicadosContainer"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-progreso" style="display:none;opacity:0;transition:opacity 0.2s ease;">
+    <div id="progreso-sec-estadisticas" style="display:none;">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;">
         <div class="search-wrap">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -2557,9 +3243,7 @@ button, .btn, .tab, .curso-chip, .reg-card, .config-card, input, select {
       </div>
       <div id="statsContent"></div>
     </div>
-
-    <!-- ══════════════ TAB: PROGRESO ══════════════ -->
-    <div id="tab-progreso" style="display:none">
+    <div id="progreso-sec-progreso-oa" style="display:none;">
       <div class="prog-toolbar">
         <div class="search-wrap">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -2578,11 +3262,10 @@ button, .btn, .tab, .curso-chip, .reg-card, .config-card, input, select {
       </div>
       <div id="progresoContent"></div>
     </div>
+  </div>
 
-    <!-- ══════════════ TAB: REPORTE ══════════════ -->
-    <!-- ══ TAB CORREO ════════════════════════════════════════════════════ -->
-    <div id="tab-correo" style="display:none">
-      <div class="config-card" style="border-left:3px solid var(--accent);margin-bottom:14px;">
+  <div id="tab-comunica" style="display:none;opacity:0;transition:opacity 0.2s ease;">
+    <div class="config-card" style="border-left:3px solid var(--accent);margin-bottom:14px;">
         <div style="display:flex;align-items:center;gap:14px;">
           <div style="width:44px;height:44px;background:var(--accent-bg);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
           <div style="flex:1;"><h3 style="margin-bottom:2px;">Correos a apoderados</h3><div style="font-size:13px;color:var(--text3);">Alumnos con promedio crítico (bajo 4,0)</div></div>
@@ -2649,10 +3332,10 @@ button, .btn, .tab, .curso-chip, .reg-card, .config-card, input, select {
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;"><h3 style="margin-bottom:0;">Alumnos con promedio crítico</h3><button class="btn btn-primary" onclick="_enviarTodosCorreoTab()" style="display:inline-flex;align-items:center;gap:6px;min-height:36px;font-size:13px;border-radius:10px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>Abrir todos en Gmail</button></div>
         <div id="correoTabContainer"><div style="text-align:center;padding:40px;color:var(--text3);"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="opacity:.2;display:block;margin:0 auto 10px;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg><div style="font-size:13px;">Cargando alumnos críticos...</div></div></div>
       </div>
-    </div>
+  </div>
 
-
-    <div id="tab-reporte" style="display:none">
+  <div id="tab-sistema" style="display:none;opacity:0;transition:opacity 0.2s ease;">
+    <div id="sistema-sec-drive" style="display:block;">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
         <div class="search-wrap">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -2672,9 +3355,7 @@ button, .btn, .tab, .curso-chip, .reg-card, .config-card, input, select {
       </div>
       <div id="reporteContent"></div>
     </div>
-
-    <!-- ══════════════ TAB: RÚBRICAS ══════════════ -->
-    <div id="tab-rubricas" style="display:none">
+    <div id="sistema-sec-rubricas" style="display:none;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
         <div>
           <div style="font-size:15px;font-weight:600;">Mis rúbricas</div>
@@ -2698,144 +3379,7 @@ button, .btn, .tab, .curso-chip, .reg-card, .config-card, input, select {
         </div>
       </div>
     </div>
-
-
-    <!-- ══════════════ TAB: CURSOS ══════════════ -->
-    <div id="tab-cursos" style="display:none">
-      <div class="curso-panel">
-
-        <!-- GRID DE CURSOS por nivel -->
-        <div id="cursoSidebar">
-          <!-- Selector de instancia global en sidebar -->
-          <div style="padding:8px 4px 12px 4px;border-bottom:1px solid var(--border);margin-bottom:10px;">
-            <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;font-family:var(--font-mono);margin-bottom:4px;">Instancia evaluativa</div>
-            <select id="instanciaSidebarCursos" class="filter-select" style="width:100%;font-size:12px;padding:5px 8px;" onchange="cambiarInstanciaSidebar(this.value)">
-              <option value="">Todas</option>
-              <option value="Evaluación 1">Evaluación 1</option>
-              <option value="Evaluación 2">Evaluación 2</option>
-              <option value="Evaluación 3">Evaluación 3</option>
-              <option value="Diagnóstico">Diagnóstico</option>
-              <option value="Proceso">Proceso</option>
-              <option value="Final">Final</option>
-            </select>
-          </div>
-          <div class="cursos-grid-section">
-            <div class="cursos-nivel-titulo">3° Básico</div>
-            <div class="cursos-grid">
-              <button class="curso-sidebar-btn" data-curso="3°A" id="csb-3A">3°A<span class="cs-count" id="csc-3A"></span></button>
-              <button class="curso-sidebar-btn" data-curso="3°B" id="csb-3B">3°B<span class="cs-count" id="csc-3B"></span></button>
-              <button class="curso-sidebar-btn" data-curso="3°C" id="csb-3C">3°C<span class="cs-count" id="csc-3C"></span></button>
-              <button class="curso-sidebar-btn" data-curso="3°D" id="csb-3D">3°D<span class="cs-count" id="csc-3D"></span></button>
-            </div>
-          </div>
-          <div class="cursos-grid-section">
-            <div class="cursos-nivel-titulo">4° Básico</div>
-            <div class="cursos-grid">
-              <button class="curso-sidebar-btn" data-curso="4°A" id="csb-4A">4°A<span class="cs-count" id="csc-4A"></span></button>
-              <button class="curso-sidebar-btn" data-curso="4°B" id="csb-4B">4°B<span class="cs-count" id="csc-4B"></span></button>
-              <button class="curso-sidebar-btn" data-curso="4°C" id="csb-4C">4°C<span class="cs-count" id="csc-4C"></span></button>
-              <button class="curso-sidebar-btn" data-curso="4°D" id="csb-4D">4°D<span class="cs-count" id="csc-4D"></span></button>
-            </div>
-          </div>
-          <div class="cursos-grid-section">
-            <div class="cursos-nivel-titulo">5° Básico</div>
-            <div class="cursos-grid">
-              <button class="curso-sidebar-btn" data-curso="5°A" id="csb-5A">5°A<span class="cs-count" id="csc-5A"></span></button>
-              <button class="curso-sidebar-btn" data-curso="5°B" id="csb-5B">5°B<span class="cs-count" id="csc-5B"></span></button>
-              <button class="curso-sidebar-btn" data-curso="5°C" id="csb-5C">5°C<span class="cs-count" id="csc-5C"></span></button>
-              <button class="curso-sidebar-btn" data-curso="5°D" id="csb-5D">5°D<span class="cs-count" id="csc-5D"></span></button>
-            </div>
-          </div>
-          <div class="cursos-grid-section">
-            <div class="cursos-nivel-titulo">6° Básico</div>
-            <div class="cursos-grid">
-              <button class="curso-sidebar-btn" data-curso="6°A" id="csb-6A">6°A<span class="cs-count" id="csc-6A"></span></button>
-              <button class="curso-sidebar-btn" data-curso="6°B" id="csb-6B">6°B<span class="cs-count" id="csc-6B"></span></button>
-              <button class="curso-sidebar-btn" data-curso="6°C" id="csb-6C">6°C<span class="cs-count" id="csc-6C"></span></button>
-              <button class="curso-sidebar-btn" data-curso="6°D" id="csb-6D">6°D<span class="cs-count" id="csc-6D"></span></button>
-            </div>
-          </div>
-        </div>
-
-        <!-- MAIN: detalle del curso seleccionado -->
-        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:0;">
-          <!-- Buscador universal de estudiantes en Cursos -->
-          <div style="position:relative;margin-bottom:10px;">
-            <div class="search-bar" style="max-width:400px;">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              <input class="search-input" type="text" id="buscarCursos"
-                placeholder="Buscar estudiante en todos los cursos..."
-                autocomplete="off"
-                oninput="buscarEnCursos(this.value)"
-                onkeydown="navBuscarCursos(event)"
-                onblur="setTimeout(ocultarResultadosCursos,200)">
-            </div>
-            <div id="resultadosBuscarCursos" style="display:none;position:absolute;top:100%;left:0;width:400px;max-width:90vw;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--rad);box-shadow:var(--shadow);z-index:500;max-height:240px;overflow-y:auto;"></div>
-          </div>
-          <!-- ══ PANEL ALEXIA ══ -->
-          <div id="alexiaPanelWrap" style="background:var(--bg2);border:1.5px solid var(--accent-border);border-radius:var(--rad-lg);margin-bottom:14px;overflow:hidden;">
-            <!-- Header del panel -->
-            <div style="background:var(--accent-bg);padding:10px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;cursor:pointer;" onclick="toggleAlexiaPanel()">
-              <span style="font-size:13px;font-weight:700;color:var(--accent);">📥 Planillas Alexia</span>
-              <span style="font-size:11px;color:var(--text2);">Sube los XLS de Alexia por curso → evalúa en ArtEval → exporta con notas actualizadas</span>
-              <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
-                <span id="alexiaPanelResumen" style="font-size:11px;color:var(--accent);font-family:var(--font-mono);font-weight:600;"></span>
-                <span id="alexiaPanelChevron" style="font-size:13px;color:var(--accent);">▼</span>
-              </div>
-            </div>
-            <!-- Contenido del panel -->
-            <div id="alexiaPanelBody" style="padding:14px;display:flex;flex-direction:column;gap:10px;">
-              <!-- Instrucción rápida -->
-              <div style="font-size:11px;color:var(--text3);line-height:1.8;padding:8px 12px;background:var(--bg3);border-radius:var(--rad);border-left:3px solid var(--accent);">
-                <strong style="color:var(--text2);">Flujo por curso:</strong>
-                &nbsp;① Descarga el XLS de Alexia (plantilla vacía o con datos del curso)
-                &nbsp;→ ② Súbelo aquí <em>(ya importa nómina + guarda plantilla para exportar)</em>
-                &nbsp;→ ③ Evalúa con ArtEval
-                &nbsp;→ ④ Exporta el XLS para subir a Alexia con las notas
-              </div>
-              <!-- Grid de niveles con estado -->
-              <div id="alexiaGridNiveles" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;">
-                <!-- Se rellena por JS -->
-              </div>
-              <!-- Botón importar rápido -->
-              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-top:4px;border-top:1px solid var(--border);">
-                <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
-                  <input type="file" id="importListaFile" accept=".txt,.csv,.xls,.xlsx" style="display:none" onchange="importarListaArchivo(this)">
-                  <button class="btn btn-primary" style="font-size:12px;padding:5px 14px;" onclick="document.getElementById('importListaFile').click()">📂 Subir planilla Alexia (.xls/.xlsx)</button>
-                </label>
-                <span style="font-size:11px;color:var(--text3);">También acepta TXT y CSV con nombres</span>
-                <span id="importListaStatus" style="font-size:11px;color:var(--text3);font-family:var(--font-mono);margin-left:auto;"></span>
-                <!-- Exportar todos los cursos que tienen plantilla -->
-                <button class="btn btn-success" style="font-size:12px;padding:5px 14px;" onclick="exportarTodosAlexia()" id="btnExportarTodosAlexia" title="Exportar XLS de todos los cursos con plantilla cargada">⬇ Exportar todos los XLS</button>
-              </div>
-            </div>
-          </div>
-          <!-- Importar lista PIE -->
-          <div style="background:var(--pie-bg);border:1px solid var(--pie-border);border-radius:var(--rad);padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-            <span style="font-size:12px;color:var(--pie);font-weight:700;"><svg width="12" height="12" viewBox="0 0 100 100" fill="#FF9500" style="flex-shrink:0;vertical-align:middle;display:inline-block" aria-label="PIE"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="#FF9500" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/></svg> Importar lista PIE</span>
-            <span style="font-size:11px;color:var(--text3);">TXT, CSV o XLS con nombres — se marcan automáticamente como PIE en todos los cursos</span>
-            <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;margin-left:auto;">
-              <input type="file" id="importPIEFile" accept=".txt,.csv,.xls,.xlsx" style="display:none" onchange="importarListaPIE(this)">
-              <button class="btn" style="font-size:12px;padding:5px 14px;background:var(--pie);color:white;border-color:var(--pie);" onclick="document.getElementById('importPIEFile').click()"><svg width="12" height="12" viewBox="0 0 100 100" fill="#FF9500" style="flex-shrink:0;vertical-align:middle;display:inline-block" aria-label="PIE"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="#FF9500" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/></svg> Elegir archivo PIE</button>
-            </label>
-            <span id="importPIEStatus" style="font-size:11px;color:var(--pie);font-family:var(--font-mono);font-weight:600;"></span>
-          </div>
-          <div class="curso-main" id="cursoMain">
-          <div class="cursos-empty">
-            <div class="ce-icon">🏫</div>
-            <div class="ce-title">Selecciona un curso</div>
-            <div class="ce-sub">Elige un curso de la lista izquierda para ver<br>sus estudiantes, pendientes y estado PIE.</div>
-          </div>
-        </div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- ══════════════ TAB: CONFIGURAR ══════════════ -->
-    <div id="tab-config" style="display:none">
-
+    <div id="sistema-sec-config" style="display:none;">
       <!-- ══════ PANEL GOOGLE DRIVE (Apple Style) ══════ -->
       <div class="config-card" style="border-left:3px solid var(--accent);">
         <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
@@ -3129,8 +3673,9 @@ function doGet(e) {
           <button class="btn btn-danger" onclick="borrarTodosLosDatos()">Borrar todos los datos</button>
       </div>
     </div>
-
-  </div><!-- /content -->
+    </div>
+  </div>
+<!-- /content -->
 </div><!-- /app -->
 
 <script>
@@ -3173,6 +3718,7 @@ function limpiarClientId() {
 }
 
 function actualizarEstadoConfigDrive() {
+  if (typeof _driveToken === 'undefined') return;
   // Pre-rellenar input con valor guardado
   var inp = document.getElementById('googClientIdInput');
   var saved = localStorage.getItem('av_goog_client_id') || '';
@@ -3681,6 +4227,49 @@ function actualizarBarraProgresoCurso() {
 }
 
 // ── Saltar al siguiente alumno pendiente del curso activo ─────────────────────
+var _evalSerieActivo=false,_evalSerieLista=[],_evalSerieIdx=0;
+function _iniciarEvalSerie(nombreInicial) {
+  var curso=(document.getElementById('inputCurso')?.value||'').trim();
+  if(!curso||!listaCursos[curso])return;
+  _evalSerieLista=(typeof _aplicarFiltroAula==='function'
+    ?_aplicarFiltroAula(listaCursos[curso]||[])
+    :(listaCursos[curso]||[])).map(function(a){return typeof a==='string'?a:(a&&a.nombre||'');});
+  var idx=_evalSerieLista.indexOf(nombreInicial);
+  _evalSerieIdx=idx>=0?idx:0;
+  _evalSerieActivo=_evalSerieLista.length>1;
+  _actualizarEvalNavBar();
+}
+function _evalSerie(dir) {
+  if(!_evalSerieActivo||!_evalSerieLista.length)return;
+  var vals=Object.values(evaluacion||{}).filter(function(v){return v&&v.nivel;});
+  if(vals.length>0){try{guardar();}catch(e){}}
+  _evalSerieIdx=(_evalSerieIdx+dir+_evalSerieLista.length)%_evalSerieLista.length;
+  var nombre=_evalSerieLista[_evalSerieIdx];
+  var inp=document.getElementById('inputNombre');
+  if(inp){inp.value=nombre;inp.dispatchEvent(new Event('input'));}
+  if(typeof evaluacion!=='undefined')Object.keys(evaluacion).forEach(function(k){delete evaluacion[k];});
+  if(typeof renderCriterios==='function')renderCriterios();
+  _actualizarEvalNavBar();
+  toast('\u2708\ufe0f '+(_evalSerieIdx+1)+' / '+_evalSerieLista.length+': '+nombre,'info',2000);
+}
+function _actualizarEvalNavBar() {
+  var bar=document.getElementById('evalNavBar');
+  var lbl=document.getElementById('evalNavLabel');
+  if(!bar)return;
+  bar.style.display=_evalSerieActivo?'flex':'none';
+  if(lbl&&_evalSerieLista.length){
+    lbl.textContent=(_evalSerieIdx+1)+' / '+_evalSerieLista.length+' — '+(_evalSerieLista[_evalSerieIdx]||'—');
+  }
+}
+function _irAEvaluarAlumno(nombre) {
+  if(typeof showEstudioSub==='function')showEstudioSub('evaluar');
+  var inp=document.getElementById('inputNombre');
+  if(inp){inp.value=nombre;inp.dispatchEvent(new Event('input'));}
+  if(typeof evaluacion!=='undefined')Object.keys(evaluacion).forEach(function(k){delete evaluacion[k];});
+  if(typeof renderCriterios==='function')renderCriterios();
+  _iniciarEvalSerie(nombre);
+}
+
 function siguienteAlumnoPendiente() {
   var curso     = (document.getElementById('inputCurso')?.value || '').trim();
   var instancia = document.getElementById('instanciaSelect')?.value || 'Evaluación 1';
@@ -4160,6 +4749,7 @@ function guardar() {
     : (listaCursos[curso] || []).find(function(e){ return mismoEstudiante(e.nombre||'', nombre||''); })?.guidMatricula || '';
 
   const nuevoReg = {
+    _id: _uuidV4(), // UUID único por registro — integridad anti-duplicados
     nombre, curso, fecha: new Date().toLocaleDateString('es-CL'), fechaISO: new Date().toISOString(),
     pts, maxPts, pct, nota, conteo, detalle,
     rubricaNombre: rubricaEfectiva?.nombre || getRubrica().nombre,
@@ -4378,8 +4968,10 @@ function _confirmarNotaNE(ri){
   if(isNaN(nota)||nota<1||nota>7){if(inp)inp.style.borderColor='#FF3B30';
     toast('\u26a0 Nota inv\u00e1lida (1.0 \u2013 7.0)','err',2500);return;}
   if(ri>-1&&registros[ri]){
+    if(!registros[ri]._id) registros[ri]._id = _uuidV4(); // garantizar UUID
     registros[ri].nota=Math.round(nota*10)/10;
     registros[ri].noEntregado=false;
+    registros[ri]._editedAt=new Date().toISOString();
     saveRegistros();actualizarConteo();
     renderLibroClases();renderRegistros();
     if(cursoSeleccionado)renderCursoMain();
@@ -4389,7 +4981,11 @@ function _evaluarDesdeNEMenu(ri){
   var r=registros[ri];if(!r)return;
   var m=document.getElementById('menuNE');if(m)m.remove();
   window._neIdxPendiente=ri;
-  showTab('evaluar');
+  var _lt=localStorage.getItem('av_last_tab')||'estudio';
+  var _tm={inicio:'estudio',evaluar:'estudio',cursos:'estudio',
+    registros:'progreso',estadisticas:'progreso',progreso:'progreso',
+    correo:'comunica',config:'sistema',reporte:'sistema',rubricas:'sistema'};
+  showTab(_tm[_lt]||_lt);
   setTimeout(function(){
     var inp=document.getElementById('inputNombre');
     var sel=document.getElementById('inputCurso');
@@ -4576,6 +5172,7 @@ function filtrarPorInstancia(instancia) {
 }
 
 function renderRegistros() {
+  if (!Array.isArray(registros)) return;
   const list   = document.getElementById('registrosList');
   const libro  = document.getElementById('libroClasesView');
   if (!list) return;
@@ -4697,7 +5294,11 @@ function renderRegistros() {
 
 // ── Libro de Clases: tabla dinámica por curso con columnas por instancia ──
 function renderLibroClases(filtrados, container) {
-  if (!filtrados.length) { container.innerHTML = '<div class="empty-state">Sin registros para mostrar.</div>'; return; }
+  if (!container) return; // guard: el contenedor puede no existir si el tab no está visible
+  if (!filtrados || !filtrados.length) {
+    container.innerHTML = '<div class="empty-state">Sin registros para mostrar.</div>';
+    return;
+  }
 
   // Agrupar por curso
   const porCurso = {};
@@ -4943,6 +5544,9 @@ function verDuplicados() {
 async function eliminarDesdeDup(idx) {
   const ok = await confirmarAccion('Eliminar registro', `¿Eliminar este registro de <strong>${registros[idx]?.nombre||''}</strong>?`);
   if (!ok) return;
+  // Marca de borrado: evita que Drive resucite registros eliminados
+  // El registro se elimina localmente y se registra el timestamp
+  localStorage.setItem('av_deleted_' + (registros[idx]._id||idx), new Date().toISOString());
   registros.splice(idx, 1);
   saveRegistros();
   actualizarConteo();
@@ -5221,6 +5825,7 @@ function confirmarEdicion(idx) {
   // El profesor edita el registro porque el alumno ya entregó — no importa qué niveles tenga.
   if (r.noEntregado) {
     r.noEntregado = false;
+    r._editedAt = new Date().toISOString(); // timestamp edición
     toast('✓ Registro actualizado — se removió el estado <strong>NE</strong>', 'ok', 3000);
   }
   saveRegistros();
@@ -5310,11 +5915,17 @@ async function eliminar(idx) {
   const nombre = registros[idx]?.nombre || 'este registro';
   const ok = await confirmarAccion('Eliminar registro', `¿Eliminar el registro de <strong>${nombre}</strong>? Esta acción no se puede deshacer.`);
   if (!ok) return;
+  try {
   registros.splice(idx, 1);
   saveRegistros();
   actualizarConteo();
   renderRegistros();
   toast(`✓ Registro de ${nombre} eliminado`, 'ok');
+
+  } catch(e) {
+    console.error('[ArtEval] eliminar:', e);
+    toast('Error al procesar: ' + e.message, 'err', 3000);
+  }
 }
 
 async function limpiarTodo() {
@@ -7156,6 +7767,9 @@ function renderDashboard() {
   }
   const instFiltro = selInst?.value || '';
 
+  // ── KPIs globales del sistema ──
+  _renderDashKpiGlobal(instFiltro);
+
   // ── Resumen del día ──
   _renderDashHoy();
 
@@ -7173,6 +7787,42 @@ function renderDashboard() {
 
   // ── Gráfico comparativo ──
   _renderDashChart(instFiltro);
+}
+
+function _renderDashKpiGlobal(instFiltro) {
+  const kpiEl = document.getElementById('dashKpiGlobal');
+  if (!kpiEl) return;
+  const regs = instFiltro
+    ? registros.filter(r => (r.instancia||'Evaluación 1') === instFiltro)
+    : registros;
+  if (!regs.length) {
+    kpiEl.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:24px;color:var(--text3);font-size:13px;">Sin datos registrados aún. Comienza evaluando en la sección <strong>Evaluar</strong>.</div>';
+    return;
+  }
+  const totalEval   = regs.length;
+  const cursos      = [...new Set(regs.map(r=>r.curso).filter(Boolean))].length;
+  const prom        = (regs.reduce((s,r)=>s+(r.nota||1),0)/regs.length).toFixed(1);
+  const aprobados   = regs.filter(r=>(r.nota||1)>=4).length;
+  const pctAprob    = Math.round(aprobados/totalEval*100);
+  const pie         = regs.filter(r=>r.pie).length;
+  const ne          = regs.filter(r=>r.nota===null||r.nota===undefined||r.ne).length;
+  const notaColor   = prom>=6?'var(--blue)':prom>=4?'var(--green)':'var(--red)';
+  const aprobColor  = pctAprob>=60?'var(--green)':pctAprob>=40?'var(--amber)':'var(--red)';
+
+  kpiEl.innerHTML = [
+    { val: totalEval,            lbl: 'Evaluaciones',    color: 'var(--accent)' },
+    { val: cursos,               lbl: 'Cursos activos',  color: 'var(--blue,#2563eb)' },
+    { val: prom,                 lbl: 'Promedio general',color: notaColor },
+    { val: pctAprob + '%',       lbl: 'Tasa de logro',   color: aprobColor },
+    { val: aprobados,            lbl: 'Logrado (≥4.0)',  color: 'var(--green)' },
+    { val: totalEval-aprobados,  lbl: 'No logrado',      color: 'var(--red)' },
+    { val: pie,                  lbl: 'Alumnos PIE',     color: 'var(--accent)' },
+    { val: ne,                   lbl: 'Sin entregar',    color: 'var(--amber)' },
+  ].map(k => `
+    <div class="stat-card">
+      <div class="stat-val" style="color:${k.color}">${k.val}</div>
+      <div class="stat-lbl">${k.lbl}</div>
+    </div>`).join('');
 }
 
 function _renderDashHoy() {
@@ -7612,6 +8262,34 @@ function _miniChartSVG(notas, labels) {
   </svg>`;
 }
 
+
+// ── Renderizadores aislados por tab ─────────────────────────────────────
+function renderEstudio() {
+  if (typeof listaCursos === 'undefined' || typeof registros === 'undefined') return;
+  if (cursoSeleccionado) {
+    try { renderCursoMain(); } catch(e) { console.warn('[ArtEval] renderEstudio:', e); }
+  }
+  if (typeof _renderEstudioSubNav === 'function') _renderEstudioSubNav();
+}
+
+function renderComunica() {
+  try {
+    if (typeof _renderCorreoTab === 'function') _renderCorreoTab();
+  } catch(e) { console.warn('[ArtEval] renderComunica:', e); }
+  try {
+    if (typeof _actualizarEstadoGmailUI === 'function') {
+      var activo = typeof _gmailToken !== 'undefined' && _gmailToken
+                   && Date.now() < (typeof _gmailTokenExp !== 'undefined' ? _gmailTokenExp : 0);
+      _actualizarEstadoGmailUI(activo);
+    }
+  } catch(e) {}
+}
+
+function renderSistema() {
+  try { actualizarEstadoConfigDrive(); } catch(e) {}
+  _renderSistemaSubNav();
+}
+
 function renderProgreso() {
   const cont = document.getElementById('progresoContent');
   if (!cont) return;
@@ -7645,10 +8323,10 @@ function renderProgreso() {
   });
 
   const alumnos = Object.values(porAlumno)
-    .filter(function(a){ return a.evals.length >= 1; })
+    .filter(function(a){ return a && a.evals && a.evals.length >= 1; })
     .sort(function(a,b){ return a.nombre.localeCompare(b.nombre,'es',{sensitivity:'base'}); });
 
-  if (!alumnos.length) {
+  if (!alumnos || !alumnos.length) {
     cont.innerHTML = '<div class="empty-state"><svg style="width:40px;height:40px;opacity:0.2;margin-bottom:10px;" viewBox="0 0 48 48" fill="none"><rect width="48" height="48" rx="11" fill="#1c1410"/><path d="M24 7 L42 40 L6 40 Z" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round" fill="none"/><rect x="13" y="28" width="22" height="4" rx="0.5" fill="white"/><path d="M24 15 L38 37 L10 37 Z" fill="#1c1410"/><line x1="23.5" y1="17" x2="17" y2="32" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg><div>Sin datos de progreso.</div><div style="font-size:12px;margin-top:4px;">Guarda al menos una evaluación para ver el progreso</div></div>';
     return;
   }
@@ -7788,7 +8466,34 @@ function generarInformeUTP() {
   const win = window.open('', '_blank');
   win.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
   <title>Informe UTP · ArtEval</title>
-  <style>
+  <style>.reg-group {
+  background: var(--ios-bg2);
+  border-radius: var(--rad-lg);
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 0.5px rgba(60,60,67,0.12);
+  margin-bottom: 24px;
+}
+.btn-primary {
+  background: var(--ios-orange) !important; color: #fff !important; font-weight: 600;
+  box-shadow: 0 2px 8px rgba(255,149,0,0.28);
+}
+.btn-primary:hover:not(:disabled) { background: var(--ios-orange-dark) !important; }
+.btn-primary:active:not(:disabled) { transform: scale(0.96); box-shadow: 0 1px 3px rgba(255,149,0,0.16); }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: 44px; padding: 10px 18px;
+  border: none; border-radius: 10px;
+  background: var(--ios-bg2); color: var(--ios-label);
+  font-family: var(--font-ui); font-size: 14px; font-weight: 500;
+  letter-spacing: -0.1px; cursor: pointer; white-space: nowrap;
+  user-select: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 0.5px rgba(60,60,67,0.18);
+  transition: background 0.18s ease, transform 0.18s ease, opacity 0.18s ease;
+}
+.btn:hover:not(:disabled) { background: var(--ios-fill2); }
+.btn:active:not(:disabled) { transform: scale(0.96); opacity: 0.82; }
+.btn:disabled { opacity: 0.36; cursor: not-allowed; }
+
     body { font-family: 'Inter', Arial, sans-serif; margin: 32px; color: #1c1410; font-size: 13px; }
     h1 { font-size: 22px; font-weight: 800; color: #FF9500; margin-bottom: 4px; }
     .meta { font-size: 12px; color: #6b7280; margin-bottom: 24px; }
@@ -7804,18 +8509,28 @@ function generarInformeUTP() {
    MÓDULO 3 — UX/UI Update: táctil + legible
    ═══════════════════════════════════════════ */
 
-/* Touch targets mínimo 44px para todos los botones */
-button, .btn, .tab, .est-filtro-btn, select, input[type="checkbox"],
+/* Touch targets mínimo 44px — excepto sub-tabs y seg-ctrl que tienen su propio tamaño */
+.btn, .est-filtro-btn, select, input[type="checkbox"],
 .cloud-btn, .est-actions button {
   min-height: 44px;
   touch-action: manipulation;
 }
+/* sub-tab y seg-ctrl NO forzar 44px — tienen su propio min-height */
+.sub-tab, .ios-segment-btn, .seg-ctrl button { touch-action: manipulation; }
 
 /* Excepción: badges y elementos pequeños decorativos */
 .est-badge, .conteo-pill { min-height: unset; }
 
-/* Font-size base mínimo 13px */
-body, .est-nombre, .est-nota, .csl, .tab { font-size: 13px; }
+/* Font-size base mínimo 13px — SOLO para los elementos correctos, NO body ni .tab */
+.est-nombre, .est-nota, .csl { font-size: 13px; }
+.tab span { font-size: 10px; font-weight: 500; letter-spacing: 0.2px; line-height: 1; }
+.tab svg  { width: 24px; height: 24px; flex-shrink: 0; transition: transform 0.2s ease; }
+.tab:hover:not(.active) { color: var(--ios-label); background: rgba(0,0,0,0.04); }
+.tab:active:not(.active) { transform: scale(0.92); }
+
+.tab.active svg   { transform: scale(1.08); }
+.tab.active span  { font-weight: 700; }
+@media (pointer: coarse) { .tab { min-height: 56px; } }
 .est-num, .est-badge { font-size: 11px; }
 small, .text-xs, code { font-size: 12px; }
 
@@ -7851,10 +8566,68 @@ small, .text-xs, code { font-size: 12px; }
 
 /* Media query iPad (768px) */
 @media (max-width: 900px) {
-  .tabs { overflow-x: auto; white-space: nowrap; gap: 2px; padding: 4px; }
+
   .tab  { flex-shrink: 0; padding: 8px 12px; font-size: 12px; }
   .tab-icon { display: none; }
-  .topbar { padding: 0 10px; }
+  .topbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  min-height: 56px;
+  background: rgba(249,249,251,0.94);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 0.5px solid var(--ios-sep-solid);
+  position: sticky; top: 0; z-index: 200;
+}
+.topbar-logo {
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+}
+.logo-icon { width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0; }
+.topbar-search { flex: 1; min-width: 0; position: relative; }
+.topbar-search svg {
+  position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+  color: var(--ios-label3); pointer-events: none; z-index: 1;
+}
+.global-search-input {
+  width: 100%; box-sizing: border-box;
+  padding: 9px 12px 9px 38px !important;
+  padding-left: 45px !important;
+  border: none; border-radius: 10px;
+  background: rgba(120,120,128,0.12);
+  font-size: 15px; font-family: var(--font-ui); color: var(--ios-label);
+  outline: none;
+  transition: background 0.15s ease;
+  -webkit-appearance: none;
+}
+.global-search-input:focus { background: rgba(120,120,128,0.18); }
+.topbar-right {
+  display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+}
+/* Cápsula de estado Drive */
+.cloud-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 12px; min-height: 34px;
+  border: none; border-radius: 20px; cursor: pointer;
+  font-size: 12px; font-weight: 600; font-family: var(--font-ui);
+  background: rgba(52,199,89,0.10); color: #1A7A34;
+  transition: all 0.18s ease; -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+}
+.cloud-btn.disconnected { background: var(--ios-fill2); color: var(--ios-label3); }
+.cloud-btn.syncing      { background: var(--ios-orange-bg); color: var(--ios-orange); }
+.cloud-btn.error        { background: var(--red-bg); color: var(--red); }
+.cloud-btn:active       { transform: scale(0.94); }
+.conteo-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 5px 10px; border-radius: 20px;
+  font-size: 12px; font-weight: 700; font-family: var(--font-mono);
+  background: var(--ios-fill2); color: var(--ios-label2);
+  cursor: pointer; white-space: nowrap;
+  transition: all 0.15s ease;
+}
+.conteo-pill:hover { background: var(--ios-fill); }
   .content { padding: 10px; }
   .curso-chip-stat { min-width: 60px; padding: 8px 10px; }
   .csn { font-size: 18px; }
@@ -7970,19 +8743,7 @@ small, .text-xs, code { font-size: 12px; }
   margin-bottom: 16px;
 }
 
-/* Tab activa — más contraste */
-.tab.active {
-  background: var(--bg) !important;
-  color: var(--accent) !important;
-  border-color: var(--accent) !important;
-  border-bottom-color: var(--bg) !important;
-  font-weight: 700 !important;
-  border-width: 2px !important;
-}
-.tab.active::after {
-  height: 3px !important;
-  background: var(--accent) !important;
-}
+
 
 /* Barra de progreso curso en Evaluar */
 #barraProgresoCurso {
@@ -8135,13 +8896,24 @@ body { font-family: var(--font-ui); font-size: 14px; color: var(--text); backgro
 
 /* Config cards — Apple sheets */
 .config-card {
-  background: var(--bg2);
-  border: 0.5px solid var(--border);
-  border-radius: 16px;
-  padding: 20px 24px;
-  margin-bottom: 14px;
-  box-shadow: var(--shadow);
+  background: var(--ios-bg2) !important;
+  border-radius: var(--rad-lg) !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 0.5px rgba(60,60,67,0.12) !important;
+  padding: 0 !important; margin-bottom: 20px !important; overflow: hidden;
 }
+.config-card > h3 {
+  padding: 12px 18px 10px;
+  font-size: 13px; font-weight: 600; color: var(--ios-label3);
+  text-transform: uppercase; letter-spacing: 0.5px;
+  border-bottom: 0.5px solid var(--ios-sep-solid);
+  background: none; margin: 0;
+}
+.config-card > div, .config-card > p {
+  padding: 14px 18px;
+  border-bottom: 0.5px solid var(--ios-sep-solid);
+}
+.config-card > div:last-child, .config-card > p:last-child { border-bottom: none; }
+
 .config-card h3 {
   font-size: 15px;
   font-weight: 600;
@@ -8235,16 +9007,20 @@ body { font-family: var(--font-ui); font-size: 14px; color: var(--text); backgro
 #drivePanelWrap { border: 0.5px solid var(--border) !important; border-radius: 16px !important; box-shadow: 0 8px 32px rgba(0,0,0,0.08) !important; }
 
 /* Tab activa — naranja */
-.tab.active { background: var(--bg2) !important; color: var(--accent) !important; border-color: var(--accent) !important; font-weight: 600 !important; }
+
 
 /* Reg cards */
 .reg-card {
-  background: var(--bg2) !important;
-  border: 0.5px solid var(--border) !important;
-  border-radius: 14px !important;
-  box-shadow: var(--shadow) !important;
-  padding: 14px 16px !important;
+  background: var(--ios-bg2) !important;
+  border-radius: 0 !important;
+  border-bottom: 0.5px solid var(--ios-sep-solid) !important;
+  box-shadow: none !important;
+  padding: 12px 18px !important;
+  transition: background 0.12s ease;
 }
+.reg-card:last-child { border-bottom: none !important; }
+.reg-card:hover { background: rgba(0,0,0,0.02) !important; }
+
 .reg-card:hover { border-color: var(--accent) !important; box-shadow: 0 4px 20px rgba(255,149,0,0.10) !important; }
 .reg-nombre { font-size: 14px !important; font-weight: 600 !important; color: var(--text) !important; }
 .reg-meta { font-size: 12px !important; color: var(--text3) !important; }
@@ -8278,11 +9054,129 @@ body { font-family: var(--font-ui); font-size: 14px; color: var(--text); backgro
 
 /* Override BG tokens to neutral Apple */
 :root {
-  --bg:  #F9F9FB;
-  --bg3: #F2F2F7;
-  --bg4: #E5E5EA;
+  /* ── iOS Color Tokens ───────────────────────── */
+  --ios-orange:        #FF9500;
+  --ios-orange-dark:   #E67E00;
+  --ios-orange-bg:     rgba(255,149,0,0.10);
+  --ios-label:         #1C1C1E;
+  --ios-label2:        #3C3C43;
+  --ios-label3:        #8E8E93;
+  --ios-label4:        #C7C7CC;
+  --ios-bg:            #F2F2F7;
+  --ios-bg2:           #FFFFFF;
+  --ios-separator:     rgba(60,60,67,0.29);
+  --ios-sep-solid:     #C6C6C8;
+  --ios-fill:          rgba(120,120,128,0.20);
+  --ios-fill2:         rgba(120,120,128,0.12);
+  /* ── Aliases ────────────────────────────────── */
+  --bg:       var(--ios-bg);
+  --bg2:      var(--ios-bg2);
+  --bg3:      var(--ios-bg);
+  --bg4:      #E5E5EA;
+  --border:   var(--ios-sep-solid);
+  --text:     var(--ios-label);
+  --text2:    var(--ios-label2);
+  --text3:    var(--ios-label3);
+  --accent:   var(--ios-orange);
+  --accent-dark: var(--ios-orange-dark);
+  --accent-bg:   var(--ios-orange-bg);
+  --red:      #FF3B30; --green:    #34C759; --blue:     #007AFF;
+  --green-bg: rgba(52,199,89,0.10);
+  --red-bg:   rgba(255,59,48,0.10);
+  --blue-bg:  rgba(0,122,255,0.10);
+  --shadow:   0 1px 3px rgba(0,0,0,0.06), 0 0 0 0.5px rgba(60,60,67,0.18);
+  --shadow-md:0 4px 16px rgba(0,0,0,0.10);
+  --shadow-lg:0 16px 40px rgba(0,0,0,0.14);
+  --rad:      12px; --rad-sm: 8px; --rad-lg: 16px; --rad-xl: 20px;
+  --font-ui:  -apple-system,'DM Sans',sans-serif;
+  --font-mono:'DM Mono','SF Mono',monospace;
 }
 
+/* ══ ArtEval v.125 — iOS Design System Complete ══════════════════════════ */
+body { background: var(--ios-bg); }
+
+/* Sub-tabs */
+
+
+/* Tab panes */
+#tab-estudio, #tab-progreso, #tab-comunica, #tab-sistema {
+  transition: opacity 0.18s ease; background: var(--ios-bg); min-height: calc(100vh - 108px);
+}
+
+/* Botones pequeños y variantes */
+.btn-sm { font-size: 12px; padding: 7px 13px; min-height: 36px; border-radius: 8px; }
+.btn-danger { background: var(--red-bg) !important; color: var(--red) !important; }
+.btn-danger:hover { background: rgba(255,59,48,0.16) !important; }
+.btn-icon { width: 44px; height: 44px; padding: 0; border-radius: 12px; }
+.ios-btn { transition: transform 0.18s ease, opacity 0.18s ease; -webkit-tap-highlight-color: transparent; }
+.ios-btn:active { transform: scale(0.96); opacity: 0.82; }
+@media (pointer: coarse) { .btn, .ios-btn { min-height: 44px; } .btn-sm { min-height: 38px; } }
+
+/* Nivel rúbrica buttons */
+.nivel-btn {
+  border-radius: 10px !important; padding: 10px 8px !important; border: none !important;
+  background: rgba(120,120,128,0.12) !important; color: var(--ios-label2) !important;
+  font-family: var(--font-ui) !important; cursor: pointer !important;
+  touch-action: manipulation !important; transition: all 0.15s ease !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+.nivel-btn:active { transform: scale(0.93) !important; }
+.nivel-btn.sel-MB { background: rgba(52,199,89,0.14) !important; color: #1D8A3A !important; box-shadow: inset 0 0 0 1.5px #34C759 !important; }
+.nivel-btn.sel-L  { background: rgba(0,122,255,0.12) !important; color: #0058CC !important; box-shadow: inset 0 0 0 1.5px #007AFF !important; }
+.nivel-btn.sel-M  { background: var(--ios-orange-bg) !important; color: var(--ios-orange-dark) !important; box-shadow: inset 0 0 0 1.5px var(--ios-orange) !important; }
+.nivel-btn.sel-N  { background: var(--red-bg) !important; color: var(--red) !important; box-shadow: inset 0 0 0 1.5px var(--red) !important; }
+
+/* .seg-ctrl — hereda del bloque principal v.137 */
+/* Reglas secundarias neutralizadas para evitar conflicto */
+
+/* Eval nav (modo serie) */
+.eval-nav {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 10px 16px; background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(10px); border-top: 0.5px solid var(--ios-sep-solid);
+}
+.eval-nav-btn {
+  display: inline-flex; align-items: center; gap: 5px; padding: 8px 14px;
+  border: none; border-radius: 10px; background: var(--ios-fill2);
+  color: var(--ios-label); font-size: 13px; font-weight: 500; font-family: var(--font-ui);
+  cursor: pointer; min-height: 40px; transition: all 0.18s ease;
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+.eval-nav-btn:hover { background: var(--ios-fill); }
+.eval-nav-btn:active { transform: scale(0.96); opacity: 0.82; }
+.eval-nav-label {
+  flex: 1; text-align: center; font-size: 13px; font-weight: 600;
+  color: var(--ios-label); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* NE interactiva */
+.no-entregado-cell.ne-editable { cursor: pointer; transition: background 0.15s, transform 0.1s; }
+.no-entregado-cell.ne-editable:hover { background: rgba(255,59,48,0.12) !important; }
+.no-entregado-cell.ne-editable:active { transform: scale(0.95); }
+
+/* Animaciones */
+@keyframes fadeInUp { from{opacity:0;transform:translateY(8px) scale(0.97)} to{opacity:1;transform:none} }
+@keyframes slideIn  { from{opacity:0;transform:translateX(12px)} to{opacity:1;transform:none} }
+
+/* Márgenes seguros iPad */
+.section-pad { padding: 16px; }
+@media (min-width:768px) { .section-pad { padding: 20px 28px; } }
+
+/* Buscador global */
+input[type="search"]:not(.noop), .global-search-input {
+  padding-left: 45px !important;
+}
+
+/* Menú NE */
+#menuNE { animation: fadeInUp 0.18s ease-out; }
+
+/* ios-list utilitario */
+.ios-list { background: var(--ios-bg2); border-radius: var(--rad-lg); overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 0.5px rgba(60,60,67,0.12); margin-bottom: 20px; }
+.ios-list-row { display: flex; align-items: center; gap: 12px; padding: 13px 18px; border-top: 0.5px solid var(--ios-sep-solid); background: var(--ios-bg2); transition: background 0.12s; }
+.ios-list-row:first-child { border-top: none; }
+.ios-list-row:hover { background: rgba(0,0,0,0.02); }
+.ios-list-row-label { flex: 1; font-size: 16px; font-weight: 500; color: var(--ios-label); letter-spacing: -0.2px; }
+.ios-list-row-detail { font-size: 14px; color: var(--ios-label3); }
 </style></head><body>
   <h1>📋 Informe de Evaluaciones · Artes Visuales</h1>
   <div class="meta">
@@ -8438,7 +9332,7 @@ async function sincronizarTodo() {
   if (!okSync) return;
   const st = document.getElementById('sheetsStatus');
   if (st) { st.style.display='inline-block'; st.className='gsheet-status sync'; st.textContent='Sincronizando...'; }
-  agregarLog('Iniciando sincronización de ' + registros.length + ' registros...');
+  try {  agregarLog('Iniciando sincronización de ' + registros.length + ' registros...');
   let ok = 0;
   for (const r of registros) {
     await enviarASheets(r);
@@ -8448,6 +9342,12 @@ async function sincronizarTodo() {
   }
   if (st) { st.className='gsheet-status ok'; st.textContent='✓ ' + ok + ' registros sincronizados'; }
   agregarLog('✓ Sincronización completada: ' + ok + ' registros enviados.');
+
+  } catch(e) {
+    console.warn('[ArtEval] sincronizarTodo error:', e.message);
+    toast('Error en sincronización: ' + e.message, 'err', 4000);
+    if (st) { st.className = 'gsheet-status error'; st.textContent = '✗ Error'; }
+  }
 }
 
 function agregarLog(msg) {
@@ -8471,45 +9371,158 @@ function copiarScript() {
 }
 
 function showTab(name) {
-  ['inicio','evaluar','registros','cursos','estadisticas','progreso','correo','reporte','rubricas','config'].forEach(t => {
+  // Mapa de aliases: tabs antiguas → nuevas (para compatibilidad interna)
+  var _tabAlias = {
+    'inicio':'estudio', 'evaluar':'estudio', 'cursos':'estudio',
+    'registros':'estudio',        // registros ahora vive en estudio
+    'duplicados':'estudio',       // duplicados ahora vive en estudio
+    'estadisticas':'progreso', 'progreso-oa':'progreso',
+    'correo':'comunica',
+    'config':'sistema', 'reporte':'sistema', 'rubricas':'sistema'
+  };
+  // Si se pide una tab antigua, redirigir a la nueva
+  var mappedName = _tabAlias[name] || name;
+
+  // Ocultar todas las tab sections con transición
+  ['estudio','progreso','comunica','sistema'].forEach(t => {
     const el = document.getElementById('tab-'+t);
-    if (el) el.style.display = t===name ? 'block' : 'none';
-  });
-  document.querySelectorAll('.tab').forEach(btn => {
-    // Comparar data-tab del botón directamente — sin depender del orden
-    btn.classList.toggle('active', btn.getAttribute('data-tab') === name);
-  });
-  if (name==='registros')   { renderRegistros(); renderCursosChips(); }
-  if (name==='cursos')       { deduplicarYFusionarTodos(); renderTabCursos(); renderCursosChips(); }
-  if (name==='estadisticas') renderEstadisticas();
-  if (name==='inicio')       renderDashboard();
-  if (name==='progreso')     renderProgreso();
-  if (name==='reporte')      renderReporte();
-  if (name==='correo')        _renderCorreoTab();
-  if (name==='rubricas')     renderRubricas();
-  // FIX QA v72: detener stream de cámara al salir del tab evaluar
-  if (name !== 'evaluar' && typeof stream !== 'undefined' && stream) {
-    try { stream.getTracks().forEach(function(t){ t.stop(); }); stream = null;
-      var _vid = document.getElementById('camVideo'); if (_vid) _vid.srcObject = null;
-    } catch(e) { /* silencioso */ }
-  }
-  if (name==='config') {
-    const k = getKey();
-    const inp = document.getElementById('apiKeyInput');
-    if (inp && k) inp.value = k;
-    const su = getSheetsUrl();
-    const sinp = document.getElementById('sheetsUrlInput');
-    if (sinp && su) sinp.value = su;
-    if (su) {
-      const st = document.getElementById('sheetsStatus');
-      if (st) { st.style.display='inline-block'; st.className='gsheet-status ok'; st.textContent='✓ Configurado'; }
+    if (el) {
+      el.style.opacity = '0';
+      el.style.pointerEvents = 'none';
+      setTimeout(function(){
+        if (t !== mappedName) el.style.display = 'none';
+      }, 80);
     }
-    // Actualizar estado Drive Sync
-    setTimeout(actualizarEstadoConfigDrive, 50);
+  });
+
+  // Mostrar la tab activa
+  const active = document.getElementById('tab-'+mappedName);
+  if (active) {
+    active.style.display = 'block';
+    active.style.pointerEvents = '';
+    setTimeout(function(){ active.style.opacity = '1'; }, 10);
+  }
+
+  // El resaltado visual lo maneja _activarTab()
+  // Aquí solo sincronizamos si showTab fue llamado internamente
+  // (ej: desde un alias o desde código JS, no desde click)
+  if (!window._activarTabInProgress) {
+    // Llamada interna: resaltar el primer botón del tab activo
+    var firstMatch = document.querySelector('.tabs-inner .tab[data-tab="' + mappedName + '"]');
+    if (firstMatch) {
+      document.querySelectorAll('.tabs-inner .tab').forEach(function(b){ b.classList.remove('active'); });
+      firstMatch.classList.add('active');
+    }
+  }
+
+  // Guardar tab activa
+  try { localStorage.setItem('av_last_tab', mappedName); } catch(e) {}
+
+  // Callbacks de renderizado por tab
+  // Renderizadores aislados — cada uno con su propio try/catch
+  if (mappedName === 'estudio') {
+    try { renderEstudio(); } catch(e) { console.warn('[ArtEval] renderEstudio:', e.message); }
+    // Asegurar que la sub-sección correcta se muestre al navegar a estudio
+    try { _renderEstudioSubNav(); } catch(e) {}
+  } else if (mappedName === 'progreso') {
+    // Registros ya no está en progreso; mostrar estadísticas por defecto
+    try { if(_progresoSubTab==='registros') _progresoSubTab='estadisticas'; } catch(e) {}
+    try { actualizarConteo(); if(typeof _renderDashChart==='function')_renderDashChart('todo'); } catch(e) {}
+  } else if (mappedName === 'comunica') {
+    try { renderComunica(); } catch(e) { console.warn('[ArtEval] renderComunica:', e.message); }
+  } else if (mappedName === 'sistema') {
+    try { renderSistema(); } catch(e) { console.warn('[ArtEval] renderSistema:', e.message); }
+  }
+
+  // Pendiente de tab anterior
+  if (window._tabPendiente) {
+    var p = window._tabPendiente; window._tabPendiente = null;
+    setTimeout(function(){ showTab(p); }, 50);
   }
 }
 
-// Mostrar count PIE en el pill del topbar
+// Sub-navegación interna del tab Estudio
+var _estudioSubTab = 'cursos';
+function _renderEstudioSubNav() {
+  var sub = document.getElementById('estudioSubNav');
+  if (!sub) return;
+  // Tabs de la subbarra: Cursos, Registros y Duplicados
+  ['cursos','registros','duplicados'].forEach(function(t) {
+    var btn = sub.querySelector('[data-sub="'+t+'"]');
+    var sec = document.getElementById('estudio-sec-'+t);
+    var isActive = t === _estudioSubTab;
+    if (btn) {
+      btn.classList.toggle('sub-active', isActive);
+      btn.classList.toggle('active', isActive);
+      btn.removeAttribute('style'); // dejar que CSS maneje el estilo
+    }
+    if (sec) sec.style.display = isActive ? 'block' : 'none';
+  });
+  // Secciones activadas desde barra principal (inicio, evaluar)
+  ['inicio','evaluar'].forEach(function(t) {
+    var sec = document.getElementById('estudio-sec-'+t);
+    if (sec) sec.style.display = (t === _estudioSubTab) ? 'block' : 'none';
+  });
+}
+function showEstudioSub(sub) {
+  _estudioSubTab = sub;
+  _renderEstudioSubNav();
+  if (sub === 'cursos'      && cursoSeleccionado) renderCursoMain();
+  if (sub === 'registros')  { try { renderRegistros(); renderLibroClases(); } catch(e) {} }
+  if (sub === 'inicio')     { try { renderDashboard(); } catch(e) { console.warn('[ArtEval] renderDashboard:', e.message); } }
+  if (sub === 'duplicados') { try { renderPanelDuplicados('panelDuplicadosContainer'); } catch(e) {} }
+}
+
+// Sub-navegación interna del tab Sistema
+var _sistemaSubTab = 'drive';
+function _renderSistemaSubNav() {
+  var sub = document.getElementById('sistemaSubNav');
+  if (!sub) return;
+  ['drive','rubricas','config'].forEach(function(t) {
+    var btn = sub.querySelector('[data-sub="'+t+'"]');
+    var sec = document.getElementById('sistema-sec-'+t);
+    var isActive = t === _sistemaSubTab;
+    if (btn) {
+      btn.classList.toggle('sub-active', isActive);
+      btn.classList.toggle('active', isActive);
+      btn.removeAttribute('style');
+    }
+    if (sec) sec.style.display = isActive ? 'block' : 'none';
+  });
+  if (_sistemaSubTab === 'duplicados') {
+    renderPanelDuplicados('panelDuplicadosContainer');
+  }
+}
+
+// ── Sub-navegación del tab Progreso ─────────────────────────────────────
+var _progresoSubTab = 'estadisticas';
+function showProgresoSub(sub) {
+  _progresoSubTab = sub;
+  var nav = document.getElementById('progresoSubNav');
+  if (!nav) return;
+  // Registros se mudó a estudio — progreso solo tiene estadísticas y OA
+  ['estadisticas','progreso-oa'].forEach(function(t) {
+    var btn = nav.querySelector('[data-sub="'+t+'"]');
+    var sec = document.getElementById('progreso-sec-'+t);
+    var isA = (t === sub);
+    if (btn) {
+      btn.classList.toggle('sub-active', isA);
+      btn.classList.toggle('active', isA);
+      btn.removeAttribute('style');
+    }
+    if (sec) sec.style.display = isA ? 'block' : 'none';
+  });
+  try {
+    if (sub === 'estadisticas')  { actualizarConteo(); if(typeof _renderDashChart==='function')_renderDashChart('todo'); }
+    if (sub === 'progreso-oa')   { if(typeof renderProgreso==='function')renderProgreso(); }
+  } catch(e) { console.warn('[ArtEval] showProgresoSub:', e.message); }
+}
+function showSistemaSub(sub) {
+  _sistemaSubTab = sub;
+  _renderSistemaSubNav();
+}
+
+
 function actualizarConteoPIE() {
   const evaluados  = registros.length;
   const pie        = registros.filter(r => r.pie).length;
@@ -8964,6 +9977,19 @@ function _procesarPlanillaApoderadosCSV(text, fileName) {
   _procesarPlanillaApoderadosRows(rows, fileName);
 }
 
+
+// ── Eliminar columna CUPO de cualquier importación ──────────────────────
+function _filtrarCupo(headers, rows) {
+  var cupoIdx = headers.findIndex(function(h) {
+    return (h||'').toString().toUpperCase().includes('CUPO');
+  });
+  if (cupoIdx === -1) return { headers: headers, rows: rows };
+  var newHeaders = headers.filter(function(_, i) { return i !== cupoIdx; });
+  var newRows    = rows.map(function(row) {
+    return row.filter(function(_, i) { return i !== cupoIdx; });
+  });
+  return { headers: newHeaders, rows: newRows };
+}
 function _procesarPlanillaApoderadosRows(rows, fileName) {
   if (!rows.length) { toast('✗ Planilla vacía', 'err'); return; }
 
@@ -10254,6 +11280,18 @@ function tokenizar(nombre) {
 
 // ── Intersección de tokens: todas las palabras del nombre corto están en el largo ──
 // 'Alexander Padilla' → [alexander, padilla] todos en [padilla, mercati, alexander, maximiliano] → true
+
+// ── UUID v4 criptográfico para integridad de registros ─────────────────
+function _uuidV4() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  // Fallback manual
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
 function mismoEstudiante(nombreA, nombreB) {
   const tA = tokenizar(nombreA);
   const tB = tokenizar(nombreB);
@@ -10475,7 +11513,49 @@ function getRegsEstudiante(nombre, curso) {
 }
 
 // ── Render principal del curso seleccionado ──
+var _aulaFiltro = 'todos';
+function _setAulaFiltro(filtro, btn) {
+  _aulaFiltro = filtro;
+  var ctrl = document.getElementById('aulaSegCtrl');
+  if (ctrl) {
+    var ACT = "display:inline-flex;align-items:center;gap:5px;padding:5px 13px;font-family:-apple-system,'DM Sans',sans-serif;font-size:13px;font-weight:500;border:none;border-radius:8px;cursor:pointer;white-space:nowrap;min-height:30px;-webkit-tap-highlight-color:transparent;outline:none;background-color:#FF9500;color:#FFFFFF;";
+    var INA = "display:inline-flex;align-items:center;gap:5px;padding:5px 13px;font-family:-apple-system,'DM Sans',sans-serif;font-size:13px;font-weight:500;border:none;border-radius:8px;cursor:pointer;white-space:nowrap;min-height:30px;-webkit-tap-highlight-color:transparent;outline:none;background:transparent;color:rgba(60,60,67,0.75);";
+    ctrl.querySelectorAll('button').forEach(function(b) {
+      var isA = b.dataset.seg === filtro;
+      b.classList.toggle('seg-active', isA);
+      b.setAttribute('style', isA ? ACT : INA);
+    });
+  }
+  if (cursoSeleccionado) renderCursoMain();
+}
+function _aplicarFiltroAula(lista) {
+  if (_aulaFiltro === 'todos') return lista;
+  return (lista||[]).filter(function(al) {
+    var nombre = typeof al==='string' ? al : (al&&al.nombre||al||'');
+    if (_aulaFiltro === 'pie') {
+      return registros.some(function(r) {
+        return r.pie && mismoEstudiante(r.nombre||'',nombre)
+               && (r.curso||'')===cursoSeleccionado;
+      }) || (al&&al.pie);
+    }
+    if (_aulaFiltro === 'pendientes') {
+      var tieneNE = registros.some(function(r) {
+        return r.noEntregado && mismoEstudiante(r.nombre||'',nombre)
+               && (r.curso||'')===cursoSeleccionado;
+      });
+      var sinEval = !registros.some(function(r) {
+        return !r.noEntregado && r.nota!==undefined
+               && mismoEstudiante(r.nombre||'',nombre)
+               && (r.curso||'')===cursoSeleccionado;
+      });
+      return tieneNE || sinEval;
+    }
+    return true;
+  });
+}
+
 function renderCursoMain() {
+  if (!cursoSeleccionado || !Array.isArray(registros)) return;
   const main = document.getElementById('cursoMain');
   if (!main) return;
 
@@ -10490,7 +11570,10 @@ function renderCursoMain() {
 
   const curso = cursoSeleccionado;
   // ── Nómina oficial (importada desde Excel del colegio) ──
-  const listaNomina = (listaCursos && listaCursos[curso]) ? listaCursos[curso] : [];
+  const _listaNominaRaw = (listaCursos && listaCursos[curso]) ? listaCursos[curso] : [];
+  const listaNomina = (typeof _aplicarFiltroAula === 'function')
+    ? _aplicarFiltroAula(_listaNominaRaw)
+    : _listaNominaRaw;
 
   // ── Agregar registros que NO están cubiertos por ningún nombre oficial ──
   // Usa mismoEstudiante (fuzzy) para detectar cobertura, no comparación exacta
@@ -10641,7 +11724,7 @@ function renderCursoMain() {
   [
     { key: 'todos',     lbl: 'Todos (' + lista.length + ')',          cls: '' },
     { key: 'entregado', lbl: '✓ Entregados (' + entregados + ')',     cls: 'f-entregado' },
-    { key: 'pendiente', lbl: '⚠ Pendientes (' + pendientes + ')',    cls: 'f-pendiente' },
+    { key: 'pendiente', lbl: 'Pendientes (' + pendientes + ')',    cls: 'f-pendiente' },
     { key: 'pie',       lbl: '<svg width="12" height="12" viewBox="0 0 100 100" fill="#FF9500" style="flex-shrink:0;vertical-align:middle;display:inline-block" aria-label="PIE"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="#FF9500" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/></svg> PIE (' + pieCount + ')', cls: 'f-pie' },
   ].forEach(function(f) {
     const btn = document.createElement('button');
@@ -11518,8 +12601,14 @@ async function borrarTodosLosDatos() {
     '🗑️', 'Sí, borrar todo', 'btn-danger'
   );
   if (!ok) return;
+  try {
   localStorage.clear();
   location.reload();
+
+  } catch(e) {
+    console.error('[ArtEval] borrarTodosLosDatos:', e);
+    toast('Error al procesar: ' + e.message, 'err', 3000);
+  }
 }
 
 // (autocomplete implementado más arriba)
@@ -11925,6 +13014,109 @@ function deduplicarYFusionarCurso(curso) {
   return fusiones;
 }
 
+
+// ── Fusión inteligente de duplicados (similitud 95%) ────────────────────
+function _similitudNombre(a, b) {
+  // Normalizar: minúsculas, sin tildes, sin espacios extra
+  var norm = function(s) {
+    return (s||'').toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g,' ').trim();
+  };
+  var na = norm(a), nb = norm(b);
+  if (na === nb) return 1;
+  if (!na.length || !nb.length) return 0;
+  // Distancia Levenshtein → similitud
+  var m = na.length, n = nb.length;
+  var dp = Array.from({length:m+1}, function(_, i){ return [i]; });
+  for (var j=0;j<=n;j++) dp[0][j]=j;
+  for (var i=1;i<=m;i++)
+    for (var j=1;j<=n;j++)
+      dp[i][j] = na[i-1]===nb[j-1] ? dp[i-1][j-1] : 1+Math.min(dp[i-1][j],dp[i][j-1],dp[i-1][j-1]);
+  return 1 - dp[m][n] / Math.max(m, n);
+}
+
+// Auditoría de duplicados: retorna grupos de registros similares
+function auditarDuplicados() {
+  var grupos = [];
+  var usados = new Set();
+  registros.forEach(function(r, i) {
+    if (usados.has(i)) return;
+    var grupo = [i];
+    registros.forEach(function(r2, j) {
+      if (i===j || usados.has(j)) return;
+      if ((r.curso||'')===(r2.curso||'') && _similitudNombre(r.nombre,r2.nombre)>=0.90) {
+        grupo.push(j);
+        usados.add(j);
+      }
+    });
+    if (grupo.length > 1) {
+      usados.add(i);
+      grupos.push(grupo);
+    }
+  });
+  return grupos;
+}
+
+// Fusionar grupo de duplicados: mantener el más reciente, acumular notas
+function _fusionarGrupo(indices) {
+  if (!indices || indices.length < 2) return;
+  // El más reciente (por fecha) es el maestro
+  var sorted = indices.slice().sort(function(a,b) {
+    return new Date(registros[b].fechaISO||0) - new Date(registros[a].fechaISO||0);
+  });
+  var maestroIdx = sorted[0];
+  var maestro    = registros[maestroIdx];
+  // Garantizar UUID en el maestro
+  if (!maestro._id) maestro._id = _uuidV4();
+  // Eliminar los duplicados (del mayor al menor para no desplazar índices)
+  var toDelete = sorted.slice(1).sort(function(a,b){return b-a;});
+  toDelete.forEach(function(idx) {
+    localStorage.setItem('av_deleted_'+(registros[idx]._id||idx), new Date().toISOString());
+    registros.splice(idx, 1);
+  });
+  saveRegistros();
+  actualizarConteo();
+  renderRegistros();
+  if (cursoSeleccionado) renderCursoMain();
+}
+
+// Renderizar panel de limpieza de duplicados
+function renderPanelDuplicados(containerId) {
+  var cont = document.getElementById(containerId);
+  if (!cont) return;
+  var grupos = auditarDuplicados();
+  if (!grupos.length) {
+    cont.innerHTML = '<div style="text-align:center;padding:30px;color:#34C759;">'
+      + '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#34C759" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:0 auto 10px;"><polyline points="20 6 9 17 4 12"/></svg>'
+      + '<div style="font-size:15px;font-weight:700;">Sin duplicados detectados</div>'
+      + '<div style="font-size:12px;color:#8E8E93;margin-top:4px;">Todos los registros son únicos</div></div>';
+    return;
+  }
+  var html = '<div style="font-size:11px;font-weight:700;color:#8E8E93;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">'
+    + grupos.length + ' grupo' + (grupos.length!==1?'s':'') + ' de posibles duplicados</div>';
+  grupos.forEach(function(grupo, gi) {
+    html += '<div style="background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,0.06),0 0 0 0.5px #E5E5EA;margin-bottom:12px;overflow:hidden;">';
+    grupo.forEach(function(ri, k) {
+      var r = registros[ri];
+      var nota = r.nota ? r.nota.toFixed(1) : (r.noEntregado ? 'NE' : '—');
+      html += '<div style="padding:10px 16px;'+(k>0?'border-top:0.5px solid #F2F2F7;':'')+'display:flex;align-items:center;gap:10px;">'
+        + '<div style="flex:1;">'
+        + '<div style="font-size:13px;font-weight:600;color:#1C1C1E;">'+r.nombre+'</div>'
+        + '<div style="font-size:11px;color:#8E8E93;">'+r.curso+' · '+r.instancia+' · '+r.fecha+' · '+nota+'</div>'
+        + '</div>'
+        + (k===0?'<span style="font-size:10px;padding:2px 8px;background:rgba(255,149,0,0.12);color:#FF9500;border-radius:20px;font-weight:700;">PRINCIPAL</span>':'')
+        + '</div>';
+    });
+    html += '<div style="padding:10px 16px;border-top:0.5px solid #E5E5EA;display:flex;gap:8px;">'
+      + '<button onclick="_fusionarGrupo(['+grupo.join(',')+'])" '
+      + 'style="flex:1;padding:9px;background:#FF9500;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">Sí aceptar y fusionar</button>'
+      + '<button onclick="this.parentNode.parentNode.remove()" '
+      + 'style="padding:9px 14px;background:none;border:1px solid #E5E5EA;border-radius:10px;font-size:13px;color:#8E8E93;cursor:pointer;font-family:inherit;">Ignorar</button>'
+      + '</div></div>';
+  });
+  cont.innerHTML = html;
+}
 function deduplicarYFusionarTodos() {
   let total = 0;
   Object.keys(listaCursos).forEach(function(curso) {
@@ -12861,6 +14053,16 @@ async function syncToDrive() {
         geminiKey:          localStorage.getItem('av_gemini_key')          || '',
         linkedWorkEmail:    localStorage.getItem('ae_linked_work_email')   || '',
       },
+      // Anti-zombie: IDs de registros eliminados con su timestamp
+      deletedRegistry: (function() {
+        var dr = {};
+        try {
+          Object.keys(localStorage).forEach(function(k) {
+            if (k.startsWith('av_deleted_')) dr[k.slice(11)] = localStorage.getItem(k);
+          });
+        } catch(e) {}
+        return dr;
+      })(),
     };
 
     if (snapshot.registros.length === 0 && registros.length === 0) {
@@ -13056,6 +14258,17 @@ async function syncFromDrive() {
 
     if (!raw._v || !raw.registros) throw new Error('Formato de backup no reconocido');
 
+    // Anti-zombie: no restaurar registros que fueron eliminados localmente
+    if (raw.deletedRegistry) {
+      raw.registros = raw.registros.filter(function(r) {
+        if (!r._id) return true; // registros sin UUID siempre pasan
+        var delKey = 'av_deleted_' + r._id;
+        var delTs  = localStorage.getItem(delKey);
+        if (!delTs) return true; // no fue eliminado localmente
+        // Si fue eliminado después del backup: no restaurar
+        return new Date(r.fechaISO||0) > new Date(delTs);
+      });
+    }
     // Validar que el backup no está vacío antes de sobreescribir datos locales
     if (raw.registros.length === 0 && registros.length > 0) {
       var okEmpty = await confirmarAccion(
@@ -13167,6 +14380,107 @@ if (document.readyState === 'loading') {
 
 
 
+
+// ── _activarTab v.141 ────────────────────────────────────────────
+// Función central de navegación. Resalta SOLO el botón pulsado,
+// cambia la sección visible y activa el sub-tab correcto.
+// Garantía: nunca quedan dos tabs naranjas simultáneamente.
+function _activarTab(btnEl, tabName, subTab) {
+  // 1. Quitar .active de TODOS los tabs de la barra principal
+  document.querySelectorAll('.tabs-inner .tab').forEach(function(b) {
+    b.classList.remove('active');
+  });
+  // 2. Poner .active SOLO en el botón pulsado
+  if (btnEl) btnEl.classList.add('active');
+
+  // 3. Bandera para evitar que showTab sobreescriba el estado
+  window._activarTabInProgress = true;
+  showTab(tabName);
+  window._activarTabInProgress = false;
+
+  // 4. Activar sub-sección si corresponde
+  if (subTab) {
+    try { showEstudioSub(subTab); } catch(e) {}
+  }
+
+  // 5. Mostrar subnav: Inicio y Evaluar NO muestran subnav.
+  //    Solo Estudio (data-maintab='cursos') muestra estudioSubNav.
+  var maintab = btnEl ? (btnEl.dataset.maintab || tabName) : tabName;
+  _mostrarSubnav(tabName, maintab);
+
+  // 6. Persistir
+  try { localStorage.setItem('av_last_maintab', maintab); } catch(e) {}
+}
+
+// Muestra el subnav correspondiente al tab activo, oculta los demás
+function _mostrarSubnav(tabName, maintab) {
+  var layer = document.getElementById('subnavLayer');
+  // Ocultar todos los subnavs
+  ['estudioSubNav','progresoSubNav','sistemaSubNav'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('subnav-visible');
+  });
+  // Determinar qué subnav mostrar:
+  // - Inicio (maintab='inicio') y Evaluar (maintab='evaluar') → sin subnav
+  // - Estudio (maintab='cursos') → estudioSubNav
+  // - Progreso → progresoSubNav
+  // - Sistema → sistemaSubNav
+  // - Correo → sin subnav
+  var sinSubnav = ['inicio','evaluar','comunica'];
+  var targetId = null;
+  if (sinSubnav.indexOf(maintab) === -1) {
+    var navMap = {
+      'cursos':   'estudioSubNav',
+      'registros':'estudioSubNav',
+      'progreso': 'progresoSubNav',
+      'sistema':  'sistemaSubNav',
+      'estudio':  'estudioSubNav',  // fallback si maintab no definido
+    };
+    targetId = navMap[maintab] || navMap[tabName] || null;
+  }
+  var target = targetId ? document.getElementById(targetId) : null;
+  if (layer) layer.style.display = target ? 'block' : 'none';
+  if (target) target.classList.add('subnav-visible');
+}
+
+// ── Restaurar estado visual al cargar ─────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  // Recuperar el último tab visitado
+  var lastMaintab = null;
+  try { lastMaintab = localStorage.getItem('av_last_maintab'); } catch(e) {}
+
+  // Mapa maintab → botón
+  var btnMap = {
+    'inicio':    document.getElementById('tabBtnInicio'),
+    'evaluar':   document.getElementById('tabBtnEvaluar'),
+    'cursos':    document.getElementById('tabBtnEstudio'),
+    'progreso':  document.getElementById('tabBtnProgreso'),
+    'comunica':  document.querySelector('[data-maintab="comunica"]'),
+    'sistema':   document.querySelector('[data-maintab="sistema"]'),
+  };
+
+  // Por defecto: Estudio (Cursos)
+  var targetBtn = btnMap[lastMaintab] || btnMap['cursos'];
+  var targetTab = targetBtn ? targetBtn.dataset.tab : 'estudio';
+  var targetSub = (lastMaintab === 'inicio') ? 'inicio'
+                : (lastMaintab === 'evaluar') ? 'evaluar'
+                : (lastMaintab === 'cursos' || !lastMaintab) ? 'cursos'
+                : null;
+
+  // Limpiar todos y activar solo el correcto
+  document.querySelectorAll('.tabs-inner .tab').forEach(function(b) {
+    b.classList.remove('active');
+  });
+  if (targetBtn) targetBtn.classList.add('active');
+
+  // Activar sub-sección inicial
+  if (targetSub) {
+    try { _estudioSubTab = targetSub; _renderEstudioSubNav(); } catch(e) {}
+  }
+
+  // Mostrar el subnav correcto para el tab inicial
+  try { _mostrarSubnav(targetTab, lastMaintab || 'cursos'); } catch(e) {}
+});
 </script>
 
 <!-- Service Worker disabled: app runs as single HTML file -->
