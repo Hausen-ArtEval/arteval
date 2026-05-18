@@ -3210,7 +3210,7 @@ button, .btn, .tab, .curso-chip, .reg-card, .config-card, input, select {
           <span class="reg-title" id="regTitulo">Sin registros</span>
           <div class="search-wrap">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input class="search-input" type="text" id="buscarRegistros" placeholder="Buscar estudiante..." oninput="renderRegistros()">
+            <input class="search-input" type="text" id="buscarRegistros" placeholder="Buscar estudiante..." oninput="clearTimeout(window._regSearchTimer);window._regSearchTimer=setTimeout(renderRegistros,300)">
           </div>
           <select class="filter-select" id="filtroCurso" onchange="renderRegistros()" title="Filtrar por curso">
             <option value="">Todos los cursos</option>
@@ -4075,6 +4075,8 @@ function _checkPendingQueue() {
 }
 
 function saveRegistros() {
+  _regsMapCache = null; // Invalidate O(1) lookup cache on data change
+  _regsMapCacheVersion = -1;
   try {
     localStorage.setItem('av_registros', JSON.stringify(registros));
     localStorage.setItem('av_local_count', String(registros.length));
@@ -4166,12 +4168,30 @@ function iniciales(nombre) {
   return nombre.split(' ').slice(0,2).map(function(p){ return p[0]||''; }).join('').toUpperCase() || '?';
 }
 
+var _cursosUnicosCache = null;
+var _cursosUnicosCacheVer = -1;
 function cursosUnicos() {
+  // Cache invalidated when registros or listaCursos change length
+  var cacheKey = registros.length + '|' + Object.keys(listaCursos||{}).length;
+  if (_cursosUnicosCache && _cursosUnicosCacheVer === cacheKey) return _cursosUnicosCache;
   try {
-    const desdRegistros = registros.filter(Boolean).map(function(r){ return r.curso; }).filter(Boolean);
-    const lc = (typeof listaCursos !== 'undefined') ? listaCursos : {};
-    const desdeNomina = Object.keys(lc).filter(function(c){ return (lc[c]||[]).length > 0; });
-    return [...new Set([...desdRegistros, ...desdeNomina])].sort();
+    var norm = function(c) {
+      return (c||'').toString().trim()
+        .replace(/º/g, '°')  // º → °
+        .replace(/\s+/g, ' ');
+    };
+    var seen = new Set();
+    var result = [];
+    var addNorm = function(c) {
+      var n = norm(c); if (n && !seen.has(n)) { seen.add(n); result.push(n); }
+    };
+    registros.filter(Boolean).forEach(function(r){ addNorm(r.curso); });
+    var lc = (typeof listaCursos !== 'undefined') ? listaCursos : {};
+    Object.keys(lc).filter(function(c){ return (lc[c]||[]).length > 0; }).forEach(addNorm);
+    result.sort();
+    _cursosUnicosCache = result;
+    _cursosUnicosCacheVer = cacheKey;
+    return result;
   } catch(e) { return []; }
 }
 function rubricasUsadas() {
@@ -4740,6 +4760,31 @@ Incluye los ${n} criterios, desde idx 0 hasta idx ${n-1}. Usa exactamente "MB","
         setStatus(`⚠️ Límite alcanzado — esperando ${t}s...`);
         if (autoMode) toggleAuto();
         iniciarCronometroEspera(t);
+      } else if (
+          data.error.code === 400 ||
+          (data.error.message||'').toLowerCase().includes('api key expired') ||
+          (data.error.message||'').toLowerCase().includes('api_key_invalid') ||
+          (data.error.message||'').toLowerCase().includes('invalid api key')
+        ) {
+        // ── API Key expirada o inválida ──────────────────────────
+        setStatus('🔑 API Key inválida o expirada');
+        const _toastMsg = 'Tu clave de Gemini ha caducado o es inválida. Ve a la sección Sistema → Ajustes para renovarla.';
+        toast('🔑 ' + _toastMsg, 'err', 8000);
+        // Mostrar banner persistente en el panel de evaluación
+        const _debugEl = document.getElementById('debugInfo');
+        if (_debugEl) {
+          _debugEl.style.display = 'block';
+          _debugEl.innerHTML = '<div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgba(255,59,48,0.08);border:0.5px solid rgba(255,59,48,0.25);border-radius:10px;">'
+            + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF3B30" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
+            + '<div style="flex:1;">'
+            + '<div style="font-size:13px;font-weight:700;color:#FF3B30;">Clave API expirada</div>'
+            + '<div style="font-size:12px;color:#8E8E93;margin-top:2px;">' + _toastMsg + '</div>'
+            + '</div>'
+            + '<button onclick="showSistemaSub(&apos;config&apos;);showTab(&apos;sistema&apos;);" '
+            + 'style="padding:6px 12px;background:#FF9500;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">Ir a Ajustes</button>'
+            + '</div>';
+        }
+        mostrarFallbackManual();
       } else {
         setStatus('Error Gemini: ' + data.error.message);
         mostrarFallbackManual();
@@ -4748,9 +4793,9 @@ Incluye los ${n} criterios, desde idx 0 hasta idx ${n-1}. Usa exactamente "MB","
     }
     const texto = (data.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
     let parsed = null;
-    try { parsed = JSON.parse(texto); } catch {}
-    if (!parsed) try { parsed = JSON.parse(texto.replace(/^```json\s*/i,'').replace(/```\s*$/,'').trim()); } catch {}
-    if (!parsed) { const mx = texto.match(/\{[\s\S]*\}/); if (mx) try { parsed = JSON.parse(mx[0]); } catch {} }
+    try { parsed = JSON.parse(texto); } catch(e) {}
+    if (!parsed) try { parsed = JSON.parse(texto.replace(/^```json\s*/i,'').replace(/```\s*$/,'').trim()); } catch(e) {}
+    if (!parsed) { var mx = texto.match(/\{[\s\S]*\}/); if (mx) try { parsed = JSON.parse(mx[0]); } catch(e) {} }
     if (parsed?.criterios?.length) {
       parsed.criterios.forEach(c => {
         const idx = parseInt(c.idx);
@@ -5300,9 +5345,16 @@ function filtrarPorInstancia(instancia) {
 
 function renderRegistros() {
   if (!Array.isArray(registros)) return;
+  if (_isRenderingRegistros) return;
+  _isRenderingRegistros = true;
+  try {
   const list   = document.getElementById('registrosList');
   const libro  = document.getElementById('libroClasesView');
-  if (!list) return;
+  if (!list) { _isRenderingRegistros = false; return; }
+  // Skip render if section is not visible (saves CPU on tab switches)
+  const secEl = document.getElementById('estudio-sec-registros') ||
+                document.getElementById('progreso-sec-registros');
+  if (secEl && secEl.style.display === 'none') { _isRenderingRegistros = false; return; }
   actualizarFiltros();
   const filtrados = getRegistrosFiltrados();
   const titulo = document.getElementById('regTitulo');
@@ -5341,12 +5393,13 @@ function renderRegistros() {
   const _btnDups = document.getElementById('btnLimpiarDups');
   if (_btnDups) _btnDups.style.display = 'inline-block';
 
-  // Detectar duplicados reales usando auditarDuplicados (similitud ≥90% mismo curso)
-  // Esto evita falsos positivos de alumnos con múltiples instancias evaluativas
+  // Detectar duplicados — diferido 400ms para no bloquear el render principal
   const btnDup = document.getElementById('btnDuplicados');
   if (btnDup) btnDup.style.display = 'none';
-  var dupSubBtn = document.querySelector('[data-sub="duplicados"]');
-  if (dupSubBtn) {
+  clearTimeout(window._dupBadgeTimer);
+  window._dupBadgeTimer = setTimeout(function() {
+    var dupSubBtn = document.querySelector('[data-sub="duplicados"]');
+    if (!dupSubBtn) return;
     try {
       var gruposDup = (typeof auditarDuplicados === 'function') ? auditarDuplicados() : [];
       var existingBadge = dupSubBtn.querySelector('.dup-count-badge');
@@ -5363,7 +5416,7 @@ function renderRegistros() {
         existingBadge.remove();
       }
     } catch(e) { /* auditarDuplicados puede no estar lista al cargar */ }
-  }
+  }, 400);
 
   // ── Vista Libro de Clases ──
   if (_vistaLibroActiva) {
@@ -5430,6 +5483,8 @@ function renderRegistros() {
     }
     grp.appendChild(card);
   });
+  } catch(e) { console.warn('[ArtEval] renderRegistros:', e.message); }
+  finally { _isRenderingRegistros = false; }
 }
 
 // ── Libro de Clases: tabla dinámica por curso con columnas por instancia ──
@@ -5597,9 +5652,11 @@ function actualizarFiltros() {
     // Obtener textos actuales (sin la opción vacía)
     const textoActuales = Array.from(sel.options).slice(1).map(function(o){ return o.value; });
 
-    // Agregar opciones nuevas
+    // Agregar opciones nuevas (doble verificación: en textoActuales Y en el DOM actual)
     opciones.forEach(function(op) {
-      if (!textoActuales.includes(op)) {
+      var yaExiste = textoActuales.includes(op) ||
+        Array.from(sel.options).some(function(o){ return o.value === op; });
+      if (!yaExiste) {
         const opt = document.createElement('option');
         opt.value = op;
         opt.textContent = op;
@@ -8409,7 +8466,10 @@ function _miniChartSVG(notas, labels) {
 function renderEstudio() {
   if (typeof listaCursos === 'undefined' || typeof registros === 'undefined') return;
   if (cursoSeleccionado) {
-    try { renderCursoMain(); } catch(e) { console.warn('[ArtEval] renderEstudio:', e); }
+    // rAF yields thread to browser for paint, then renders — prevents jank
+    requestAnimationFrame(function() {
+      try { renderCursoMain(); } catch(e) { console.warn('[ArtEval] renderEstudio:', e); }
+    });
   }
   if (typeof _renderEstudioSubNav === 'function') _renderEstudioSubNav();
 }
@@ -9571,13 +9631,15 @@ function showTab(name) {
     try { if(_progresoSubTab==='registros') _progresoSubTab='estadisticas'; } catch(e) {}
     try { actualizarConteo(); } catch(e) {}
     // Renderizar la sub-sección activa inmediatamente
-    try {
-      if (_progresoSubTab === 'estadisticas' || !_progresoSubTab) {
-        if (typeof renderEstadisticas === 'function') renderEstadisticas();
-      } else if (_progresoSubTab === 'progreso-oa') {
-        if (typeof renderProgreso === 'function') renderProgreso();
-      }
-    } catch(e) { console.warn('[ArtEval] progreso render:', e.message); }
+    requestAnimationFrame(function() {
+      try {
+        if (_progresoSubTab === 'estadisticas' || !_progresoSubTab) {
+          if (typeof renderEstadisticas === 'function') renderEstadisticas();
+        } else if (_progresoSubTab === 'progreso-oa') {
+          if (typeof renderProgreso === 'function') renderProgreso();
+        }
+      } catch(e) { console.warn('[ArtEval] progreso render:', e.message); }
+    });
   } else if (mappedName === 'comunica') {
     try { renderComunica(); } catch(e) { console.warn('[ArtEval] renderComunica:', e.message); }
   } else if (mappedName === 'sistema') {
@@ -9617,9 +9679,21 @@ function _renderEstudioSubNav() {
 function showEstudioSub(sub) {
   _estudioSubTab = sub;
   _renderEstudioSubNav();
-  if (sub === 'cursos'      && cursoSeleccionado) renderCursoMain();
-  if (sub === 'registros')  { try { renderRegistros(); renderLibroClases(); } catch(e) {} }
-  if (sub === 'inicio')     { try { renderDashboard(); } catch(e) { console.warn('[ArtEval] renderDashboard:', e.message); } }
+  // requestAnimationFrame: yields main thread after nav, then renders
+  // This prevents the tab transition animation from being blocked by render work
+  if (sub === 'cursos' && cursoSeleccionado) {
+    requestAnimationFrame(renderCursoMain);
+  }
+  if (sub === 'registros') {
+    requestAnimationFrame(function() {
+      try { renderRegistros(); renderLibroClases(); } catch(e) {}
+    });
+  }
+  if (sub === 'inicio') {
+    requestAnimationFrame(function() {
+      try { renderDashboard(); } catch(e) { console.warn('[ArtEval] renderDashboard:', e.message); }
+    });
+  }
   if (sub === 'duplicados') { try { renderPanelDuplicados('panelDuplicadosContainer'); } catch(e) {} }
 }
 
@@ -11659,7 +11733,32 @@ function tieneEvaluacion(nombre, curso) {
 }
 
 // ── Obtener registros de un estudiante en un curso ──
+function _buildRegsMap() {
+  // Build a HashMap: "curso nombreNorm" → [registros]
+  // O(N) to build, O(1) to lookup. Rebuilt when registros array changes length.
+  if (_regsMapCache && _regsMapCacheVersion === registros.length) return;
+  _regsMapCache = Object.create(null);
+  registros.forEach(function(r) {
+    if (!r) return;
+    var k = (r.curso||'').trim() + ' ' + (r.nombre||'').trim().toUpperCase();
+    if (!_regsMapCache[k]) _regsMapCache[k] = [];
+    _regsMapCache[k].push(r);
+  });
+  _regsMapCacheVersion = registros.length;
+}
+
 function getRegsEstudiante(nombre, curso) {
+  // Fast path: use the cache if available
+  if (_regsMapCache && _regsMapCacheVersion === registros.length) {
+    var key = (curso||'').trim() + ' ' + (nombre||'').trim().toUpperCase();
+    var exact = _regsMapCache[key] || [];
+    if (exact.length) return exact;
+    // Fuzzy fallback: scan only registros of this course (small N per course)
+    return registros.filter(function(r) {
+      return (r.curso||'') === curso && mismoEstudiante(r.nombre||'', nombre||'');
+    });
+  }
+  // Cold path: no cache yet
   return registros.filter(function(r) {
     return (r.curso||'') === curso && mismoEstudiante(r.nombre||'', nombre||'');
   });
@@ -11709,8 +11808,16 @@ function _aplicarFiltroAula(lista) {
 
 function renderCursoMain() {
   if (!cursoSeleccionado || !Array.isArray(registros)) return;
+  if (_isRenderingCurso) return;
+  _isRenderingCurso = true;
+  _buildRegsMap(); // O(N) once per render — O(1) per student thereafter
   const main = document.getElementById('cursoMain');
-  if (!main) return;
+  if (!main) { _isRenderingCurso = false; return; }
+  // Skip if curso panel is not visible (prevents background CPU use)
+  const cursosec = document.getElementById('estudio-sec-cursos');
+  if (cursosec && cursosec.style.display === 'none') { _isRenderingCurso = false; return; }
+  // Wrap entire render in try/finally so guard ALWAYS releases
+  try {
 
   if (!cursoSeleccionado) {
     main.innerHTML = '';
@@ -11718,6 +11825,7 @@ function renderCursoMain() {
     emp.className = 'cursos-empty';
     emp.innerHTML = '<div class="ce-icon">🏫</div><div class="ce-title">Selecciona un curso</div><div class="ce-sub">Elige un curso de la lista para ver sus estudiantes.</div>';
     main.appendChild(emp);
+    _isRenderingCurso = false; // release guard before early return
     return;
   }
 
@@ -11748,14 +11856,21 @@ function renderCursoMain() {
     return normalizarNombre(a.nombre).localeCompare(normalizarNombre(b.nombre), 'es', { sensitivity: 'base' });
   });
 
-  // ── Estadísticas — respetan el filtro de instancia activo ──
-  let entregados = 0, pendientes = 0, pieCount = 0, sumNotas = 0, countNotas = 0;
+  // ── Pre-compute regs per student (single pass, reused in render loop) ──
+  // Avoids calling getRegsEstudiante twice per student (stats + render)
+  const _regsPerEst = new Map();
   lista.forEach(function(e) {
     const regsAll = getRegsEstudiante(e.nombre, curso);
-    // Filtrar por instancia igual que en las tarjetas individuales
     const regs = instanciaCursoFiltro
       ? regsAll.filter(function(r){ return (r.instancia || 'Evaluación 1') === instanciaCursoFiltro; })
       : regsAll;
+    _regsPerEst.set(e.nombre, regs);
+  });
+
+  // ── Estadísticas — respetan el filtro de instancia activo ──
+  let entregados = 0, pendientes = 0, pieCount = 0, sumNotas = 0, countNotas = 0;
+  lista.forEach(function(e) {
+    const regs = _regsPerEst.get(e.nombre) || [];
     const ultimaStat = regs.length ? regs[regs.length - 1] : null;
     if (regs.length) {
       entregados++;
@@ -11769,10 +11884,11 @@ function renderCursoMain() {
   const avance   = lista.length > 0 ? Math.round(entregados / lista.length * 100) : 0;
 
   // ── Filtrado ──
+  // Use _regsPerEst for filtering (already computed above)
   let listaFiltrada = lista.slice();
-  if (estFiltro === 'pendiente') listaFiltrada = lista.filter(function(e){ return !tieneEvaluacion(e.nombre, curso); });
-  if (estFiltro === 'entregado') listaFiltrada = lista.filter(function(e){ return  tieneEvaluacion(e.nombre, curso); });
-  if (estFiltro === 'pie')       listaFiltrada = lista.filter(function(e){ return  e.pie; });
+  if (estFiltro === 'pendiente') listaFiltrada = lista.filter(function(e){ return (_regsPerEst.get(e.nombre)||[]).length === 0; });
+  if (estFiltro === 'entregado') listaFiltrada = lista.filter(function(e){ return (_regsPerEst.get(e.nombre)||[]).length > 0; });
+  if (estFiltro === 'pie')       listaFiltrada = lista.filter(function(e){ return e.pie; });
 
   // ── Construir DOM ──
   main.innerHTML = '';
@@ -11897,11 +12013,8 @@ function renderCursoMain() {
   } else {
     listaFiltrada.forEach(function(e) {
       const idxReal = lista.indexOf(e);
-      const regsAll  = getRegsEstudiante(e.nombre, curso);
-      // Filtrar por instancia si hay una seleccionada
-      const regs = instanciaCursoFiltro
-        ? regsAll.filter(function(r){ return (r.instancia || 'Evaluación 1') === instanciaCursoFiltro; })
-        : regsAll;
+      // Use pre-computed regs (already filtered by instancia) — avoids repeat work
+      const regs = _regsPerEst.get(e.nombre) || [];
       const entregado = regs.length > 0;
       // Mostrar la nota de la instancia filtrada, no la del último registro global
       const ultimaReg = regs.length ? regs[regs.length - 1] : null;
@@ -11989,6 +12102,7 @@ function renderCursoMain() {
         btnEdit.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>';
         (function(nb, cb){
         btnEdit.onclick = function(e){ e.stopPropagation(); editarDesde(nb, cb); };
+        /* safe: btnEdit is a newly created element each render — no listener accumulation */
         btnEdit.addEventListener('touchend', function(e){ e.preventDefault(); e.stopPropagation(); editarDesde(nb, cb); }, {passive:false});
       })(e.nombre, curso);
         acts.appendChild(btnEdit);
@@ -12022,17 +12136,25 @@ function renderCursoMain() {
       acts.appendChild(btnDel);
 
       row.appendChild(acts);
-      listEl.appendChild(row);
+      _listFrag.appendChild(row);
     });
+    listEl.appendChild(_listFrag); // single DOM flush
   }
   main.appendChild(listEl);
   renderSidebarCounts();
+  } catch(e) {
+    console.warn('[ArtEval] renderCursoMain error:', e.message);
+  } finally {
+    _isRenderingCurso = false; // ALWAYS released — even on exception
+  }
 }
 
 // ── Filtros ──
 function setEstFiltro(f, curso) {
   estFiltro = f;
-  renderCursoMain();
+  // Small timeout lets button state update visually before heavy render
+  clearTimeout(window._estFiltroTimer);
+  window._estFiltroTimer = setTimeout(renderCursoMain, 16);
 }
 
 // Resetear filtro de instancia al cambiar de curso
@@ -13191,22 +13313,41 @@ function _similitudNombre(a, b) {
 
 // Auditoría de duplicados: retorna grupos de registros similares
 function auditarDuplicados() {
+  // O(N) grouping phase + O(K²) within-group comparison (K << N)
+  // Avoids the O(N²) full cross-product of the previous algorithm.
   var grupos = [];
   var usados = new Set();
+
+  // Phase 1 O(N): bucket by "curso|rubricaNombre"
+  var buckets = Object.create(null);
   registros.forEach(function(r, i) {
-    if (usados.has(i)) return;
-    var grupo = [i];
-    registros.forEach(function(r2, j) {
-      if (i===j || usados.has(j)) return;
-      if ((r.curso||'')===(r2.curso||'') && _similitudNombre(r.nombre,r2.nombre)>=0.90) {
-        grupo.push(j);
-        usados.add(j);
+    if (!r) return;
+    var key = (r.curso||'').trim() + ' ' + (r.rubricaNombre||'').trim().toUpperCase();
+    if (!buckets[key]) buckets[key] = [];
+    buckets[key].push(i);
+  });
+
+  // Phase 2 O(K²) within each bucket (K is typically 1-5 students per group)
+  Object.keys(buckets).forEach(function(key) {
+    var bucket = buckets[key];
+    if (bucket.length < 2) return; // single entry — skip entirely
+    bucket.forEach(function(i) {
+      if (usados.has(i)) return;
+      var r = registros[i];
+      var grupo = [i];
+      bucket.forEach(function(j) {
+        if (i === j || usados.has(j)) return;
+        var r2 = registros[j];
+        if (_similitudNombre(r.nombre, r2.nombre) >= 0.90) {
+          grupo.push(j);
+          usados.add(j);
+        }
+      });
+      if (grupo.length > 1) {
+        usados.add(i);
+        grupos.push(grupo);
       }
     });
-    if (grupo.length > 1) {
-      usados.add(i);
-      grupos.push(grupo);
-    }
   });
   return grupos;
 }
