@@ -4795,7 +4795,7 @@ Incluye los ${n} criterios, desde idx 0 hasta idx ${n-1}. Usa exactamente "MB","
     let parsed = null;
     try { parsed = JSON.parse(texto); } catch(e) {}
     if (!parsed) try { parsed = JSON.parse(texto.replace(/^```json\s*/i,'').replace(/```\s*$/,'').trim()); } catch(e) {}
-    if (!parsed) { var mx = texto.match(/\{[\s\S]*\}/); if (mx) try { parsed = JSON.parse(mx[0]); } catch(e) {} }
+    if (!parsed) { const mx = texto.match(/\{[\s\S]*\}/); if (mx) try { parsed = JSON.parse(mx[0]); } catch(e) {} }
     if (parsed?.criterios?.length) {
       parsed.criterios.forEach(c => {
         const idx = parseInt(c.idx);
@@ -11662,6 +11662,13 @@ function selCurso(curso) {
   // Scroll al inicio del área principal al cambiar de curso
   const main = document.getElementById('cursoMain');
   if (main) setTimeout(function(){ main.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 50);
+  // REACTIVIDAD v167: sincronizar botón Alexia con el curso recién seleccionado
+  var _btnAlexiaSync = document.getElementById('btnExportAlexia');
+  if (_btnAlexiaSync) {
+    _btnAlexiaSync.textContent = '📥 Alexia — ' + curso;
+    _btnAlexiaSync.title = 'Exportar planilla Alexia para ' + curso;
+    _btnAlexiaSync.dataset.curso = curso;
+  }
   renderCursoMain();
 }
 
@@ -13318,11 +13325,12 @@ function auditarDuplicados() {
   var grupos = [];
   var usados = new Set();
 
-  // Phase 1 O(N): bucket by "curso|rubricaNombre"
+  // LLAVE COMPUESTA v167: curso + rubricaNombre + instancia
+  // Phase 1 O(N): bucket by "curso|rubricaNombre|instancia"
   var buckets = Object.create(null);
   registros.forEach(function(r, i) {
     if (!r) return;
-    var key = (r.curso||'').trim() + ' ' + (r.rubricaNombre||'').trim().toUpperCase();
+    var key = (r.curso||'').trim() + '|' + (r.rubricaNombre||'').trim().toUpperCase() + '|' + (r.instancia||'Evaluación 1').trim();
     if (!buckets[key]) buckets[key] = [];
     buckets[key].push(i);
   });
