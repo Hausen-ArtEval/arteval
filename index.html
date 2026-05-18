@@ -3210,7 +3210,7 @@ button, .btn, .tab, .curso-chip, .reg-card, .config-card, input, select {
           <span class="reg-title" id="regTitulo">Sin registros</span>
           <div class="search-wrap">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input class="search-input" type="text" id="buscarRegistros" placeholder="Buscar estudiante..." oninput="renderRegistros()">
+            <input class="search-input" type="text" id="buscarRegistros" placeholder="Buscar estudiante..." oninput="clearTimeout(window._regSearchTimer);window._regSearchTimer=setTimeout(renderRegistros,300)">
           </div>
           <select class="filter-select" id="filtroCurso" onchange="renderRegistros()" title="Filtrar por curso">
             <option value="">Todos los cursos</option>
@@ -4075,6 +4075,8 @@ function _checkPendingQueue() {
 }
 
 function saveRegistros() {
+  _regsMapCache = null; // Invalidate O(1) lookup cache on data change
+  _regsMapCacheVersion = -1;
   try {
     localStorage.setItem('av_registros', JSON.stringify(registros));
     localStorage.setItem('av_local_count', String(registros.length));
@@ -4166,23 +4168,30 @@ function iniciales(nombre) {
   return nombre.split(' ').slice(0,2).map(function(p){ return p[0]||''; }).join('').toUpperCase() || '?';
 }
 
+var _cursosUnicosCache = null;
+var _cursosUnicosCacheVer = -1;
 function cursosUnicos() {
+  // Cache invalidated when registros or listaCursos change length
+  var cacheKey = registros.length + '|' + Object.keys(listaCursos||{}).length;
+  if (_cursosUnicosCache && _cursosUnicosCacheVer === cacheKey) return _cursosUnicosCache;
   try {
-    // Normalizar: trim + colapsar espacios + ° vs º unificado
     var norm = function(c) {
       return (c||'').toString().trim()
-        .replace(/º/g, '°')   // º → °
-        .replace(/\s+/g, ' ');           // espacios múltiples → uno
+        .replace(/º/g, '°')  // º → °
+        .replace(/\s+/g, ' ');
     };
-    var desdRegistros = registros.filter(Boolean)
-      .map(function(r){ return norm(r.curso); })
-      .filter(Boolean);
+    var seen = new Set();
+    var result = [];
+    var addNorm = function(c) {
+      var n = norm(c); if (n && !seen.has(n)) { seen.add(n); result.push(n); }
+    };
+    registros.filter(Boolean).forEach(function(r){ addNorm(r.curso); });
     var lc = (typeof listaCursos !== 'undefined') ? listaCursos : {};
-    var desdeNomina = Object.keys(lc)
-      .filter(function(c){ return (lc[c]||[]).length > 0; })
-      .map(norm);
-    // Set garantiza unicidad exacta; el norm previene variantes tipográficas
-    return [...new Set([...desdRegistros, ...desdeNomina])].sort();
+    Object.keys(lc).filter(function(c){ return (lc[c]||[]).length > 0; }).forEach(addNorm);
+    result.sort();
+    _cursosUnicosCache = result;
+    _cursosUnicosCacheVer = cacheKey;
+    return result;
   } catch(e) { return []; }
 }
 function rubricasUsadas() {
@@ -5336,9 +5345,11 @@ function filtrarPorInstancia(instancia) {
 
 function renderRegistros() {
   if (!Array.isArray(registros)) return;
+  if (_isRenderingRegistros) return;
+  _isRenderingRegistros = true;
   const list   = document.getElementById('registrosList');
   const libro  = document.getElementById('libroClasesView');
-  if (!list) return;
+  if (!list) { _isRenderingRegistros = false; return; }
   actualizarFiltros();
   const filtrados = getRegistrosFiltrados();
   const titulo = document.getElementById('regTitulo');
@@ -5377,12 +5388,13 @@ function renderRegistros() {
   const _btnDups = document.getElementById('btnLimpiarDups');
   if (_btnDups) _btnDups.style.display = 'inline-block';
 
-  // Detectar duplicados reales usando auditarDuplicados (similitud ≥90% mismo curso)
-  // Esto evita falsos positivos de alumnos con múltiples instancias evaluativas
+  // Detectar duplicados — diferido 400ms para no bloquear el render principal
   const btnDup = document.getElementById('btnDuplicados');
   if (btnDup) btnDup.style.display = 'none';
-  var dupSubBtn = document.querySelector('[data-sub="duplicados"]');
-  if (dupSubBtn) {
+  clearTimeout(window._dupBadgeTimer);
+  window._dupBadgeTimer = setTimeout(function() {
+    var dupSubBtn = document.querySelector('[data-sub="duplicados"]');
+    if (!dupSubBtn) return;
     try {
       var gruposDup = (typeof auditarDuplicados === 'function') ? auditarDuplicados() : [];
       var existingBadge = dupSubBtn.querySelector('.dup-count-badge');
@@ -5399,7 +5411,7 @@ function renderRegistros() {
         existingBadge.remove();
       }
     } catch(e) { /* auditarDuplicados puede no estar lista al cargar */ }
-  }
+  }, 400);
 
   // ── Vista Libro de Clases ──
   if (_vistaLibroActiva) {
@@ -5466,6 +5478,7 @@ function renderRegistros() {
     }
     grp.appendChild(card);
   });
+  _isRenderingRegistros = false;
 }
 
 // ── Libro de Clases: tabla dinámica por curso con columnas por instancia ──
@@ -11697,7 +11710,32 @@ function tieneEvaluacion(nombre, curso) {
 }
 
 // ── Obtener registros de un estudiante en un curso ──
+function _buildRegsMap() {
+  // Build a HashMap: "curso nombreNorm" → [registros]
+  // O(N) to build, O(1) to lookup. Rebuilt when registros array changes length.
+  if (_regsMapCache && _regsMapCacheVersion === registros.length) return;
+  _regsMapCache = Object.create(null);
+  registros.forEach(function(r) {
+    if (!r) return;
+    var k = (r.curso||'').trim() + ' ' + (r.nombre||'').trim().toUpperCase();
+    if (!_regsMapCache[k]) _regsMapCache[k] = [];
+    _regsMapCache[k].push(r);
+  });
+  _regsMapCacheVersion = registros.length;
+}
+
 function getRegsEstudiante(nombre, curso) {
+  // Fast path: use the cache if available
+  if (_regsMapCache && _regsMapCacheVersion === registros.length) {
+    var key = (curso||'').trim() + ' ' + (nombre||'').trim().toUpperCase();
+    var exact = _regsMapCache[key] || [];
+    if (exact.length) return exact;
+    // Fuzzy fallback: scan only registros of this course (small N per course)
+    return registros.filter(function(r) {
+      return (r.curso||'') === curso && mismoEstudiante(r.nombre||'', nombre||'');
+    });
+  }
+  // Cold path: no cache yet
   return registros.filter(function(r) {
     return (r.curso||'') === curso && mismoEstudiante(r.nombre||'', nombre||'');
   });
@@ -11747,8 +11785,11 @@ function _aplicarFiltroAula(lista) {
 
 function renderCursoMain() {
   if (!cursoSeleccionado || !Array.isArray(registros)) return;
+  if (_isRenderingCurso) return;
+  _isRenderingCurso = true;
+  _buildRegsMap(); // O(N) once per render — O(1) per student thereafter
   const main = document.getElementById('cursoMain');
-  if (!main) return;
+  if (!main) { _isRenderingCurso = false; return; }
 
   if (!cursoSeleccionado) {
     main.innerHTML = '';
@@ -12027,6 +12068,7 @@ function renderCursoMain() {
         btnEdit.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>';
         (function(nb, cb){
         btnEdit.onclick = function(e){ e.stopPropagation(); editarDesde(nb, cb); };
+        /* safe: btnEdit is a newly created element each render — no listener accumulation */
         btnEdit.addEventListener('touchend', function(e){ e.preventDefault(); e.stopPropagation(); editarDesde(nb, cb); }, {passive:false});
       })(e.nombre, curso);
         acts.appendChild(btnEdit);
@@ -12065,6 +12107,7 @@ function renderCursoMain() {
   }
   main.appendChild(listEl);
   renderSidebarCounts();
+  _isRenderingCurso = false;
 }
 
 // ── Filtros ──
@@ -13229,28 +13272,41 @@ function _similitudNombre(a, b) {
 
 // Auditoría de duplicados: retorna grupos de registros similares
 function auditarDuplicados() {
+  // O(N) grouping phase + O(K²) within-group comparison (K << N)
+  // Avoids the O(N²) full cross-product of the previous algorithm.
   var grupos = [];
   var usados = new Set();
+
+  // Phase 1 O(N): bucket by "curso|rubricaNombre"
+  var buckets = Object.create(null);
   registros.forEach(function(r, i) {
-    if (usados.has(i)) return;
-    var grupo = [i];
-    registros.forEach(function(r2, j) {
-      if (i===j || usados.has(j)) return;
-      var mismoCurso   = (r.curso||'').trim() === (r2.curso||'').trim();
-      // Dos evaluaciones del MISMO alumno con DIFERENTE rúbrica = válidas (no duplicado)
-      var mismaRubrica = (r.rubricaNombre||'').trim().toUpperCase() ===
-                         (r2.rubricaNombre||'').trim().toUpperCase();
-      var nombreSimilar = _similitudNombre(r.nombre, r2.nombre) >= 0.90;
-      // Solo es duplicado si coinciden curso + rúbrica + nombre similar
-      if (mismoCurso && mismaRubrica && nombreSimilar) {
-        grupo.push(j);
-        usados.add(j);
+    if (!r) return;
+    var key = (r.curso||'').trim() + ' ' + (r.rubricaNombre||'').trim().toUpperCase();
+    if (!buckets[key]) buckets[key] = [];
+    buckets[key].push(i);
+  });
+
+  // Phase 2 O(K²) within each bucket (K is typically 1-5 students per group)
+  Object.keys(buckets).forEach(function(key) {
+    var bucket = buckets[key];
+    if (bucket.length < 2) return; // single entry — skip entirely
+    bucket.forEach(function(i) {
+      if (usados.has(i)) return;
+      var r = registros[i];
+      var grupo = [i];
+      bucket.forEach(function(j) {
+        if (i === j || usados.has(j)) return;
+        var r2 = registros[j];
+        if (_similitudNombre(r.nombre, r2.nombre) >= 0.90) {
+          grupo.push(j);
+          usados.add(j);
+        }
+      });
+      if (grupo.length > 1) {
+        usados.add(i);
+        grupos.push(grupo);
       }
     });
-    if (grupo.length > 1) {
-      usados.add(i);
-      grupos.push(grupo);
-    }
   });
   return grupos;
 }
