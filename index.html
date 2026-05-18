@@ -3212,6 +3212,9 @@ button, .btn, .tab, .curso-chip, .reg-card, .config-card, input, select {
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             <input class="search-input" type="text" id="buscarRegistros" placeholder="Buscar estudiante..." oninput="renderRegistros()">
           </div>
+          <select class="filter-select" id="filtroCurso" onchange="renderRegistros()" title="Filtrar por curso">
+            <option value="">Todos los cursos</option>
+          </select>
           <select class="filter-select" id="filtroRubrica" onchange="renderRegistros()">
             <option value="">Todas las rúbricas</option>
           </select>
@@ -5002,12 +5005,14 @@ function toggleFiltroPie() {
 function getRegistrosFiltrados() {
   const fr   = document.getElementById('filtroRubrica')?.value || '';
   const fi   = document.getElementById('filtroInstancia')?.value || '';
+  const fc   = document.getElementById('filtroCurso')?.value    || '';
   const bus  = (document.getElementById('buscarRegistros')?.value || '').toLowerCase().trim();
   return registros.filter(function(r) {
     if (!r) return false;
     return (!fr  || r.rubricaNombre === fr) &&
            (!fi  || (r.instancia || 'Evaluación 1') === fi) &&
-           (cursosSeleccionados.size === 0 || cursosSeleccionados.has(r.curso||'')) &&
+           (!fc  || (r.curso||'') === fc) &&
+           (fc || cursosSeleccionados.size === 0 || cursosSeleccionados.has(r.curso||'')) &&
            (!bus || (r.nombre||'').toLowerCase().includes(bus) ||
                     (r.curso||'').toLowerCase().includes(bus) ||
                     (r.instancia||'').toLowerCase().includes(bus)) &&
@@ -5336,34 +5341,28 @@ function renderRegistros() {
   const _btnDups = document.getElementById('btnLimpiarDups');
   if (_btnDups) _btnDups.style.display = 'inline-block';
 
-  const nombreCount = {};
-  registros.forEach(function(r) {
-    if (!r) return;
-    // Un alumno es duplicado solo si tiene el mismo nombre Y la misma rúbrica
-    const k = (r.nombre||'').trim().toUpperCase() + '|' + (r.rubricaNombre||'').trim().toUpperCase();
-    nombreCount[k] = (nombreCount[k]||0) + 1;
-  });
-  const hayDuplicados = Object.values(nombreCount).some(function(v){ return v > 1; });
-  // btnDuplicados en Registros — siempre oculto (los dups van a su sección)
+  // Detectar duplicados reales usando auditarDuplicados (similitud ≥90% mismo curso)
+  // Esto evita falsos positivos de alumnos con múltiples instancias evaluativas
   const btnDup = document.getElementById('btnDuplicados');
   if (btnDup) btnDup.style.display = 'none';
-  // Actualizar badge contador en el botón de subnav Duplicados
   var dupSubBtn = document.querySelector('[data-sub="duplicados"]');
   if (dupSubBtn) {
-    var existingBadge = dupSubBtn.querySelector('.dup-count-badge');
-    if (hayDuplicados) {
-      var dupCount = Object.values(nombreCount).filter(function(v){ return v > 1; }).length;
-      if (!existingBadge) {
-        var badge = document.createElement('span');
-        badge.className = 'dup-count-badge';
-        badge.style.cssText = 'background:#FF3B30;color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:20px;font-family:var(--font-mono);margin-left:3px;';
-        dupSubBtn.appendChild(badge);
-        existingBadge = badge;
+    try {
+      var gruposDup = (typeof auditarDuplicados === 'function') ? auditarDuplicados() : [];
+      var existingBadge = dupSubBtn.querySelector('.dup-count-badge');
+      if (gruposDup.length > 0) {
+        if (!existingBadge) {
+          var badge = document.createElement('span');
+          badge.className = 'dup-count-badge';
+          badge.style.cssText = 'background:#FF3B30;color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:20px;font-family:var(--font-mono);margin-left:3px;';
+          dupSubBtn.appendChild(badge);
+          existingBadge = badge;
+        }
+        existingBadge.textContent = gruposDup.length;
+      } else if (existingBadge) {
+        existingBadge.remove();
       }
-      existingBadge.textContent = dupCount;
-    } else if (existingBadge) {
-      existingBadge.remove();
-    }
+    } catch(e) { /* auditarDuplicados puede no estar lista al cargar */ }
   }
 
   // ── Vista Libro de Clases ──
@@ -13247,26 +13246,67 @@ function renderPanelDuplicados(containerId) {
       + '<div style="font-size:12px;color:#8E8E93;margin-top:4px;">Todos los registros son únicos</div></div>';
     return;
   }
-  var html = '<div style="font-size:11px;font-weight:700;color:#8E8E93;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">'
-    + grupos.length + ' grupo' + (grupos.length!==1?'s':'') + ' de posibles duplicados</div>';
+  // ── Header del panel ──
+  var html = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">'
+    + '<div>'
+    + '<div style="font-size:13px;font-weight:700;color:#1C1C1E;">'
+    + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="2" style="vertical-align:middle;margin-right:6px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
+    + grupos.length + ' grupo' + (grupos.length!==1?'s de posibles duplicados detectados':' de posible duplicado detectado')+'</div>'
+    + '<div style="font-size:11px;color:#8E8E93;margin-top:2px;">Nombres con ≥90% de similitud en el mismo curso. Fusiona para conservar el más reciente.</div>'
+    + '</div>'
+    + '</div>';
+
   grupos.forEach(function(grupo, gi) {
-    html += '<div style="background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,0.06),0 0 0 0.5px #E5E5EA;margin-bottom:12px;overflow:hidden;">';
+    var primerReg = registros[grupo[0]];
+    var cursoGrupo = primerReg ? (primerReg.curso || 'Sin curso') : '—';
+    var conflictoDesc = grupo.length + ' registros con nombre similar en ' + cursoGrupo;
+
+    // ── Tarjeta de conflicto ──
+    html += '<div style="background:#fff;border-radius:12px;'
+      + 'border-left:3px solid #FF9500;'
+      + 'box-shadow:0 1px 4px rgba(0,0,0,0.06),0 0 0 0.5px #E5E5EA;'
+      + 'margin-bottom:14px;overflow:hidden;">'
+      // Header de la tarjeta
+      + '<div style="padding:10px 16px 8px;background:rgba(255,149,0,0.04);border-bottom:0.5px solid #F2F2F7;display:flex;align-items:center;gap:8px;">'
+      + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
+      + '<span style="font-size:11px;font-weight:700;color:#FF9500;text-transform:uppercase;letter-spacing:0.4px;">Conflicto #'+(gi+1)+'</span>'
+      + '<span style="font-size:11px;color:#8E8E93;margin-left:auto;">'+conflictoDesc+'</span>'
+      + '</div>';
+
     grupo.forEach(function(ri, k) {
       var r = registros[ri];
+      if (!r) return;
       var nota = r.nota ? r.nota.toFixed(1) : (r.noEntregado ? 'NE' : '—');
-      html += '<div style="padding:10px 16px;'+(k>0?'border-top:0.5px solid #F2F2F7;':'')+'display:flex;align-items:center;gap:10px;">'
-        + '<div style="flex:1;">'
-        + '<div style="font-size:13px;font-weight:600;color:#1C1C1E;">'+r.nombre+'</div>'
-        + '<div style="font-size:11px;color:#8E8E93;">'+r.curso+' · '+r.instancia+' · '+r.fecha+' · '+nota+'</div>'
+      var notaColor = r.nota >= 4 ? '#34C759' : r.nota >= 1 ? '#FF3B30' : '#8E8E93';
+      var pieSVG = r.pie ? '<svg width="11" height="11" viewBox="0 0 100 100" fill="#FF9500" style="vertical-align:middle;margin-left:4px;" aria-label="PIE"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="#FF9500" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/></svg>' : '';
+
+      html += '<div style="padding:10px 16px;'+(k>0?'border-top:0.5px solid #F2F2F7;':'')+'display:flex;align-items:center;gap:12;">'
+        + '<div style="flex:1;min-width:0;">'
+        // Nombre del alumno (prominente)  
+        + '<div style="font-size:14px;font-weight:600;color:#1C1C1E;display:flex;align-items:center;gap:4px;">'
+        + (r.nombre || 'Sin nombre') + pieSVG
         + '</div>'
-        + (k===0?'<span style="font-size:10px;padding:2px 8px;background:rgba(255,149,0,0.12);color:#FF9500;border-radius:20px;font-weight:700;">PRINCIPAL</span>':'')
+        // Curso + instancia + fecha + nota
+        + '<div style="font-size:11px;color:#8E8E93;margin-top:2px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'
+        + '<span style="background:#F2F2F7;padding:1px 7px;border-radius:20px;font-weight:600;color:#3A3A3C;">'+(r.curso||'Sin curso')+'</span>'
+        + '<span>'+(r.instancia||'Sin instancia')+'</span>'
+        + '<span>'+r.fecha+'</span>'
+        + '</div>'
+        + '</div>'
+        + '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">'
+        + '<span style="font-size:16px;font-weight:700;font-family:var(--font-mono);color:'+notaColor+';">'+nota+'</span>'
+        + (k===0?'<span style="font-size:9px;padding:2px 7px;background:rgba(255,149,0,0.12);color:#FF9500;border-radius:20px;font-weight:700;">CONSERVAR</span>':'<span style="font-size:9px;padding:2px 7px;background:rgba(255,59,48,0.09);color:#FF3B30;border-radius:20px;font-weight:700;">DUPLICADO</span>')
+        + '</div>'
         + '</div>';
     });
-    html += '<div style="padding:10px 16px;border-top:0.5px solid #E5E5EA;display:flex;gap:8px;">'
-      + '<button onclick="_fusionarGrupo(['+grupo.join(',')+'])" '
+
+    // ── Acciones ──
+    html += '<div style="padding:10px 16px;border-top:0.5px solid #E5E5EA;display:flex;gap:8px;background:#FAFAFA;">'
+      + '<button onclick="_fusionarGrupo(['+grupo.join(',')+']);this.closest(\'[data-grupo]\').remove()" '
+      + 'data-grupo="'+gi+'" '
       + 'style="flex:1;padding:9px;background:#FF9500;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">Sí aceptar y fusionar</button>'
-      + '<button onclick="this.parentNode.parentNode.remove()" '
-      + 'style="padding:9px 14px;background:none;border:1px solid #E5E5EA;border-radius:10px;font-size:13px;color:#8E8E93;cursor:pointer;font-family:inherit;">Ignorar</button>'
+      + '<button onclick="this.closest(\'div[style*=border-left]\').remove()" '
+      + 'style="padding:9px 14px;background:none;border:0.5px solid #E5E5EA;border-radius:10px;font-size:13px;color:#8E8E93;cursor:pointer;font-family:inherit;">Ignorar</button>'
       + '</div></div>';
   });
   cont.innerHTML = html;
