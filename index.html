@@ -4168,9 +4168,20 @@ function iniciales(nombre) {
 
 function cursosUnicos() {
   try {
-    const desdRegistros = registros.filter(Boolean).map(function(r){ return r.curso; }).filter(Boolean);
-    const lc = (typeof listaCursos !== 'undefined') ? listaCursos : {};
-    const desdeNomina = Object.keys(lc).filter(function(c){ return (lc[c]||[]).length > 0; });
+    // Normalizar: trim + colapsar espacios + ° vs º unificado
+    var norm = function(c) {
+      return (c||'').toString().trim()
+        .replace(/º/g, '°')   // º → °
+        .replace(/\s+/g, ' ');           // espacios múltiples → uno
+    };
+    var desdRegistros = registros.filter(Boolean)
+      .map(function(r){ return norm(r.curso); })
+      .filter(Boolean);
+    var lc = (typeof listaCursos !== 'undefined') ? listaCursos : {};
+    var desdeNomina = Object.keys(lc)
+      .filter(function(c){ return (lc[c]||[]).length > 0; })
+      .map(norm);
+    // Set garantiza unicidad exacta; el norm previene variantes tipográficas
     return [...new Set([...desdRegistros, ...desdeNomina])].sort();
   } catch(e) { return []; }
 }
@@ -4740,6 +4751,31 @@ Incluye los ${n} criterios, desde idx 0 hasta idx ${n-1}. Usa exactamente "MB","
         setStatus(`⚠️ Límite alcanzado — esperando ${t}s...`);
         if (autoMode) toggleAuto();
         iniciarCronometroEspera(t);
+      } else if (
+          data.error.code === 400 ||
+          (data.error.message||'').toLowerCase().includes('api key expired') ||
+          (data.error.message||'').toLowerCase().includes('api_key_invalid') ||
+          (data.error.message||'').toLowerCase().includes('invalid api key')
+        ) {
+        // ── API Key expirada o inválida ──────────────────────────
+        setStatus('🔑 API Key inválida o expirada');
+        const _toastMsg = 'Tu clave de Gemini ha caducado o es inválida. Ve a la sección Sistema → Ajustes para renovarla.';
+        toast('🔑 ' + _toastMsg, 'err', 8000);
+        // Mostrar banner persistente en el panel de evaluación
+        const _debugEl = document.getElementById('debugInfo');
+        if (_debugEl) {
+          _debugEl.style.display = 'block';
+          _debugEl.innerHTML = '<div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgba(255,59,48,0.08);border:0.5px solid rgba(255,59,48,0.25);border-radius:10px;">'
+            + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF3B30" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
+            + '<div style="flex:1;">'
+            + '<div style="font-size:13px;font-weight:700;color:#FF3B30;">Clave API expirada</div>'
+            + '<div style="font-size:12px;color:#8E8E93;margin-top:2px;">' + _toastMsg + '</div>'
+            + '</div>'
+            + '<button onclick="showSistemaSub(&apos;config&apos;);showTab(&apos;sistema&apos;);" '
+            + 'style="padding:6px 12px;background:#FF9500;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">Ir a Ajustes</button>'
+            + '</div>';
+        }
+        mostrarFallbackManual();
       } else {
         setStatus('Error Gemini: ' + data.error.message);
         mostrarFallbackManual();
@@ -5597,9 +5633,11 @@ function actualizarFiltros() {
     // Obtener textos actuales (sin la opción vacía)
     const textoActuales = Array.from(sel.options).slice(1).map(function(o){ return o.value; });
 
-    // Agregar opciones nuevas
+    // Agregar opciones nuevas (doble verificación: en textoActuales Y en el DOM actual)
     opciones.forEach(function(op) {
-      if (!textoActuales.includes(op)) {
+      var yaExiste = textoActuales.includes(op) ||
+        Array.from(sel.options).some(function(o){ return o.value === op; });
+      if (!yaExiste) {
         const opt = document.createElement('option');
         opt.value = op;
         opt.textContent = op;
@@ -13198,7 +13236,13 @@ function auditarDuplicados() {
     var grupo = [i];
     registros.forEach(function(r2, j) {
       if (i===j || usados.has(j)) return;
-      if ((r.curso||'')===(r2.curso||'') && _similitudNombre(r.nombre,r2.nombre)>=0.90) {
+      var mismoCurso   = (r.curso||'').trim() === (r2.curso||'').trim();
+      // Dos evaluaciones del MISMO alumno con DIFERENTE rúbrica = válidas (no duplicado)
+      var mismaRubrica = (r.rubricaNombre||'').trim().toUpperCase() ===
+                         (r2.rubricaNombre||'').trim().toUpperCase();
+      var nombreSimilar = _similitudNombre(r.nombre, r2.nombre) >= 0.90;
+      // Solo es duplicado si coinciden curso + rúbrica + nombre similar
+      if (mismoCurso && mismaRubrica && nombreSimilar) {
         grupo.push(j);
         usados.add(j);
       }
