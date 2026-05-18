@@ -3204,7 +3204,7 @@ button, .btn, .tab, .curso-chip, .reg-card, .config-card, input, select {
         <div class="chart-comparativo" id="dashChartComparativo"></div>
       </div>
     </div>
-    <div id="estudio-sec-registros" style="display:none;" style="display:block;">
+    <div id="estudio-sec-registros" style="display:none;">
       <div class="reg-toolbar">
         <div class="reg-toolbar-left">
           <span class="reg-title" id="regTitulo">Sin registros</span>
@@ -5054,10 +5054,12 @@ function getRegistrosFiltrados() {
   const bus  = (document.getElementById('buscarRegistros')?.value || '').toLowerCase().trim();
   return registros.filter(function(r) {
     if (!r) return false;
+    // Si hay filtroCurso select activo, úsalo. Si no, usa los chips de cursosSeleccionados.
+    var pasaCurso = fc ? ((r.curso||'') === fc) :
+                         (cursosSeleccionados.size === 0 || cursosSeleccionados.has(r.curso||''));
     return (!fr  || r.rubricaNombre === fr) &&
            (!fi  || (r.instancia || 'Evaluación 1') === fi) &&
-           (!fc  || (r.curso||'') === fc) &&
-           (fc || cursosSeleccionados.size === 0 || cursosSeleccionados.has(r.curso||'')) &&
+           pasaCurso &&
            (!bus || (r.nombre||'').toLowerCase().includes(bus) ||
                     (r.curso||'').toLowerCase().includes(bus) ||
                     (r.instancia||'').toLowerCase().includes(bus)) &&
@@ -5345,16 +5347,10 @@ function filtrarPorInstancia(instancia) {
 
 function renderRegistros() {
   if (!Array.isArray(registros)) return;
-  if (_isRenderingRegistros) return;
-  _isRenderingRegistros = true;
-  try {
   const list   = document.getElementById('registrosList');
   const libro  = document.getElementById('libroClasesView');
-  if (!list) { _isRenderingRegistros = false; return; }
-  // Skip render if section is not visible (saves CPU on tab switches)
-  const secEl = document.getElementById('estudio-sec-registros') ||
-                document.getElementById('progreso-sec-registros');
-  if (secEl && secEl.style.display === 'none') { _isRenderingRegistros = false; return; }
+  if (!list) return;
+  try {
   actualizarFiltros();
   const filtrados = getRegistrosFiltrados();
   const titulo = document.getElementById('regTitulo');
@@ -5430,6 +5426,14 @@ function renderRegistros() {
   list.style.display = 'block';
   list.innerHTML = '';
 
+  // Construir mapa de duplicados (nombre+rúbrica) para marcar tarjetas
+  const nombreCount = {};
+  registros.forEach(function(r) {
+    if (!r) return;
+    const k = (r.nombre||'').trim().toUpperCase() + '|' + (r.rubricaNombre||'').trim().toUpperCase();
+    nombreCount[k] = (nombreCount[k]||0) + 1;
+  });
+
   // FIX v90: empty state elegante si no hay resultados
   if (!filtrados.length) {
     list.innerHTML = '<div style="text-align:center;padding:60px 20px;">'  
@@ -5484,7 +5488,6 @@ function renderRegistros() {
     grp.appendChild(card);
   });
   } catch(e) { console.warn('[ArtEval] renderRegistros:', e.message); }
-  finally { _isRenderingRegistros = false; }
 }
 
 // ── Libro de Clases: tabla dinámica por curso con columnas por instancia ──
@@ -5652,11 +5655,9 @@ function actualizarFiltros() {
     // Obtener textos actuales (sin la opción vacía)
     const textoActuales = Array.from(sel.options).slice(1).map(function(o){ return o.value; });
 
-    // Agregar opciones nuevas (doble verificación: en textoActuales Y en el DOM actual)
+    // Agregar opciones nuevas (verificación simple, sin doble-scan)
     opciones.forEach(function(op) {
-      var yaExiste = textoActuales.includes(op) ||
-        Array.from(sel.options).some(function(o){ return o.value === op; });
-      if (!yaExiste) {
+      if (!textoActuales.includes(op)) {
         const opt = document.createElement('option');
         opt.value = op;
         opt.textContent = op;
@@ -13377,6 +13378,8 @@ function _fusionarGrupo(indices) {
 
 // Renderizar panel de limpieza de duplicados
 function renderPanelDuplicados(containerId) {
+  // AISLAMIENTO ESTRICTO: solo renderizar si estamos en la sección duplicados
+  if (typeof _estudioSubTab !== 'undefined' && _estudioSubTab !== 'duplicados') return;
   var cont = document.getElementById(containerId);
   if (!cont) return;
   var grupos = auditarDuplicados();
