@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v170">
+<meta name="arteval-version" content="v146">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4793,9 +4793,9 @@ Incluye los ${n} criterios, desde idx 0 hasta idx ${n-1}. Usa exactamente "MB","
     }
     const texto = (data.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
     let parsed = null;
-    try { parsed = JSON.parse(texto); } catch(e) {}
-    if (!parsed) try { parsed = JSON.parse(texto.replace(/^```json\s*/i,'').replace(/```\s*$/,'').trim()); } catch(e) {}
-    if (!parsed) { const mx = texto.match(/\{[\s\S]*\}/); if (mx) try { parsed = JSON.parse(mx[0]); } catch(e) {} }
+    try { parsed = JSON.parse(texto); } catch(_e) {}
+    if (!parsed) try { parsed = JSON.parse(texto.replace(/^```json\s*/i,'').replace(/```\s*$/,'').trim()); } catch(_e) {}
+    if (!parsed) { const mx = texto.match(/\{[\s\S]*\}/); if (mx) try { parsed = JSON.parse(mx[0]); } catch(_e) {} }
     if (parsed?.criterios?.length) {
       parsed.criterios.forEach(c => {
         const idx = parseInt(c.idx);
@@ -5351,7 +5351,10 @@ function renderRegistros() {
   const list   = document.getElementById('registrosList');
   const libro  = document.getElementById('libroClasesView');
   if (!list) { _isRenderingRegistros = false; return; }
-  // v170: guard removed - section may still be transitioning when called
+  // Skip render if section is not visible (saves CPU on tab switches)
+  const secEl = document.getElementById('estudio-sec-registros') ||
+                document.getElementById('progreso-sec-registros');
+  if (secEl && secEl.style.display === 'none') { _isRenderingRegistros = false; return; }
   actualizarFiltros();
   const filtrados = getRegistrosFiltrados();
   const titulo = document.getElementById('regTitulo');
@@ -5437,13 +5440,6 @@ function renderRegistros() {
     return;
   }
 
-  // v170: build nombreCount with composite key so only true duplicates are flagged
-  var nombreCount = Object.create(null);
-  filtrados.forEach(function(r) {
-    if (!r) return;
-    var _ck = (r.nombre||'')+'|' + (r.curso||'')+'|' + (r.rubricaNombre||'')+'|' + (r.instancia||'Evaluación 1');
-    nombreCount[_ck] = (nombreCount[_ck]||0) + 1;
-  });
   filtrados.forEach(function(r) {
     if (!r) return;
     const idx = registros.indexOf(r);
@@ -5453,8 +5449,7 @@ function renderRegistros() {
     else if (nota >= 4.0) { bg='var(--green-bg)'; clr='var(--green)'; }
     else                  { bg='var(--red-bg)';   clr='var(--red)';   }
     const nLabel = nota>=6.0?'Excelente':nota>=5.0?'Muy bien logrado':nota>=4.0?'Logrado':'No logrado';
-    var _ckDup = (r.nombre||'')+'|' + (r.curso||'')+'|' + (r.rubricaNombre||'')+'|' + (r.instancia||'Evaluación 1');
-    const esDup  = (nombreCount[_ckDup]||0) > 1;
+    const esDup  = (nombreCount[(r.nombre||'').trim().toUpperCase() + '|' + (r.rubricaNombre||'').trim().toUpperCase()]||0) > 1;
     const instancia = r.instancia || 'Evaluación 1';
     const card = document.createElement('div');
     card.className = 'reg-card' + (esDup?' duplicado':'') + (r.pie?' pie-card':'') + (r.noEntregado?' no-entregado ne-card':'');
@@ -9718,8 +9713,9 @@ function _renderSistemaSubNav() {
     }
     if (sec) sec.style.display = isActive ? 'block' : 'none';
   });
-  // v170: sistema subnav does not host duplicados panel
-  // renderPanelDuplicados is only valid in estudio-sec-duplicados
+  if (_sistemaSubTab === 'duplicados') {
+    renderPanelDuplicados('panelDuplicadosContainer');
+  }
 }
 
 // ── Sub-navegación del tab Progreso ─────────────────────────────────────
@@ -11666,14 +11662,6 @@ function selCurso(curso) {
   // Scroll al inicio del área principal al cambiar de curso
   const main = document.getElementById('cursoMain');
   if (main) setTimeout(function(){ main.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 50);
-  // v170 REACTIVITY: update Alexia button immediately when course changes
-  var _alexiaBtn = document.getElementById('btnExportAlexia');
-  if (_alexiaBtn && curso) {
-    _alexiaBtn.textContent = '📥 Alexia — ' + curso;
-    _alexiaBtn.title = 'Exportar planilla Alexia para ' + curso;
-    _alexiaBtn.dataset.curso = curso;
-    _alexiaBtn.style.display = 'inline-block';
-  }
   renderCursoMain();
 }
 
@@ -13330,15 +13318,11 @@ function auditarDuplicados() {
   var grupos = [];
   var usados = new Set();
 
-  // Phase 1 O(N): bucket by "curso|rubricaNombre|instancia" (v170 composite key)
+  // Phase 1 O(N): bucket by "curso|rubricaNombre"
   var buckets = Object.create(null);
   registros.forEach(function(r, i) {
     if (!r) return;
-    // v170 COMPOSITE KEY: curso + rubricaNombre + instancia
-    // Students with different instancias are NOT duplicates
-    var key = (r.curso||'').trim()
-            + '|' + (r.rubricaNombre||'').trim().toUpperCase()
-            + '|' + (r.instancia||'Evaluación 1').trim();
+    var key = (r.curso||'').trim() + ' ' + (r.rubricaNombre||'').trim().toUpperCase();
     if (!buckets[key]) buckets[key] = [];
     buckets[key].push(i);
   });
@@ -13393,8 +13377,6 @@ function _fusionarGrupo(indices) {
 
 // Renderizar panel de limpieza de duplicados
 function renderPanelDuplicados(containerId) {
-  // v170 SANDBOX: only inject when duplicados sub-tab is visible
-  if (typeof _estudioSubTab !== 'undefined' && _estudioSubTab !== 'duplicados') return;
   var cont = document.getElementById(containerId);
   if (!cont) return;
   var grupos = auditarDuplicados();
