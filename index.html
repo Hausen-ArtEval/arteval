@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v180">
+<meta name="arteval-version" content="v185">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -2619,7 +2619,7 @@ button:focus-visible, .tab:focus-visible, .sub-tab:focus-visible {
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v180</span>
+      ">v185</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -4106,6 +4106,14 @@ function actualizarEstadoConfigDrive() {
 let rubricas=(function(){try{var s=JSON.parse(localStorage.getItem('av_rubricas')||'null');if(Array.isArray(s)&&s.length>0)return s;}catch(e){}return getDefaultRubricas();})();
 let contextoGuardado = {}; // se carga en init desde localStorage
 // FIX QA v72: init protegido — JSON corrupto no congela la app
+// ── normalizarCurso: definida antes de IIFEs de carga ─────────────────────
+function normalizarCurso(c) {
+  if (!c) return '';
+  var s = (c || '').toString().trim().replace(/[°º]/g, '').replace(/\s+/g, '').toUpperCase();
+  return s.replace(/^(\d{1,2})([A-Z].*)$/, function(_, num, rest) { return num + '°' + rest; });
+}
+function _normCursoKey(c) { return normalizarCurso(c).replace(/°/g, '').toUpperCase(); }
+
 let registros = (function(){
   try {
     var raw = JSON.parse(localStorage.getItem('av_registros') || '[]');
@@ -4116,6 +4124,7 @@ let registros = (function(){
     }).map(function(r) {
       // Garantizar UUID en cada registro (compatibilidad con registros sin _id)
       if (!r._id) r._id = (typeof _uuidV4 === 'function') ? _uuidV4() : (Date.now().toString(36) + Math.random().toString(36).slice(2));
+      // Normalización de curso se hace en saveRegistros() donde normalizarCurso ya está definida
       return r;
     });
   } catch(e) { console.error('[ArtEval] av_registros corrupto:', e.message); return []; }
@@ -4128,7 +4137,14 @@ let listaCursos = (function(){
     var clean = {};
     Object.keys(raw).forEach(function(curso) {
       var arr = raw[curso];
-      clean[curso] = Array.isArray(arr) ? arr.filter(function(e) { return e && typeof e === 'object'; }) : [];
+      // Nota: normalizarCurso no está disponible aquí (se define más adelante).
+      // La normalización de claves se aplica en saveListaCursos() al primer guardado.
+      var filtered = Array.isArray(arr) ? arr.filter(function(e) { return e && typeof e === 'object'; }) : [];
+      if (clean[curso]) {
+        clean[curso] = clean[curso].concat(filtered);
+      } else {
+        clean[curso] = filtered;
+      }
     });
     return clean;
   } catch(e) { console.error('[ArtEval] av_lista_cursos corrupto:', e.message); return {}; }
@@ -4332,6 +4348,8 @@ function saveRegistros() {
     console.error('[ArtEval] saveRegistros abortado: registros no es Array', typeof registros);
     return;
   }
+  // Normalizar cursos antes de guardar (normalizarCurso está definida aquí)
+  registros.forEach(function(r) { if (r && r.curso) r.curso = normalizarCurso(r.curso); });
   // Invalidar cachés de rendimiento cuando cambian los registros
   _regsMapCache = null;
   _cursosUnicosCache = null;
@@ -4439,15 +4457,12 @@ function cursosUnicos() {
   var cacheKey = registros.length + '|' + Object.keys(listaCursos||{}).length;
   if (_cursosUnicosCache && _cursosUnicosCacheVer === cacheKey) return _cursosUnicosCache;
   try {
-    var norm = function(c) {
-      return (c||'').toString().trim()
-        .replace(/º/g, '°')   // normalizar ordinal masculino → símbolo grado
-        .replace(/\s+/g, ' ');
-    };
+    // Usar normalizarCurso global para consistencia total: "5D" y "5°D" → mismo curso
     var seen = new Set();
     var result = [];
     var addNorm = function(c) {
-      var n = norm(c); if (n && !seen.has(n)) { seen.add(n); result.push(n); }
+      var n = normalizarCurso(c);
+      if (n && !seen.has(n)) { seen.add(n); result.push(n); }
     };
     registros.filter(Boolean).forEach(function(r){ addNorm(r.curso); });
     var lc = (typeof listaCursos !== 'undefined') ? listaCursos : {};
@@ -5058,7 +5073,17 @@ Incluye los ${n} criterios, desde idx 0 hasta idx ${n-1}. Usa exactamente "MB","
       const code    = data.error.code || 0;
       const msg     = data.error.message || '';
       const isQuota = code === 429 || msg.includes('Quota') || msg.includes('exceeded') || msg.includes('RESOURCE_EXHAUSTED');
-      const isModel = code === 400 || code === 404 || msg.includes('not found') || msg.includes('deprecated') || msg.includes('MODEL_NOT_FOUND');
+      // Auth errors: expired key, invalid key, billing issues — detected BEFORE model errors
+      const isAuth  = code === 401 || code === 403 ||
+                      msg.includes('API key expired') ||
+                      msg.includes('API_KEY_INVALID') ||
+                      msg.includes('API key not valid') ||
+                      msg.includes('invalid API key') ||
+                      msg.includes('API key') ||
+                      msg.includes('UNAUTHENTICATED') ||
+                      msg.includes('billing') ||
+                      msg.includes('PERMISSION_DENIED');
+      const isModel = !isAuth && (code === 400 || code === 404 || msg.includes('not found') || msg.includes('deprecated') || msg.includes('MODEL_NOT_FOUND'));
       if (isQuota) {
         let t = 60;
         if (data.error.details) {
@@ -5070,17 +5095,27 @@ Incluye los ${n} criterios, desde idx 0 hasta idx ${n-1}. Usa exactamente "MB","
         setStatus(`⚠️ Límite de API alcanzado — esperando ${t}s...`);
         if (autoMode) toggleAuto();
         iniciarCronometroEspera(t);
+      } else if (isAuth) {
+        // API Key expirada, inválida o sin permiso — mensaje directo y claro
+        const _isExpired = msg.includes('expired');
+        const _authMsg   = _isExpired
+          ? 'Tu API Key expiró. Genera una nueva en aistudio.google.com y pégala en Configurar → API Key.'
+          : 'API Key inválida o sin permisos. Revisa que la clave sea correcta en Configurar → API Key.';
+        toast('🔑 ' + _authMsg, 'err', 9000);
+        setStatus('API Key inválida — ' + (_isExpired ? 'expirada, renuévala en Google AI Studio' : 'revisa tu clave en Configurar'));
+        setDebug(''); // No mostrar el error crudo
+        mostrarFallbackManual();
       } else if (isModel) {
         // Error de modelo no encontrado — aviso iOS amigable
-        const _modelMsg = `El motor de IA no está disponible temporalmente.\n\nEl modelo "${_modeloUsado}" no responde. Revisa tu API Key o el estado del servicio Google Gemini.`;
-        toast('⚠️ Error de IA — cambiando a evaluación manual', 'err', 6000);
+        toast('⚠️ El modelo de IA no respondió. Intentando con alternativa...', 'err', 6000);
         setStatus('Motor IA no disponible — evalúa manualmente los criterios');
         mostrarFallbackManual();
-        setDebug('Error modelo: ' + msg);
+        setDebug(''); // No mostrar el error crudo
       } else {
         // Error genérico de API — mensaje humano, sin código crudo
         toast('⚠️ Error de conexión con el motor de IA. Revisa tu clave o el estado del servicio.', 'err', 6000);
         setStatus('Error IA: ' + (msg.length > 80 ? msg.slice(0,80) + '…' : msg));
+        setDebug(''); // Nunca mostrar errores crudos al usuario
         mostrarFallbackManual();
       }
       finalizarAnalisis(); return;
@@ -5149,7 +5184,7 @@ function guardar() {
   // Normalizar nombre: capitalizar primera letra de cada palabra, colapsar espacios
   var rawNombre = (document.getElementById('inputNombre')?.value || '').trim().replace(/\s+/g, ' ');
   const nombre = rawNombre.replace(/\b\w/g, function(c) { return c.toUpperCase(); });
-  const curso  = (document.getElementById('inputCurso')?.value || '').trim();
+  const curso  = normalizarCurso((document.getElementById('inputCurso')?.value || '').trim());
   if (!nombre) {
     toast('⚠️ Ingresa el nombre del/la estudiante', 'err');
     const inp = document.getElementById('inputNombre');
@@ -5209,7 +5244,24 @@ function guardar() {
     pieRubrica: esPIE && pieRubricaIdx !== '' ? rubricaEfectiva?.nombre : null,
     pieExigencia: esPIE ? pieExigencia : null
   };
-  registros.unshift(nuevoReg);
+  // ── Guardia anti-duplicados: mismo alumno + curso + rúbrica + instancia ──────
+  // Buscar si ya existe un registro para esta combinación exacta
+  var _idxExistente = registros.findIndex(function(r) {
+    return mismoEstudiante(r.nombre||'', nombre) &&
+           (r.curso||'') === curso &&
+           (r.rubricaNombre||'') === nuevoReg.rubricaNombre &&
+           (r.instancia||'Evaluación 1') === nuevoReg.instancia;
+  });
+  if (_idxExistente !== -1) {
+    // Hay un registro existente — reemplazarlo automáticamente (mismo alumno, misma evaluación)
+    // Conservar el _id original para trazabilidad
+    var _idOriginal = registros[_idxExistente]._id;
+    nuevoReg._id = _idOriginal;
+    registros.splice(_idxExistente, 1, nuevoReg);
+    toast('✓ Evaluación de <strong>' + nombre + '</strong> actualizada (reemplaza registro anterior)', 'ok', 4000);
+  } else {
+    registros.unshift(nuevoReg);
+  }
   saveRegistros();
   // Cola offline: guardar cada nota al momento de ingresarse
   // Garantiza recuperación aunque Drive sobreescriba al reconectar
@@ -5356,8 +5408,8 @@ function getRegistrosFiltrados() {
     if (!r) return false;
     return (!fr  || r.rubricaNombre === fr) &&
            (!fi  || (r.instancia || 'Evaluación 1') === fi) &&
-           (!fc  || (r.curso||'') === fc) &&
-           (fc || cursosSeleccionados.size === 0 || cursosSeleccionados.has(r.curso||'')) &&
+           (!fc  || _normCursoKey(r.curso||'') === _normCursoKey(fc)) &&
+           (fc || cursosSeleccionados.size === 0 || cursosSeleccionados.has(normalizarCurso(r.curso||''))) &&
            (!bus || (r.nombre||'').toLowerCase().includes(bus) ||
                     (r.curso||'').toLowerCase().includes(bus) ||
                     (r.instancia||'').toLowerCase().includes(bus)) &&
@@ -5649,7 +5701,24 @@ function renderRegistros() {
   const libro  = document.getElementById('libroClasesView');
   if (!list) return;
   actualizarFiltros();
-  const filtrados = getRegistrosFiltrados();
+  var filtrados = getRegistrosFiltrados();
+  // ── DEDUPLICACIÓN: eliminar entradas duplicadas antes de renderizar ─────────
+  // Un registro es duplicado si tiene el mismo _id, o si comparte nombre+curso+rubrica+instancia
+  (function() {
+    var vistos_id   = new Set();
+    var vistos_key  = new Set();
+    filtrados = filtrados.filter(function(r) {
+      if (!r) return false;
+      // Por _id primero
+      if (r._id && vistos_id.has(r._id)) return false;
+      if (r._id) vistos_id.add(r._id);
+      // Por clave semántica (mismo alumno, mismo curso, misma evaluación)
+      var semKey = normalizarStrict(r.nombre||'') + '|' + _normCursoKey(r.curso||'') + '|' + (r.rubricaNombre||'') + '|' + (r.instancia||'Evaluación 1');
+      if (vistos_key.has(semKey)) return false;
+      vistos_key.add(semKey);
+      return true;
+    });
+  })();
   const titulo = document.getElementById('regTitulo');
   const btnExp = document.getElementById('btnExport');
   const btnLim = document.getElementById('btnLimpiarTodo');
@@ -5822,7 +5891,8 @@ function renderLibroClases(filtrados, container) {
   // Agrupar por curso
   const porCurso = {};
   filtrados.forEach(function(r) {
-    const c = r.curso || 'Sin curso';
+    // Normalizar el curso del registro antes de agrupar: "5D" y "5°D" → "5°D"
+    const c = normalizarCurso(r.curso || '') || 'Sin curso';
     if (!porCurso[c]) porCurso[c] = [];
     porCurso[c].push(r);
   });
@@ -5847,8 +5917,21 @@ function renderLibroClases(filtrados, container) {
 
     // Agregar alumnos de la nómina que NO tienen ningún registro
     // → aparecen en la tabla con celdas vacías y marcados como "Sin evaluar"
-    const nominaCurso = listaCursos[curso] || [];
-    nominaCurso.forEach(function(e) {
+    // Buscar la nómina con clave normalizada (resuelve 5D vs 5°D)
+    var _nominaKey = Object.keys(listaCursos).find(function(k) {
+      return _normCursoKey(k) === _normCursoKey(curso);
+    }) || curso;
+    const nominaCurso = listaCursos[_nominaKey] || [];
+    // Deduplicar la nómina antes de iterar (previene alumnos duplicados en el libro)
+    var nominaVistosKey = new Set();
+    var nominaDedup = nominaCurso.filter(function(e) {
+      if (!e || !e.nombre) return false;
+      var nk = normalizarStrict(e.nombre);
+      if (nominaVistosKey.has(nk)) return false;
+      nominaVistosKey.add(nk);
+      return true;
+    });
+    nominaDedup.forEach(function(e) {
       const normE = normalizarStrict(e.nombre || '');
       const yaIncluido = Object.keys(porAlumno).some(function(k){
         return normalizarStrict(k) === normE;
@@ -7557,6 +7640,8 @@ function alexiaNorm(str) {
 function alexiaNormCurso(curso) {
   return (curso || '').replace(/[°º]/g, '').trim();
 }
+
+// normalizarCurso y _normCursoKey definidas al inicio del script (ver arriba)
 
 // ── Guardar plantilla al importar XLS de Alexia ───────────────────────────────
 function alexiaGuardarPlantilla(rows, fileName) {
@@ -10126,7 +10211,10 @@ function showEstudioSub(sub) {
   }
   if (sub === 'duplicados') {
     requestAnimationFrame(function() {
-      try { renderPanelDuplicados('panelDuplicadosContainer'); } catch(e) {}
+      // Solo render duplicados si el sub-tab destino ES duplicados
+      if (typeof _estudioSubTab !== 'undefined' && _estudioSubTab === 'duplicados') {
+        try { renderPanelDuplicados('panelDuplicadosContainer'); } catch(e) {}
+      }
     });
   }
 }
@@ -10780,14 +10868,21 @@ function _generarTextoEmail(al, nombreProfesor, nombreColegio) {
 
 function _poblarFiltrosUTP() {
   var cursos = cursosUnicos();
-  // Extraer niveles únicos (ej: "3°", "4°", "5°") desde los cursos
-  var nivelesSet = new Set();
+  // Extraer el NÚMERO de nivel de forma consistente, sin importar si el curso tiene ° o no
+  // "3°A", "3A", "3ºA", "3°B" → nivel "3°"
+  // "10°A" → nivel "10°"
+  var nivelesMap = {}; // número → "N°" con símbolo
   cursos.forEach(function(c) {
-    var m = c.match(/^(\d+[°ºo]?\s*(?:básico|bM-CM-!sico|medio|B|M)?)/i);
-    var nivel = m ? m[1].trim() : c.split(/[A-Z]/)[0].trim();
-    if (nivel) nivelesSet.add(nivel);
+    // Extraer solo el número inicial (1-12) del nombre del curso
+    var m = c.match(/^(\d{1,2})/);
+    if (m) {
+      var num = m[1];
+      var key = num + '°';
+      nivelesMap[num] = key;
+    }
   });
-  var nivelesArr = Array.from(nivelesSet).sort();
+  // Ordenar numéricamente
+  var nivelesArr = Object.keys(nivelesMap).sort(function(a,b){ return parseInt(a)-parseInt(b); }).map(function(k){ return nivelesMap[k]; });
 
   var selNivel = document.getElementById('utpFiltroNivel');
   var selCurso = document.getElementById('utpFiltroCurso');
@@ -10807,7 +10902,10 @@ function _poblarFiltrosUTP() {
   selCurso.innerHTML = '<option value="">Todos los cursos</option>';
   cursos.filter(function(c) {
     if (!nivelActivo) return true;
-    return c.startsWith(nivelActivo) || c.toLowerCase().startsWith(nivelActivo.toLowerCase());
+    // Extraer número del nivel activo (ej: "5°" → "5") y del curso (ej: "5D" → "5", "5°A" → "5")
+    var nivelNum = nivelActivo.replace(/[°º°\s]/g, '');
+    var cursoNum = (c.match(/^(\d{1,2})/) || ['',''])[1];
+    return cursoNum === nivelNum;
   }).forEach(function(c) {
     var opt = document.createElement('option');
     opt.value = c;
@@ -10816,7 +10914,7 @@ function _poblarFiltrosUTP() {
   });
 }
 
-function _renderInformeUTP() {
+function _renderInformeUTP() { try {
   var tabla = document.getElementById('utpInformeTabla');
   if (!tabla) return;
   // Actualizar cursos cuando cambia el nivel
@@ -10853,7 +10951,9 @@ function _renderInformeUTP() {
 
   // Aplicar filtros
   var filtrados = todosAlumnos.filter(function(al) {
-    var okNivel = !nivelFiltro || al.curso.startsWith(nivelFiltro) || al.curso.toLowerCase().startsWith(nivelFiltro.toLowerCase());
+    var _nivelNum = nivelFiltro ? nivelFiltro.replace(/[°º°\s]/g, '') : '';
+    var _cursoNum = (al.curso.match(/^(\d{1,2})/) || ['',''])[1];
+    var okNivel = !nivelFiltro || _cursoNum === _nivelNum;
     var okCurso = !cursoFiltro || al.curso === cursoFiltro;
     var okEstado = !estadoFiltro || (estadoFiltro === 'enviado' && al.enviado) || (estadoFiltro === 'pendiente' && !al.enviado);
     return okNivel && okCurso && okEstado;
@@ -10899,6 +10999,7 @@ function _renderInformeUTP() {
     + filtrados.length + ' registro(s) · ' + filtrados.filter(function(a){ return a.enviado; }).length + ' enviados · '
     + filtrados.filter(function(a){ return !a.enviado; }).length + ' pendientes</div>';
   tabla.innerHTML = html;
+  } catch(_utpErr) { console.warn('[ArtEval] _renderInformeUTP:', _utpErr.message); if(document.getElementById('utpInformeTabla')) document.getElementById('utpInformeTabla').innerHTML = '<div style="color:var(--text3);padding:12px;">Sin datos para mostrar</div>'; }
 }
 
 function _exportarInformeUTP() {
@@ -10942,7 +11043,9 @@ function _exportarInformeUTP() {
   });
 
   var filtrados = todosAlumnos.filter(function(al) {
-    var okN = !nivelFiltro || al.curso.startsWith(nivelFiltro);
+    var _nivelNumE = nivelFiltro ? nivelFiltro.replace(/[°º°\s]/g, '') : '';
+    var _cursoNumE = (al.curso.match(/^(\d{1,2})/) || ['',''])[1];
+    var okN = !nivelFiltro || _cursoNumE === _nivelNumE;
     var okC = !cursoFiltro || al.curso === cursoFiltro;
     var okE = !estadoFiltro || (estadoFiltro==='enviado'&&al.enviado) || (estadoFiltro==='pendiente'&&!al.enviado);
     return okN && okC && okE;
@@ -10973,7 +11076,7 @@ function _exportarInformeUTP() {
   toast('✓ Informe UTP descargado (' + filtrados.length + ' registros)', 'ok');
 }
 
-function _renderCorreoTab(){
+function _renderCorreoTab(){ try { /* try-open */
   var ct=document.getElementById('correoTabContainer'),badge=document.getElementById('correoTabEmailBadge');
   if(!ct)return;
   ['correoNombreProf','correoNombreColegio','correoEmailUTP','correoInstitucional','correoGmailIdx'].forEach(function(id){
@@ -11088,6 +11191,7 @@ function _renderCorreoTab(){
       });
     });
   }, 50);
+  } catch(_correoErr) { console.warn('[ArtEval] _renderCorreoTab:', _correoErr.message); }
 }
 function _abrirCorreoTab(idx){
   var criticos=window._correoTabCriticos||[],al=criticos[idx];if(!al)return;
@@ -12081,6 +12185,28 @@ let estFiltro = 'todos'; // todos | pendiente | entregado | pie
 let instanciaCursoFiltro = ''; // '' = todas las instancias
 
 function saveListaCursos() {
+  // Normalizar claves de cursos antes de guardar (previene 5D vs 5°D como claves separadas)
+  try {
+    var keysRaw = Object.keys(listaCursos);
+    keysRaw.forEach(function(k) {
+      var normK = normalizarCurso(k);
+      if (normK !== k) {
+        if (listaCursos[normK]) {
+          // Fusionar: deduplicar por nombre de estudiante
+          var combinados = (listaCursos[normK] || []).concat(listaCursos[k] || []);
+          var vistos = new Set();
+          listaCursos[normK] = combinados.filter(function(e) {
+            var key = (e && e.nombre) ? e.nombre.trim().toUpperCase() : '';
+            if (!key || vistos.has(key)) return false;
+            vistos.add(key); return true;
+          });
+        } else {
+          listaCursos[normK] = listaCursos[k];
+        }
+        delete listaCursos[k];
+      }
+    });
+  } catch(_normErr) { console.warn('[ArtEval] saveListaCursos normCurso:', _normErr.message); }
   // Invalidar cachés que dependen de listaCursos
   _cursosUnicosCache = null;
   _regsMapCache = null;
@@ -14015,8 +14141,15 @@ function _fusionarGrupo(indices) {
 
 // Renderizar panel de limpieza de duplicados
 function renderPanelDuplicados(containerId) {
-  // AISLAMIENTO ESTRICTO: solo renderizar cuando estamos en la sección de duplicados
-  if (typeof _estudioSubTab !== 'undefined' && _estudioSubTab !== 'duplicados') return;
+  // AISLAMIENTO RADICAL: si no estamos en la pestaña duplicados, limpiar residuos y salir
+  if (typeof _estudioSubTab !== 'undefined' && _estudioSubTab !== 'duplicados') {
+    // Limpiar cualquier residuo visual que pudiera haber quedado en el contenedor
+    var _residuo = document.getElementById(containerId);
+    if (_residuo && _residuo.innerHTML && !_residuo.innerHTML.includes('panelDuplicadosContainer')) {
+      _residuo.innerHTML = '';
+    }
+    return;
+  }
   var cont = document.getElementById(containerId);
   if (!cont) return;
   var grupos = auditarDuplicados();
