@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v171-L99">
+<meta name="arteval-version" content="v180">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -2619,7 +2619,7 @@ button:focus-visible, .tab:focus-visible, .sub-tab:focus-visible {
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v146</span>
+      ">v180</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -4988,46 +4988,99 @@ Incluye los ${n} criterios, desde idx 0 hasta idx ${n-1}. Usa exactamente "MB","
     }];
   }
 
-  try {
-    const _ctrl=new AbortController();
-    const _tmo=setTimeout(()=>_ctrl.abort(), 5000);
-    let res;
+  // ── Llamada a la API de Gemini con fallback automático ─────────────────────
+  // Modelo primario: gemini-2.0-flash-lite (más rápido, menor latencia en aula)
+  // Fallback:        gemini-1.5-flash      (estable, producción)
+  const GEMINI_MODELOS = [
+    'gemini-2.0-flash-lite',
+    'gemini-1.5-flash'
+  ];
+  const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/';
+  const GEMINI_ENDPOINT = ':generateContent?key=';
+
+  const _bodyGemini = JSON.stringify({
+    contents,
+    generationConfig: { temperature: exigEfectiva.temp, maxOutputTokens: 2048, responseMimeType: 'application/json' }
+  });
+
+  let res, _modeloUsado;
+  for (let _mi = 0; _mi < GEMINI_MODELOS.length; _mi++) {
+    _modeloUsado = GEMINI_MODELOS[_mi];
+    const _url = `${GEMINI_BASE}${_modeloUsado}${GEMINI_ENDPOINT}${key}`;
     try {
-      res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${key}`, {
-        method: 'POST', signal: _ctrl.signal,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-        contents,
-        generationConfig: { temperature: exigEfectiva.temp, maxOutputTokens: 2048, responseMimeType: 'application/json' }
-      })
-    });
-      clearTimeout(_tmo);
-    } catch(_ae) {
-      clearTimeout(_tmo);
-      analizando=false;
-      const ba2=document.getElementById('btnAnalizar'); if(ba2)ba2.disabled=false;
-      const lb2=document.getElementById('liveBadge');
-      if(lb2){lb2.textContent='● MODO MANUAL';lb2.className='cam-badge';}
-      setStatus('Modo manual — presiona los niveles de la rúbrica');
-      toast(_ae.name==='AbortError'?'\u23f1 Análisis demorado. Modo manual activo':'\u26a0 IA no disponible. Evalúa manualmente','info',5000);
+      const _ctrl = new AbortController();
+      const _tmo  = setTimeout(() => _ctrl.abort(), 28000); // 28s timeout
+      try {
+        res = await fetch(_url, {
+          method: 'POST', signal: _ctrl.signal,
+          headers: { 'Content-Type': 'application/json' },
+          body: _bodyGemini
+        });
+        clearTimeout(_tmo);
+      } catch (_ae) {
+        clearTimeout(_tmo);
+        if (_mi < GEMINI_MODELOS.length - 1) {
+          // Timeout/red → intentar siguiente modelo
+          setStatus(`⚠️ Modelo ${_modeloUsado} sin respuesta — intentando con ${GEMINI_MODELOS[_mi+1]}...`);
+          continue;
+        }
+        // Todos los modelos fallaron por red
+        analizando = false;
+        const ba2 = document.getElementById('btnAnalizar'); if (ba2) ba2.disabled = false;
+        const lb2 = document.getElementById('liveBadge');
+        if (lb2) { lb2.textContent = '● MODO MANUAL'; lb2.className = 'cam-badge'; }
+        setStatus('Modo manual — presiona los niveles de la rúbrica');
+        toast(_ae.name === 'AbortError'
+          ? '⏱ Análisis demorado. Modo manual activo'
+          : '⚠️ IA no disponible. Evalúa manualmente', 'info', 5000);
+        return;
+      }
+      // Verificar si el modelo no existe (400/404) → intentar siguiente
+      if ((res.status === 400 || res.status === 404) && _mi < GEMINI_MODELOS.length - 1) {
+        setStatus(`⚠️ Modelo ${_modeloUsado} no disponible — cambiando a ${GEMINI_MODELOS[_mi+1]}...`);
+        continue;
+      }
+      break; // Respuesta válida (o último modelo — manejar abajo)
+    } catch (_fe) {
+      if (_mi < GEMINI_MODELOS.length - 1) continue;
+      // Error de red irrecuperable
+      setStatus('Error de conexión con la IA: ' + _fe.message);
+      mostrarFallbackManual();
+      finalizarAnalisis();
       return;
     }
+  }
+  // ── Procesar respuesta de Gemini ────────────────────────────────────────
+  try {
     const data = await res.json();
     setDebug(JSON.stringify(data, null, 2));
     if (data.error) {
-      if (data.error.code === 429 || (data.error.message||'').includes('Quota') || (data.error.message||'').includes('exceeded')) {
+      const code    = data.error.code || 0;
+      const msg     = data.error.message || '';
+      const isQuota = code === 429 || msg.includes('Quota') || msg.includes('exceeded') || msg.includes('RESOURCE_EXHAUSTED');
+      const isModel = code === 400 || code === 404 || msg.includes('not found') || msg.includes('deprecated') || msg.includes('MODEL_NOT_FOUND');
+      if (isQuota) {
         let t = 60;
         if (data.error.details) {
           const ri = data.error.details.find(d => d['@type'] === 'type.googleapis.com/google.rpc.RetryInfo');
           if (ri?.retryDelay) t = parseInt(ri.retryDelay.replace('s','')) + 2;
         }
-        const m = (data.error.message||'').match(/in (\d+)/);
-        if (m) t = parseInt(m[1]) + 2;
-        setStatus(`⚠️ Límite alcanzado — esperando ${t}s...`);
+        const mWait = msg.match(/in (\d+)/);
+        if (mWait) t = parseInt(mWait[1]) + 2;
+        setStatus(`⚠️ Límite de API alcanzado — esperando ${t}s...`);
         if (autoMode) toggleAuto();
         iniciarCronometroEspera(t);
+      } else if (isModel) {
+        // Error de modelo no encontrado — aviso iOS amigable
+        const _modelMsg = `El motor de IA no está disponible temporalmente.\n\nEl modelo "${_modeloUsado}" no responde. Revisa tu API Key o el estado del servicio Google Gemini.`;
+        toast('⚠️ Error de IA — cambiando a evaluación manual', 'err', 6000);
+        setStatus('Motor IA no disponible — evalúa manualmente los criterios');
+        mostrarFallbackManual();
+        setDebug('Error modelo: ' + msg);
       } else {
-        setStatus('Error Gemini: ' + data.error.message);
+        // Error genérico de API — mensaje humano, sin código crudo
+        toast('⚠️ Error de conexión con el motor de IA. Revisa tu clave o el estado del servicio.', 'err', 6000);
+        setStatus('Error IA: ' + (msg.length > 80 ? msg.slice(0,80) + '…' : msg));
         mostrarFallbackManual();
       }
       finalizarAnalisis(); return;
@@ -5048,9 +5101,13 @@ Incluye los ${n} criterios, desde idx 0 hasta idx ${n-1}. Usa exactamente "MB","
       });
       renderCriterios();
       reproducirBeep();
-      setStatus(`✓ ${Object.keys(evaluacion).length}/${n} criterios evaluados — revisa y ajusta si necesitas`);
-    } else { setStatus('Respuesta inesperada — revisa el panel debug'); }
+      setStatus(`✓ ${Object.keys(evaluacion).length}/${n} criterios evaluados con ${_modeloUsado} — revisa y ajusta si necesitas`);
+    } else {
+      setStatus('Respuesta inesperada de la IA — revisa el panel debug o evalúa manualmente');
+      mostrarFallbackManual();
+    }
   } catch(e) {
+    toast('⚠️ Error de conexión con el motor de IA. Revisa tu clave o el estado del servicio.', 'err', 6000);
     setStatus('Error de conexión: ' + e.message);
     setDebug('Excepción: ' + e.message);
     mostrarFallbackManual();
@@ -6868,24 +6925,52 @@ function guardarKey() {
 async function probarKey() {
   const key = getKey();
   if (!key) { toast('⚠️ Guarda primero tu API Key', 'err'); return; }
-  setStatus('Probando conexión...');
+  setStatus('Probando conexión con Gemini...');
   const st = document.getElementById('apiStatus');
-  try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${key}`, {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ contents: [{ parts: [{ text: 'di OK' }] }] })
-    });
-    const data = await res.json();
-    if (data.candidates) {
-      setStatus('✓ Conexión con Gemini exitosa. Listo para evaluar.');
-      if (st) { st.textContent = '✓ Funcionando'; st.style.color = 'var(--green)'; }
-    } else {
-      setStatus('Error: ' + (data.error?.message||'Respuesta inesperada'));
-      if (st) { st.textContent = '✗ Error'; st.style.color = 'var(--red)'; }
+  if (st) { st.textContent = '⏳ Probando…'; st.style.color = 'var(--text3)'; }
+
+  const _modelos = ['gemini-2.0-flash-lite', 'gemini-1.5-flash'];
+  const _base    = 'https://generativelanguage.googleapis.com/v1beta/models/';
+  const _body    = JSON.stringify({ contents: [{ parts: [{ text: 'Responde únicamente: OK' }] }] });
+  let _exito = false;
+
+  for (let _mi = 0; _mi < _modelos.length; _mi++) {
+    const _modelo = _modelos[_mi];
+    const _url    = `${_base}${_modelo}:generateContent?key=${key}`;
+    try {
+      const res  = await fetch(_url, { method: 'POST', headers: {'Content-Type':'application/json'}, body: _body });
+      const data = await res.json();
+      if (data.candidates) {
+        setStatus(`✓ Conexión exitosa con Gemini (${_modelo}). Listo para evaluar.`);
+        if (st) { st.textContent = `✓ Funcionando (${_modelo})`; st.style.color = 'var(--green)'; }
+        _exito = true; break;
+      } else if ((res.status === 400 || res.status === 404) && _mi < _modelos.length - 1) {
+        // Modelo no disponible — intentar siguiente
+        continue;
+      } else {
+        const errMsg = data.error?.message || 'Respuesta inesperada';
+        const esAuth = errMsg.includes('API_KEY_INVALID') || errMsg.includes('401') || errMsg.includes('API key');
+        if (esAuth) {
+          setStatus('⚠️ API Key inválida o sin permisos para Gemini.');
+          if (st) { st.textContent = '✗ Key inválida'; st.style.color = 'var(--red)'; }
+        } else {
+          setStatus('Error de conexión con el motor de IA. Revisa tu clave o el estado del servicio.');
+          if (st) { st.textContent = '✗ Error'; st.style.color = 'var(--red)'; }
+        }
+        toast('⚠️ Error al conectar con Gemini: ' + (errMsg.length > 80 ? errMsg.slice(0,80)+'…' : errMsg), 'err', 6000);
+        _exito = true; break; // no seguir intentando si es auth error
+      }
+    } catch(e) {
+      if (_mi < _modelos.length - 1) continue;
+      setStatus('Error de red: ' + e.message);
+      if (st) { st.textContent = '✗ Sin conexión'; st.style.color = 'var(--red)'; }
+      toast('⚠️ Sin conexión con el motor de IA. Verifica tu internet o el estado del servicio Google.', 'err', 6000);
     }
-  } catch(e) {
-    setStatus('Error de conexión: ' + e.message);
-    if (st) { st.textContent = '✗ Sin conexión'; st.style.color = 'var(--red)'; }
+  }
+  if (!_exito) {
+    setStatus('Error de conexión con el motor de IA. Revisa tu clave o el estado del servicio.');
+    if (st) { st.textContent = '✗ No disponible'; st.style.color = 'var(--red)'; }
+    toast('⚠️ El motor de IA no responde. Revisa tu API Key o el estado de Google Gemini.', 'err', 6000);
   }
 }
 
@@ -15558,7 +15643,7 @@ document.addEventListener('DOMContentLoaded', function() {
     _cursosUnicosCache = null;
     _regsMapCache = null;
     // 5. Log de estado
-    console.log('[ArtEval v171-L99] Arrancado · ' + registros.length + ' registros · ' + Object.keys(listaCursos).length + ' cursos');
+    console.log('[ArtEval v180] Arrancado · ' + registros.length + ' registros · ' + Object.keys(listaCursos).length + ' cursos');
   } catch(diagErr) {
     console.error('[ArtEval] Error en auto-diagnóstico:', diagErr);
   }
