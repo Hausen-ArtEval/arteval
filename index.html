@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v170-r">
+<meta name="arteval-version" content="v171-L99">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -2358,6 +2358,85 @@ button, .btn, .tab, .curso-chip, .reg-card, .config-card, input, select {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
+
+/* ── Undo Toast ─────────────────────────────────────────────────── */
+#undoToast {
+  animation: slideUpFade 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes slideUpFade {
+  from { opacity: 0; transform: translateX(-50%) translateY(16px) scale(0.95); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0)    scale(1);    }
+}
+
+/* ── Focus rings accesibles ─────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+button:focus-visible, .tab:focus-visible, .sub-tab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ── Smooth scroll en contenedores internos ──────────────────────── */
+.reg-list, .curso-list, #panelDuplicadosContainer {
+  scroll-behavior: smooth;
+}
+
+/* ── Mejora visual: highlight de tarjeta al hover más suave ─────── */
+.reg-card {
+  transition: box-shadow 0.15s ease, transform 0.1s ease;
+}
+.reg-card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+  transform: translateY(-1px);
+}
+.reg-card:active {
+  transform: translateY(0);
+}
+
+/* ── Indicador de carga en botones async ────────────────────────── */
+.btn.loading {
+  opacity: 0.7;
+  pointer-events: none;
+  position: relative;
+}
+.btn.loading::after {
+  content: '';
+  position: absolute;
+  right: 10px; top: 50%;
+  width: 12px; height: 12px;
+  margin-top: -6px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: btn-spin 0.6s linear infinite;
+}
+@keyframes btn-spin { to { transform: rotate(360deg); } }
+
+/* ── Print improvements ─────────────────────────────────────────── */
+@media print {
+  .topbar, .tabs-bar, #subnavLayer, .reg-actions, #installBanner,
+  #autoSaveIndicator, #storageWarning, #offlinePendingBanner { display: none !important; }
+  .reg-card { break-inside: avoid; border: 0.5px solid #ccc !important; margin-bottom: 6px; }
+  .reg-badge { border: 0.5px solid currentColor; }
+  body { font-size: 11pt; }
+  h1, h2, h3 { break-after: avoid; }
+}
+
+/* ── Animación de entrada para las tarjetas de registro ─────────── */
+.reg-card {
+  animation: cardIn 0.18s ease-out both;
+}
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: none; }
+}
+/* Desactivar animación si el usuario prefiere reducida */
+@media (prefers-reduced-motion: reduce) {
+  .reg-card, #undoToast, * { animation: none !important; transition: none !important; }
+}
 </style>
 
 <script>
@@ -2397,10 +2476,10 @@ button, .btn, .tab, .curso-chip, .reg-card, .config-card, input, select {
       .then(function(r){ console.log('[ArtEval] SW listo:', r.scope); })
       .catch(function(){
         // data: URL también bloqueado (Chrome) — SW no disponible, continúa sin él
-        console.info('[ArtEval] SW omitido (entorno no compatible) — app funciona normalmente.');
+        console.log('[ArtEval] SW omitido (entorno no compatible) — app funciona normalmente.');
       });
   } catch(e) {
-    console.info('[ArtEval] SW omitido:', e.message);
+    console.log('[ArtEval] SW omitido:', e.message);
   }
 })();
 </script>
@@ -2447,7 +2526,7 @@ button, .btn, .tab, .curso-chip, .reg-card, .config-card, input, select {
 <div class="app">
 
   <!-- TOAST -->
-  <div class="toast-wrap" id="toastWrap"></div>
+  <div class="toast-wrap" id="toastWrap" role="status" aria-live="polite" aria-atomic="true"></div>
   <div id="autoSaveIndicator">✓ Guardado</div>
   <div id="offlinePendingBanner" style="display:none;position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:801;background:#FF9500;color:white;font-size:13px;font-weight:600;padding:8px 20px;border-radius:20px;box-shadow:0 2px 12px rgba(0,0,0,0.15);pointer-events:none;"></div>
   <div id="storageWarning"></div>
@@ -2902,7 +2981,7 @@ button, .btn, .tab, .curso-chip, .reg-card, .config-card, input, select {
             oninput="mostrarAutocompletado(this.value)"
             onkeydown="navAutocompletado(event)"
             onblur="setTimeout(()=>ocultarAutocompletado(),200)">
-          <div class="autocomplete-list" id="autocompleteList" style="display:none;"></div>
+          <div class="autocomplete-list" id="evalAutocompleteList" style="display:none;"></div>
         </div>
         <div class="field-wrap" style="max-width:140px;">
           <label>Curso</label>
@@ -3210,7 +3289,7 @@ button, .btn, .tab, .curso-chip, .reg-card, .config-card, input, select {
           <span class="reg-title" id="regTitulo">Sin registros</span>
           <div class="search-wrap">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input class="search-input" type="text" id="buscarRegistros" placeholder="Buscar estudiante..." oninput="clearTimeout(window._regSearchTimer);window._regSearchTimer=setTimeout(renderRegistros,300)">
+            <input class="search-input" type="text" id="buscarRegistros" placeholder="Buscar estudiante..." oninput="clearTimeout(window._regSearchTimer);window._regSearchTimer=setTimeout(renderRegistros,280)">
           </div>
           <select class="filter-select" id="filtroCurso" onchange="renderRegistros()" title="Filtrar por curso">
             <option value="">Todos los cursos</option>
@@ -3754,6 +3833,15 @@ function doGet(e) {
 </div><!-- /app -->
 
 <script>
+// ── Console safety shim ─────────────────────────────────────────────────────
+// Algunos WebViews (iOS UIWebView antiguo, ciertas apps) tienen console
+// incompleto o roto. Este shim garantiza que log/warn/error nunca lancen.
+(function() {
+  if (typeof console === 'undefined') { window.console = {}; }
+  ['log','warn','error','info','debug','group','groupEnd','time','timeEnd'].forEach(function(m) {
+    if (typeof console[m] !== 'function') { console[m] = function() {}; }
+  });
+})();
 // FIX: wrapper showTab seguro (clic antes de cargar JS)
 // Chart.js cargado dinámicamente
 (function(){
@@ -3879,8 +3967,33 @@ function actualizarEstadoConfigDrive() {
 let rubricas=(function(){try{var s=JSON.parse(localStorage.getItem('av_rubricas')||'null');if(Array.isArray(s)&&s.length>0)return s;}catch(e){}return getDefaultRubricas();})();
 let contextoGuardado = {}; // se carga en init desde localStorage
 // FIX QA v72: init protegido — JSON corrupto no congela la app
-let registros   = (function(){ try { return JSON.parse(localStorage.getItem('av_registros')||'[]')||[]; } catch(e){ console.error('[ArtEval] av_registros:',e.message); return []; } })();
-let listaCursos = (function(){ try { return JSON.parse(localStorage.getItem('av_lista_cursos')||'{}')||{}; } catch(e){ console.error('[ArtEval] av_lista_cursos:',e.message); return {}; } })();
+let registros = (function(){
+  try {
+    var raw = JSON.parse(localStorage.getItem('av_registros') || '[]');
+    if (!Array.isArray(raw)) { console.warn('[ArtEval] av_registros no es array, reseteando.'); return []; }
+    // Filtrar entradas corruptas (null/undefined/no-objeto) y garantizar campos mínimos
+    return raw.filter(function(r) {
+      return r && typeof r === 'object' && (r.nombre || r.pts !== undefined);
+    }).map(function(r) {
+      // Garantizar UUID en cada registro (compatibilidad con registros sin _id)
+      if (!r._id) r._id = (typeof _uuidV4 === 'function') ? _uuidV4() : (Date.now().toString(36) + Math.random().toString(36).slice(2));
+      return r;
+    });
+  } catch(e) { console.error('[ArtEval] av_registros corrupto:', e.message); return []; }
+})();
+let listaCursos = (function(){
+  try {
+    var raw = JSON.parse(localStorage.getItem('av_lista_cursos') || '{}');
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) { console.warn('[ArtEval] av_lista_cursos inválido, reseteando.'); return {}; }
+    // Garantizar que cada curso sea un array de estudiantes
+    var clean = {};
+    Object.keys(raw).forEach(function(curso) {
+      var arr = raw[curso];
+      clean[curso] = Array.isArray(arr) ? arr.filter(function(e) { return e && typeof e === 'object'; }) : [];
+    });
+    return clean;
+  } catch(e) { console.error('[ArtEval] av_lista_cursos corrupto:', e.message); return {}; }
+})();
 let rubricaActiva = (function(){ var v=parseInt(localStorage.getItem('av_rubrica_activa')||'0'); return isNaN(v)?0:v; })();
 // Autocomplete cache — aquí para evitar zona muerta al llamar saveRegistros/saveListaCursos
 let _candidatosCache = null;
@@ -4048,7 +4161,7 @@ function _flushPendingQueue() {
     });
     if (nuevos > 0) {
       saveRegistros();
-      console.info('[ArtEval] Cola offline: ' + nuevos + ' nota(s) fusionada(s) antes de sync');
+      console.log('[ArtEval] Cola offline: ' + nuevos + ' nota(s) fusionada(s) antes de sync');
     }
     // Limpiar la cola una vez fusionada
     localStorage.removeItem('av_pending_queue');
@@ -4075,8 +4188,14 @@ function _checkPendingQueue() {
 }
 
 function saveRegistros() {
-  _regsMapCache = null; // Invalidate O(1) lookup cache on data change
-  _regsMapCacheVersion = -1;
+  // Guardia de integridad: nunca guardar si registros no es Array
+  if (!Array.isArray(registros)) {
+    console.error('[ArtEval] saveRegistros abortado: registros no es Array', typeof registros);
+    return;
+  }
+  // Invalidar cachés de rendimiento cuando cambian los registros
+  _regsMapCache = null;
+  _cursosUnicosCache = null;
   try {
     localStorage.setItem('av_registros', JSON.stringify(registros));
     localStorage.setItem('av_local_count', String(registros.length));
@@ -4145,6 +4264,12 @@ function getKey() { return localStorage.getItem('av_gemini_key') || ''; }
 // ═══════════════════════════════════════════════════════
 function setEl(id, val) { const e = document.getElementById(id); if (e) e.textContent = val; }
 function setStatus(msg) { setEl('statusBar', msg); }
+// Escape HTML para prevenir XSS en innerHTML — usar siempre con datos de usuario
+function _esc(str) {
+  return (str||'').toString()
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
 function setDebug(txt) {
   const panel = document.getElementById('debugPanel');
   const pre = document.getElementById('debugContent');
@@ -4171,13 +4296,13 @@ function iniciales(nombre) {
 var _cursosUnicosCache = null;
 var _cursosUnicosCacheVer = -1;
 function cursosUnicos() {
-  // Cache invalidated when registros or listaCursos change length
+  // Cache key: invalidate when registros o listaCursos cambian
   var cacheKey = registros.length + '|' + Object.keys(listaCursos||{}).length;
   if (_cursosUnicosCache && _cursosUnicosCacheVer === cacheKey) return _cursosUnicosCache;
   try {
     var norm = function(c) {
       return (c||'').toString().trim()
-        .replace(/º/g, '°')  // º → °
+        .replace(/º/g, '°')   // normalizar ordinal masculino → símbolo grado
         .replace(/\s+/g, ' ');
     };
     var seen = new Set();
@@ -4194,6 +4319,8 @@ function cursosUnicos() {
     return result;
   } catch(e) { return []; }
 }
+// Invalidar caché cuando cambian registros o cursos
+function _invalidarCursosCache() { _cursosUnicosCache = null; }
 function rubricasUsadas() {
   return [...new Set(registros.filter(Boolean).map(function(r){ return r.rubricaNombre; }).filter(Boolean))].sort();
 }
@@ -4760,31 +4887,6 @@ Incluye los ${n} criterios, desde idx 0 hasta idx ${n-1}. Usa exactamente "MB","
         setStatus(`⚠️ Límite alcanzado — esperando ${t}s...`);
         if (autoMode) toggleAuto();
         iniciarCronometroEspera(t);
-      } else if (
-          data.error.code === 400 ||
-          (data.error.message||'').toLowerCase().includes('api key expired') ||
-          (data.error.message||'').toLowerCase().includes('api_key_invalid') ||
-          (data.error.message||'').toLowerCase().includes('invalid api key')
-        ) {
-        // ── API Key expirada o inválida ──────────────────────────
-        setStatus('🔑 API Key inválida o expirada');
-        const _toastMsg = 'Tu clave de Gemini ha caducado o es inválida. Ve a la sección Sistema → Ajustes para renovarla.';
-        toast('🔑 ' + _toastMsg, 'err', 8000);
-        // Mostrar banner persistente en el panel de evaluación
-        const _debugEl = document.getElementById('debugInfo');
-        if (_debugEl) {
-          _debugEl.style.display = 'block';
-          _debugEl.innerHTML = '<div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgba(255,59,48,0.08);border:0.5px solid rgba(255,59,48,0.25);border-radius:10px;">'
-            + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF3B30" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
-            + '<div style="flex:1;">'
-            + '<div style="font-size:13px;font-weight:700;color:#FF3B30;">Clave API expirada</div>'
-            + '<div style="font-size:12px;color:#8E8E93;margin-top:2px;">' + _toastMsg + '</div>'
-            + '</div>'
-            + '<button onclick="showSistemaSub(&apos;config&apos;);showTab(&apos;sistema&apos;);" '
-            + 'style="padding:6px 12px;background:#FF9500;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">Ir a Ajustes</button>'
-            + '</div>';
-        }
-        mostrarFallbackManual();
       } else {
         setStatus('Error Gemini: ' + data.error.message);
         mostrarFallbackManual();
@@ -4793,9 +4895,9 @@ Incluye los ${n} criterios, desde idx 0 hasta idx ${n-1}. Usa exactamente "MB","
     }
     const texto = (data.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
     let parsed = null;
-    try { parsed = JSON.parse(texto); } catch(_e) {}
-    if (!parsed) try { parsed = JSON.parse(texto.replace(/^```json\s*/i,'').replace(/```\s*$/,'').trim()); } catch(_e) {}
-    if (!parsed) { const mx = texto.match(/\{[\s\S]*\}/); if (mx) try { parsed = JSON.parse(mx[0]); } catch(_e) {} }
+    try { parsed = JSON.parse(texto); } catch {}
+    if (!parsed) try { parsed = JSON.parse(texto.replace(/^```json\s*/i,'').replace(/```\s*$/,'').trim()); } catch {}
+    if (!parsed) { const mx = texto.match(/\{[\s\S]*\}/); if (mx) try { parsed = JSON.parse(mx[0]); } catch {} }
     if (parsed?.criterios?.length) {
       parsed.criterios.forEach(c => {
         const idx = parseInt(c.idx);
@@ -4848,8 +4950,10 @@ function toggleAuto() {
 //  GUARDAR REGISTRO
 // ═══════════════════════════════════════════════════════
 function guardar() {
-  const nombre = document.getElementById('inputNombre')?.value.trim();
-  const curso  = document.getElementById('inputCurso')?.value.trim();
+  // Normalizar nombre: capitalizar primera letra de cada palabra, colapsar espacios
+  var rawNombre = (document.getElementById('inputNombre')?.value || '').trim().replace(/\s+/g, ' ');
+  const nombre = rawNombre.replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+  const curso  = (document.getElementById('inputCurso')?.value || '').trim();
   if (!nombre) {
     toast('⚠️ Ingresa el nombre del/la estudiante', 'err');
     const inp = document.getElementById('inputNombre');
@@ -5345,13 +5449,9 @@ function filtrarPorInstancia(instancia) {
 
 function renderRegistros() {
   if (!Array.isArray(registros)) return;
-  if (_isRenderingRegistros) return;
-  _isRenderingRegistros = true;
-  try {
   const list   = document.getElementById('registrosList');
   const libro  = document.getElementById('libroClasesView');
-  if (!list) { _isRenderingRegistros = false; return; }
-  // [FIX] display guard removed - renderRegistros must run regardless of visibility
+  if (!list) return;
   actualizarFiltros();
   const filtrados = getRegistrosFiltrados();
   const titulo = document.getElementById('regTitulo');
@@ -5390,13 +5490,12 @@ function renderRegistros() {
   const _btnDups = document.getElementById('btnLimpiarDups');
   if (_btnDups) _btnDups.style.display = 'inline-block';
 
-  // Detectar duplicados — diferido 400ms para no bloquear el render principal
+  // Detectar duplicados reales usando auditarDuplicados (similitud ≥90% mismo curso)
+  // Esto evita falsos positivos de alumnos con múltiples instancias evaluativas
   const btnDup = document.getElementById('btnDuplicados');
   if (btnDup) btnDup.style.display = 'none';
-  clearTimeout(window._dupBadgeTimer);
-  window._dupBadgeTimer = setTimeout(function() {
-    var dupSubBtn = document.querySelector('[data-sub="duplicados"]');
-    if (!dupSubBtn) return;
+  var dupSubBtn = document.querySelector('[data-sub="duplicados"]');
+  if (dupSubBtn) {
     try {
       var gruposDup = (typeof auditarDuplicados === 'function') ? auditarDuplicados() : [];
       var existingBadge = dupSubBtn.querySelector('.dup-count-badge');
@@ -5413,7 +5512,7 @@ function renderRegistros() {
         existingBadge.remove();
       }
     } catch(e) { /* auditarDuplicados puede no estar lista al cargar */ }
-  }, 400);
+  }
 
   // ── Vista Libro de Clases ──
   if (_vistaLibroActiva) {
@@ -5437,15 +5536,17 @@ function renderRegistros() {
     return;
   }
 
-  // [FIX] Build nombreCount with composite key before render loop.
-  // Composite key prevents false duplicate flags for same student in different instancias.
+  // Mapa de duplicados con clave compuesta: nombre+curso+rúbrica+instancia
+  // Evita falsos positivos de alumnos con múltiples instancias evaluativas legítimas
   var nombreCount = Object.create(null);
   filtrados.forEach(function(rx) {
     if (!rx) return;
-    var _nc = (rx.nombre||'').trim().toUpperCase()+'|'+(rx.curso||'').trim()+'|'
-             +(rx.rubricaNombre||'').trim().toUpperCase()+'|'+(rx.instancia||'Evaluación 1');
-    nombreCount[_nc] = (nombreCount[_nc]||0) + 1;
+    var _k = (rx.nombre||'').trim().toUpperCase()+'|'+(rx.curso||'').trim()
+            +'|'+(rx.rubricaNombre||'').trim().toUpperCase()+'|'+(rx.instancia||'Evaluación 1');
+    nombreCount[_k] = (nombreCount[_k]||0) + 1;
   });
+
+  var _cardIndex = 0;
   filtrados.forEach(function(r) {
     if (!r) return;
     const idx = registros.indexOf(r);
@@ -5455,17 +5556,23 @@ function renderRegistros() {
     else if (nota >= 4.0) { bg='var(--green-bg)'; clr='var(--green)'; }
     else                  { bg='var(--red-bg)';   clr='var(--red)';   }
     const nLabel = nota>=6.0?'Excelente':nota>=5.0?'Muy bien logrado':nota>=4.0?'Logrado':'No logrado';
-    var _nc2 = (r.nombre||'').trim().toUpperCase()+'|'+(r.curso||'').trim()+'|'
-              +(r.rubricaNombre||'').trim().toUpperCase()+'|'+(r.instancia||'Evaluación 1');
-    const esDup  = (nombreCount[_nc2]||0) > 1;
     const instancia = r.instancia || 'Evaluación 1';
+    var _dupKey = (r.nombre||'').trim().toUpperCase()+'|'+(r.curso||'').trim()
+                 +'|'+(r.rubricaNombre||'').trim().toUpperCase()+'|'+instancia;
+    const esDup  = (nombreCount[_dupKey]||0) > 1;
     const card = document.createElement('div');
     card.className = 'reg-card' + (esDup?' duplicado':'') + (r.pie?' pie-card':'') + (r.noEntregado?' no-entregado ne-card':'');
+    // Stagger animation: delay escalonado para lista fluida
+    var delay = Math.min(_cardIndex * 22, 220);
+    card.style.animationDelay = delay + 'ms';
+    card.setAttribute('role', 'article');
+    card.setAttribute('aria-label', (r.nombre||'Registro') + ' — nota ' + nota.toFixed(1));
+    _cardIndex++;
     card.innerHTML = `
       <div class="reg-avatar">${iniciales(r.nombre)}</div>
       <div class="reg-info">
-        <div class="reg-nombre">${r.nombre||'Sin nombre'}${r.pie?'<span class="pie-badge"><svg width="12" height="12" viewBox="0 0 100 100" fill="#FF9500" style="flex-shrink:0;vertical-align:middle;display:inline-block" aria-label="PIE"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="#FF9500" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/></svg>PIE</span>':''} <span class="instancia-badge" onclick="event.stopPropagation();filtrarPorInstancia('${instancia}')" title="Filtrar por ${instancia}" style="cursor:pointer;">${instancia}</span>${r.noEntregado?'<span class="no-entregado-badge">✕ No entregado</span>':''}</div>
-        <div class="reg-meta">${r.fecha||''}${r.curso?' · '+r.curso:''}${r.instancia&&r.instancia!=='Evaluación 1'?' · '+r.instancia:''}${r.rubricaNombre?' · '+r.rubricaNombre:''} · ${r.pts??'?'}/${r.maxPts??'?'} pts</div>
+        <div class="reg-nombre">${_esc(r.nombre||'Sin nombre')}${r.pie?'<span class="pie-badge"><svg width="12" height="12" viewBox="0 0 100 100" fill="#FF9500" style="flex-shrink:0;vertical-align:middle;display:inline-block" aria-label="PIE"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="#FF9500" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/></svg>PIE</span>':''} <span class="instancia-badge" onclick="event.stopPropagation();filtrarPorInstancia('${instancia}')" title="Filtrar por ${instancia}" style="cursor:pointer;">${_esc(instancia)}</span>${r.noEntregado?'<span class="no-entregado-badge">✕ No entregado</span>':''}</div>
+        <div class="reg-meta">${_esc(r.fecha||'')}${r.curso?' · '+_esc(r.curso):''}${r.instancia&&r.instancia!=='Evaluación 1'?' · '+_esc(r.instancia):''}${r.rubricaNombre?' · '+_esc(r.rubricaNombre):''} · ${r.pts??'?'}/${r.maxPts??'?'} pts</div>
       </div>
       <span class="reg-badge" style="background:${bg};color:${clr}">${nota.toFixed(1)} — ${nLabel}</span>
       <div class="reg-actions">
@@ -5491,8 +5598,6 @@ function renderRegistros() {
     }
     grp.appendChild(card);
   });
-  } catch(e) { console.warn('[ArtEval] renderRegistros:', e.message); }
-  finally { _isRenderingRegistros = false; }
 }
 
 // ── Libro de Clases: tabla dinámica por curso con columnas por instancia ──
@@ -5660,11 +5765,9 @@ function actualizarFiltros() {
     // Obtener textos actuales (sin la opción vacía)
     const textoActuales = Array.from(sel.options).slice(1).map(function(o){ return o.value; });
 
-    // Agregar opciones nuevas (doble verificación: en textoActuales Y en el DOM actual)
+    // Agregar opciones nuevas
     opciones.forEach(function(op) {
-      var yaExiste = textoActuales.includes(op) ||
-        Array.from(sel.options).some(function(o){ return o.value === op; });
-      if (!yaExiste) {
+      if (!textoActuales.includes(op)) {
         const opt = document.createElement('option');
         opt.value = op;
         opt.textContent = op;
@@ -5751,16 +5854,21 @@ function verDuplicados() {
 }
 
 async function eliminarDesdeDup(idx) {
-  const ok = await confirmarAccion('Eliminar registro', `¿Eliminar este registro de <strong>${registros[idx]?.nombre||''}</strong>?`);
+  const reg = registros[idx];
+  if (!reg) return;
+  const ok = await confirmarAccion('Eliminar registro', `¿Eliminar este registro de <strong>${_esc(reg.nombre||'')}</strong>?`, '🗑️', 'Sí aceptar');
   if (!ok) return;
   // Marca de borrado: evita que Drive resucite registros eliminados
-  // El registro se elimina localmente y se registra el timestamp
-  localStorage.setItem('av_deleted_' + (registros[idx]._id||idx), new Date().toISOString());
+  const regId = reg._id || String(idx);
+  localStorage.setItem('av_deleted_' + regId, new Date().toISOString());
+  const backup = JSON.parse(JSON.stringify(reg));
   registros.splice(idx, 1);
   saveRegistros();
   actualizarConteo();
   cerrarModal();
   renderRegistros();
+  _pushUndo('eliminar', { idx, registro: backup });
+  _showUndoToast('✓ Registro de ' + (reg.nombre||'') + ' eliminado');
   // Actualizar el panel de duplicados (ya estamos en esa sección)
   setTimeout(function() {
     renderPanelDuplicados('panelDuplicadosContainer');
@@ -6118,17 +6226,57 @@ function confirmarDuplicar(idx) {
   setStatus(`✓ Duplicado: ${nombre}`);
 }
 
+// ── Sistema de Undo para eliminaciones ──────────────────────────────────
+var _undoQueue = []; // stack de operaciones reversibles
+var _undoToastTimer = null;
+function _pushUndo(tipo, datos) {
+  _undoQueue.push({ tipo, datos, ts: Date.now() });
+  if (_undoQueue.length > 10) _undoQueue.shift(); // max 10 operaciones
+}
+function _showUndoToast(msg) {
+  clearTimeout(_undoToastTimer);
+  var existing = document.getElementById('undoToast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.id = 'undoToast';
+  t.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);z-index:10001;'
+    + 'background:#1C1C1E;color:#fff;border-radius:14px;padding:10px 16px;font-size:13px;'
+    + 'display:flex;align-items:center;gap:12px;box-shadow:0 4px 20px rgba(0,0,0,0.25);'
+    + 'animation:fadeInUp 0.2s ease-out;white-space:nowrap;';
+  t.innerHTML = '<span>' + msg + '</span>'
+    + '<button onclick="_ejecutarUndo()" style="background:#FF9500;color:#fff;border:none;border-radius:8px;'
+    + 'padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Deshacer</button>';
+  document.body.appendChild(t);
+  _undoToastTimer = setTimeout(function() { if (t.parentNode) t.remove(); }, 5000);
+}
+function _ejecutarUndo() {
+  var op = _undoQueue.pop();
+  if (!op) return;
+  clearTimeout(_undoToastTimer);
+  var t = document.getElementById('undoToast'); if (t) t.remove();
+  if (op.tipo === 'eliminar') {
+    registros.splice(op.datos.idx, 0, op.datos.registro);
+    saveRegistros(); actualizarConteo(); renderRegistros();
+    toast('↩ Registro restaurado: ' + (op.datos.registro.nombre||''), 'ok');
+  } else if (op.tipo === 'limpiarTodo') {
+    registros = op.datos.registros.slice();
+    saveRegistros(); actualizarConteo(); renderRegistros();
+    toast('↩ ' + op.datos.registros.length + ' registros restaurados', 'ok');
+  }
+}
+
 async function eliminar(idx) {
   const nombre = registros[idx]?.nombre || 'este registro';
-  const ok = await confirmarAccion('Eliminar registro', `¿Eliminar el registro de <strong>${nombre}</strong>? Esta acción no se puede deshacer.`);
+  const ok = await confirmarAccion('Eliminar registro', `¿Eliminar el registro de <strong>${nombre}</strong>?`, '🗑️', 'Sí aceptar');
   if (!ok) return;
   try {
-  registros.splice(idx, 1);
-  saveRegistros();
-  actualizarConteo();
-  renderRegistros();
-  toast(`✓ Registro de ${nombre} eliminado`, 'ok');
-
+    const backup = JSON.parse(JSON.stringify(registros[idx]));
+    registros.splice(idx, 1);
+    saveRegistros();
+    actualizarConteo();
+    renderRegistros();
+    _pushUndo('eliminar', { idx, registro: backup });
+    _showUndoToast(`✓ Registro de ${nombre} eliminado`);
   } catch(e) {
     console.error('[ArtEval] eliminar:', e);
     toast('Error al procesar: ' + e.message, 'err', 3000);
@@ -6136,11 +6284,13 @@ async function eliminar(idx) {
 }
 
 async function limpiarTodo() {
-  const ok = await confirmarAccion('Borrar todos los registros', '¿Eliminar <strong>todos</strong> los registros? Esta acción no se puede deshacer.', '🗑️');
+  const ok = await confirmarAccion('Borrar todos los registros', '¿Eliminar <strong>todos</strong> los registros? Tendrás 5 segundos para deshacer.', '🗑️', 'Sí aceptar', 'btn-danger');
   if (!ok) return;
+  const backup = JSON.parse(JSON.stringify(registros));
   registros = []; saveRegistros();
   actualizarConteo(); renderRegistros();
-  toast('✓ Todos los registros eliminados', 'info');
+  _pushUndo('limpiarTodo', { registros: backup });
+  _showUndoToast('✓ ' + backup.length + ' registros eliminados');
 }
 
 // ═══════════════════════════════════════════════════════
@@ -8473,13 +8623,12 @@ function _miniChartSVG(notas, labels) {
 // ── Renderizadores aislados por tab ─────────────────────────────────────
 function renderEstudio() {
   if (typeof listaCursos === 'undefined' || typeof registros === 'undefined') return;
+  if (typeof _renderEstudioSubNav === 'function') _renderEstudioSubNav();
   if (cursoSeleccionado) {
-    // rAF yields thread to browser for paint, then renders — prevents jank
     requestAnimationFrame(function() {
       try { renderCursoMain(); } catch(e) { console.warn('[ArtEval] renderEstudio:', e); }
     });
   }
-  if (typeof _renderEstudioSubNav === 'function') _renderEstudioSubNav();
 }
 
 function renderComunica() {
@@ -9638,7 +9787,7 @@ function showTab(name) {
     // Registros ya no está en progreso; mostrar estadísticas por defecto
     try { if(_progresoSubTab==='registros') _progresoSubTab='estadisticas'; } catch(e) {}
     try { actualizarConteo(); } catch(e) {}
-    // Renderizar la sub-sección activa inmediatamente
+    // Renderizar la sub-sección activa con rAF para no bloquear la transición visual
     requestAnimationFrame(function() {
       try {
         if (_progresoSubTab === 'estadisticas' || !_progresoSubTab) {
@@ -9684,18 +9833,37 @@ function _renderEstudioSubNav() {
     if (sec) sec.style.display = (t === _estudioSubTab) ? 'block' : 'none';
   });
 }
+// Memoria de scroll por sección
+var _scrollMemory = {};
+function _saveScroll(secId) {
+  var el = document.getElementById(secId);
+  if (el) _scrollMemory[secId] = el.scrollTop;
+}
+function _restoreScroll(secId) {
+  var el = document.getElementById(secId);
+  if (el && _scrollMemory[secId] != null) {
+    el.scrollTop = _scrollMemory[secId];
+  }
+}
+
 function showEstudioSub(sub) {
+  // Guardar scroll de la sección que estamos dejando
+  var prevSec = 'estudio-sec-' + _estudioSubTab;
+  _saveScroll(prevSec);
+
   _estudioSubTab = sub;
   _renderEstudioSubNav();
-  // requestAnimationFrame: yields main thread after nav, then renders
-  // This prevents the tab transition animation from being blocked by render work
+  // requestAnimationFrame: cede el hilo al browser para pintar la navegación primero
   if (sub === 'cursos') {
-    // [FIX] Always RAF renderCursoMain - it handles the empty state itself
-    requestAnimationFrame(renderCursoMain);
+    requestAnimationFrame(function() {
+      if (cursoSeleccionado) { try { renderCursoMain(); } catch(e) {} }
+      _restoreScroll('estudio-sec-cursos');
+    });
   }
   if (sub === 'registros') {
     requestAnimationFrame(function() {
-      try { renderRegistros(); renderLibroClases(); } catch(e) {}
+      try { renderRegistros(); } catch(e) { console.warn('[ArtEval] renderRegistros:', e.message); }
+      _restoreScroll('estudio-sec-registros');
     });
   }
   if (sub === 'inicio') {
@@ -9703,7 +9871,11 @@ function showEstudioSub(sub) {
       try { renderDashboard(); } catch(e) { console.warn('[ArtEval] renderDashboard:', e.message); }
     });
   }
-  if (sub === 'duplicados') { try { renderPanelDuplicados('panelDuplicadosContainer'); } catch(e) {} }
+  if (sub === 'duplicados') {
+    requestAnimationFrame(function() {
+      try { renderPanelDuplicados('panelDuplicadosContainer'); } catch(e) {}
+    });
+  }
 }
 
 // Sub-navegación interna del tab Sistema
@@ -9722,7 +9894,9 @@ function _renderSistemaSubNav() {
     }
     if (sec) sec.style.display = isActive ? 'block' : 'none';
   });
-  // [FIX] _sistemaSubTab never equals 'duplicados': block removed to prevent bleeding
+  if (_sistemaSubTab === 'duplicados') {
+    renderPanelDuplicados('panelDuplicadosContainer');
+  }
 }
 
 // ── Sub-navegación del tab Progreso ─────────────────────────────────────
@@ -9887,7 +10061,7 @@ function repararRegistros() {
 
   if (reparados > 0) {
     saveRegistros();
-    console.info('[ArtEval] Migración silenciosa: ' + reparados + ' campos actualizados');
+    console.log('[ArtEval] Migración silenciosa: ' + reparados + ' campos actualizados');
   }
 }
 
@@ -10022,7 +10196,7 @@ function actualizarCtxResumen() {
         var p = JSON.parse(pending);
         // Mostrar aviso al profesor
         toast('⚠ La sesión anterior se cerró con ' + p.count + ' registros sin sincronizar. Conéctate a Drive para subirlos.', 'err', 8000);
-        console.info('[ArtEval] Sync pendiente del cierre anterior:', p);
+        console.log('[ArtEval] Sync pendiente del cierre anterior:', p);
       } catch(e) {}
     }
   }, 1200);
@@ -10059,7 +10233,7 @@ function _actualizarEstadoSync() {
 
   // Si hay pendientes y token activo, disparar sync
   if (localCount > driveCount && driveCount > 0 && tieneToken) {
-    console.info('[ArtEval] Estado: ' + localCount + ' local vs ' + driveCount + ' drive → sync automática');
+    console.log('[ArtEval] Estado: ' + localCount + ' local vs ' + driveCount + ' drive → sync automática');
     if (typeof syncToDrive === 'function') {
       syncToDrive().catch(function(e){ console.warn('[ArtEval] Auto-sync silencioso falló:', e.message); });
     }
@@ -11159,13 +11333,24 @@ function _buildCandidatos() {
   return _candidatosCache;
 }
 
+// Obtener la lista de autocompletado activa (global search o evaluar section)
+function _getActiveAutocompleteList() {
+  // Primero intentar encontrar cuál input está activo
+  var active = document.activeElement;
+  if (active && active.id === 'inputNombre') {
+    return document.getElementById('evalAutocompleteList') || document.getElementById('autocompleteList');
+  }
+  // Por defecto: lista del header (globalSearchInput)
+  return document.getElementById('autocompleteList') || document.getElementById('evalAutocompleteList');
+}
+
 function mostrarAutocompletado(val) {
   clearTimeout(_acDebounceTimer);
   _acDebounceTimer = setTimeout(function() { _mostrarAutocompletadoImmediate(val); }, 80);
 }
 
 function _mostrarAutocompletadoImmediate(val) {
-  const list = document.getElementById('autocompleteList');
+  const list = _getActiveAutocompleteList();
   if (!list) return;
   const q = (val || '').trim();
   if (q.length < 2) { list.style.display = 'none'; _acIdx = -1; return; }
@@ -11367,13 +11552,16 @@ function _sugerirRubricaPorCurso(curso) {
 }
 
 function ocultarAutocompletado() {
-  const list = document.getElementById('autocompleteList');
-  if (list) list.style.display = 'none';
+  // Ocultar ambas listas por seguridad
+  var list1 = document.getElementById('autocompleteList');
+  var list2 = document.getElementById('evalAutocompleteList');
+  if (list1) list1.style.display = 'none';
+  if (list2) list2.style.display = 'none';
   _acIdx = -1;
 }
 
 function navAutocompletado(e) {
-  const list = document.getElementById('autocompleteList');
+  const list = _getActiveAutocompleteList();
   if (!list || list.style.display === 'none') return;
   const items = list.querySelectorAll('.autocomplete-item');
   if (e.key === 'ArrowDown') {
@@ -11401,11 +11589,21 @@ document.addEventListener('keydown', e => {
     const tabActiva = document.querySelector('.tab.active')?.dataset?.tab;
     if (tabActiva === 'evaluar') guardar();
   }
+  // Ctrl+Z / Cmd+Z → Deshacer eliminación
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+    if (_undoQueue && _undoQueue.length > 0) {
+      e.preventDefault();
+      _ejecutarUndo();
+    }
+  }
   // Escape → Cerrar modal
   if (e.key === 'Escape') {
     if (document.getElementById('confirmOverlay')) { document.getElementById('confirmOverlay').remove(); return; }
     if (document.getElementById('presOverlay')) { document.getElementById('presOverlay').remove(); return; }
     if (document.getElementById('contextoCursoPanel')?.style.display !== 'none') { cerrarContextoCurso(); return; }
+    var menuNE = document.getElementById('menuNE'); if (menuNE) { menuNE.remove(); return; }
+    var popNR  = document.getElementById('popoverNotaRapida'); if (popNR) { popNR.remove(); return; }
+    ocultarAutocompletado();
     cerrarModal();
   }
   // Espacio → Analizar (solo si cámara activa y no hay input enfocado)
@@ -11429,6 +11627,9 @@ let estFiltro = 'todos'; // todos | pendiente | entregado | pie
 let instanciaCursoFiltro = ''; // '' = todas las instancias
 
 function saveListaCursos() {
+  // Invalidar cachés que dependen de listaCursos
+  _cursosUnicosCache = null;
+  _regsMapCache = null;
   try {
     localStorage.setItem('av_lista_cursos', JSON.stringify(listaCursos));
     _invalidarCandidatos();
@@ -11669,14 +11870,6 @@ function selCurso(curso) {
   // Scroll al inicio del área principal al cambiar de curso
   const main = document.getElementById('cursoMain');
   if (main) setTimeout(function(){ main.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 50);
-  // [FIX] Update Alexia button label immediately when course changes
-  var _aBtn = document.getElementById('btnExportAlexia');
-  if (_aBtn && curso) {
-    _aBtn.textContent = '📥 Alexia — ' + curso;
-    _aBtn.title = 'Exportar planilla Alexia para ' + curso;
-    _aBtn.dataset.curso = curso;
-    if (registros && registros.length) _aBtn.style.display = 'inline-block';
-  }
   renderCursoMain();
 }
 
@@ -11747,33 +11940,28 @@ function tieneEvaluacion(nombre, curso) {
   });
 }
 
-// ── Obtener registros de un estudiante en un curso ──
+// ── HashMap de registros: O(N) construcción → O(1) consulta ──────────────
+var _regsMapCache = null;
+var _regsMapCacheVersion = -1;
 function _buildRegsMap() {
-  // Build a HashMap: "curso nombreNorm" → [registros]
-  // O(N) to build, O(1) to lookup. Rebuilt when registros array changes length.
   if (_regsMapCache && _regsMapCacheVersion === registros.length) return;
   _regsMapCache = Object.create(null);
   registros.forEach(function(r) {
     if (!r) return;
-    var k = (r.curso||'').trim() + ' ' + (r.nombre||'').trim().toUpperCase();
+    var k = (r.curso||'').trim() + '\x00' + (r.nombre||'').trim().toUpperCase();
     if (!_regsMapCache[k]) _regsMapCache[k] = [];
     _regsMapCache[k].push(r);
   });
   _regsMapCacheVersion = registros.length;
 }
 
+// ── Obtener registros de un estudiante en un curso ──
 function getRegsEstudiante(nombre, curso) {
-  // Fast path: use the cache if available
-  if (_regsMapCache && _regsMapCacheVersion === registros.length) {
-    var key = (curso||'').trim() + ' ' + (nombre||'').trim().toUpperCase();
-    var exact = _regsMapCache[key] || [];
-    if (exact.length) return exact;
-    // Fuzzy fallback: scan only registros of this course (small N per course)
-    return registros.filter(function(r) {
-      return (r.curso||'') === curso && mismoEstudiante(r.nombre||'', nombre||'');
-    });
-  }
-  // Cold path: no cache yet
+  _buildRegsMap();
+  var key = (curso||'').trim() + '\x00' + (nombre||'').trim().toUpperCase();
+  var exact = (_regsMapCache && _regsMapCache[key]) || [];
+  if (exact.length) return exact;
+  // Fallback fuzzy si no hay coincidencia exacta
   return registros.filter(function(r) {
     return (r.curso||'') === curso && mismoEstudiante(r.nombre||'', nombre||'');
   });
@@ -11823,15 +12011,8 @@ function _aplicarFiltroAula(lista) {
 
 function renderCursoMain() {
   if (!cursoSeleccionado || !Array.isArray(registros)) return;
-  if (_isRenderingCurso) return;
-  _isRenderingCurso = true;
-  _buildRegsMap(); // O(N) once per render — O(1) per student thereafter
   const main = document.getElementById('cursoMain');
-  if (!main) { _isRenderingCurso = false; return; }
-  // [FIX] display guard removed from renderCursoMain - render must complete
-  // even when called before the section becomes visible
-  // Wrap entire render in try/finally so guard ALWAYS releases
-  try {
+  if (!main) return;
 
   if (!cursoSeleccionado) {
     main.innerHTML = '';
@@ -11839,7 +12020,6 @@ function renderCursoMain() {
     emp.className = 'cursos-empty';
     emp.innerHTML = '<div class="ce-icon">🏫</div><div class="ce-title">Selecciona un curso</div><div class="ce-sub">Elige un curso de la lista para ver sus estudiantes.</div>';
     main.appendChild(emp);
-    _isRenderingCurso = false; // release guard before early return
     return;
   }
 
@@ -11870,21 +12050,14 @@ function renderCursoMain() {
     return normalizarNombre(a.nombre).localeCompare(normalizarNombre(b.nombre), 'es', { sensitivity: 'base' });
   });
 
-  // ── Pre-compute regs per student (single pass, reused in render loop) ──
-  // Avoids calling getRegsEstudiante twice per student (stats + render)
-  const _regsPerEst = new Map();
-  lista.forEach(function(e) {
-    const regsAll = getRegsEstudiante(e.nombre, curso);
-    const regs = instanciaCursoFiltro
-      ? regsAll.filter(function(r){ return (r.instancia || 'Evaluación 1') === instanciaCursoFiltro; })
-      : regsAll;
-    _regsPerEst.set(e.nombre, regs);
-  });
-
   // ── Estadísticas — respetan el filtro de instancia activo ──
   let entregados = 0, pendientes = 0, pieCount = 0, sumNotas = 0, countNotas = 0;
   lista.forEach(function(e) {
-    const regs = _regsPerEst.get(e.nombre) || [];
+    const regsAll = getRegsEstudiante(e.nombre, curso);
+    // Filtrar por instancia igual que en las tarjetas individuales
+    const regs = instanciaCursoFiltro
+      ? regsAll.filter(function(r){ return (r.instancia || 'Evaluación 1') === instanciaCursoFiltro; })
+      : regsAll;
     const ultimaStat = regs.length ? regs[regs.length - 1] : null;
     if (regs.length) {
       entregados++;
@@ -11898,11 +12071,10 @@ function renderCursoMain() {
   const avance   = lista.length > 0 ? Math.round(entregados / lista.length * 100) : 0;
 
   // ── Filtrado ──
-  // Use _regsPerEst for filtering (already computed above)
   let listaFiltrada = lista.slice();
-  if (estFiltro === 'pendiente') listaFiltrada = lista.filter(function(e){ return (_regsPerEst.get(e.nombre)||[]).length === 0; });
-  if (estFiltro === 'entregado') listaFiltrada = lista.filter(function(e){ return (_regsPerEst.get(e.nombre)||[]).length > 0; });
-  if (estFiltro === 'pie')       listaFiltrada = lista.filter(function(e){ return e.pie; });
+  if (estFiltro === 'pendiente') listaFiltrada = lista.filter(function(e){ return !tieneEvaluacion(e.nombre, curso); });
+  if (estFiltro === 'entregado') listaFiltrada = lista.filter(function(e){ return  tieneEvaluacion(e.nombre, curso); });
+  if (estFiltro === 'pie')       listaFiltrada = lista.filter(function(e){ return  e.pie; });
 
   // ── Construir DOM ──
   main.innerHTML = '';
@@ -12027,8 +12199,11 @@ function renderCursoMain() {
   } else {
     listaFiltrada.forEach(function(e) {
       const idxReal = lista.indexOf(e);
-      // Use pre-computed regs (already filtered by instancia) — avoids repeat work
-      const regs = _regsPerEst.get(e.nombre) || [];
+      const regsAll  = getRegsEstudiante(e.nombre, curso);
+      // Filtrar por instancia si hay una seleccionada
+      const regs = instanciaCursoFiltro
+        ? regsAll.filter(function(r){ return (r.instancia || 'Evaluación 1') === instanciaCursoFiltro; })
+        : regsAll;
       const entregado = regs.length > 0;
       // Mostrar la nota de la instancia filtrada, no la del último registro global
       const ultimaReg = regs.length ? regs[regs.length - 1] : null;
@@ -12116,7 +12291,6 @@ function renderCursoMain() {
         btnEdit.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>';
         (function(nb, cb){
         btnEdit.onclick = function(e){ e.stopPropagation(); editarDesde(nb, cb); };
-        /* safe: btnEdit is a newly created element each render — no listener accumulation */
         btnEdit.addEventListener('touchend', function(e){ e.preventDefault(); e.stopPropagation(); editarDesde(nb, cb); }, {passive:false});
       })(e.nombre, curso);
         acts.appendChild(btnEdit);
@@ -12150,25 +12324,17 @@ function renderCursoMain() {
       acts.appendChild(btnDel);
 
       row.appendChild(acts);
-      _listFrag.appendChild(row);
+      listEl.appendChild(row);
     });
-    listEl.appendChild(_listFrag); // single DOM flush
   }
   main.appendChild(listEl);
   renderSidebarCounts();
-  } catch(e) {
-    console.warn('[ArtEval] renderCursoMain error:', e.message);
-  } finally {
-    _isRenderingCurso = false; // ALWAYS released — even on exception
-  }
 }
 
 // ── Filtros ──
 function setEstFiltro(f, curso) {
   estFiltro = f;
-  // Small timeout lets button state update visually before heavy render
-  clearTimeout(window._estFiltroTimer);
-  window._estFiltroTimer = setTimeout(renderCursoMain, 16);
+  renderCursoMain();
 }
 
 // Resetear filtro de instancia al cambiar de curso
@@ -13327,43 +13493,22 @@ function _similitudNombre(a, b) {
 
 // Auditoría de duplicados: retorna grupos de registros similares
 function auditarDuplicados() {
-  // O(N) grouping phase + O(K²) within-group comparison (K << N)
-  // Avoids the O(N²) full cross-product of the previous algorithm.
   var grupos = [];
   var usados = new Set();
-
-  // Phase 1 O(N): bucket by "curso|rubricaNombre"
-  var buckets = Object.create(null);
   registros.forEach(function(r, i) {
-    if (!r) return;
-    // [FIX] Composite key: curso|rubricaNombre|instancia prevents false positives
-    var key = (r.curso||'').trim() + '|' + (r.rubricaNombre||'').trim().toUpperCase()
-            + '|' + (r.instancia||'Evaluación 1').trim();
-    if (!buckets[key]) buckets[key] = [];
-    buckets[key].push(i);
-  });
-
-  // Phase 2 O(K²) within each bucket (K is typically 1-5 students per group)
-  Object.keys(buckets).forEach(function(key) {
-    var bucket = buckets[key];
-    if (bucket.length < 2) return; // single entry — skip entirely
-    bucket.forEach(function(i) {
-      if (usados.has(i)) return;
-      var r = registros[i];
-      var grupo = [i];
-      bucket.forEach(function(j) {
-        if (i === j || usados.has(j)) return;
-        var r2 = registros[j];
-        if (_similitudNombre(r.nombre, r2.nombre) >= 0.90) {
-          grupo.push(j);
-          usados.add(j);
-        }
-      });
-      if (grupo.length > 1) {
-        usados.add(i);
-        grupos.push(grupo);
+    if (usados.has(i)) return;
+    var grupo = [i];
+    registros.forEach(function(r2, j) {
+      if (i===j || usados.has(j)) return;
+      if ((r.curso||'')===(r2.curso||'') && _similitudNombre(r.nombre,r2.nombre)>=0.90) {
+        grupo.push(j);
+        usados.add(j);
       }
     });
+    if (grupo.length > 1) {
+      usados.add(i);
+      grupos.push(grupo);
+    }
   });
   return grupos;
 }
@@ -13371,29 +13516,41 @@ function auditarDuplicados() {
 // Fusionar grupo de duplicados: mantener el más reciente, acumular notas
 function _fusionarGrupo(indices) {
   if (!indices || indices.length < 2) return;
+  // Filtrar índices inválidos
+  var validIndices = indices.filter(function(i) { return i >= 0 && i < registros.length && registros[i]; });
+  if (validIndices.length < 2) return;
   // El más reciente (por fecha) es el maestro
-  var sorted = indices.slice().sort(function(a,b) {
+  var sorted = validIndices.slice().sort(function(a,b) {
     return new Date(registros[b].fechaISO||0) - new Date(registros[a].fechaISO||0);
   });
   var maestroIdx = sorted[0];
   var maestro    = registros[maestroIdx];
   // Garantizar UUID en el maestro
   if (!maestro._id) maestro._id = _uuidV4();
+  // Backup para undo
+  var backups = sorted.slice(1).map(function(i) { return { idx: i, registro: JSON.parse(JSON.stringify(registros[i])) }; });
+  // Fusionar PIE flag del maestro desde cualquier duplicado
+  sorted.slice(1).forEach(function(i) {
+    var r = registros[i];
+    if (r && r.pie && !maestro.pie) { maestro.pie = true; maestro.pieNota = r.pieNota || maestro.pieNota || ''; }
+  });
   // Eliminar los duplicados (del mayor al menor para no desplazar índices)
   var toDelete = sorted.slice(1).sort(function(a,b){return b-a;});
   toDelete.forEach(function(idx) {
-    localStorage.setItem('av_deleted_'+(registros[idx]._id||idx), new Date().toISOString());
+    var r = registros[idx];
+    if (r) localStorage.setItem('av_deleted_' + (r._id || String(idx)), new Date().toISOString());
     registros.splice(idx, 1);
   });
   saveRegistros();
   actualizarConteo();
   renderRegistros();
   if (cursoSeleccionado) renderCursoMain();
+  toast('✓ ' + backups.length + ' duplicado(s) fusionado(s) en ' + (maestro.nombre||''), 'ok');
 }
 
 // Renderizar panel de limpieza de duplicados
 function renderPanelDuplicados(containerId) {
-  // [FIX] Sandbox: only render when duplicados sub-tab is active
+  // AISLAMIENTO ESTRICTO: solo renderizar cuando estamos en la sección de duplicados
   if (typeof _estudioSubTab !== 'undefined' && _estudioSubTab !== 'duplicados') return;
   var cont = document.getElementById(containerId);
   if (!cont) return;
@@ -13632,6 +13789,9 @@ function aplicarVincularPIE(i, nombrePIE) {
 // ── 1. Función centralizada de actualización ──────────
 function actualizarTodaLaApp() {
   try {
+    // Invalidar cachés antes de cualquier render
+    _regsMapCache = null;
+    _cursosUnicosCache = null;
     deduplicarYFusionarTodos();
     actualizarConteo();
     renderSidebarCounts();
@@ -13978,14 +14138,20 @@ function initGoogleAuth() {
 
 // Callback: ID token (login con One Tap → nos da info del usuario)
 function _onIdToken(response) {
-  // Decodificar JWT payload
-  var parts  = response.credential.split('.');
-  var payload = JSON.parse(atob(parts[1].replace(/-/g,'+').replace(/_/g,'/')));
-  var user = { name: payload.name, email: payload.email, picture: payload.picture };
-  localStorage.setItem('av_drive_user', JSON.stringify(user));
-  _showDriveUser(user);
-  // Solicitar token de acceso OAuth2 para Drive
-  _requestToken();
+  try {
+    // Decodificar JWT payload con protección ante tokens malformados
+    var parts  = (response.credential || '').split('.');
+    if (parts.length < 3) throw new Error('JWT malformado');
+    var payload = JSON.parse(atob(parts[1].replace(/-/g,'+').replace(/_/g,'/')));
+    var user = { name: payload.name, email: payload.email, picture: payload.picture };
+    localStorage.setItem('av_drive_user', JSON.stringify(user));
+    _showDriveUser(user);
+    // Solicitar token de acceso OAuth2 para Drive
+    _requestToken();
+  } catch(e) {
+    console.warn('[ArtEval] _onIdToken error:', e.message);
+    toast('⚠️ Error al iniciar sesión con Google. Intenta de nuevo.', 'err', 4000);
+  }
 }
 
 // Callback: Access token para Drive API
@@ -14326,22 +14492,22 @@ async function _smartSyncOnConnect() {
       localStorage.setItem('av_drive_last_count', String(driveCount));
     }
 
-    console.info('[ArtEval] SmartSync: local=' + localCount + ' drive=' + driveCount);
+    console.log('[ArtEval] SmartSync: local=' + localCount + ' drive=' + driveCount);
 
     if (localCount === 0 && driveCount === 0) return; // nada que hacer
 
     if (localCount >= driveCount) {
       // LOCAL ES MAESTRO: subir a Drive (siempre que haya diferencia o sea primera vez)
       if (localCount > driveCount || !fileRef || _hayEdicionSinSync()) {
-        console.info('[ArtEval] SmartSync: local tiene más (' + localCount + ' vs ' + driveCount + ') → subiendo a Drive');
+        console.log('[ArtEval] SmartSync: local tiene más (' + localCount + ' vs ' + driveCount + ') → subiendo a Drive');
         _updateCloudUI('saving');
         await syncToDrive();
-        console.info('[ArtEval] SmartSync: subida completada');
+        console.log('[ArtEval] SmartSync: subida completada');
       }
       // Si son iguales, no hacer nada — ya están sincronizados
     } else {
       // DRIVE TIENE MÁS: fusionar — no sobreescribir, añadir los que faltan en local
-      console.info('[ArtEval] SmartSync: Drive tiene más (' + driveCount + ' vs ' + localCount + ') → fusionando');
+      console.log('[ArtEval] SmartSync: Drive tiene más (' + driveCount + ' vs ' + localCount + ') → fusionando');
       if (driveData && driveData.registros) {
         var existentes = new Set(registros.map(function(r) {
           return (r.nombre||'') + '|' + (r.curso||'') + '|' + (r.fecha||'') + '|' + (r.instancia||'');
@@ -14362,7 +14528,7 @@ async function _smartSyncOnConnect() {
           // Ahora subir el resultado fusionado a Drive (local+drive → drive)
           await syncToDrive();
           toast('✅ Fusionados ' + fusionados + ' registros desde Drive. Total: ' + registros.length, 'ok', 5000);
-          console.info('[ArtEval] SmartSync: fusión completada, total=' + registros.length);
+          console.log('[ArtEval] SmartSync: fusión completada, total=' + registros.length);
         }
       }
     }
@@ -14812,6 +14978,35 @@ function _mostrarSubnav(tabName, maintab) {
 
 // ── Restaurar estado visual al cargar ─────────────────────────
 document.addEventListener('DOMContentLoaded', function() {
+  // ── AUTO-DIAGNÓSTICO DE ARRANQUE ────────────────────────────────────────
+  // Verifica integridad de datos y repara problemas silenciosos antes de renderizar
+  try {
+    // 1. Garantizar que registros sea siempre un Array
+    if (!Array.isArray(registros)) {
+      console.warn('[ArtEval] ⚠️ registros no era Array al arrancar — restaurando []');
+      registros = [];
+    }
+    // 2. Eliminar registros null/undefined del array
+    var antesLength = registros.length;
+    registros = registros.filter(function(r) { return r && typeof r === 'object'; });
+    if (registros.length < antesLength) {
+      console.warn('[ArtEval] Se eliminaron ' + (antesLength - registros.length) + ' registros corruptos.');
+      saveRegistros();
+    }
+    // 3. Garantizar que listaCursos sea Object
+    if (!listaCursos || typeof listaCursos !== 'object' || Array.isArray(listaCursos)) {
+      console.warn('[ArtEval] ⚠️ listaCursos inválido — restaurando {}');
+      listaCursos = {};
+    }
+    // 4. Invalidar cachés para forzar reconstrucción limpia
+    _cursosUnicosCache = null;
+    _regsMapCache = null;
+    // 5. Log de estado
+    console.log('[ArtEval v171-L99] Arrancado · ' + registros.length + ' registros · ' + Object.keys(listaCursos).length + ' cursos');
+  } catch(diagErr) {
+    console.error('[ArtEval] Error en auto-diagnóstico:', diagErr);
+  }
+
   // Recuperar el último tab visitado
   var lastMaintab = null;
   try { lastMaintab = localStorage.getItem('av_last_maintab'); } catch(e) {}
