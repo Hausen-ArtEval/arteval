@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v185">
+<meta name="arteval-version" content="v190">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -2619,7 +2619,7 @@ button:focus-visible, .tab:focus-visible, .sub-tab:focus-visible {
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v185</span>
+      ">v190</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -4348,8 +4348,30 @@ function saveRegistros() {
     console.error('[ArtEval] saveRegistros abortado: registros no es Array', typeof registros);
     return;
   }
-  // Normalizar cursos antes de guardar (normalizarCurso está definida aquí)
-  registros.forEach(function(r) { if (r && r.curso) r.curso = normalizarCurso(r.curso); });
+  // Normalizar cursos y nombres antes de guardar
+  registros.forEach(function(r) {
+    if (!r) return;
+    // Normalizar curso
+    if (r.curso) r.curso = normalizarCurso(r.curso);
+    // Normalizar nombre: title-case estricto (primera letra de cada palabra en mayúscula, resto minúscula)
+    // Esto corrige "Rivas PeñAloza" → "Rivas Peñaloza", "ROJAS" → "Rojas"
+    // Solo aplicar si el nombre parece incorrecto (tiene mayúsculas inconsistentes mid-word)
+    if (r.nombre && typeof r.nombre === 'string') {
+      var _nombre = r.nombre.trim();
+      // Detectar si tiene capitalización inconsistente: alguna palabra con mayúscula NO en posición 0
+      var _needsNorm = _nombre.split(' ').some(function(w) {
+        return w.length > 1 && w.slice(1) !== w.slice(1).toLowerCase();
+      });
+      if (_needsNorm) {
+        r.nombre = _nombre.split(' ').map(function(w) {
+          if (!w) return w;
+          // Preservar mayúsculas en siglas cortas (1-2 letras como "DE", "LA", "Y") — dejarlas como están
+          // Para palabras más largas, title-case
+          return w.length <= 2 ? w : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+        }).join(' ');
+      }
+    }
+  });
   // Invalidar cachés de rendimiento cuando cambian los registros
   _regsMapCache = null;
   _cursosUnicosCache = null;
@@ -5181,9 +5203,13 @@ function toggleAuto() {
 //  GUARDAR REGISTRO
 // ═══════════════════════════════════════════════════════
 function guardar() {
-  // Normalizar nombre: capitalizar primera letra de cada palabra, colapsar espacios
+  // Normalizar nombre: title-case estricto — primera letra mayúscula, RESTO MINÚSCULA por palabra
+  // Previene "Rivas PeñAloza" → fuerza "Rivas Peñaloza"
+  // Palabras de 1-2 letras (DE, LA, Y) se respetan tal como vienen
   var rawNombre = (document.getElementById('inputNombre')?.value || '').trim().replace(/\s+/g, ' ');
-  const nombre = rawNombre.replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+  const nombre = rawNombre.split(' ').filter(Boolean).map(function(w) {
+    return w.length <= 2 ? w : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+  }).join(' ');
   const curso  = normalizarCurso((document.getElementById('inputCurso')?.value || '').trim());
   if (!nombre) {
     toast('⚠️ Ingresa el nombre del/la estudiante', 'err');
@@ -5702,23 +5728,27 @@ function renderRegistros() {
   if (!list) return;
   actualizarFiltros();
   var filtrados = getRegistrosFiltrados();
-  // ── DEDUPLICACIÓN: eliminar entradas duplicadas antes de renderizar ─────────
-  // Un registro es duplicado si tiene el mismo _id, o si comparte nombre+curso+rubrica+instancia
+  // ── AGRUPACIÓN v190: un alumno = una tarjeta, con todas sus evaluaciones dentro ──
+  // Primero deduplicar por _id (evitar registros duplicados en memoria)
   (function() {
-    var vistos_id   = new Set();
-    var vistos_key  = new Set();
+    var vistos_id = new Set();
     filtrados = filtrados.filter(function(r) {
       if (!r) return false;
-      // Por _id primero
       if (r._id && vistos_id.has(r._id)) return false;
       if (r._id) vistos_id.add(r._id);
-      // Por clave semántica (mismo alumno, mismo curso, misma evaluación)
-      var semKey = normalizarStrict(r.nombre||'') + '|' + _normCursoKey(r.curso||'') + '|' + (r.rubricaNombre||'') + '|' + (r.instancia||'Evaluación 1');
-      if (vistos_key.has(semKey)) return false;
-      vistos_key.add(semKey);
       return true;
     });
   })();
+  // Agrupar por alumno: clave = normalizarStrict(nombre) + '|' + _normCursoKey(curso)
+  var _alumnosMap = new Map(); // key → { primerReg, registros[] }
+  filtrados.forEach(function(r) {
+    var key = normalizarStrict(r.nombre||'') + '|' + _normCursoKey(r.curso||'');
+    if (!_alumnosMap.has(key)) {
+      _alumnosMap.set(key, { primerReg: r, registros: [] });
+    }
+    _alumnosMap.get(key).registros.push(r);
+  });
+  var _alumnosAgrupados = Array.from(_alumnosMap.values());
   const titulo = document.getElementById('regTitulo');
   const btnExp = document.getElementById('btnExport');
   const btnLim = document.getElementById('btnLimpiarTodo');
@@ -5800,43 +5830,57 @@ function renderRegistros() {
     return;
   }
 
-  // Mapa de duplicados con clave compuesta: nombre+curso+rúbrica+instancia
-  // Evita falsos positivos de alumnos con múltiples instancias evaluativas legítimas
-  var nombreCount = Object.create(null);
-  filtrados.forEach(function(rx) {
-    if (!rx) return;
-    var _k = (rx.nombre||'').trim().toUpperCase()+'|'+(rx.curso||'').trim()
-            +'|'+(rx.rubricaNombre||'').trim().toUpperCase()+'|'+(rx.instancia||'Evaluación 1');
-    nombreCount[_k] = (nombreCount[_k]||0) + 1;
-  });
-
   var _cardIndex = 0;
-  filtrados.forEach(function(r) {
+  // v190: _alumnosAgrupados — un alumno = una tarjeta, todas sus evals dentro
+  _alumnosAgrupados.forEach(function(grupo) {
+    var r   = grupo.primerReg;
+    var _regsAlumno = grupo.registros;  // todos sus registros
     if (!r) return;
     const idx = registros.indexOf(r);
-    const nota = (typeof r.nota === 'number') ? r.nota : (parseFloat(r.nota) || 1.0);
+
+    // Calcular nota representativa: promedio de todas las evaluaciones del alumno
+    var _notas = _regsAlumno.map(function(rx){ return (typeof rx.nota==='number') ? rx.nota : (parseFloat(rx.nota)||1.0); });
+    var _notaMedia = _notas.reduce(function(s,n){return s+n;},0) / _notas.length;
+    const nota = _notaMedia;
     let bg, clr;
     if (nota >= 6.0)      { bg='var(--blue-bg)';  clr='var(--blue)';  }
     else if (nota >= 4.0) { bg='var(--green-bg)'; clr='var(--green)'; }
     else                  { bg='var(--red-bg)';   clr='var(--red)';   }
-    const nLabel = nota>=6.0?'Excelente':nota>=5.0?'Muy bien logrado':nota>=4.0?'Logrado':'No logrado';
+    const nLabel = nota>=6.0?'Excelente':nota>=5.0?'Muy bien':nota>=4.0?'Logrado':nota>=3.0?'En proceso':'No logrado';
     const instancia = r.instancia || 'Evaluación 1';
-    var _dupKey = (r.nombre||'').trim().toUpperCase()+'|'+(r.curso||'').trim()
-                 +'|'+(r.rubricaNombre||'').trim().toUpperCase()+'|'+instancia;
-    const esDup  = (nombreCount[_dupKey]||0) > 1;
+
     const card = document.createElement('div');
-    card.className = 'reg-card' + (esDup?' duplicado':'') + (r.pie?' pie-card':'') + (r.noEntregado?' no-entregado ne-card':'');
-    // Stagger animation: delay escalonado para lista fluida
+    card.className = 'reg-card' + (r.pie?' pie-card':'') + (r.noEntregado?' no-entregado ne-card':'');
     var delay = Math.min(_cardIndex * 22, 220);
     card.style.animationDelay = delay + 'ms';
     card.setAttribute('role', 'article');
-    card.setAttribute('aria-label', (r.nombre||'Registro') + ' — nota ' + nota.toFixed(1));
+    card.setAttribute('aria-label', (r.nombre||'Registro') + ' — promedio ' + nota.toFixed(1));
     _cardIndex++;
-    // Barra de progreso: color semántico por nota
-    const pct = r.maxPts > 0 ? Math.round((r.pts||0) / r.maxPts * 100) : 0;
+
+    // Barra de progreso basada en nota media
+    const pct = Math.round(Math.max(0, Math.min(100, (nota - 1) / 6 * 100)));
     const barClr = nota>=6.0?'#007AFF':nota>=5.0?'#34C759':nota>=4.0?'#30D158':nota>=3.0?'#FF9500':'#FF3B30';
     const notaShort = nota>=6.0?'Excelente':nota>=5.0?'Muy bien':nota>=4.0?'Logrado':nota>=3.0?'En proceso':'No logrado';
     const pieSVG = r.pie?'<span class="pie-badge"><svg width="12" height="12" viewBox="0 0 100 100" fill="#FF9500" style="flex-shrink:0;vertical-align:middle;display:inline-block" aria-label="PIE"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="#FF9500" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/></svg>PIE</span>':'';
+
+    // Mini-chips de cada evaluación (cuando hay más de una)
+    var _evalsHtml = '';
+    if (_regsAlumno.length > 1) {
+      _evalsHtml = '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:5px;">'
+        + _regsAlumno.map(function(rx, ri) {
+            var rn = (typeof rx.nota==='number') ? rx.nota : (parseFloat(rx.nota)||1.0);
+            var rc = rn>=4.0 ? '#34C759' : '#FF3B30';
+            var rInst = (rx.instancia||'Ev.'+(ri+1)).replace('Evaluación ','Ev.');
+            var rIdx  = registros.indexOf(rx);
+            return '<span onclick="event.stopPropagation();verDetalle('+rIdx+')" title="'+_esc(rx.instancia||'Ev.'+(ri+1))+' · '+rn.toFixed(1)+' — clic para ver detalle"'
+              +' style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;cursor:pointer;'
+              +'background:rgba('+(rn>=4.0?'52,199,89':'255,59,48')+',0.10);color:'+rc+';border:0.5px solid '+rc+';">'
+              + _esc(rInst) + ' ' + rn.toFixed(1)
+              + '</span>';
+          }).join('')
+        + '</div>';
+    }
+
     card.innerHTML = `
       <div class="reg-card-body">
         <div class="reg-nota-col">
@@ -5845,25 +5889,23 @@ function renderRegistros() {
         </div>
         <div class="reg-vdivider"></div>
         <div class="reg-info">
-          <div class="reg-nombre">${_esc(r.nombre||'Sin nombre')}${pieSVG} <span class="instancia-badge" onclick="event.stopPropagation();filtrarPorInstancia('${instancia}')" title="Filtrar por ${instancia}" style="cursor:pointer;">${_esc(instancia)}</span>${r.noEntregado?'<span class="no-entregado-badge">✕ NE</span>':''}</div>
-          <div class="reg-meta">${_esc(r.fecha||'')}${r.curso?' · '+_esc(r.curso):''}${r.rubricaNombre?' · '+_esc(r.rubricaNombre):''}</div>
-          <div class="reg-meta" style="display:flex;align-items:center;gap:6px;margin-top:3px;">
-            <span>${r.pts??'?'}/${r.maxPts??'?'} pts</span>
-            <div style="flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;max-width:80px;">
-              <div style="height:100%;width:${pct}%;background:${barClr};border-radius:2px;transition:width 0.4s ease;"></div>
-            </div>
+          <div class="reg-nombre">${_esc(r.nombre||'Sin nombre')}${pieSVG}</div>
+          <div class="reg-meta">${r.curso?_esc(r.curso):''}${r.rubricaNombre?' · '+_esc(r.rubricaNombre):''}</div>
+          ${_evalsHtml || `<div class="reg-meta" style="display:flex;align-items:center;gap:6px;margin-top:3px;">
+            <span class="instancia-badge" onclick="event.stopPropagation();filtrarPorInstancia('${instancia}')" style="cursor:pointer;">${_esc(instancia)}</span>
+            ${r.noEntregado?'<span class="no-entregado-badge">✕ NE</span>':''}
             <span style="font-family:var(--font-mono);font-size:10px;color:var(--text3);">${pct}%</span>
-          </div>
+          </div>`}
         </div>
         <div class="reg-actions">
           <button class="btn btn-icon" title="Ver detalle" onclick="verDetalle(${idx})">👁</button>
-          <button class="btn btn-icon" title="Presentar en pantalla" onclick="modoPresentacion(${idx})">🖥️</button>
+          <button class="btn btn-icon" title="Presentar" onclick="modoPresentacion(${idx})">🖥️</button>
           <button class="btn btn-icon" title="Editar nota rápida" onclick="editarNotaRapida(${idx}, this)" style="font-size:11px;padding:4px 7px;font-family:var(--font-mono);">${nota.toFixed(1)}</button>
-          <button class="btn btn-icon" title="Editar completo" onclick="editarRegistro(${idx})">✏️</button>
+          <button class="btn btn-icon" title="Editar" onclick="editarRegistro(${idx})">✏️</button>
           <button class="btn btn-icon btn-danger" title="Eliminar" onclick="eliminar(${idx})"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
         </div>
       </div>`;
-    // FIX v90: acumular en grupos por curso (iOS Grouped List)
+    // Agrupar en iOS Grouped List por curso
     const cardCurso = r.curso || 'Sin curso';
     let grp = list.querySelector('.reg-group[data-curso="'+CSS.escape(cardCurso)+'"]');
     if (!grp) {
@@ -5905,14 +5947,28 @@ function renderLibroClases(filtrados, container) {
     const instancias = [...new Set(regs.map(function(r){ return r.instancia || 'Evaluación 1'; }))].sort();
 
     // Agrupar por alumno — primero desde registros
+    // Clave = normalizarStrict(nombre) para que "Rivas PeñAloza" y "Rivas Peñaloza" sean la misma fila
     const porAlumno = {};
     regs.forEach(function(r) {
-      const n = (r.nombre||'Sin nombre').trim();
-      if (!porAlumno[n]) porAlumno[n] = { nombre: n, pie: r.pie, notas: {}, noEntregado: {}, sinRegistro: false };
+      const normKey = normalizarStrict(r.nombre||'Sin nombre');
+      // Si ya existe una entrada para este alumno, conservar el nombre canónico (el primero encontrado
+      // o el que tenga capitalización más limpia — usamos el más corto de los dos, que suele ser el correcto)
+      if (!porAlumno[normKey]) {
+        porAlumno[normKey] = { nombre: (r.nombre||'Sin nombre').trim(), pie: r.pie, notas: {}, noEntregado: {}, sinRegistro: false };
+      } else {
+        // Preservar el nombre con capitalización más uniforme (title-case aproximado)
+        var existing = porAlumno[normKey].nombre;
+        var incoming = (r.nombre||'').trim();
+        // Elegir el nombre que tenga más palabras con primera letra mayúscula y resto minúscula
+        var scoreExisting = existing.split(' ').filter(function(w){ return w && w[0] === w[0].toUpperCase() && w.slice(1) === w.slice(1).toLowerCase(); }).length;
+        var scoreIncoming = incoming.split(' ').filter(function(w){ return w && w[0] === w[0].toUpperCase() && w.slice(1) === w.slice(1).toLowerCase(); }).length;
+        if (scoreIncoming > scoreExisting) porAlumno[normKey].nombre = incoming;
+        if (r.pie) porAlumno[normKey].pie = true;
+      }
       const inst = r.instancia || 'Evaluación 1';
       // FIX v90: preservar nota exacta (evitar 0 → 1.0)
-      porAlumno[n].notas[inst] = (typeof r.nota === 'number') ? r.nota : (parseFloat(r.nota) || 1.0);
-      if (r.noEntregado) porAlumno[n].noEntregado[inst] = true;
+      porAlumno[normKey].notas[inst] = (typeof r.nota === 'number') ? r.nota : (parseFloat(r.nota) || 1.0);
+      if (r.noEntregado) porAlumno[normKey].noEntregado[inst] = true;
     });
 
     // Agregar alumnos de la nómina que NO tienen ningún registro
@@ -5933,14 +5989,15 @@ function renderLibroClases(filtrados, container) {
     });
     nominaDedup.forEach(function(e) {
       const normE = normalizarStrict(e.nombre || '');
-      const yaIncluido = Object.keys(porAlumno).some(function(k){
-        return normalizarStrict(k) === normE;
-      });
-      if (!yaIncluido) {
-        porAlumno[e.nombre] = {
-          nombre: e.nombre, pie: e.pie || false,
+      // porAlumno ya usa normalizarStrict como clave → lookup directo
+      if (!porAlumno[normE]) {
+        porAlumno[normE] = {
+          nombre: (e.nombre||'').trim(), pie: e.pie || false,
           notas: {}, noEntregado: {}, sinRegistro: true
         };
+      } else {
+        // Alumno ya tiene registros — enriquecer con datos de nómina (PIE, etc.)
+        if (e.pie) porAlumno[normE].pie = true;
       }
     });
 
@@ -11076,6 +11133,129 @@ function _exportarInformeUTP() {
   toast('✓ Informe UTP descargado (' + filtrados.length + ' registros)', 'ok');
 }
 
+// ── Estado de filtro activo en panel de correos ────────────────────────────
+var _correoFiltroActivo = null; // null = todos | 'enviado' | 'pendiente'
+
+function _setCorreoFiltro(tipo) {
+  // Toggle: si ya está activo ese filtro, lo apaga
+  _correoFiltroActivo = (_correoFiltroActivo === tipo) ? null : tipo;
+  _renderCriticosList(window._correoTabCriticos || []);
+}
+
+function _renderCriticosList(criticos) {
+  var ct = document.getElementById('correoTabContainer');
+  if (!ct) return;
+  var prof = localStorage.getItem('av_email_prof') || '';
+  var cole = localStorage.getItem('av_email_colegio') || '';
+  var nEnviados   = criticos.filter(function(a){ return _fueEnviado(a.nombre); }).length;
+  var nPendientes = criticos.length - nEnviados;
+
+  // Botones de filtro interactivos (estilo iOS pill con feedback táctil)
+  var _esActEnv  = _correoFiltroActivo === 'enviado';
+  var _esActPend = _correoFiltroActivo === 'pendiente';
+
+  var headerHtml = '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px;">'
+    + '<div style="display:flex;gap:8px;align-items:center;">'
+    // Botón Enviados
+    + '<button onclick="_setCorreoFiltro('enviado')" title="'+ (_esActEnv?'Quitar filtro':'Mostrar solo enviados') +'"'
+    + ' style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:20px;cursor:pointer;border:none;'
+    + 'transition:all 0.15s ease;font-family:var(--font-ui);font-size:12px;font-weight:700;'
+    + (_esActEnv
+        ? 'background:#34C759;color:#fff;box-shadow:0 2px 8px rgba(52,199,89,0.35);transform:scale(0.97);'
+        : 'background:rgba(52,199,89,0.10);color:#34C759;border:1.5px solid rgba(52,199,89,0.30);')
+    + '" onmousedown="this.style.transform='scale(0.94)'" onmouseup="this.style.transform=''"">'
+    + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+    + nEnviados + ' enviados'
+    + (_esActEnv ? ' ✕' : '')
+    + '</button>'
+    // Botón Pendientes
+    + '<button onclick="_setCorreoFiltro('pendiente')" title="'+ (_esActPend?'Quitar filtro':'Mostrar solo pendientes') +'"'
+    + ' style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:20px;cursor:pointer;border:none;'
+    + 'transition:all 0.15s ease;font-family:var(--font-ui);font-size:12px;font-weight:700;'
+    + (_esActPend
+        ? 'background:#FF9500;color:#fff;box-shadow:0 2px 8px rgba(255,149,0,0.35);transform:scale(0.97);'
+        : 'background:rgba(255,149,0,0.10);color:#FF9500;border:1.5px solid rgba(255,149,0,0.30);')
+    + '" onmousedown="this.style.transform='scale(0.94)'" onmouseup="this.style.transform=''"">'
+    + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
+    + nPendientes + ' pendientes'
+    + (_esActPend ? ' ✕' : '')
+    + '</button>'
+    + (_correoFiltroActivo ? '<button onclick="_setCorreoFiltro(null)" style="padding:7px 12px;border-radius:20px;cursor:pointer;border:0.5px solid var(--border);background:var(--bg3);font-size:11px;color:var(--text3);font-family:var(--font-ui);">Todos</button>' : '')
+    + '</div>'
+    + '<button class="btn btn-primary" onclick="_enviarTodosCorreoTab()" style="display:inline-flex;align-items:center;gap:6px;min-height:36px;font-size:13px;border-radius:10px;">'
+    + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>Abrir todos en Gmail</button>'
+    + '</div>';
+
+  // Aplicar filtro a la lista
+  var listaFiltrada = criticos;
+  if (_correoFiltroActivo === 'enviado') {
+    listaFiltrada = criticos.filter(function(a){ return _fueEnviado(a.nombre); });
+  } else if (_correoFiltroActivo === 'pendiente') {
+    listaFiltrada = criticos.filter(function(a){ return !_fueEnviado(a.nombre); });
+  }
+
+  // Mensaje si lista vacía tras filtro
+  var listHtml = '';
+  if (!listaFiltrada.length) {
+    listHtml = '<div style="text-align:center;padding:40px 20px;color:var(--text3);font-size:13px;">'
+      + (_correoFiltroActivo === 'enviado' ? '✅ Ningún alumno con correo enviado aún.' : '🎉 Todos los alumnos críticos tienen correo enviado.')
+      + '</div>';
+  } else {
+    listaFiltrada.forEach(function(al, idx) {
+      // Usar índice en criticos originales para que los botones de acción funcionen bien
+      var idxReal = criticos.indexOf(al);
+      var email = _getEmailApoderado(al.nombre);
+      var prom  = al.promedio.toFixed(1);
+      var pc    = al.promedio < 2.5 ? '#FF3B30' : '#FF9500';
+      var texto = _generarTextoEmail(al, prof, cole);
+      var ns    = al.notas.map(function(n,i){ return (al.instancias[i]||'Ev.'+(i+1))+': '+n.toFixed(1); }).join(' · ');
+      var pie   = al.pie ? '<svg width="11" height="11" viewBox="0 0 100 100" fill="'+pc+'" style="vertical-align:middle;margin-left:4px;"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="'+pc+'" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="'+pc+'" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="'+pc+'" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="'+pc+'" stroke-width="8" stroke-linecap="round" fill="none"/></svg>' : '';
+      var enviado = _getEnvio(al.nombre);
+      var badgeEnvio = enviado
+        ? '<div style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:rgba(52,199,89,0.12);border:1px solid rgba(52,199,89,0.25);border-radius:20px;margin-top:5px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#34C759" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span style="font-size:11px;font-weight:600;color:#34C759;">Enviado '+new Date(enviado.fecha).toLocaleDateString('es-CL',{day:'numeric',month:'short'})+'</span></div>'
+        : '<div style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:rgba(255,149,0,0.10);border:1px solid rgba(255,149,0,0.25);border-radius:20px;margin-top:5px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span style="font-size:11px;font-weight:600;color:#FF9500;">Pendiente</span></div>';
+
+      listHtml += '<div class="config-card" style="padding:16px 20px;margin-bottom:10px;">'
+        + '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;gap:10px;">'
+        + '<div><div style="font-size:15px;font-weight:700;color:var(--text);">'+al.nombre+pie+'</div>'
+        + '<div style="font-size:11px;color:var(--text3);margin-top:3px;">'+al.curso+' · '+ns+'</div>'
+        + badgeEnvio + '</div>'
+        + '<div style="text-align:right;"><div style="font-size:20px;font-weight:800;font-family:var(--font-mono);color:'+pc+';">'+prom+'</div>'
+        + '<div style="font-size:10px;color:var(--text3);">promedio</div></div></div>'
+        + '<div style="display:flex;align-items:center;padding:10px 0;border-top:0.5px solid var(--border);border-bottom:0.5px solid var(--border);margin-bottom:10px;gap:10px;">'
+        + '<div style="font-size:13px;font-weight:500;color:var(--text);flex:1;">Email apoderado</div>'
+        + '<input type="email" id="cEmailInp_'+idxReal+'" placeholder="correo@ejemplo.cl" value="'+email+'" style="max-width:240px;padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-family:var(--font-ui);text-align:right;"></div>'
+        + '<details open style="margin-bottom:10px;"><summary style="font-size:12px;font-weight:600;color:var(--accent);cursor:pointer;user-select:none;padding:6px 0;">Texto del correo</summary>'
+        + '<textarea class="email-preview" id="cEmailTxt_'+idxReal+'" readonly>'+texto.replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</textarea></details>'
+        + '<div style="display:flex;gap:6px;flex-wrap:wrap;">'
+        + '<button class="btn btn-primary" onclick="_abrirCorreoTab('+idxReal+')" style="display:inline-flex;align-items:center;gap:6px;min-height:36px;font-size:13px;border-radius:10px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Abrir en Gmail</button>'
+        + '<button class="btn" onclick="_copiarCorreoTab('+idxReal+')" style="display:inline-flex;align-items:center;gap:6px;min-height:36px;font-size:13px;border-radius:10px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copiar</button>'
+        + '<button class="btn" data-idx="'+idxReal+'" data-nom="'+al.nombre.replace(/"/g,'&quot;')+'" onclick="_guardarCorreoTab(parseInt(this.dataset.idx),this.dataset.nom)" style="display:inline-flex;align-items:center;gap:6px;min-height:36px;font-size:13px;border-radius:10px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Guardar</button>'
+        + (enviado
+          ? '<button class="btn" data-nom="'+al.nombre.replace(/"/g,'&quot;')+'" onclick="var k=this.dataset.nom.toUpperCase();delete _historialCorreos[k];_saveHistorialCorreos();_correoFiltroActivo=null;_renderCorreoTab();" style="display:inline-flex;align-items:center;gap:5px;min-height:36px;font-size:12px;border-radius:10px;color:#8E8E93;border-color:rgba(142,142,147,0.3);"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#8E8E93" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Desmarcar</button>'
+          : '<button class="btn" data-nom="'+al.nombre.replace(/"/g,'&quot;')+'" data-curso="'+al.curso+'" data-prom="'+prom+'" onclick="_marcarCorreoEnviado(this.dataset.nom,this.dataset.email||String(),this.dataset.curso,parseFloat(this.dataset.prom)||0);_renderCorreoTab();" style="display:inline-flex;align-items:center;gap:5px;min-height:36px;font-size:12px;border-radius:10px;color:#34C759;border-color:rgba(52,199,89,0.3);background:rgba(52,199,89,0.08);"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#34C759" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Marcar enviado</button>')
+        + '</div></div>';
+    });
+  }
+
+  ct.innerHTML = headerHtml + listHtml;
+  window._correoTabCriticos = criticos;
+
+  // Auto-resize textareas
+  setTimeout(function() {
+    ct.querySelectorAll('textarea.email-preview').forEach(function(ta) {
+      ta.style.height = 'auto';
+      ta.style.height = Math.max(360, ta.scrollHeight+24) + 'px';
+    });
+    ct.querySelectorAll('details').forEach(function(det) {
+      det.addEventListener('toggle', function() {
+        var ta = det.querySelector('textarea.email-preview');
+        if (ta && det.open) { ta.style.height='auto'; ta.style.height=Math.max(360,ta.scrollHeight+24)+'px'; }
+      });
+    });
+  }, 50);
+}
+
 function _renderCorreoTab(){ try { /* try-open */
   var ct=document.getElementById('correoTabContainer'),badge=document.getElementById('correoTabEmailBadge');
   if(!ct)return;
@@ -11102,10 +11282,39 @@ function _renderCorreoTab(){ try { /* try-open */
     });
   });
   criticos.sort(function(a,b){return a.promedio-b.promedio;});
-  if(!criticos.length){ct.innerHTML='<div style="text-align:center;padding:60px 20px;"><div style="font-size:40px;margin-bottom:12px;">\u2705</div><div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px;">Sin alumnos cr\u00edticos</div><div style="font-size:13px;color:var(--text3);">Todos tienen promedio \u2265 4,0</div></div>';return;}
-  // Contadores
-  var nEnviados  = criticos.filter(function(a){ return _fueEnviado(a.nombre); }).length;
-  var nPendientes = criticos.length - nEnviados;
+  if(!criticos.length){ct.innerHTML='<div style="text-align:center;padding:60px 20px;"><div style="font-size:40px;margin-bottom:12px;">✅</div><div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px;">Sin alumnos críticos</div><div style="font-size:13px;color:var(--text3);">Todos tienen promedio ≥ 4,0</div></div>';return;}
+  // v190: Delegar a _renderCriticosList (contadores interactivos + filtro reactivo)
+  _correoFiltroActivo = null; // Reset filtro al recargar tab completo
+  _renderCriticosList(criticos);
+  } catch(_correoErr) { console.warn('[ArtEval] _renderCorreoTab:', _correoErr.message); }
+}
+function _abrirCorreoTab(idx){
+  var criticos=window._correoTabCriticos||[],al=criticos[idx];if(!al)return;
+  var email=(document.getElementById('cEmailInp_'+idx)||{}).value||'';
+  var utp  =(document.getElementById('correoEmailUTP')||{}).value||localStorage.getItem('av_email_utp')||'';
+  var prof =(document.getElementById('correoNombreProf')||{}).value||localStorage.getItem('av_email_prof')||'';
+  var cole =(document.getElementById('correoNombreColegio')||{}).value||localStorage.getItem('av_email_colegio')||'';
+  var inst =(document.getElementById('correoInstitucional')||{}).value||localStorage.getItem('av_email_institucional')||'';
+  var texto =_generarTextoEmail(al,prof,cole);
+  var asunto='Situación académica Artes Visuales — '+al.nombre;
+  if(email&&email.includes('@')){
+    _apoderadoEmails[al.nombre.trim().toUpperCase()]=email.toLowerCase();
+    _saveApoderadoEmails();
+  }
+
+  // ── Construir URL de Gmail Compose ──────────────────────────────────────
+  // Sin /u/N/ — usando solo authuser=EMAIL para que Gmail seleccione
+  // la cuenta correcta independientemente del perfil de Chrome.
+  // Si la cuenta no está activa en esa sesión, Gmail pedirá login.
+  function buildGmailCompose(authEmail){
+    var params = (authEmail ? '?authuser='+encodeURIComponent(authEmail)+'&' : '?')
+      +'view=cm'
+      +'&to='+encodeURIComponent(email)
+      +'&su='+encodeURIComponent(asunto)
+      +'&body='+encodeURIComponent(texto)
+      +(utp?'&cc='+encodeURIComponent(utp):'');
+    return 'https://mail.google.com/mail/'+params;
+
 
   var html='<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px;">'
     +'<div style="display:flex;gap:10px;">'
