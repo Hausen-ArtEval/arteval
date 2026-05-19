@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v170-fixed">
+<meta name="arteval-version" content="v170-r">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4793,9 +4793,9 @@ Incluye los ${n} criterios, desde idx 0 hasta idx ${n-1}. Usa exactamente "MB","
     }
     const texto = (data.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
     let parsed = null;
-    try { parsed = JSON.parse(texto); } catch(e) {}
-    if (!parsed) try { parsed = JSON.parse(texto.replace(/^```json\s*/i,'').replace(/```\s*$/,'').trim()); } catch(e) {}
-    if (!parsed) { const mx = texto.match(/\{[\s\S]*\}/); if (mx) try { parsed = JSON.parse(mx[0]); } catch(e) {} }
+    try { parsed = JSON.parse(texto); } catch(_e) {}
+    if (!parsed) try { parsed = JSON.parse(texto.replace(/^```json\s*/i,'').replace(/```\s*$/,'').trim()); } catch(_e) {}
+    if (!parsed) { const mx = texto.match(/\{[\s\S]*\}/); if (mx) try { parsed = JSON.parse(mx[0]); } catch(_e) {} }
     if (parsed?.criterios?.length) {
       parsed.criterios.forEach(c => {
         const idx = parseInt(c.idx);
@@ -5351,7 +5351,7 @@ function renderRegistros() {
   const list   = document.getElementById('registrosList');
   const libro  = document.getElementById('libroClasesView');
   if (!list) { _isRenderingRegistros = false; return; }
-  // [v170] display guard removed - caused render deadlock on tab switch
+  // [FIX] display guard removed - renderRegistros must run regardless of visibility
   actualizarFiltros();
   const filtrados = getRegistrosFiltrados();
   const titulo = document.getElementById('regTitulo');
@@ -5437,13 +5437,14 @@ function renderRegistros() {
     return;
   }
 
-  // [v170] Build nombreCount with composite key before render loop
-  // Composite key = nombre|curso|rubrica|instancia prevents false positives
+  // [FIX] Build nombreCount with composite key before render loop.
+  // Composite key prevents false duplicate flags for same student in different instancias.
   var nombreCount = Object.create(null);
   filtrados.forEach(function(rx) {
     if (!rx) return;
-    var _ck = (rx.nombre||'').trim().toUpperCase()+'|'+(rx.curso||'').trim()+'|'+(rx.rubricaNombre||'').trim().toUpperCase()+'|'+(rx.instancia||'Evaluación 1');
-    nombreCount[_ck] = (nombreCount[_ck]||0) + 1;
+    var _nc = (rx.nombre||'').trim().toUpperCase()+'|'+(rx.curso||'').trim()+'|'
+             +(rx.rubricaNombre||'').trim().toUpperCase()+'|'+(rx.instancia||'Evaluación 1');
+    nombreCount[_nc] = (nombreCount[_nc]||0) + 1;
   });
   filtrados.forEach(function(r) {
     if (!r) return;
@@ -5454,8 +5455,9 @@ function renderRegistros() {
     else if (nota >= 4.0) { bg='var(--green-bg)'; clr='var(--green)'; }
     else                  { bg='var(--red-bg)';   clr='var(--red)';   }
     const nLabel = nota>=6.0?'Excelente':nota>=5.0?'Muy bien logrado':nota>=4.0?'Logrado':'No logrado';
-    var _ck2 = (r.nombre||'').trim().toUpperCase()+'|'+(r.curso||'').trim()+'|'+(r.rubricaNombre||'').trim().toUpperCase()+'|'+(r.instancia||'Evaluación 1');
-    const esDup  = (nombreCount[_ck2]||0) > 1;
+    var _nc2 = (r.nombre||'').trim().toUpperCase()+'|'+(r.curso||'').trim()+'|'
+              +(r.rubricaNombre||'').trim().toUpperCase()+'|'+(r.instancia||'Evaluación 1');
+    const esDup  = (nombreCount[_nc2]||0) > 1;
     const instancia = r.instancia || 'Evaluación 1';
     const card = document.createElement('div');
     card.className = 'reg-card' + (esDup?' duplicado':'') + (r.pie?' pie-card':'') + (r.noEntregado?' no-entregado ne-card':'');
@@ -9687,7 +9689,8 @@ function showEstudioSub(sub) {
   _renderEstudioSubNav();
   // requestAnimationFrame: yields main thread after nav, then renders
   // This prevents the tab transition animation from being blocked by render work
-  if (sub === 'cursos' && cursoSeleccionado) {
+  if (sub === 'cursos') {
+    // [FIX] Always RAF renderCursoMain - it handles the empty state itself
     requestAnimationFrame(renderCursoMain);
   }
   if (sub === 'registros') {
@@ -9719,7 +9722,7 @@ function _renderSistemaSubNav() {
     }
     if (sec) sec.style.display = isActive ? 'block' : 'none';
   });
-  // [v170] Sistema tab has no duplicados sub-section: call removed to prevent bleeding
+  // [FIX] _sistemaSubTab never equals 'duplicados': block removed to prevent bleeding
 }
 
 // ── Sub-navegación del tab Progreso ─────────────────────────────────────
@@ -11666,13 +11669,13 @@ function selCurso(curso) {
   // Scroll al inicio del área principal al cambiar de curso
   const main = document.getElementById('cursoMain');
   if (main) setTimeout(function(){ main.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 50);
-  // [v170] Sync Alexia button immediately on course change
+  // [FIX] Update Alexia button label immediately when course changes
   var _aBtn = document.getElementById('btnExportAlexia');
   if (_aBtn && curso) {
     _aBtn.textContent = '📥 Alexia — ' + curso;
     _aBtn.title = 'Exportar planilla Alexia para ' + curso;
     _aBtn.dataset.curso = curso;
-    if (registros.length) _aBtn.style.display = 'inline-block';
+    if (registros && registros.length) _aBtn.style.display = 'inline-block';
   }
   renderCursoMain();
 }
@@ -11825,9 +11828,8 @@ function renderCursoMain() {
   _buildRegsMap(); // O(N) once per render — O(1) per student thereafter
   const main = document.getElementById('cursoMain');
   if (!main) { _isRenderingCurso = false; return; }
-  // Skip if curso panel is not visible (prevents background CPU use)
-  const cursosec = document.getElementById('estudio-sec-cursos');
-  if (cursosec && cursosec.style.display === 'none') { _isRenderingCurso = false; return; }
+  // [FIX] display guard removed from renderCursoMain - render must complete
+  // even when called before the section becomes visible
   // Wrap entire render in try/finally so guard ALWAYS releases
   try {
 
@@ -13334,7 +13336,7 @@ function auditarDuplicados() {
   var buckets = Object.create(null);
   registros.forEach(function(r, i) {
     if (!r) return;
-    // [v170] Composite key: same student in different instancias is NOT a duplicate
+    // [FIX] Composite key: curso|rubricaNombre|instancia prevents false positives
     var key = (r.curso||'').trim() + '|' + (r.rubricaNombre||'').trim().toUpperCase()
             + '|' + (r.instancia||'Evaluación 1').trim();
     if (!buckets[key]) buckets[key] = [];
@@ -13391,7 +13393,7 @@ function _fusionarGrupo(indices) {
 
 // Renderizar panel de limpieza de duplicados
 function renderPanelDuplicados(containerId) {
-  // [v170] SANDBOX: only render when the duplicados sub-tab is active
+  // [FIX] Sandbox: only render when duplicados sub-tab is active
   if (typeof _estudioSubTab !== 'undefined' && _estudioSubTab !== 'duplicados') return;
   var cont = document.getElementById(containerId);
   if (!cont) return;
