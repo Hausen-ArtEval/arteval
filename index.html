@@ -433,8 +433,16 @@ input[type="text"]:focus, textarea:focus, select:focus {
 .reg-toolbar-filters {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   flex-wrap: wrap;
+  row-gap: 6px;
+}
+#regCursoChipsRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  row-gap: 5px;
 }
 .reg-toolbar-left { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .reg-title { font-size: 15px; font-weight: 600; color: var(--text); }
@@ -554,24 +562,27 @@ input[type="text"]:focus, textarea:focus, select:focus {
 .reg-curso-chip {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 5px 12px;
+  gap: 4px;
+  padding: 5px 10px;
   font-family: -apple-system, 'DM Sans', sans-serif;
   font-size: 12px;
   font-weight: 500;
+  letter-spacing: -0.1px;
   color: #3A3A3C;
-  background: rgba(116,116,128,0.12);
+  background: rgba(116,116,128,0.11);
   border: 0.5px solid rgba(0,0,0,0.06);
   border-radius: 8px;
   cursor: pointer;
   white-space: nowrap;
-  min-height: 30px;
+  min-height: 28px;
   flex-shrink: 0;
-  transition: background 0.13s ease, color 0.13s ease,
-              border-color 0.13s ease, box-shadow 0.13s ease;
+  transition: background 0.12s ease, color 0.12s ease,
+              border-color 0.12s ease, box-shadow 0.12s ease,
+              transform 0.1s ease;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
 }
+.reg-curso-chip:active { transform: scale(0.94); }
 .reg-curso-chip:hover:not(.activo) {
   background: rgba(116,116,128,0.22);
   color: #1C1C1E;
@@ -593,14 +604,16 @@ input[type="text"]:focus, textarea:focus, select:focus {
   font-size: 10px;
   font-weight: 700;
   font-family: var(--font-mono);
-  padding: 1px 5px;
-  border-radius: 20px;
-  background: rgba(0,0,0,0.10);
+  padding: 1px 4px;
+  border-radius: 5px;
+  background: rgba(0,0,0,0.08);
   line-height: 1.4;
   letter-spacing: 0;
+  min-width: 16px;
+  text-align: center;
 }
 .reg-curso-chip.activo .chip-count {
-  background: rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.28);
   color: #fff;
 }
 /* Chip "Todos" — aparece cuando no hay ninguno seleccionado */
@@ -5688,7 +5701,8 @@ function getRegistrosFiltrados() {
     return (!fr  || r.rubricaNombre === fr) &&
            (!fi  || (r.instancia || 'Evaluación 1') === fi) &&
            (!fc  || _normCursoKey(r.curso||'') === _normCursoKey(fc)) &&
-           (fc || cursosSeleccionados.size === 0 || cursosSeleccionados.has(normalizarCurso(r.curso||''))) &&
+           (fc || cursosSeleccionados.size === 0 || cursosSeleccionados.has(normalizarCurso(r.curso||'')) ||
+            Array.from(cursosSeleccionados).some(function(sel){ return _normCursoKey(sel) === _normCursoKey(r.curso||''); })) &&
            (!bus || (r.nombre||'').toLowerCase().includes(bus) ||
                     (r.curso||'').toLowerCase().includes(bus) ||
                     (r.instancia||'').toLowerCase().includes(bus)) &&
@@ -16105,47 +16119,62 @@ function renderRegCursoChips() {
   var sep = document.getElementById('regFiltrosSep');
   if (!row) return;
 
-  // Cursos disponibles: unión de registros + nóminas
-  var desdRegistros = new Set(registros.map(function(r){ return r.curso; }).filter(Boolean));
-  var desdeNomina   = new Set(Object.keys(listaCursos).filter(function(c){ return (listaCursos[c]||[]).length > 0; }));
-  var cursos = Array.from(new Set([...desdRegistros, ...desdeNomina])).sort();
+  // Cursos disponibles normalizados — unión de registros + nóminas
+  var desdRegs  = registros.map(function(r){ return r.curso ? normalizarCurso(r.curso) : null; }).filter(Boolean);
+  var desdNom   = Object.keys(listaCursos).filter(function(c){ return (listaCursos[c]||[]).length > 0; }).map(normalizarCurso);
+  var cursos = Array.from(new Set(desdRegs.concat(desdNom))).sort(function(a, b) {
+    var na = parseInt(a) || 0, nb = parseInt(b) || 0;
+    return na !== nb ? na - nb : a.localeCompare(b, 'es');
+  });
 
-  if (!cursos.length) {
-    row.innerHTML = '';
-    if (sep) sep.style.display = 'none';
-    return;
-  }
+  if (!cursos.length) { row.innerHTML = ''; if (sep) sep.style.display = 'none'; return; }
+  if (sep) sep.style.display = 'block';
 
-  if (sep) sep.style.display = (cursos.length > 0) ? 'block' : 'none';
+  // Normalizar el Set para comparar consistentemente
+  var selNorm   = new Set(Array.from(cursosSeleccionados).map(normalizarCurso));
+  var todosActivo = selNorm.size === 0;
 
-  var html = '';
+  var html = '<button class="reg-curso-chip todos-chip' + (todosActivo ? ' activo' : '') + '" data-curso="__todos__">Todos</button>';
 
-  // Chip "Todos" — activo cuando no hay selección
-  var todosActivo = cursosSeleccionados.size === 0;
-  html += '<button class="reg-curso-chip todos-chip' + (todosActivo ? ' activo' : '') + '"'
-    + ' onclick="_regCursoTodos()" title="Mostrar todos los cursos">Todos</button>';
-
-  // Un chip por curso
+  var nivelPrev = null;
   cursos.forEach(function(c) {
-    var activo = cursosSeleccionados.has(c);
+    var nivel = parseInt(c) || 0;
+    // Separador sutil entre niveles (3°→4°→5°→6°)
+    if (nivelPrev !== null && nivel !== nivelPrev) {
+      html += '<span aria-hidden="true" style="width:1px;height:16px;background:var(--border);border-radius:1px;flex-shrink:0;align-self:center;margin:0 1px;"></span>';
+    }
+    nivelPrev = nivel;
+    var activo = selNorm.has(c);
     var nRegs  = registros.filter(function(r){ return _normCursoKey(r.curso||'') === _normCursoKey(c); }).length;
     var badge  = nRegs > 0 ? '<span class="chip-count">' + nRegs + '</span>' : '';
-    html += '<button class="reg-curso-chip' + (activo ? ' activo' : '') + '"'
-      + ' onclick="_regCursoToggle(' + JSON.stringify(c) + ')"'
-      + ' title="' + c + (activo ? ' — clic para deseleccionar' : ' — clic para seleccionar') + '">'
-      + c + badge
-      + '</button>';
+    // data-curso evita el problema de comillas con caracteres ° en onclick inline
+    html += '<button class="reg-curso-chip' + (activo ? ' activo' : '') + '" data-curso="' + c.replace(/"/g,'&quot;') + '">' + c + badge + '</button>';
   });
 
   row.innerHTML = html;
+
+  // Event delegation — un listener en el contenedor, sin onclick inline que rompa con °
+  row.onclick = function(e) {
+    var btn = e.target.closest('button[data-curso]');
+    if (!btn) return;
+    var c = btn.getAttribute('data-curso');
+    if (c === '__todos__') _regCursoTodos();
+    else _regCursoToggle(c);
+  };
+
   _updateClearFiltersBtn();
 }
 
 function _regCursoToggle(curso) {
-  if (cursosSeleccionados.has(curso)) {
-    cursosSeleccionados.delete(curso);
+  var c = normalizarCurso(curso);
+  var selNorm = new Set(Array.from(cursosSeleccionados).map(normalizarCurso));
+  if (selNorm.has(c)) {
+    // Eliminar — buscar la entrada original que normaliza a c
+    cursosSeleccionados.forEach(function(existing) {
+      if (normalizarCurso(existing) === c) cursosSeleccionados.delete(existing);
+    });
   } else {
-    cursosSeleccionados.add(curso);
+    cursosSeleccionados.add(c); // guardar normalizado
   }
   renderRegCursoChips();
   renderRegistros();
