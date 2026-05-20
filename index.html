@@ -7374,12 +7374,20 @@ function cerrarModal() { document.getElementById('modalActivo')?.remove(); }
 //  CONFIGURAR API KEY
 // ═══════════════════════════════════════════════════════
 function guardarKey() {
-  const v = document.getElementById('apiKeyInput')?.value.trim();
-  localStorage.setItem('av_gemini_key', v||'');
+  const v       = document.getElementById('apiKeyInput')?.value.trim();
+  const _actual = localStorage.getItem('av_gemini_key') || '';
+  // Protección: no borrar una key guardada si el campo está vacío
+  // (ocurre si el input no se rellenó y el usuario hace clic en Guardar)
+  if (!v && _actual) {
+    toast('ℹ️ La API Key actual se mantiene guardada.', 'info', 2500);
+    return;
+  }
+  localStorage.setItem('av_gemini_key', v || '');
   const st = document.getElementById('apiStatus');
-  if (st) { st.textContent = v?'✓ Guardada':'—'; st.style.color = v?'var(--green)':'var(--text3)'; }
+  if (st) { st.textContent = v ? '✓ Guardada' : '—'; st.style.color = v ? 'var(--green)' : 'var(--text3)'; }
   const banner = document.getElementById('infoBanner');
-  if (banner) banner.style.display = v?'none':'block';
+  if (banner) banner.style.display = v ? 'none' : 'block';
+  if (v) toast('✓ API Key guardada correctamente', 'ok', 2000);
 }
 
 async function probarKey() {
@@ -9362,6 +9370,22 @@ function renderComunica() {
 function renderSistema() {
   try { actualizarEstadoConfigDrive(); } catch(e) {}
   _renderSistemaSubNav();
+  // Restaurar API Key guardada en el input (evita que aparezca vacío al recargar)
+  try {
+    var _savedKey = localStorage.getItem('av_gemini_key') || '';
+    var _inp      = document.getElementById('apiKeyInput');
+    var _st       = document.getElementById('apiStatus');
+    if (_inp && !_inp.value && _savedKey) {
+      _inp.value = _savedKey;
+    }
+    if (_st && _savedKey) {
+      _st.textContent = '✓ Guardada';
+      _st.style.color = 'var(--green)';
+    }
+    // Ocultar banner de advertencia si ya hay key
+    var _banner = document.getElementById('infoBanner');
+    if (_banner && _savedKey) _banner.style.display = 'none';
+  } catch(_e) {}
 }
 
 function renderProgreso() {
@@ -16382,6 +16406,18 @@ document.addEventListener('DOMContentLoaded', function() {
   } catch(diagErr) {
     console.error('[ArtEval] Error en auto-diagnóstico:', diagErr);
   }
+
+  // ── Restaurar API Key en el input desde localStorage ────────────────────
+  // Necesario porque el campo type="password" arranca vacío aunque haya key guardada
+  try {
+    var _apiK  = localStorage.getItem('av_gemini_key') || '';
+    var _apiIn = document.getElementById('apiKeyInput');
+    var _apiSt = document.getElementById('apiStatus');
+    var _apiBn = document.getElementById('infoBanner');
+    if (_apiIn && _apiK) _apiIn.value = _apiK;
+    if (_apiSt && _apiK) { _apiSt.textContent = '✓ Guardada'; _apiSt.style.color = 'var(--green)'; }
+    if (_apiBn && _apiK) _apiBn.style.display = 'none';
+  } catch(_apiErr) {}
 
   // Recuperar el último tab visitado
   var lastMaintab = null;
