@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v190">
+<meta name="arteval-version" content="v191">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -2619,7 +2619,7 @@ button:focus-visible, .tab:focus-visible, .sub-tab:focus-visible {
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v190</span>
+      ">v191</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -3587,7 +3587,7 @@ button:focus-visible, .tab:focus-visible, .sub-tab:focus-visible {
         <label style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;cursor:pointer;background:var(--accent);color:#fff;border-radius:12px;padding:12px 16px;font-size:14px;font-weight:600;font-family:var(--font-ui);box-shadow:0 2px 10px rgba(255,149,0,0.20);box-sizing:border-box;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Subir Excel / CSV con emails<input type="file" accept=".xlsx,.xls,.csv,.txt" onchange="importarPlanillaApoderados(this.files[0]);this.value=''" style="display:none"></label>
       </div>
       <div class="config-card">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;"><h3 style="margin-bottom:0;">Alumnos con promedio crítico</h3><button class="btn btn-primary" onclick="_enviarTodosCorreoTab()" style="display:inline-flex;align-items:center;gap:6px;min-height:36px;font-size:13px;border-radius:10px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>Abrir todos en Gmail</button></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;"><h3 style="margin-bottom:0;">Alumnos con promedio crítico</h3></div>
         <div id="correoTabContainer"><div style="text-align:center;padding:40px;color:var(--text3);"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="opacity:.2;display:block;margin:0 auto 10px;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg><div style="font-size:13px;">Cargando alumnos críticos...</div></div></div>
       </div>
 
@@ -4348,11 +4348,14 @@ function saveRegistros() {
     console.error('[ArtEval] saveRegistros abortado: registros no es Array', typeof registros);
     return;
   }
-  // Normalizar cursos y nombres antes de guardar
+  // Normalizar cursos, nombres y añadir timestamp de edición
+  var _saveTs = new Date().toISOString();
   registros.forEach(function(r) {
     if (!r) return;
     // Normalizar curso
     if (r.curso) r.curso = normalizarCurso(r.curso);
+    // Marcar timestamp de última modificación — usado por SmartSync para detectar cambios
+    if (!r._savedAt) r._savedAt = _saveTs;
     // Normalizar nombre: title-case estricto (primera letra de cada palabra en mayúscula, resto minúscula)
     // Esto corrige "Rivas PeñAloza" → "Rivas Peñaloza", "ROJAS" → "Rojas"
     // Solo aplicar si el nombre parece incorrecto (tiene mayúsculas inconsistentes mid-word)
@@ -5260,6 +5263,7 @@ function guardar() {
 
   const nuevoReg = {
     _id: _uuidV4(), // UUID único por registro — integridad anti-duplicados
+    _savedAt: new Date().toISOString(), // timestamp de edición — usado por SmartSync
     nombre, curso, fecha: new Date().toLocaleDateString('es-CL'), fechaISO: new Date().toISOString(),
     pts, maxPts, pct, nota, conteo, detalle,
     rubricaNombre: rubricaEfectiva?.nombre || getRubrica().nombre,
@@ -5608,6 +5612,7 @@ function guardarNotaRapida(idx) {
   const nueva = parseFloat(inp.value);
   if (isNaN(nueva) || nueva < 1 || nueva > 7) { toast('Nota debe estar entre 1.0 y 7.0', 'err'); return; }
   r.nota = Math.round(nueva * 10) / 10;
+  r._savedAt = new Date().toISOString(); // marca para SmartSync — detecta nota modificada
   // Recalcular pct aproximado inverso
   r.pct = Math.round(((nueva - 1) / 6) * 100);
   // Si era NE, quitarlo — el profesor está asignando una nota real
@@ -10984,7 +10989,8 @@ function _renderInformeUTP() { try {
   // Construir lista de todos los alumnos críticos con su estado de envío
   var todosAlumnos = [];
   TODOS_LOS_CURSOS.forEach(function(curso) {
-    var regs = registros.filter(function(r){ return (r.curso||'')===curso && r.nota!=null; });
+    var _normCursoUTP = _normCursoKey(curso);
+    var regs = registros.filter(function(r){ return _normCursoKey(r.curso||'')===_normCursoUTP && r.nota!=null; });
     if (!regs.length) return;
     var pa = {};
     regs.forEach(function(r) {
@@ -11077,7 +11083,8 @@ function _exportarInformeUTP() {
 
   var todosAlumnos = [];
   TODOS_LOS_CURSOS.forEach(function(curso) {
-    var regs = registros.filter(function(r){ return (r.curso||'')===curso && r.nota!=null; });
+    var _normCursoUTP = _normCursoKey(curso);
+    var regs = registros.filter(function(r){ return _normCursoKey(r.curso||'')===_normCursoUTP && r.nota!=null; });
     if (!regs.length) return;
     var pa = {};
     regs.forEach(function(r) {
@@ -11259,7 +11266,8 @@ function _renderCorreoTab(){ try { /* try-open */
   if(badge)badge.textContent=Object.keys(_apoderadoEmails).length?(Object.keys(_apoderadoEmails).length+' emails'):'';
   var criticos=[];
   TODOS_LOS_CURSOS.forEach(function(curso){
-    var regs=registros.filter(function(r){return(r.curso||'')===curso&&r.nota!==undefined&&r.nota!==null;});
+    var _normCurso = _normCursoKey(curso);
+    var regs=registros.filter(function(r){return _normCursoKey(r.curso||'')===_normCurso&&r.nota!==undefined&&r.nota!==null;});
     if(!regs.length)return;
     var pa={};
     regs.forEach(function(r){
@@ -15181,39 +15189,87 @@ async function _smartSyncOnConnect() {
 
     if (localCount === 0 && driveCount === 0) return; // nada que hacer
 
+    // ── Detección de cambios mejorada v191 ──────────────────────────────────
+    // Ya no basta con comparar conteos — las notas MODIFICADAS tienen el mismo count.
+    // Usamos timestamps: si hay edición local sin sync, subimos siempre.
+    var _hayEdicion = _hayEdicionSinSync();
+    var _localMasReciente = false;
+    if (driveData && driveData._savedAt) {
+      var localTs = localStorage.getItem('av_last_edit_ts') || '';
+      _localMasReciente = localTs > driveData._savedAt;
+    }
+
     if (localCount >= driveCount) {
-      // LOCAL ES MAESTRO: subir a Drive (siempre que haya diferencia o sea primera vez)
-      if (localCount > driveCount || !fileRef || _hayEdicionSinSync()) {
-        console.log('[ArtEval] SmartSync: local tiene más (' + localCount + ' vs ' + driveCount + ') → subiendo a Drive');
+      // LOCAL TIENE IGUAL O MÁS: subir si hay ediciones o diferencia de count
+      if (localCount > driveCount || !fileRef || _hayEdicion || _localMasReciente) {
+        console.log('[ArtEval] SmartSync: local maestro (' + localCount + ' vs ' + driveCount + ', edición=' + _hayEdicion + ') → subiendo');
         _updateCloudUI('saving');
         await syncToDrive();
         console.log('[ArtEval] SmartSync: subida completada');
+      } else {
+        console.log('[ArtEval] SmartSync: sin cambios detectados, ya sincronizado');
       }
-      // Si son iguales, no hacer nada — ya están sincronizados
     } else {
-      // DRIVE TIENE MÁS: fusionar — no sobreescribir, añadir los que faltan en local
+      // DRIVE TIENE MÁS: merge inteligente
       console.log('[ArtEval] SmartSync: Drive tiene más (' + driveCount + ' vs ' + localCount + ') → fusionando');
       if (driveData && driveData.registros) {
-        var existentes = new Set(registros.map(function(r) {
-          return (r.nombre||'') + '|' + (r.curso||'') + '|' + (r.fecha||'') + '|' + (r.instancia||'');
-        }));
+        // Construir índice local por _id y por clave semántica
+        var localById  = {};
+        var localByKey = {};
+        registros.forEach(function(r, i) {
+          if (r._id) localById[r._id] = i;
+          var sem = normalizarStrict(r.nombre||'') + '|' + _normCursoKey(r.curso||'') + '|' + (r.instancia||'Evaluación 1') + '|' + (r.rubricaNombre||'');
+          localByKey[sem] = i;
+        });
+
         var fusionados = 0;
-        driveData.registros.forEach(function(r) {
-          var key = (r.nombre||'') + '|' + (r.curso||'') + '|' + (r.fecha||'') + '|' + (r.instancia||'');
-          if (!existentes.has(key)) {
-            registros.push(r);
-            existentes.add(key);
+        var actualizados = 0;
+        driveData.registros.forEach(function(driveReg) {
+          if (!driveReg) return;
+          // Buscar por _id primero (más preciso)
+          var localIdx = driveReg._id ? localById[driveReg._id] : -1;
+          // Si no por _id, buscar por clave semántica
+          if (localIdx === undefined || localIdx === -1) {
+            var sem2 = normalizarStrict(driveReg.nombre||'') + '|' + _normCursoKey(driveReg.curso||'') + '|' + (driveReg.instancia||'Evaluación 1') + '|' + (driveReg.rubricaNombre||'');
+            localIdx = (localByKey[sem2] !== undefined) ? localByKey[sem2] : -1;
+          }
+
+          if (localIdx === -1) {
+            // Registro nuevo desde Drive — agregar
+            if (driveReg.curso) driveReg.curso = normalizarCurso(driveReg.curso);
+            registros.push(driveReg);
             fusionados++;
+          } else {
+            // Registro existente — comparar timestamps para ver cuál es más nuevo
+            var localReg   = registros[localIdx];
+            var driveTs    = driveReg._savedAt || driveReg.fechaISO || driveReg.fecha || '';
+            var localTs2   = localReg._savedAt || localReg.fechaISO || localReg.fecha || '';
+            if (driveTs && localTs2 && driveTs > localTs2) {
+              // Drive tiene versión más reciente — actualizar local
+              if (driveReg.curso) driveReg.curso = normalizarCurso(driveReg.curso);
+              registros[localIdx] = driveReg;
+              actualizados++;
+            }
+            // Si local es más reciente o igual, mantener local
           }
         });
-        if (fusionados > 0) {
+
+        if (fusionados > 0 || actualizados > 0) {
           saveRegistros();
           actualizarConteo();
           renderSidebarCounts();
-          // Ahora subir el resultado fusionado a Drive (local+drive → drive)
+          actualizarTodaLaApp();
+          // Subir fusión a Drive
           await syncToDrive();
-          toast('✅ Fusionados ' + fusionados + ' registros desde Drive. Total: ' + registros.length, 'ok', 5000);
-          console.log('[ArtEval] SmartSync: fusión completada, total=' + registros.length);
+          var msg = '✅ Sincronizado con Drive';
+          if (fusionados > 0) msg += ' — ' + fusionados + ' nuevos';
+          if (actualizados > 0) msg += ' — ' + actualizados + ' actualizados';
+          toast(msg + ' · Total: ' + registros.length, 'ok', 5000);
+          console.log('[ArtEval] SmartSync: merge completado, fusionados=' + fusionados + ' actualizados=' + actualizados);
+        } else {
+          // Drive tiene más count pero todos ya están en local — subir local como maestro
+          console.log('[ArtEval] SmartSync: Drive count > local pero registros ya incluidos → subiendo local');
+          if (_hayEdicion) await syncToDrive();
         }
       }
     }
