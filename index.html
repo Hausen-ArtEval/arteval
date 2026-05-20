@@ -5285,7 +5285,7 @@ Incluye los ${n} criterios, desde idx 0 hasta idx ${n-1}. Usa exactamente "MB","
 
   const _bodyGemini = JSON.stringify({
     contents,
-    generationConfig: { temperature: exigEfectiva.temp, maxOutputTokens: 2048, responseMimeType: 'application/json' }
+    generationConfig: { temperature: exigEfectiva.temp, maxOutputTokens: 8192, responseMimeType: 'application/json' }
   });
 
   let res, _modeloUsado;
@@ -5406,11 +5406,34 @@ Incluye los ${n} criterios, desde idx 0 hasta idx ${n-1}. Usa exactamente "MB","
       }
       finalizarAnalisis(); return;
     }
-    const texto = (data.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
+    // Detectar MAX_TOKENS antes de parsear — respuesta truncada
+    const _finishReason = data.candidates?.[0]?.finishReason || '';
+    const _truncado     = _finishReason === 'MAX_TOKENS';
+
+    let texto = (data.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
     let parsed = null;
+
+    // Intentar parsear el JSON normalmente
     try { parsed = JSON.parse(texto); } catch {}
     if (!parsed) try { parsed = JSON.parse(texto.replace(/^```json\s*/i,'').replace(/```\s*$/,'').trim()); } catch {}
     if (!parsed) { const mx = texto.match(/\{[\s\S]*\}/); if (mx) try { parsed = JSON.parse(mx[0]); } catch {} }
+
+    // Si está truncado y el JSON falló — intentar reparación quirúrgica del JSON cortado
+    if (!parsed && _truncado && texto.includes('"criterios"')) {
+      try {
+        // Extraer todos los objetos criterio completos que ya llegaron
+        const reMatches = texto.matchAll(/"idx"\s*:\s*(\d+)[^}]*?"nivel"\s*:\s*"([^"]+)"[^}]*?"nota"\s*:\s*"([^"]+)"/gs);
+        const criteriosRescatados = [];
+        for (const m of reMatches) {
+          criteriosRescatados.push({ idx: parseInt(m[1]), nivel: m[2], nota: m[3] });
+        }
+        if (criteriosRescatados.length > 0) {
+          parsed = { criterios: criteriosRescatados };
+          console.info('[ArtEval] JSON truncado reparado — criterios rescatados:', criteriosRescatados.length);
+        }
+      } catch(_repairErr) {}
+    }
+
     if (parsed?.criterios?.length) {
       parsed.criterios.forEach(c => {
         const idx = parseInt(c.idx);
@@ -5422,9 +5445,23 @@ Incluye los ${n} criterios, desde idx 0 hasta idx ${n-1}. Usa exactamente "MB","
       });
       renderCriterios();
       reproducirBeep();
-      setStatus(`✓ ${Object.keys(evaluacion).length}/${n} criterios evaluados con ${_modeloUsado} — revisa y ajusta si necesitas`);
+      const _nEval = Object.keys(evaluacion).length;
+      if (_truncado && _nEval < n) {
+        // Aviso si la respuesta llegó incompleta pero se recuperó algo
+        setStatus(`⚠️ IA evaluó ${_nEval}/${n} criterios (respuesta parcial) — completa los ${n - _nEval} restantes manualmente`);
+        toast(`✓ ${_nEval} criterios evaluados. Completa los ${n - _nEval} restantes.`, 'info', 6000);
+      } else {
+        setStatus(`✓ ${_nEval}/${n} criterios evaluados con ${_modeloUsado} — revisa y ajusta si necesitas`);
+      }
+    } else if (_truncado) {
+      // Respuesta truncada sin ningún criterio recuperable — pedir reintento
+      setStatus('⏱ Respuesta de IA incompleta (máximo de tokens alcanzado) — reintentando...');
+      setDebug('');
+      toast('⏱ La IA no pudo completar el análisis. Reintentando automáticamente...', 'info', 3000);
+      setTimeout(function() { analizarAhora(); }, 1500);
     } else {
-      setStatus('Respuesta inesperada de la IA — revisa el panel debug o evalúa manualmente');
+      setStatus('Respuesta inesperada de la IA — reintentando con evaluación manual como respaldo');
+      toast('⚠️ La IA respondió en formato inesperado. Intenta de nuevo.', 'info', 4000);
       mostrarFallbackManual();
     }
   } catch(e) {
