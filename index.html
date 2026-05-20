@@ -5183,13 +5183,13 @@ Incluye los ${n} criterios, desde idx 0 hasta idx ${n-1}. Usa exactamente "MB","
   }
 
   // ── Llamada a la API de Gemini con fallback automático ─────────────────────
-  // Primario: gemini-2.0-flash  (pago — más rápido, sin límite de cuota diaria)
-  // Fallback: gemini-1.5-flash  (pago/gratis — estable, disponible en free tier con límite)
-  // Fallback: gemini-1.5-flash-8b (más ligero, útil si hay throttling)
+  // Primario: gemini-2.0-flash            — vigente, free tier disponible (mayo 2025)
+  // Fallback: gemini-2.0-flash-lite       — más rápido, menor costo por token
+  // Fallback: gemini-2.5-flash-preview    — más potente para análisis de imágenes
   const GEMINI_MODELOS = [
-    'gemini-2.0-flash',
-    'gemini-1.5-flash',
-    'gemini-1.5-flash-8b'
+    'gemini-2.0-flash',       // primario — vigente, free tier disponible
+    'gemini-2.0-flash-lite',  // fallback rápido — vigente, menor costo
+    'gemini-2.5-flash-preview-05-20' // fallback avanzado — modelo más reciente
   ];
   const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/';
   const GEMINI_ENDPOINT = ':generateContent?key=';
@@ -7248,7 +7248,7 @@ async function probarKey() {
   const st = document.getElementById('apiStatus');
   if (st) { st.textContent = '⏳ Probando…'; st.style.color = 'var(--text3)'; }
 
-  const _modelos = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b'];
+  const _modelos = ['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-2.5-flash-preview-05-20'];
   const _base    = 'https://generativelanguage.googleapis.com/v1beta/models/';
   const _body    = JSON.stringify({ contents: [{ parts: [{ text: 'Responde únicamente: OK' }] }] });
   let _exito = false;
