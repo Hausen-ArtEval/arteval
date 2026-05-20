@@ -550,6 +550,73 @@ input[type="text"]:focus, textarea:focus, select:focus {
 }
 .filtro-pie-btn:hover:not(.active) { background: var(--bg2); color: var(--text); }
 
+/* ── Chips de curso en toolbar — mismo look que sub-tab ── */
+.reg-curso-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  font-family: -apple-system, 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: #3A3A3C;
+  background: rgba(116,116,128,0.12);
+  border: 0.5px solid rgba(0,0,0,0.06);
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  min-height: 30px;
+  flex-shrink: 0;
+  transition: background 0.13s ease, color 0.13s ease,
+              border-color 0.13s ease, box-shadow 0.13s ease;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.reg-curso-chip:hover:not(.activo) {
+  background: rgba(116,116,128,0.22);
+  color: #1C1C1E;
+  border-color: rgba(0,0,0,0.10);
+}
+.reg-curso-chip.activo {
+  background: #FF9500;
+  color: #FFFFFF;
+  font-weight: 700;
+  border-color: #FF9500;
+  box-shadow: 0 1px 5px rgba(255,149,0,0.38);
+}
+.reg-curso-chip.activo:hover {
+  background: #E67E00;
+  border-color: #E67E00;
+}
+/* Badge contador de registros dentro del chip */
+.reg-curso-chip .chip-count {
+  font-size: 10px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  padding: 1px 5px;
+  border-radius: 20px;
+  background: rgba(0,0,0,0.10);
+  line-height: 1.4;
+  letter-spacing: 0;
+}
+.reg-curso-chip.activo .chip-count {
+  background: rgba(255,255,255,0.25);
+  color: #fff;
+}
+/* Chip "Todos" — aparece cuando no hay ninguno seleccionado */
+.reg-curso-chip.todos-chip {
+  background: rgba(116,116,128,0.08);
+  color: var(--text3);
+  font-style: normal;
+}
+.reg-curso-chip.todos-chip.activo {
+  background: rgba(116,116,128,0.18);
+  color: #3A3A3C;
+  font-weight: 600;
+  box-shadow: none;
+  border-color: rgba(0,0,0,0.10);
+}
+
 /* ── Filtro select legacy (compatibilidad) ── */
 .filter-select {
   font-size: 12px;
@@ -3497,13 +3564,22 @@ button:focus-visible, .tab:focus-visible, .sub-tab:focus-visible {
           </div>
           <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;margin-left:auto;">
             <!-- Libro de Clases -->
-            <button id="btnVistaLibro" onclick="toggleVistaLibro()" title="Vista Libro de Clases" class="filtro-pie-btn" style="gap:6px;">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-              Libro
+            <!-- Vista Lista / Libro — icono cambia, nunca emoji -->
+            <button id="btnVistaLibro" onclick="toggleVistaLibro()" title="Cambiar vista" class="reg-curso-chip" style="gap:5px;min-height:30px;padding:5px 11px;">
+              <svg id="icoVistaBtnLista" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+                <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+              </svg>
+              <svg id="icoVistaBtnLibro" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+              </svg>
+              <span id="lblVistaBtnLibro">Libro</span>
             </button>
             <!-- PIE -->
-            <button class="filtro-pie-btn" id="btnFiltroPie" onclick="toggleFiltroPie()" title="Filtrar alumnos PIE" style="gap:6px;">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2"/><path d="M12 7v8"/><path d="m9 20 3-3 3 3"/><path d="M8 17H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h14"/></svg>
+            <button class="reg-curso-chip" id="btnFiltroPie" onclick="toggleFiltroPie()" title="Mostrar solo alumnos PIE" style="gap:5px;min-height:30px;padding:5px 11px;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="5" r="2"/><path d="M12 7v8"/><path d="m9 20 3-3 3 3"/><path d="M8 17H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h14"/>
+              </svg>
               PIE
             </button>
             <!-- MENÚ EXPORTAR -->
@@ -3547,35 +3623,35 @@ button:focus-visible, .tab:focus-visible, .sub-tab:focus-visible {
           <button class="btn" onclick="verDuplicados()" id="btnDuplicados" style="display:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button>
           </div>
         </div>
-        <!-- Fila 2: filtros pill — Curso · Rúbrica · Instancia -->
+        <!-- Fila 2: chips de curso (selección múltiple tipo sub-tab) + rúbrica + instancia -->
         <div class="reg-toolbar-filters" id="regFilterPills">
-          <div class="filter-pill-wrap" id="fpWrapCurso">
-            <select class="filter-pill" id="filtroCurso" onchange="_onFilterPillChange(this,'fpWrapCurso');renderRegistros()" title="Filtrar por curso">
-              <option value="">Todos los cursos</option>
-            </select>
-          </div>
+          <!-- Chips de curso — estilo sub-tab, selección múltiple -->
+          <div id="regCursoChipsRow" style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;"></div>
+          <!-- Separador visual si hay cursos -->
+          <div id="regFiltrosSep" style="display:none;width:1px;height:20px;background:var(--border);margin:0 2px;flex-shrink:0;"></div>
+          <!-- Rúbrica -->
           <div class="filter-pill-wrap" id="fpWrapRubrica">
             <select class="filter-pill" id="filtroRubrica" onchange="_onFilterPillChange(this,'fpWrapRubrica');renderRegistros()" title="Filtrar por rúbrica">
               <option value="">Todas las rúbricas</option>
             </select>
           </div>
+          <!-- Instancia -->
           <div class="filter-pill-wrap" id="fpWrapInstancia">
             <select class="filter-pill" id="filtroInstancia" onchange="_onFilterPillChange(this,'fpWrapInstancia');renderRegistros()" title="Filtrar por instancia">
               <option value="">Todas las instancias</option>
             </select>
           </div>
-          <!-- Chip "Limpiar filtros" — aparece cuando hay algún filtro activo -->
-          <button id="btnClearFilters" onclick="_clearAllFilters()" style="display:none;padding:7px 11px;border:none;border-radius:10px;background:rgba(255,59,48,0.10);color:#FF3B30;font-size:12px;font-weight:600;font-family:var(--font-ui);cursor:pointer;transition:background 0.15s;gap:5px;align-items:center;display:none;" title="Limpiar todos los filtros">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          <!-- Limpiar todo -->
+          <button id="btnClearFilters" onclick="_clearAllFilters()" style="display:none;padding:6px 11px;border:none;border-radius:8px;background:rgba(255,59,48,0.10);color:#FF3B30;font-size:12px;font-weight:600;font-family:var(--font-ui);cursor:pointer;transition:background 0.15s;align-items:center;gap:5px;" title="Quitar todos los filtros">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             Limpiar
           </button>
         </div>
       </div>
-      <!-- Chips de cursos para filtro múltiple (selección avanzada) -->
-      <div id="cursosChipsWrap" style="display:none;margin-bottom:10px;">
-        <div style="font-size:10px;color:var(--text3);margin-bottom:6px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">Selección múltiple de cursos</div>
-        <div class="curso-check-list" id="cursosChips"></div>
-      </div>
+      <!-- select oculto para compatibilidad con actualizarFiltros/_syncSelect -->
+      <select id="filtroCurso" style="display:none;" onchange="renderRegistros()"><option value="">Todos los cursos</option></select>
+      <!-- cursosChipsWrap legacy — ya no se usa visualmente -->
+      <div id="cursosChipsWrap" style="display:none;"><div id="cursosChips"></div></div>
       <div class="fallback-banner" id="fallbackBanner">
         ⚠️ La IA no respondió. Puedes evaluar manualmente los criterios con los botones de abajo.
       </div>
@@ -5597,8 +5673,9 @@ function guardarNoEntregado() {
 let filtroPIEactivo = false;
 function toggleFiltroPie() {
   filtroPIEactivo = !filtroPIEactivo;
-  const btn = document.getElementById('btnFiltroPie');
-  if (btn) btn.classList.toggle('active', filtroPIEactivo);
+  var btn = document.getElementById('btnFiltroPie');
+  // Usar .activo (sistema de chips) en lugar de .active (sistema legacy filtro-pie-btn)
+  if (btn) btn.classList.toggle('activo', filtroPIEactivo);
   renderRegistros();
 }
 function getRegistrosFiltrados() {
@@ -5622,8 +5699,19 @@ function getRegistrosFiltrados() {
 var _vistaLibroActiva = false;
 function toggleVistaLibro() {
   _vistaLibroActiva = !_vistaLibroActiva;
-  const btn = document.getElementById('btnVistaLibro');
-  if (btn) { btn.textContent = _vistaLibroActiva ? '📄 Lista' : '📋 Libro'; btn.classList.toggle('btn-primary', _vistaLibroActiva); }
+  var btn      = document.getElementById('btnVistaLibro');
+  var icoLista = document.getElementById('icoVistaBtnLista');
+  var icoLibro = document.getElementById('icoVistaBtnLibro');
+  var lbl      = document.getElementById('lblVistaBtnLibro');
+  if (btn) {
+    // Mismo sistema .activo que los chips de curso — naranja sólido cuando activo
+    btn.classList.toggle('activo', _vistaLibroActiva);
+    // Swap de iconos: Lista (modo libro activo = volver a lista) ↔ Libro
+    if (icoLista) icoLista.style.display = _vistaLibroActiva ? 'none'  : '';
+    if (icoLibro) icoLibro.style.display = _vistaLibroActiva ? ''      : 'none';
+    if (lbl)      lbl.textContent         = _vistaLibroActiva ? 'Lista' : 'Libro';
+    btn.title = _vistaLibroActiva ? 'Volver a vista lista' : 'Vista Libro de Clases';
+  }
   renderRegistros();
 }
 
@@ -5904,6 +5992,8 @@ function renderRegistros() {
   const libro  = document.getElementById('libroClasesView');
   if (!list) return;
   actualizarFiltros();
+  // Actualizar chips de curso (selección múltiple tipo sub-tab)
+  if (typeof renderRegCursoChips === 'function') renderRegCursoChips();
   var filtrados = getRegistrosFiltrados();
   // ── AGRUPACIÓN v190: un alumno = una tarjeta, con todas sus evaluaciones dentro ──
   // Primero deduplicar por _id (evitar registros duplicados en memoria)
@@ -16008,6 +16098,65 @@ function _irASesion() {
 })();
 
 
+// ── Chips de curso en toolbar de Registros ───────────────────────────────
+// Renderiza chips tipo sub-tab para selección de curso (simple o múltiple)
+function renderRegCursoChips() {
+  var row = document.getElementById('regCursoChipsRow');
+  var sep = document.getElementById('regFiltrosSep');
+  if (!row) return;
+
+  // Cursos disponibles: unión de registros + nóminas
+  var desdRegistros = new Set(registros.map(function(r){ return r.curso; }).filter(Boolean));
+  var desdeNomina   = new Set(Object.keys(listaCursos).filter(function(c){ return (listaCursos[c]||[]).length > 0; }));
+  var cursos = Array.from(new Set([...desdRegistros, ...desdeNomina])).sort();
+
+  if (!cursos.length) {
+    row.innerHTML = '';
+    if (sep) sep.style.display = 'none';
+    return;
+  }
+
+  if (sep) sep.style.display = (cursos.length > 0) ? 'block' : 'none';
+
+  var html = '';
+
+  // Chip "Todos" — activo cuando no hay selección
+  var todosActivo = cursosSeleccionados.size === 0;
+  html += '<button class="reg-curso-chip todos-chip' + (todosActivo ? ' activo' : '') + '"'
+    + ' onclick="_regCursoTodos()" title="Mostrar todos los cursos">Todos</button>';
+
+  // Un chip por curso
+  cursos.forEach(function(c) {
+    var activo = cursosSeleccionados.has(c);
+    var nRegs  = registros.filter(function(r){ return _normCursoKey(r.curso||'') === _normCursoKey(c); }).length;
+    var badge  = nRegs > 0 ? '<span class="chip-count">' + nRegs + '</span>' : '';
+    html += '<button class="reg-curso-chip' + (activo ? ' activo' : '') + '"'
+      + ' onclick="_regCursoToggle(' + JSON.stringify(c) + ')"'
+      + ' title="' + c + (activo ? ' — clic para deseleccionar' : ' — clic para seleccionar') + '">'
+      + c + badge
+      + '</button>';
+  });
+
+  row.innerHTML = html;
+  _updateClearFiltersBtn();
+}
+
+function _regCursoToggle(curso) {
+  if (cursosSeleccionados.has(curso)) {
+    cursosSeleccionados.delete(curso);
+  } else {
+    cursosSeleccionados.add(curso);
+  }
+  renderRegCursoChips();
+  renderRegistros();
+}
+
+function _regCursoTodos() {
+  cursosSeleccionados.clear();
+  renderRegCursoChips();
+  renderRegistros();
+}
+
 // ── Filtros pill iOS — helpers de estado ──────────────────────────────────
 function _onFilterPillChange(selectEl, wrapId) {
   var wrap = document.getElementById(wrapId);
@@ -16026,27 +16175,32 @@ function _onFilterPillChange(selectEl, wrapId) {
 function _updateClearFiltersBtn() {
   var btn = document.getElementById('btnClearFilters');
   if (!btn) return;
-  var fc = (document.getElementById('filtroCurso')?.value || '');
   var fr = (document.getElementById('filtroRubrica')?.value || '');
   var fi = (document.getElementById('filtroInstancia')?.value || '');
-  var hayFiltro = fc || fr || fi;
+  var hayFiltro = cursosSeleccionados.size > 0 || fr || fi;
   btn.style.display = hayFiltro ? 'inline-flex' : 'none';
 }
 
 function _clearAllFilters() {
-  var selCurso    = document.getElementById('filtroCurso');
-  var selRubrica  = document.getElementById('filtroRubrica');
+  // Limpiar selección múltiple de cursos
+  cursosSeleccionados.clear();
+  if (typeof renderRegCursoChips === 'function') renderRegCursoChips();
+  // Limpiar rúbrica e instancia
+  var selRubrica   = document.getElementById('filtroRubrica');
   var selInstancia = document.getElementById('filtroInstancia');
-  if (selCurso)    { selCurso.value = '';    _onFilterPillChange(selCurso,    'fpWrapCurso'); }
-  if (selRubrica)  { selRubrica.value = '';  _onFilterPillChange(selRubrica,  'fpWrapRubrica'); }
-  if (selInstancia){ selInstancia.value = ''; _onFilterPillChange(selInstancia,'fpWrapInstancia'); }
+  var selCurso     = document.getElementById('filtroCurso');
+  if (selRubrica)  { selRubrica.value = '';   _onFilterPillChange(selRubrica,  'fpWrapRubrica'); }
+  if (selInstancia){ selInstancia.value = '';  _onFilterPillChange(selInstancia,'fpWrapInstancia'); }
+  if (selCurso)    selCurso.value = '';
   renderRegistros();
 }
 
 // Aplicar estado pill al poblar selectores (llamar después de actualizarFiltros)
 function _syncFilterPillStates() {
+  // Renderizar chips de curso
+  if (typeof renderRegCursoChips === 'function') renderRegCursoChips();
+  // Sincronizar pills de rúbrica e instancia
   var pairs = [
-    ['filtroCurso',    'fpWrapCurso'],
     ['filtroRubrica',  'fpWrapRubrica'],
     ['filtroInstancia','fpWrapInstancia'],
   ];
