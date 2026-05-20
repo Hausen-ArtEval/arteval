@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v191">
+<meta name="arteval-version" content="v195">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -2619,7 +2619,7 @@ button:focus-visible, .tab:focus-visible, .sub-tab:focus-visible {
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v191</span>
+      ">v195</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -14168,29 +14168,38 @@ function _similitudNombre(a, b) {
 
 // Auditoría de duplicados: retorna grupos de registros similares
 function auditarDuplicados() {
-  // LLAVE ÚNICA: nombre + curso + rúbrica/actividad
-  // Solo son duplicados si coinciden los TRES campos simultáneamente.
-  // Un alumno con notas en distintas actividades (Evaluación 1 ≠ Evaluación 2) NO es duplicado.
+  // LLAVE COMPUESTA v195: nombre + curso + rúbrica + instancia
+  // Los CUATRO campos deben coincidir simultáneamente para ser duplicado real.
+  // Alumno con Ev.1 y Ev.2 bajo la misma rúbrica → instancias distintas → NO duplicado.
+  // Alumno con misma rubrica + misma instancia → SÍ duplicado (registro accidental doble).
   var grupos = [];
   var usados = new Set();
+
   registros.forEach(function(r, i) {
     if (usados.has(i)) return;
     var grupo = [i];
-    var rubricaR = (r.rubricaNombre || '').trim().toUpperCase();
-    var cursoR   = (r.curso || '').trim();
+    var rubricaR  = (r.rubricaNombre || '').trim().toUpperCase();
+    var instanciaR = (r.instancia    || 'Evaluación 1').trim();
+    var cursoR     = _normCursoKey(r.curso || '');
+
     registros.forEach(function(r2, j) {
       if (i === j || usados.has(j)) return;
-      var rubricaR2 = (r2.rubricaNombre || '').trim().toUpperCase();
-      var cursoR2   = (r2.curso || '').trim();
-      // Deben coincidir: curso + rúbrica/actividad + nombre similar
-      if (cursoR === cursoR2 &&
-          rubricaR === rubricaR2 &&
-          rubricaR !== '' &&           // sin rúbrica no se puede determinar duplicado
-          _similitudNombre(r.nombre, r2.nombre) >= 0.90) {
+      var rubricaR2  = (r2.rubricaNombre || '').trim().toUpperCase();
+      var instanciaR2 = (r2.instancia    || 'Evaluación 1').trim();
+      var cursoR2     = _normCursoKey(r2.curso || '');
+
+      // Llave compuesta: curso + rúbrica + instancia + nombre similar ≥ 95%
+      // Umbral más alto (0.95) para reducir falsos positivos entre alumnos con nombres similares
+      if (cursoR    === cursoR2    &&
+          rubricaR  === rubricaR2  &&
+          rubricaR  !== ''         &&   // sin rúbrica no hay base para determinar duplicado
+          instanciaR === instanciaR2 &&  // ← NUEVO: misma instancia/evaluación obligatoria
+          _similitudNombre(r.nombre, r2.nombre) >= 0.95) {
         grupo.push(j);
         usados.add(j);
       }
     });
+
     if (grupo.length > 1) {
       usados.add(i);
       grupos.push(grupo);
@@ -14237,11 +14246,14 @@ function _fusionarGrupo(indices) {
 // Renderizar panel de limpieza de duplicados
 function renderPanelDuplicados(containerId) {
   // AISLAMIENTO RADICAL: si no estamos en la pestaña duplicados, limpiar residuos y salir
-  if (typeof _estudioSubTab !== 'undefined' && _estudioSubTab !== 'duplicados') {
-    // Limpiar cualquier residuo visual que pudiera haber quedado en el contenedor
-    var _residuo = document.getElementById(containerId);
-    if (_residuo && _residuo.innerHTML && !_residuo.innerHTML.includes('panelDuplicadosContainer')) {
-      _residuo.innerHTML = '';
+  // AISLAMIENTO v195: solo renderizar si la pestaña activa ES exactamente 'duplicados'
+  var _tabActiva = (typeof _estudioSubTab !== 'undefined') ? _estudioSubTab : '';
+  if (_tabActiva !== 'duplicados') {
+    // Limpiar residuos del contenedor si los hubiera — nunca pintar duplicados fuera de su sección
+    var _cont0 = document.getElementById(containerId);
+    if (_cont0 && _cont0.getAttribute('data-dup-rendered') === 'true') {
+      _cont0.innerHTML = '';
+      _cont0.removeAttribute('data-dup-rendered');
     }
     return;
   }
@@ -14261,14 +14273,17 @@ function renderPanelDuplicados(containerId) {
     + '<div style="font-size:13px;font-weight:700;color:#1C1C1E;">'
     + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="2" style="vertical-align:middle;margin-right:6px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
     + grupos.length + ' grupo' + (grupos.length!==1?'s de posibles duplicados detectados':' de posible duplicado detectado')+'</div>'
-    + '<div style="font-size:11px;color:#8E8E93;margin-top:2px;">Nombres con ≥90% de similitud en el mismo curso. Fusiona para conservar el más reciente.</div>'
+    + '<div style="font-size:11px;color:#8E8E93;margin-top:2px;">Mismo alumno · mismo curso · misma rúbrica · misma instancia — registro accidental doble. Fusiona para conservar el más reciente.</div>'
     + '</div>'
     + '</div>';
 
   grupos.forEach(function(grupo, gi) {
     var primerReg = registros[grupo[0]];
     var cursoGrupo = primerReg ? (primerReg.curso || 'Sin curso') : '—';
-    var conflictoDesc = grupo.length + ' registros con nombre similar en ' + cursoGrupo;
+    var primerReg0 = registros[grupo[0]];
+    var instanciaGrupo = primerReg0 ? (primerReg0.instancia || 'Evaluación 1') : '—';
+    var rubricaGrupo   = primerReg0 ? (primerReg0.rubricaNombre || '—') : '—';
+    var conflictoDesc = grupo.length + ' entradas en ' + cursoGrupo + ' · ' + instanciaGrupo;
 
     // ── Tarjeta de conflicto ──
     html += '<div style="background:#fff;border-radius:12px;'
@@ -14319,6 +14334,7 @@ function renderPanelDuplicados(containerId) {
       + '</div></div>';
   });
   cont.innerHTML = html;
+  cont.setAttribute('data-dup-rendered', 'true');
 }
 function deduplicarYFusionarTodos() {
   let total = 0;
