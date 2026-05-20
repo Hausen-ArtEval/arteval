@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v195">
+<meta name="arteval-version" content="v196">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -418,14 +418,154 @@ input[type="text"]:focus, textarea:focus, select:focus {
 .nivel-pill { font-size: 12px; font-weight: 700; padding: 5px 14px; border-radius: 20px; display: none; letter-spacing: 0.3px; text-transform: uppercase; }
 
 /* ── REGISTROS ──────────────────────────────────────────── */
-.reg-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 8px; }
+.reg-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.reg-toolbar-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.reg-toolbar-filters {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
 .reg-toolbar-left { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .reg-title { font-size: 15px; font-weight: 600; color: var(--text); }
-.filter-select { font-size: 13px; padding: 7px 12px; border: 0.5px solid var(--border); border-radius: var(--rad); background: var(--bg2); color: var(--text2); cursor: pointer; font-family: var(--font-ui); }
-.search-wrap { position: relative; }
-.search-wrap svg { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); pointer-events: none; opacity: 0.45; }
-.search-input { font-size: 13px; padding: 8px 10px 8px 30px; border: 0.5px solid var(--border); border-radius: var(--rad); background: var(--bg2); color: var(--text); font-family: var(--font-ui); width: 200px; transition: all 0.15s; }
-.search-input:focus { outline: none; border-color: var(--accent); width: 240px; box-shadow: 0 0 0 3px var(--accent-bg); }
+
+/* ── Barra de búsqueda iOS ── */
+.search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 180px;
+  max-width: 320px;
+}
+.search-wrap svg {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  opacity: 0.38;
+  transition: opacity 0.15s;
+}
+.search-wrap:focus-within svg { opacity: 0.7; }
+.search-input {
+  font-size: 14px;
+  padding: 9px 12px 9px 34px;
+  border: none;
+  border-radius: 12px;
+  background: var(--bg3);
+  color: var(--text);
+  font-family: var(--font-ui);
+  width: 100%;
+  box-sizing: border-box;
+  transition: background 0.18s ease, box-shadow 0.18s ease;
+  -webkit-appearance: none;
+}
+.search-input:focus {
+  outline: none;
+  background: var(--bg2);
+  box-shadow: 0 0 0 3px rgba(255,149,0,0.18), 0 1px 4px rgba(0,0,0,0.06);
+}
+.search-input::placeholder { color: var(--text3); opacity: 1; }
+
+/* ── Filtros tipo pill iOS ── */
+.filter-pill-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.filter-pill {
+  appearance: none;
+  -webkit-appearance: none;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--font-ui);
+  padding: 7px 26px 7px 11px;
+  border: none;
+  border-radius: 10px;
+  background: var(--bg3);
+  color: var(--text2);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+  white-space: nowrap;
+  min-height: 34px;
+  line-height: 1;
+}
+.filter-pill:focus { outline: none; box-shadow: 0 0 0 3px rgba(255,149,0,0.18); }
+.filter-pill.has-value {
+  background: rgba(255,149,0,0.12);
+  color: var(--accent);
+  font-weight: 600;
+}
+/* Chevron custom dentro del pill */
+.filter-pill-wrap::after {
+  content: '';
+  position: absolute;
+  right: 9px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid currentColor;
+  opacity: 0.45;
+  pointer-events: none;
+  color: var(--text3);
+}
+.filter-pill-wrap.has-value::after { color: var(--accent); opacity: 0.8; }
+
+/* ── Botón PIE / Libro como pills activos ── */
+.filtro-pie-btn {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 7px 12px;
+  border-radius: 10px;
+  border: none;
+  background: var(--bg3);
+  color: var(--text2);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+.filtro-pie-btn.active {
+  background: rgba(255,149,0,0.14);
+  color: var(--accent);
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1.5px rgba(255,149,0,0.35);
+}
+.filtro-pie-btn:hover:not(.active) { background: var(--bg2); color: var(--text); }
+
+/* ── Filtro select legacy (compatibilidad) ── */
+.filter-select {
+  font-size: 12px;
+  padding: 7px 26px 7px 11px;
+  border: none;
+  border-radius: 10px;
+  background: var(--bg3);
+  color: var(--text2);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  appearance: none;
+  -webkit-appearance: none;
+  min-height: 34px;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+.filter-select:focus { outline: none; box-shadow: 0 0 0 3px rgba(255,149,0,0.18); }
 .reg-list { display: flex; flex-direction: column; gap: 5px; }
 .reg-card {
   background: var(--ae-white, #fff);
@@ -806,9 +946,7 @@ a:hover { text-decoration: underline; }
 .score-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); margin-right: 4px; vertical-align: middle; }
 .tag { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 8px; display: inline-flex; align-items: center; gap: 3px; }
 .ne-tag { font-size: 9px; padding: 1px 5px; border-radius: 5px; font-weight: 700; }
-.filtro-pie-btn { font-size: 11px; padding: 5px 12px; border-radius: 20px; border: 0.5px solid var(--pie-border); background: transparent; color: var(--pie); cursor: pointer; font-family: var(--font-mono); font-weight: 600; transition: all 0.15s; min-height: 34px; }
-.filtro-pie-btn.active { background: var(--pie); color: white; }
-.filtro-pie-btn:hover:not(.active) { background: var(--pie-bg); }
+/* filtro-pie-btn → ver bloque reg-toolbar */
 
 /* CARD card-est */
 .card-est { background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--rad-lg); overflow: hidden; margin-bottom: 12px; }
@@ -2619,7 +2757,7 @@ button:focus-visible, .tab:focus-visible, .sub-tab:focus-visible {
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v195</span>
+      ">v196</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -3350,39 +3488,31 @@ button:focus-visible, .tab:focus-visible, .sub-tab:focus-visible {
     </div>
     <div id="estudio-sec-registros" style="display:none;">
       <div class="reg-toolbar">
-        <div class="reg-toolbar-left">
+        <!-- Fila 1: título + búsqueda + acciones -->
+        <div class="reg-toolbar-top">
           <span class="reg-title" id="regTitulo">Sin registros</span>
-          <div class="search-wrap">
+          <div class="search-wrap" style="flex:1;min-width:160px;max-width:280px;">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input class="search-input" type="text" id="buscarRegistros" placeholder="Buscar estudiante..." oninput="clearTimeout(window._regSearchTimer);window._regSearchTimer=setTimeout(renderRegistros,280)">
+            <input class="search-input" type="text" id="buscarRegistros" placeholder="Buscar estudiante..." style="padding-left:45px !important;" oninput="clearTimeout(window._regSearchTimer);window._regSearchTimer=setTimeout(renderRegistros,280)">
           </div>
-          <select class="filter-select" id="filtroCurso" onchange="renderRegistros()" title="Filtrar por curso">
-            <option value="">Todos los cursos</option>
-          </select>
-          <select class="filter-select" id="filtroRubrica" onchange="renderRegistros()">
-            <option value="">Todas las rúbricas</option>
-          </select>
-          <select class="filter-select" id="filtroInstancia" onchange="renderRegistros()" title="Filtrar por instancia evaluativa">
-            <option value="">Todas las instancias</option>
-          </select>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;">
-          <!-- Toggle vista: lista / libro de clases -->
-          <button class="btn" id="btnVistaLibro" onclick="toggleVistaLibro()" title="Vista Libro de Clases" style="padding:6px 10px;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-            Libro
-          </button>
-          <button class="filtro-pie-btn" id="btnFiltroPie" onclick="toggleFiltroPie()" title="Filtrar alumnos PIE">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2"/><path d="M12 7v8"/><path d="m9 20 3-3 3 3"/><path d="M8 17H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h14"/></svg>
-            PIE
-          </button>
-          <!-- MENÚ EXPORTAR colapsable — reemplaza los 5 botones dispersos -->
-          <div style="position:relative;" id="exportMenuWrap">
-            <button class="btn btn-primary" id="btnExportMenu" onclick="_toggleExportMenu()" style="display:none;background:var(--accent);color:#fff;border-color:var(--accent);padding:6px 12px;gap:5px;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Exportar
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" id="exportChevron" style="transition:transform 0.2s;"><polyline points="6 9 12 15 18 9"/></svg>
+          <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;margin-left:auto;">
+            <!-- Libro de Clases -->
+            <button id="btnVistaLibro" onclick="toggleVistaLibro()" title="Vista Libro de Clases" class="filtro-pie-btn" style="gap:6px;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+              Libro
             </button>
+            <!-- PIE -->
+            <button class="filtro-pie-btn" id="btnFiltroPie" onclick="toggleFiltroPie()" title="Filtrar alumnos PIE" style="gap:6px;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2"/><path d="M12 7v8"/><path d="m9 20 3-3 3 3"/><path d="M8 17H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h14"/></svg>
+              PIE
+            </button>
+            <!-- MENÚ EXPORTAR -->
+            <div style="position:relative;" id="exportMenuWrap">
+              <button class="btn btn-primary" id="btnExportMenu" onclick="_toggleExportMenu()" style="display:none;background:var(--accent);color:#fff;border-color:var(--accent);padding:7px 13px;gap:5px;border-radius:10px;font-size:12px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Exportar
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" id="exportChevron" style="transition:transform 0.2s;"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
             <!-- Dropdown del menú de exportación -->
             <div id="exportDropdown" style="display:none;position:absolute;right:0;top:calc(100% + 6px);background:var(--bg2);border:0.5px solid var(--border2);border-radius:14px;box-shadow:0 8px 28px rgba(0,0,0,0.12);min-width:220px;overflow:hidden;z-index:500;animation:fadeInUp 0.15s ease-out;">
               <div style="padding:6px;">
@@ -3415,11 +3545,35 @@ button:focus-visible, .tab:focus-visible, .sub-tab:focus-visible {
           <span id="btnExportAlexia" style="display:none"></span>
           <span id="btnExportUniversal" style="display:none"></span>
           <button class="btn" onclick="verDuplicados()" id="btnDuplicados" style="display:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button>
+          </div>
+        </div>
+        <!-- Fila 2: filtros pill — Curso · Rúbrica · Instancia -->
+        <div class="reg-toolbar-filters" id="regFilterPills">
+          <div class="filter-pill-wrap" id="fpWrapCurso">
+            <select class="filter-pill" id="filtroCurso" onchange="_onFilterPillChange(this,'fpWrapCurso');renderRegistros()" title="Filtrar por curso">
+              <option value="">Todos los cursos</option>
+            </select>
+          </div>
+          <div class="filter-pill-wrap" id="fpWrapRubrica">
+            <select class="filter-pill" id="filtroRubrica" onchange="_onFilterPillChange(this,'fpWrapRubrica');renderRegistros()" title="Filtrar por rúbrica">
+              <option value="">Todas las rúbricas</option>
+            </select>
+          </div>
+          <div class="filter-pill-wrap" id="fpWrapInstancia">
+            <select class="filter-pill" id="filtroInstancia" onchange="_onFilterPillChange(this,'fpWrapInstancia');renderRegistros()" title="Filtrar por instancia">
+              <option value="">Todas las instancias</option>
+            </select>
+          </div>
+          <!-- Chip "Limpiar filtros" — aparece cuando hay algún filtro activo -->
+          <button id="btnClearFilters" onclick="_clearAllFilters()" style="display:none;padding:7px 11px;border:none;border-radius:10px;background:rgba(255,59,48,0.10);color:#FF3B30;font-size:12px;font-weight:600;font-family:var(--font-ui);cursor:pointer;transition:background 0.15s;gap:5px;align-items:center;display:none;" title="Limpiar todos los filtros">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            Limpiar
+          </button>
         </div>
       </div>
-      <!-- Chips de cursos para filtro múltiple -->
-      <div id="cursosChipsWrap" style="display:none;margin-bottom:12px;">
-        <div style="font-size:11px;color:var(--text3);margin-bottom:6px;font-family:'DM Mono',monospace;">FILTRAR POR CURSO (selección múltiple)</div>
+      <!-- Chips de cursos para filtro múltiple (selección avanzada) -->
+      <div id="cursosChipsWrap" style="display:none;margin-bottom:10px;">
+        <div style="font-size:10px;color:var(--text3);margin-bottom:6px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">Selección múltiple de cursos</div>
         <div class="curso-check-list" id="cursosChips"></div>
       </div>
       <div class="fallback-banner" id="fallbackBanner">
@@ -5029,11 +5183,13 @@ Incluye los ${n} criterios, desde idx 0 hasta idx ${n-1}. Usa exactamente "MB","
   }
 
   // ── Llamada a la API de Gemini con fallback automático ─────────────────────
-  // Modelo primario: gemini-2.0-flash-lite (más rápido, menor latencia en aula)
-  // Fallback:        gemini-1.5-flash      (estable, producción)
+  // Primario: gemini-2.0-flash  (pago — más rápido, sin límite de cuota diaria)
+  // Fallback: gemini-1.5-flash  (pago/gratis — estable, disponible en free tier con límite)
+  // Fallback: gemini-1.5-flash-8b (más ligero, útil si hay throttling)
   const GEMINI_MODELOS = [
-    'gemini-2.0-flash-lite',
-    'gemini-1.5-flash'
+    'gemini-2.0-flash',
+    'gemini-1.5-flash',
+    'gemini-1.5-flash-8b'
   ];
   const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/';
   const GEMINI_ENDPOINT = ':generateContent?key=';
@@ -5117,7 +5273,23 @@ Incluye los ${n} criterios, desde idx 0 hasta idx ${n-1}. Usa exactamente "MB","
         }
         const mWait = msg.match(/in (\d+)/);
         if (mWait) t = parseInt(mWait[1]) + 2;
-        setStatus(`⚠️ Límite de API alcanzado — esperando ${t}s...`);
+
+        // Detectar si es cuota cero (free tier sin billing) vs throttle temporal
+        const _esLimiteCero = msg.includes('limit: 0') || msg.includes('FreeTier');
+        if (_esLimiteCero) {
+          setStatus('🔑 Free Tier sin cuota disponible — activa billing en Google AI Studio');
+          toast(
+            '⚠️ Tu API Key está en el plan gratuito sin cuota disponible (limit: 0). ' +
+            'Activa facturación en aistudio.google.com → proyecto → Billing para continuar evaluando con IA.',
+            'err', 12000
+          );
+          setDebug('');
+          if (autoMode) toggleAuto();
+          mostrarFallbackManual();
+          finalizarAnalisis(); return;
+        }
+
+        setStatus(`⚠️ Límite temporal de velocidad — esperando ${t}s...`);
         if (autoMode) toggleAuto();
         iniciarCronometroEspera(t);
       } else if (isAuth) {
@@ -6150,6 +6322,8 @@ function actualizarFiltros() {
   _syncSelect('statsInstancia',  instancias, 'Todas las instancias');
   _syncSelect('filtroCurso',     cursos,     'Todos los cursos');
   _syncSelect('statsCurso',      cursos,     'Todos los cursos');
+  // Actualizar estado visual de pills después de poblar selectores
+  if (typeof _syncFilterPillStates === 'function') _syncFilterPillStates();
 }
 
 // ═══════════════════════════════════════════════════════
@@ -7074,7 +7248,7 @@ async function probarKey() {
   const st = document.getElementById('apiStatus');
   if (st) { st.textContent = '⏳ Probando…'; st.style.color = 'var(--text3)'; }
 
-  const _modelos = ['gemini-2.0-flash-lite', 'gemini-1.5-flash'];
+  const _modelos = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b'];
   const _base    = 'https://generativelanguage.googleapis.com/v1beta/models/';
   const _body    = JSON.stringify({ contents: [{ parts: [{ text: 'Responde únicamente: OK' }] }] });
   let _exito = false;
@@ -15832,6 +16006,55 @@ function _irASesion() {
     }
   }, { passive: true });
 })();
+
+
+// ── Filtros pill iOS — helpers de estado ──────────────────────────────────
+function _onFilterPillChange(selectEl, wrapId) {
+  var wrap = document.getElementById(wrapId);
+  if (wrap) {
+    if (selectEl.value) {
+      wrap.classList.add('has-value');
+      selectEl.classList.add('has-value');
+    } else {
+      wrap.classList.remove('has-value');
+      selectEl.classList.remove('has-value');
+    }
+  }
+  _updateClearFiltersBtn();
+}
+
+function _updateClearFiltersBtn() {
+  var btn = document.getElementById('btnClearFilters');
+  if (!btn) return;
+  var fc = (document.getElementById('filtroCurso')?.value || '');
+  var fr = (document.getElementById('filtroRubrica')?.value || '');
+  var fi = (document.getElementById('filtroInstancia')?.value || '');
+  var hayFiltro = fc || fr || fi;
+  btn.style.display = hayFiltro ? 'inline-flex' : 'none';
+}
+
+function _clearAllFilters() {
+  var selCurso    = document.getElementById('filtroCurso');
+  var selRubrica  = document.getElementById('filtroRubrica');
+  var selInstancia = document.getElementById('filtroInstancia');
+  if (selCurso)    { selCurso.value = '';    _onFilterPillChange(selCurso,    'fpWrapCurso'); }
+  if (selRubrica)  { selRubrica.value = '';  _onFilterPillChange(selRubrica,  'fpWrapRubrica'); }
+  if (selInstancia){ selInstancia.value = ''; _onFilterPillChange(selInstancia,'fpWrapInstancia'); }
+  renderRegistros();
+}
+
+// Aplicar estado pill al poblar selectores (llamar después de actualizarFiltros)
+function _syncFilterPillStates() {
+  var pairs = [
+    ['filtroCurso',    'fpWrapCurso'],
+    ['filtroRubrica',  'fpWrapRubrica'],
+    ['filtroInstancia','fpWrapInstancia'],
+  ];
+  pairs.forEach(function(p) {
+    var sel = document.getElementById(p[0]);
+    if (sel) _onFilterPillChange(sel, p[1]);
+  });
+}
 
 // ── _activarTab v.141 ────────────────────────────────────────────
 // Función central de navegación. Resalta SOLO el botón pulsado,
