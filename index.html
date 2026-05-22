@@ -13319,79 +13319,167 @@ async function _generarAnalisisIAAlumno(nombre) {
   });
   if (!regsAlumno.length) return;
 
+  var nombreReal   = regsAlumno[0].nombre || nombre;
+  var primerNombre = nombreReal.trim().split(/\s+/)[0];
+  var esPIE        = regsAlumno.some(function(r){ return r.pie; });
+
   btn.disabled = true;
   btn.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Analizando...';
   res.style.display = 'block';
-  res.textContent  = 'Generando análisis personalizado\u2026';
+  res.innerHTML = '<div style="font-size:12px;color:var(--text3);padding:8px 0;">✦ Generando informe completo\u2026</div>';
 
-  // Construir resumen de datos para el prompt
-  var lineas = [];
-  regsAlumno.forEach(function(r, i) {
-    var nota = (typeof r.nota === 'number') ? r.nota : parseFloat(r.nota)||1;
-    var critLineas = (r.detalle||[]).map(function(d) {
-      return '  - ' + (d.criterio||'Criterio') + ': ' + (d.nivel||'-') + (d.nota ? ' ("' + d.nota + '")' : '');
-    });
-    lineas.push('**' + (r.instancia||'Evaluación '+(i+1)) + '** (' + (r.fecha||'-') + ')');
-    lineas.push('  Rúbrica: ' + (r.rubricaNombre||'-'));
-    lineas.push('  Nota: ' + nota.toFixed(1));
-    if (critLineas.length) { lineas.push('  Criterios:'); critLineas.forEach(function(l){ lineas.push(l); }); }
-    if (r.noEntregado) lineas.push('  No entregado');
-    lineas.push('');
-  });
-  var resumen = lineas.join('\n');
-
+  // ── Estadísticas del alumno ────────────────────────────────────────────
   var promedios = regsAlumno.map(function(r){ return (typeof r.nota==='number') ? r.nota : parseFloat(r.nota)||1; });
-  var promedio  = (promedios.reduce(function(s,n){return s+n;},0) / promedios.length).toFixed(1);
-  var primera   = promedios[0].toFixed(1);
-  var ultima    = promedios[promedios.length-1].toFixed(1);
+  var promedio  = promedios.reduce(function(s,n){return s+n;},0) / promedios.length;
+  var primera   = promedios[0];
+  var ultima    = promedios[promedios.length-1];
+  var delta     = ultima - primera;
+  var tendencia = delta > 0.5 ? 'mejora progresiva' : delta < -0.5 ? 'tendencia a la baja' : 'rendimiento estable';
 
-  var promptLines = [
-    'Eres un asistente de evaluación docente para Artes Visuales en Chile (nivel básico).',
+  // ── Análisis de criterios ─────────────────────────────────────────────
+  var critStats = {};
+  regsAlumno.forEach(function(r) {
+    (r.detalle||[]).forEach(function(d) {
+      var k = (d.criterio||'Criterio').trim();
+      if (!critStats[k]) critStats[k] = { MB:0, L:0, M:0, N:0, obs:[] };
+      if (['MB','L','M','N'].includes(d.nivel)) critStats[k][d.nivel]++;
+      if (d.nota && d.nota.length > 5) critStats[k].obs.push(d.nota);
+    });
+  });
+  var critOrden = Object.keys(critStats).sort(function(a,b) {
+    var sa = critStats[a].MB*2 + critStats[a].L - critStats[a].N*2;
+    var sb = critStats[b].MB*2 + critStats[b].L - critStats[b].N*2;
+    return sb - sa;
+  });
+  var fortalezas  = critOrden.slice(0,3).filter(function(c){ return critStats[c].MB+critStats[c].L > 0; });
+  var debilidades = critOrden.slice(-3).reverse().filter(function(c){ return critStats[c].N+critStats[c].M > 0; });
+
+  // ── Resumen de evaluaciones ───────────────────────────────────────────
+  var evalResumen = regsAlumno.map(function(r, i) {
+    var nota = (typeof r.nota==='number') ? r.nota : parseFloat(r.nota)||1;
+    var nivs = (r.detalle||[]).map(function(d) {
+      var nv = d.nivel==='MB'?'Muy bien':d.nivel==='L'?'Logrado':d.nivel==='M'?'En proceso':d.nivel==='N'?'Por lograr':d.nivel;
+      return d.criterio+': '+nv+(d.nota?' — '+d.nota:'');
+    }).join('; ');
+    return (r.instancia||'Ev.'+(i+1))+' ('+r.fecha+'): Nota '+nota.toFixed(1)+(r.rubricaNombre?' | '+r.rubricaNombre:'')+(nivs?'\n   '+nivs:'')+(r.noEntregado?'\n   [NO ENTREGADO]':'');
+  }).join('\n\n');
+
+  var obsProf = [];
+  regsAlumno.forEach(function(r){ (r.detalle||[]).forEach(function(d){ if(d.nota&&d.nota.length>10) obsProf.push(d.nota); }); });
+
+  // ── Prompt estructurado ───────────────────────────────────────────────
+  var prompt = [
+    'Eres un profesor experto en Artes Visuales de Chile con amplia experiencia evaluando estudiantes de enseñanza básica (3° a 6°).',
+    'Debes redactar un INFORME COMPLETO Y DETALLADO de retroalimentación para el apoderado de '+primerNombre+'.',
     '',
-    'Genera un párrafo de retroalimentación constructiva (4-6 oraciones) para compartir con el apoderado. Debe:',
-    '1. Mencionar la tendencia general (mejoró, bajó, se mantuvo)',
-    '2. Destacar 1-2 criterios de fortaleza o mejora',
-    '3. Señalar 1 área de trabajo para el siguiente periodo',
-    '4. Tono alentador y constructivo, apropiado para un apoderado',
-    '5. Español, tercera persona (referirse al alumno por nombre)',
+    '═══ DATOS DEL ESTUDIANTE ═══',
+    'Nombre: '+nombreReal,
+    'Curso: '+(regsAlumno[0].curso||'No especificado'),
+    esPIE ? 'Programa: PIE — adapta las expectativas a sus necesidades de aprendizaje.' : '',
+    'Total evaluaciones: '+regsAlumno.length,
+    'Promedio general: '+promedio.toFixed(1)+'/7.0',
+    'Evolución: '+primera.toFixed(1)+' → '+ultima.toFixed(1)+' ('+tendencia+')',
     '',
-    'Estudiante: ' + nombre,
-    'Promedio general: ' + promedio,
-    'Primera evaluación: ' + primera + ' → Última: ' + ultima,
+    '═══ HISTORIAL DETALLADO ═══',
+    evalResumen,
+    fortalezas.length ? '\n═══ CRITERIOS DE FORTALEZA ═══\n'+fortalezas.join(', ') : '',
+    debilidades.length ? '\n═══ CRITERIOS A REFORZAR ═══\n'+debilidades.join(', ') : '',
+    obsProf.length ? '\n═══ OBSERVACIONES DEL DOCENTE ═══\n'+obsProf.slice(0,5).join(' | ') : '',
     '',
-    'Historial:',
-    resumen,
+    '═══ INSTRUCCIONES ═══',
+    'Redacta UN informe para el apoderado con EXACTAMENTE 3 párrafos bien desarrollados.',
+    'Cada párrafo debe tener mínimo 5 oraciones completas.',
     '',
-    'Responde SOLO con el párrafo, sin título ni formato adicional.'
-  ];
-  var prompt = promptLines.join('\n');
+    'PÁRRAFO 1 — DESEMPEÑO GENERAL:',
+    'Saluda al apoderado. Describe el rendimiento general de '+primerNombre+' con datos concretos de sus notas. Explica qué significa ese nivel en Artes Visuales. Menciona la tendencia observada entre evaluaciones.',
+    '',
+    'PÁRRAFO 2 — FORTALEZAS Y LOGROS:',
+    'Menciona 2-3 aspectos específicos donde '+primerNombre+' muestra fortalezas, usando los criterios evaluados. Reconoce su esfuerzo y creatividad. Usa ejemplos concretos del historial.',
+    '',
+    'PÁRRAFO 3 — PLAN DE MEJORA Y CIERRE:',
+    'Señala 1-2 áreas concretas de mejora. Sugiere actividades específicas que el apoderado puede apoyar en casa. Termina con un mensaje motivador y positivo.',
+    '',
+    'REGLAS OBLIGATORIAS:',
+    '- Español formal y cercano. Nunca uses inglés.',
+    '- Tercera persona, referirte al estudiante siempre por su primer nombre: '+primerNombre,
+    '- Tono positivo y constructivo en todo momento',
+    '- NO uses asteriscos (*), guiones al inicio de línea ni formato markdown',
+    '- Escribe párrafos como texto corrido, sin listas ni viñetas',
+    '- NUNCA cortes el texto a la mitad. Completa siempre cada oración y cada párrafo.',
+    '- Extensión mínima total: 400 palabras'
+  ].filter(Boolean).join('\n');
 
   try {
     var response = await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + key,
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+key,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.7, maxOutputTokens: 512 }
+          generationConfig: { temperature: 0.75, maxOutputTokens: 2048, topP: 0.95 }
         })
       }
     );
     var data = await response.json();
-    var texto = (data.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
-    if (texto) {
-      res.innerHTML = '<div style="font-size:10px;font-weight:600;color:var(--accent);margin-bottom:5px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.4px;">Análisis IA — Artes Visuales</div>'
-        + '<div id="_perfilIATexto" style="font-size:12px;color:var(--text2);line-height:1.65;">' + _esc(texto) + '</div>'
-        + '<div style="display:flex;gap:8px;margin-top:8px;">'
-        + '<button class="btn btn-sm" onclick="(function(){ var t=document.getElementById(\'_perfilIATexto\'); if(t&&navigator.clipboard){ navigator.clipboard.writeText(t.textContent).then(function(){ toast(\'✓ Copiado\',\'ok\',2000); }); } })()">Copiar</button>'
-        + '<button class="btn btn-sm" style="color:var(--text3);" onclick="document.getElementById(\'_perfilIAResult\').style.display=\'none\'">Cerrar</button>'
+    var finishReason = (data.candidates&&data.candidates[0]) ? (data.candidates[0].finishReason||'') : '';
+    var texto = ((data.candidates&&data.candidates[0]&&data.candidates[0].content&&data.candidates[0].content.parts&&data.candidates[0].content.parts[0]) ? data.candidates[0].content.parts[0].text : '').trim();
+
+    if (!texto) {
+      var errMsg = (data.error&&data.error.message) ? data.error.message : 'Sin respuesta';
+      var errCode = (data.error&&data.error.code) ? data.error.code : 0;
+      res.innerHTML = '<div style="font-size:12px;color:var(--red);padding:8px;">'
+        + (errCode===429 ? '⏳ Límite de API alcanzado. Espera un momento e intenta de nuevo.' : '✗ '+_esc(errMsg))
         + '</div>';
-    } else {
-      res.textContent = 'No se pudo generar el análisis. Intenta de nuevo.';
+      return;
     }
+
+    if (finishReason === 'MAX_TOKENS') {
+      texto += '\n\n[Análisis extenso — se muestra la primera parte. Pulsa Regenerar para obtener la versión completa.]';
+    }
+
+    var parrafos = texto.split(/\n{2,}/).filter(function(p){ return p.trim().length > 0; });
+    var htmlParrafos = parrafos.map(function(p, i) {
+      return '<p style="margin:0 0 '+(i<parrafos.length-1?'14':'0')+'px;font-size:13px;color:var(--text2);line-height:1.75;text-align:justify;">'
+        + _esc(p.trim()) + '</p>';
+    }).join('');
+
+    var textoPlano = parrafos.join('\n\n');
+
+    res.innerHTML = ''
+      + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-bottom:10px;border-bottom:0.5px solid var(--border);">'
+      +   '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>'
+      +   '<span style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;font-family:var(--font-mono);">Informe para apoderado — '+_esc(primerNombre)+'</span>'
+      +   '<span style="font-size:10px;color:var(--text3);margin-left:auto;font-family:var(--font-mono);">'+parrafos.length+' párr · ~'+Math.round(textoPlano.split(' ').length)+' palabras</span>'
+      + '</div>'
+      + '<div id="_perfilIATexto" style="background:var(--bg3);border-radius:10px;padding:14px 16px;border:0.5px solid var(--border);">'
+      +   htmlParrafos
+      + '</div>'
+      + '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">'
+      +   '<button class="btn btn-sm btn-primary" id="_btnCopiarIA" style="gap:5px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar informe</button>'
+      +   '<button class="btn btn-sm" id="_btnCompartirIA" style="gap:5px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Compartir</button>'
+      +   '<button class="btn btn-sm" id="_btnRegenerarIA" style="gap:5px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>Regenerar</button>'
+      +   '<button class="btn btn-sm" id="_btnCerrarIA" style="color:var(--text3);">Cerrar</button>'
+      + '</div>';
+
+    var _bc = document.getElementById('_btnCopiarIA');
+    var _bs = document.getElementById('_btnCompartirIA');
+    var _br = document.getElementById('_btnRegenerarIA');
+    var _bx = document.getElementById('_btnCerrarIA');
+
+    if (_bc) _bc.addEventListener('click', function() {
+      if (navigator.clipboard) navigator.clipboard.writeText(textoPlano).then(function(){ toast('✓ Informe copiado — pégalo en WhatsApp, correo o donde necesites', 'ok', 3500); });
+    });
+    if (_bs) _bs.addEventListener('click', function() {
+      if (navigator.share) { navigator.share({ title: 'Informe — '+nombreReal, text: textoPlano }); }
+      else if (navigator.clipboard) { navigator.clipboard.writeText(textoPlano).then(function(){ toast('✓ Copiado al portapapeles', 'ok', 2500); }); }
+    });
+    if (_br) _br.addEventListener('click', function() { _generarAnalisisIAAlumno(nombre); });
+    if (_bx) _bx.addEventListener('click', function() { res.style.display = 'none'; });
+
   } catch(e) {
-    res.textContent = 'Error al conectar con la IA: ' + e.message;
+    res.innerHTML = '<div style="font-size:12px;color:var(--red);padding:8px;">✗ Error de conexión: '+_esc(e.message)+'</div>';
+    console.warn('[ArtEval] _generarAnalisisIAAlumno error:', e.message);
   } finally {
     btn.disabled = false;
     btn.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg> Analizar con IA';
