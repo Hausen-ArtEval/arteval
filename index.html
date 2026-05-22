@@ -4242,7 +4242,12 @@ button:focus-visible, .tab:focus-visible, .sub-tab:focus-visible {
         <input type="file" id="importInput" accept=".json,.csv" style="display:none" onchange="importarDatos(event)">
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
           <button class="btn btn-primary" onclick="document.getElementById('importInput').click()">Importar archivo (.json o .csv)</button>
-          <button class="btn" onclick="exportarBackupJSON()">Exportar backup (.json)</button>
+          <button class="btn" onclick="exportarBackupJSON()" style="gap:5px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Descargar copia de seguridad</button>
+          <button class="btn" onclick="restaurarBackupJSON()" style="gap:5px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Restaurar copia</button>
         </div>
         <div id="importStatus" style="font-size:12px;color:var(--text3);margin-top:8px;font-family:'DM Mono',monospace;"></div>
       </div>
@@ -4689,9 +4694,11 @@ function _calcularStorageStats() {
     (registros || []).forEach(function(r) {
       if (r && r.imagenBase64) imgBytes += r.imagenBase64.length;
     });
-    var pct = Math.round(total / 51200 * 100); // ~5MB = 5*1024*1024/10 (JSON est)
-    return { totalKB: Math.round(total / 1024), imgKB: Math.round(imgBytes / 1024), pct: Math.min(pct, 100) };
-  } catch(e) { return { totalKB: 0, imgKB: 0, pct: 0 }; }
+    // localStorage limit ≈ 5MB = 5 * 1024 * 1024 = 5,242,880 chars
+    var _LIMIT = 5 * 1024 * 1024;
+    var pct = Math.min(Math.round(total / _LIMIT * 100), 100);
+    return { totalKB: Math.round(total / 1024), imgKB: Math.round(imgBytes / 1024), pct: pct };
+  } catch(e) { console.warn('[ArtEval] _calcularStorageStats:', e.message); return { totalKB: 0, imgKB: 0, pct: 0 }; }
 }
 
 function _mostrarStorageStats() {
@@ -4699,17 +4706,41 @@ function _mostrarStorageStats() {
   if (!el) return;
   var st = _calcularStorageStats();
   var clr = st.pct > 80 ? 'var(--red)' : st.pct > 60 ? 'var(--amber)' : 'var(--green)';
-  el.innerHTML = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">'
-    + '<div style="font-size:12px;color:var(--text2);">Almacenamiento local: <strong>' + st.totalKB + ' KB</strong>'
-    + ' <span style="color:var(--text3);">/ ~5 MB</span>'
-    + (st.imgKB > 0 ? ' <span style="font-size:11px;color:var(--text3);">(' + st.imgKB + ' KB en imágenes)</span>' : '')
+  var bgClr = st.pct > 80 ? 'var(--red-bg)' : st.pct > 60 ? 'var(--amber-bg)' : 'var(--green-bg)';
+
+  var msgExtra = '';
+  if (st.pct > 80) {
+    msgExtra = '<div style="font-size:11px;color:var(--red);margin-top:7px;line-height:1.5;">'
+      + '⚠️ Almacenamiento lleno. Las imágenes ocupan '+ st.imgKB +' KB — libéralas o conecta Google Drive para guardar en la nube.'
+      + '</div>';
+  } else if (st.pct > 60) {
+    msgExtra = '<div style="font-size:11px;color:var(--amber);margin-top:7px;">⚠️ El almacenamiento está al '+st.pct+'% de su capacidad.</div>';
+  }
+
+  var botonesImg = '';
+  if (st.imgKB > 50) {
+    botonesImg = '<button class="btn btn-sm" onclick="_limpiarImagenesAnteriores()" style="font-size:11px;flex-shrink:0;" title="Elimina imágenes con más de 30 días. Las notas y criterios se mantienen.">'
+      + 'Liberar antiguas (&gt;30 días)</button>'
+      + '<button class="btn btn-sm" onclick="_limpiarTodasLasImagenes()" style="font-size:11px;flex-shrink:0;color:var(--red);border-color:rgba(255,59,48,0.3);" title="Elimina TODAS las imágenes capturadas. Las notas, criterios y observaciones se mantienen intactas.">'
+      + 'Liberar todas las imágenes</button>';
+  }
+
+  el.innerHTML = '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">'
+    + '<div style="font-size:12px;color:var(--text2);flex:1;min-width:0;">'
+    +   'Almacenamiento local: <strong>' + st.totalKB + ' KB</strong>'
+    +   ' <span style="color:var(--text3);">/ ~5 MB</span>'
+    +   (st.imgKB > 0 ? ' <span style="font-size:11px;color:var(--text3);"> · '+ st.imgKB +' KB en imágenes</span>' : '')
     + '</div>'
-    + '<button class="btn btn-sm" onclick="_limpiarImagenesAnteriores()" style="font-size:11px;flex-shrink:0;">Liberar imágenes antiguas</button>'
+    + botonesImg
     + '</div>'
-    + '<div style="height:5px;background:var(--bg4);border-radius:3px;overflow:hidden;">'
-    + '<div style="height:100%;width:' + st.pct + '%;background:' + clr + ';border-radius:3px;transition:width 0.4s ease;"></div>'
+    + '<div style="height:6px;background:var(--bg4);border-radius:3px;overflow:hidden;">'
+    +   '<div style="height:100%;width:'+st.pct+'%;background:'+clr+';border-radius:3px;transition:width 0.5s ease;"></div>'
     + '</div>'
-    + (st.pct > 70 ? '<div style="font-size:11px;color:var(--amber);margin-top:5px;">⚠️ El almacenamiento está casi lleno. Las imágenes antiguas ocupan espacio — libéralas o conecta Google Drive para guardar todo en la nube.</div>' : '');
+    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;">'
+    +   '<span style="font-size:10px;color:var(--text3);font-family:var(--font-mono);">'+st.pct+'% usado</span>'
+    +   '<span style="font-size:10px;color:var(--text3);font-family:var(--font-mono);">'+Math.round((5120-st.totalKB))+' KB libres</span>'
+    + '</div>'
+    + msgExtra;
 }
 
 function _limpiarImagenesAnteriores() {
@@ -4724,11 +4755,30 @@ function _limpiarImagenesAnteriores() {
   toast('✓ ' + resultado.liberadas + ' imágenes eliminadas · ' + kb + ' KB liberados. Las notas y criterios se mantienen intactos.', 'ok', 5000);
 }
 
-// Ejecutar retención automática al arrancar (silencioso, solo si storage > 70%)
+async function _limpiarTodasLasImagenes() {
+  var conImg = (registros||[]).filter(function(r){ return r && r.imagenBase64; }).length;
+  if (!conImg) { toast('No hay imágenes guardadas actualmente', 'info', 2500); return; }
+  var _ok1 = await confirmarAccion(
+    'Liberar todas las imágenes',
+    'Se eliminarán las fotos de <strong>' + conImg + '</strong> evaluaciones.<br><br>'
+    + 'Las notas, criterios y observaciones se mantienen intactas — solo se liberan las imágenes capturadas.',
+    '🗑️', 'Sí, liberar imágenes', 'btn-danger'
+  );
+  if (!_ok1) return;
+  var bytes = 0;
+  (registros||[]).forEach(function(r) {
+    if (r && r.imagenBase64) { bytes += r.imagenBase64.length; delete r.imagenBase64; }
+  });
+  saveRegistros();
+  _mostrarStorageStats();
+  toast('✓ ' + conImg + ' imágenes eliminadas · ' + Math.round(bytes/1024) + ' KB liberados. Notas y criterios intactos.', 'ok', 5000);
+}
+
+// Auto-retención solo si storage genuinamente supera 75% (con fórmula corregida)
 function _autoRetencionImagen() {
   try {
     var st = _calcularStorageStats();
-    if (st.pct > 70) {
+    if (st.pct > 75) {
       var r = _aplicarRetencionImagenes(registros, _DIAS_RETENER_IMAGENES);
       if (r.liberadas > 0) {
         saveRegistros();
@@ -4810,7 +4860,7 @@ function _flushPendingQueue() {
     });
     if (nuevos > 0) {
       saveRegistros();
-      console.log('[ArtEval] Cola offline: ' + nuevos + ' nota(s) fusionada(s) antes de sync');
+      console.info('[ArtEval] Cola offline: ' + nuevos + ' nota(s) fusionada(s) antes de sync');
     }
     // Limpiar la cola una vez fusionada
     localStorage.removeItem('av_pending_queue');
@@ -7484,16 +7534,14 @@ function renderEstadisticas() {
 function _renderAnalisisCriterios(data) {
   if (!data || !data.length) return '';
 
-  // Agrupar criterios de todos los registros filtrados
-  // key = criterio, value = { MB, L, M, N, total }
+  // Agrupar por criterio
   var mapa = {};
   data.forEach(function(r) {
     (r.detalle || []).forEach(function(d) {
       var k = (d.criterio || 'Sin nombre').trim();
       if (!mapa[k]) mapa[k] = { MB: 0, L: 0, M: 0, N: 0, total: 0 };
-      var niv = d.nivel;
-      if (['MB','L','M','N'].includes(niv)) {
-        mapa[k][niv]++;
+      if (['MB','L','M','N'].includes(d.nivel)) {
+        mapa[k][d.nivel]++;
         mapa[k].total++;
       }
     });
@@ -7502,75 +7550,93 @@ function _renderAnalisisCriterios(data) {
   var criterios = Object.keys(mapa);
   if (!criterios.length) return '';
 
-  // Ordenar: de mayor a menor % de logro (MB+L)
+  // Ordenar de mayor a menor logro (MB+L)
   criterios.sort(function(a, b) {
-    var la = mapa[a].MB + mapa[a].L;
-    var lb = mapa[b].MB + mapa[b].L;
-    var pa = mapa[a].total > 0 ? lb / mapa[b].total : 0;
-    var pb = mapa[b].total > 0 ? la / mapa[a].total : 0;
+    var pa = (mapa[a].MB + mapa[a].L) / (mapa[a].total || 1);
+    var pb = (mapa[b].MB + mapa[b].L) / (mapa[b].total || 1);
     return pb - pa;
   });
 
   var NIVELES = [
-    { key: 'MB', lbl: 'Muy bien',   color: '#30D158', light: 'rgba(48,209,88,0.15)'  },
-    { key: 'L',  lbl: 'Logrado',    color: '#34C759', light: 'rgba(52,199,89,0.12)'  },
-    { key: 'M',  lbl: 'En proceso', color: '#FF9F0A', light: 'rgba(255,159,10,0.15)' },
-    { key: 'N',  lbl: 'Por lograr', color: '#FF3B30', light: 'rgba(255,59,48,0.12)'  },
+    { key: 'MB', lbl: 'Muy bien',   color: '#30D158', bg: 'rgba(48,209,88,0.12)',   dark: '#1a7d33' },
+    { key: 'L',  lbl: 'Logrado',    color: '#34C759', bg: 'rgba(52,199,89,0.10)',   dark: '#1e7a38' },
+    { key: 'M',  lbl: 'En proceso', color: '#FF9F0A', bg: 'rgba(255,159,10,0.12)',  dark: '#b36b00' },
+    { key: 'N',  lbl: 'Por lograr', color: '#FF3B30', bg: 'rgba(255,59,48,0.10)',   dark: '#c41f14' },
   ];
 
-  var rows = criterios.map(function(crit) {
+  var rows = criterios.map(function(crit, cidx) {
     var m     = mapa[crit];
     var total = m.total || 1;
     var logro = Math.round((m.MB + m.L) / total * 100);
     var logroClr = logro >= 70 ? '#30D158' : logro >= 50 ? '#FF9F0A' : '#FF3B30';
-    var short = crit.length > 42 ? crit.slice(0, 39) + '…' : crit;
+    var logBg    = logro >= 70 ? 'rgba(48,209,88,0.10)' : logro >= 50 ? 'rgba(255,159,10,0.10)' : 'rgba(255,59,48,0.09)';
 
-    // Segmentos de la barra apilada
+    // Nombre del criterio — max 2 líneas
+    var shortName = crit.length > 56 ? crit.slice(0, 53) + '…' : crit;
+
+    // Segmentos de barra — sin texto encima, solo color
     var segments = NIVELES.map(function(niv) {
       var pct = Math.round(m[niv.key] / total * 100);
       if (pct === 0) return '';
-      return '<div title="' + niv.lbl + ': ' + m[niv.key] + ' (' + pct + '%)" '
-        + 'style="width:' + pct + '%;background:' + niv.color + ';height:100%;'
-        + 'transition:width 0.4s ease;display:flex;align-items:center;justify-content:center;'
-        + 'min-width:' + (pct >= 8 ? '18px' : '0') + ';">'
-        + (pct >= 8 ? '<span style="font-size:9px;font-weight:700;color:#fff;font-family:var(--font-mono);">' + pct + '%</span>' : '')
-        + '</div>';
+      return '<div title="' + niv.lbl + ': ' + m[niv.key] + ' alumnos (' + pct + '%)" '
+        + 'style="width:' + pct + '%;background:' + niv.color + ';height:100%;flex-shrink:0;'
+        + 'transition:width 0.5s cubic-bezier(0.34,1.56,0.64,1);"></div>';
     }).join('');
 
-    return '<div class="crit-analysis-row">'
-      + '<div class="crit-analysis-name" title="' + _esc(crit) + '">' + _esc(short) + '</div>'
-      + '<div class="crit-analysis-bar">' + segments + '</div>'
-      + '<div class="crit-analysis-logro" style="color:' + logroClr + '">' + logro + '%</div>'
-      + '<div class="crit-analysis-detail">'
-        + NIVELES.map(function(niv) {
-            return '<span class="crit-analysis-pill" style="background:' + niv.light + ';color:' + niv.color + ';">'
-              + niv.key + ':' + m[niv.key] + '</span>';
-          }).join('')
+    // Pills con conteo — una por nivel, solo si tiene alumnos
+    var pills = NIVELES.map(function(niv) {
+      if (!m[niv.key]) return '';
+      var pct = Math.round(m[niv.key] / total * 100);
+      return '<div style="display:flex;align-items:center;gap:4px;">'
+        + '<div style="width:8px;height:8px;border-radius:2px;background:' + niv.color + ';flex-shrink:0;"></div>'
+        + '<span style="font-size:11px;font-weight:600;color:var(--text2);font-family:var(--font-mono);">' + m[niv.key] + '</span>'
+        + '<span style="font-size:10px;color:var(--text3);">' + niv.lbl + '</span>'
+        + '</div>';
+    }).filter(Boolean).join('');
+
+    return '<div class="ca-item">'
+      // Número de ranking + logro badge
+      + '<div class="ca-item-head">'
+      +   '<div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1;">'
+      +     '<div class="ca-rank">' + (cidx + 1) + '</div>'
+      +     '<div class="ca-name" title="' + _esc(crit) + '">' + _esc(shortName) + '</div>'
+      +   '</div>'
+      +   '<div class="ca-logro-badge" style="background:' + logBg + ';color:' + logroClr + ';">'
+      +     '<span class="ca-logro-num">' + logro + '%</span>'
+      +     '<span class="ca-logro-lbl">logro</span>'
+      +   '</div>'
       + '</div>'
+      // Barra apilada
+      + '<div class="ca-bar-wrap">'
+      +   '<div class="ca-bar">' + segments + '</div>'
+      + '</div>'
+      // Pills de conteo
+      + '<div class="ca-pills">' + pills + '</div>'
       + '</div>';
   }).join('');
 
-  // Leyenda compacta
-  var leyenda = '<div class="crit-analysis-legend">'
+  // Leyenda horizontal compacta
+  var leyenda = '<div class="ca-leyenda">'
     + NIVELES.map(function(niv) {
-        return '<div style="display:inline-flex;align-items:center;gap:5px;">'
-          + '<div style="width:10px;height:10px;border-radius:2px;background:' + niv.color + ';flex-shrink:0;"></div>'
-          + '<span style="font-size:11px;color:var(--text3);">' + niv.lbl + '</span>'
+        return '<div style="display:flex;align-items:center;gap:5px;">'
+          + '<div style="width:10px;height:10px;border-radius:3px;background:' + niv.color + ';flex-shrink:0;"></div>'
+          + '<span style="font-size:11px;color:var(--text3);font-weight:500;">' + niv.lbl + '</span>'
           + '</div>';
       }).join('')
     + '</div>';
 
-  return '<div class="crit-analysis-wrap">'
-    + '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px;">'
+  return '<div class="ca-wrap">'
+    + '<div class="ca-header">'
     +   '<div>'
-    +     '<h3 style="font-size:15px;font-weight:600;color:var(--text);letter-spacing:-0.2px;margin-bottom:3px;">Análisis por criterio</h3>'
-    +     '<div style="font-size:12px;color:var(--text3);">Distribución de niveles en cada criterio evaluado · '
+    +     '<div class="ca-title">Análisis por criterio</div>'
+    +     '<div class="ca-subtitle">Distribución de niveles · '
     +       criterios.length + ' criterio' + (criterios.length !== 1 ? 's' : '') + ' · '
-    +       data.length + ' evaluación' + (data.length !== 1 ? 'es' : '') + '</div>'
+    +       data.length + ' evaluación' + (data.length !== 1 ? 'es' : '')
+    +     '</div>'
     +   '</div>'
     +   leyenda
     + '</div>'
-    + '<div style="display:flex;flex-direction:column;gap:6px;">' + rows + '</div>'
+    + '<div class="ca-list">' + rows + '</div>'
     + '</div>';
 }
 
@@ -7751,6 +7817,91 @@ function exportarBackupJSON() {
   a.download = `arteval_backup_${new Date().toLocaleDateString('es-CL').replace(/\//g,'-')}.json`;
   a.click();
 }
+
+async function restaurarBackupJSON() {
+  var input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json,application/json';
+  input.onchange = function(e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = async function(ev) {
+      try {
+        var data = JSON.parse(ev.target.result);
+        // Validación estructural mínima
+        var tieneRegistros  = Array.isArray(data.registros);
+        var tieneCursos     = data.listaCursos && typeof data.listaCursos === 'object';
+        var tieneRubricas   = Array.isArray(data.rubricas);
+        if (!tieneRegistros && !tieneCursos && !tieneRubricas) {
+          toast('✗ Archivo inválido — no parece ser una copia de seguridad de ArtEval', 'err', 4000);
+          return;
+        }
+        var nRegs   = (data.registros||[]).length;
+        var nCursos = Object.keys(data.listaCursos||{}).length;
+        var nRubs   = (data.rubricas||[]).length;
+        var msg = '¿Restaurar esta copia de seguridad?\n\n'
+          + '  Registros: ' + nRegs + '\n'
+          + '  Cursos: ' + nCursos + '\n'
+          + '  Rúbricas: ' + nRubs + '\n\n'
+          + 'Se hará un MERGE con los datos actuales (no se borrarán registros existentes).\n'
+          + 'Los registros nuevos del archivo se añadirán usando su ID único.';
+        var _ok2 = await confirmarAccion(
+          'Restaurar copia de seguridad',
+          msg.replace(/\n/g, '<br>'),
+          '📂', 'Sí, restaurar', 'btn-primary'
+        );
+        if (!_ok2) return;
+
+        // Merge inteligente por _id — no sobreescritura destructiva
+        var importados = 0;
+        var existentesId = new Set((registros||[]).map(function(r){ return r._id; }).filter(Boolean));
+        (data.registros||[]).forEach(function(r) {
+          if (!r) return;
+          if (r._id && existentesId.has(r._id)) return; // ya existe, no duplicar
+          if (!r._id) r._id = _uuidV4();               // asignar ID si falta
+          if (r.curso) r.curso = normalizarCurso(r.curso);
+          registros.push(r);
+          existentesId.add(r._id);
+          importados++;
+        });
+
+        // Merge de cursos (añadir alumnos nuevos)
+        if (data.listaCursos) {
+          Object.keys(data.listaCursos).forEach(function(c) {
+            var cNorm = normalizarCurso(c);
+            if (!listaCursos[cNorm]) listaCursos[cNorm] = [];
+            (data.listaCursos[c]||[]).forEach(function(al) {
+              var exists = listaCursos[cNorm].some(function(e){ return mismoEstudiante(e.nombre||'', al.nombre||''); });
+              if (!exists) listaCursos[cNorm].push(al);
+            });
+          });
+          saveListaCursos();
+        }
+
+        // Merge de rúbricas (añadir rúbricas que no existan por nombre)
+        if (Array.isArray(data.rubricas)) {
+          data.rubricas.forEach(function(rb) {
+            var existe = rubricas.some(function(r2){ return r2.nombre === rb.nombre; });
+            if (!existe) rubricas.push(rb);
+          });
+          localStorage.setItem('av_rubricas', JSON.stringify(rubricas));
+        }
+
+        saveRegistros();
+        actualizarTodaLaApp();
+        _mostrarStorageStats();
+        toast('✓ Restauración completa — ' + importados + ' registros nuevos importados', 'ok', 5000);
+
+      } catch(err) {
+        toast('✗ Error al leer el archivo: ' + err.message, 'err', 4000);
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
 
 function importarDatos(e) {
   const file = e.target.files[0];
@@ -8649,8 +8800,13 @@ function alexiaRecargarCurso(key) {
   inp.onchange = function() { if (inp.files[0]) alexiaCargarArchivos(inp.files); };
   inp.click();
 }
-function alexiaEliminarCurso(key) {
-  if (!confirm('¿Eliminar plantilla de ' + key + '?')) return;
+async function alexiaEliminarCurso(key) {
+  var _ok3 = await confirmarAccion(
+    'Eliminar plantilla Alexia',
+    '¿Eliminar la plantilla de <strong>' + _esc(key) + '</strong>?<br>Esta acción no se puede deshacer.',
+    '⚠️', 'Sí aceptar', 'btn-danger'
+  );
+  if (!_ok3) return;
   delete alexiaDatos[key];
   saveAlexiaDatos();
   renderAlexiaPlantillasList();
@@ -10829,79 +10985,138 @@ input[type="search"]:not(.noop), .global-search-input {
 
 
 /* ── ANÁLISIS DE CRITERIOS — barras apiladas MB/L/M/N ──── */
-.crit-analysis-wrap {
+/* ── ANÁLISIS DE CRITERIOS v2 — diseño iOS elegante ─── */
+.ca-wrap {
   background: var(--bg2);
   border: 0.5px solid var(--border);
-  border-radius: var(--rad-lg);
-  padding: 18px 20px;
-  margin-top: 14px;
+  border-radius: var(--rad-xl);
+  padding: 20px 22px;
+  margin-top: 16px;
   box-shadow: var(--shadow-sm);
 }
-.crit-analysis-row {
-  display: grid;
-  grid-template-columns: minmax(140px, 2fr) 1fr auto auto;
-  align-items: center;
+.ca-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
   gap: 10px;
-  padding: 7px 0;
-  border-bottom: 0.5px solid var(--border);
-  transition: background var(--t-fast);
+  margin-bottom: 18px;
 }
-.crit-analysis-row:last-child { border-bottom: none; }
-.crit-analysis-row:hover { background: var(--bg3); margin: 0 -8px; padding: 7px 8px; border-radius: 8px; }
-.crit-analysis-name {
-  font-size: 12.5px;
-  font-weight: 500;
-  color: var(--text2);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  letter-spacing: -0.1px;
+.ca-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.3px;
+  margin-bottom: 3px;
 }
-.crit-analysis-bar {
+.ca-subtitle {
+  font-size: 12px;
+  color: var(--text3);
+  font-weight: 400;
+}
+.ca-leyenda {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.ca-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ca-item {
+  background: var(--bg3);
+  border: 0.5px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  transition: box-shadow var(--t-fast), transform var(--t-fast);
+}
+.ca-item:hover {
+  box-shadow: var(--shadow);
+  transform: translateY(-1px);
+}
+.ca-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.ca-rank {
+  width: 22px;
   height: 22px;
-  border-radius: 6px;
+  border-radius: 50%;
+  background: var(--bg4);
+  color: var(--text3);
+  font-size: 10px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ca-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.1px;
+  line-height: 1.4;
+  min-width: 0;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.ca-logro-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  min-width: 52px;
+}
+.ca-logro-num {
+  font-size: 17px;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+.ca-logro-lbl {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.7;
+  margin-top: 2px;
+}
+.ca-bar-wrap {
+  margin-bottom: 10px;
+}
+.ca-bar {
+  height: 8px;
+  border-radius: 4px;
   overflow: hidden;
   background: var(--bg4);
   display: flex;
-  flex-direction: row;
-  min-width: 0;
 }
-.crit-analysis-logro {
-  font-size: 13px;
-  font-weight: 700;
-  font-family: var(--font-mono);
-  letter-spacing: -0.5px;
-  white-space: nowrap;
-  min-width: 38px;
-  text-align: right;
-}
-.crit-analysis-detail {
-  display: flex;
-  gap: 3px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-.crit-analysis-pill {
-  font-size: 9px;
-  font-weight: 700;
-  font-family: var(--font-mono);
-  padding: 2px 5px;
-  border-radius: 4px;
-  white-space: nowrap;
-}
-.crit-analysis-legend {
+.ca-pills {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
 }
 @media (max-width: 600px) {
-  .crit-analysis-row {
-    grid-template-columns: 1fr auto;
-    grid-template-rows: auto auto;
-  }
-  .crit-analysis-bar { grid-column: 1 / -1; }
-  .crit-analysis-detail { display: none; }
+  .ca-wrap { padding: 14px 14px; }
+  .ca-item { padding: 10px 12px; }
+  .ca-leyenda { display: none; }
+  .ca-logro-num { font-size: 15px; }
 }
+
+/* mantener compatibilidad legacy */
+.crit-analysis-wrap { display: none; }
 
 
 /* ── EVOLUCIÓN TEMPORAL DEL ALUMNO ─────────────────────── */
@@ -11365,7 +11580,7 @@ function repararRegistros() {
 
   if (reparados > 0) {
     saveRegistros();
-    console.log('[ArtEval] Migración silenciosa: ' + reparados + ' campos actualizados');
+    console.info('[ArtEval] Migración silenciosa: ' + reparados + ' campos actualizados');
   }
 }
 
@@ -11500,7 +11715,7 @@ function actualizarCtxResumen() {
         var p = JSON.parse(pending);
         // Mostrar aviso al profesor
         toast('⚠ La sesión anterior se cerró con ' + p.count + ' registros sin sincronizar. Conéctate a Drive para subirlos.', 'err', 8000);
-        console.log('[ArtEval] Sync pendiente del cierre anterior:', p);
+        console.info('[ArtEval] Sync pendiente del cierre anterior:', p);
       } catch(e) {}
     }
   }, 1200);
@@ -11537,7 +11752,7 @@ function _actualizarEstadoSync() {
 
   // Si hay pendientes y token activo, disparar sync
   if (localCount > driveCount && driveCount > 0 && tieneToken) {
-    console.log('[ArtEval] Estado: ' + localCount + ' local vs ' + driveCount + ' drive → sync automática');
+    console.info('[ArtEval] Estado: ' + localCount + ' local vs ' + driveCount + ' drive → sync automática');
     if (typeof syncToDrive === 'function') {
       syncToDrive().catch(function(e){ console.warn('[ArtEval] Auto-sync silencioso falló:', e.message); });
     }
@@ -13185,12 +13400,7 @@ async function _generarAnalisisIAAlumno(nombre) {
 
 
 // ── iniciales de nombre para avatar ──────────────────
-function iniciales(nombre) {
-  if (!nombre) return '?';
-  var partes = nombre.trim().split(/\s+/);
-  if (partes.length >= 2) return (partes[0][0] + partes[1][0]).toUpperCase();
-  return partes[0].slice(0,2).toUpperCase();
-}
+// iniciales() definida en el bloque de utilidades principales (L5011)
 
 // ══════════════════════════════════════════════════════
 //  COMPARTIR REPORTE — Web Share API + fallback clipboard
@@ -16605,7 +16815,7 @@ async function _smartSyncOnConnect() {
       localStorage.setItem('av_drive_last_count', String(driveCount));
     }
 
-    console.log('[ArtEval] SmartSync: local=' + localCount + ' drive=' + driveCount);
+    console.info('[ArtEval] SmartSync: local=' + localCount + ' drive=' + driveCount);
 
     if (localCount === 0 && driveCount === 0) return; // nada que hacer
 
@@ -16622,16 +16832,16 @@ async function _smartSyncOnConnect() {
     if (localCount >= driveCount) {
       // LOCAL TIENE IGUAL O MÁS: subir si hay ediciones o diferencia de count
       if (localCount > driveCount || !fileRef || _hayEdicion || _localMasReciente) {
-        console.log('[ArtEval] SmartSync: local maestro (' + localCount + ' vs ' + driveCount + ', edición=' + _hayEdicion + ') → subiendo');
+        console.info('[ArtEval] SmartSync: local maestro (' + localCount + ' vs ' + driveCount + ', edición=' + _hayEdicion + ') → subiendo');
         _updateCloudUI('saving');
         await syncToDrive();
-        console.log('[ArtEval] SmartSync: subida completada');
+        console.info('[ArtEval] SmartSync: subida completada');
       } else {
-        console.log('[ArtEval] SmartSync: sin cambios detectados, ya sincronizado');
+        console.info('[ArtEval] SmartSync: sin cambios detectados, ya sincronizado');
       }
     } else {
       // DRIVE TIENE MÁS: merge inteligente
-      console.log('[ArtEval] SmartSync: Drive tiene más (' + driveCount + ' vs ' + localCount + ') → fusionando');
+      console.info('[ArtEval] SmartSync: Drive tiene más (' + driveCount + ' vs ' + localCount + ') → fusionando');
       if (driveData && driveData.registros) {
         // Construir índice local por _id y por clave semántica
         var localById  = {};
@@ -16685,10 +16895,10 @@ async function _smartSyncOnConnect() {
           if (fusionados > 0) msg += ' — ' + fusionados + ' nuevos';
           if (actualizados > 0) msg += ' — ' + actualizados + ' actualizados';
           toast(msg + ' · Total: ' + registros.length, 'ok', 5000);
-          console.log('[ArtEval] SmartSync: merge completado, fusionados=' + fusionados + ' actualizados=' + actualizados);
+          console.info('[ArtEval] SmartSync: merge completado, fusionados=' + fusionados + ' actualizados=' + actualizados);
         } else {
           // Drive tiene más count pero todos ya están en local — subir local como maestro
-          console.log('[ArtEval] SmartSync: Drive count > local pero registros ya incluidos → subiendo local');
+          console.info('[ArtEval] SmartSync: Drive count > local pero registros ya incluidos → subiendo local');
           if (_hayEdicion) await syncToDrive();
         }
       }
@@ -16841,7 +17051,7 @@ async function _runDailyBackup() {
     var ts = new Date().toISOString();
     localStorage.setItem('av_last_auto_backup', ts);
     _updateDrivePanel(); // actualizar panel sin notificación molesta
-    console.log('[ArtEval] Auto-backup diario completado:', ts, '—', snapshot.registros.length, 'registros');
+    console.info('[ArtEval] Auto-backup diario completado:', ts, '—', snapshot.registros.length, 'registros');
   } catch(e) {
     console.warn('[ArtEval] Auto-backup falló (silencioso):', e.message);
   } finally {
@@ -17020,7 +17230,7 @@ async function syncFromDrive() {
     if (raw.alexiaDatos && Object.keys(raw.alexiaDatos).length > 0) {
       alexiaDatos = JSON.parse(JSON.stringify(raw.alexiaDatos));
       saveAlexiaDatos();
-      console.log('[ArtEval] Plantillas Alexia restauradas desde Drive:', Object.keys(alexiaDatos).join(', '));
+      console.info('[ArtEval] Plantillas Alexia restauradas desde Drive:', Object.keys(alexiaDatos).join(', '));
     }
 
     saveRegistros();
