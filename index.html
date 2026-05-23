@@ -769,9 +769,12 @@ input[type="text"]:focus, textarea:focus, select:focus {
 
 /* ── MODALS ──────────────────────────────────────────────── */
 .modal-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.45);
-  backdrop-filter: blur(12px); display: flex; align-items: center; justify-content: center;
+  position: fixed; inset: 0; background: rgba(0,0,0,0.38);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  display: flex; align-items: center; justify-content: center;
   z-index: 500; padding: 16px;
+  animation: fadeInOverlay 0.18s ease;
 }
 .modal-box {
   background: var(--bg2); border: 0.5px solid var(--border);
@@ -954,7 +957,11 @@ input[type="text"]:focus, textarea:focus, select:focus {
   padding: 12px 20px; box-shadow: var(--shadow-xl); z-index: 9999;
   align-items: center; gap: 12px; font-size: 13px; max-width: calc(100vw - 32px); animation: slideUp 0.3s ease;
 }
-@keyframes slideUp { from { transform: translateX(-50%) translateY(20px); opacity: 0; } to { transform: translateX(-50%) translateY(0); opacity: 1; } }
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px) scale(0.985); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes fadeInOverlay { from { opacity: 0; } to { opacity: 1; } }
 
 /* ── PROGRESS BAR ────────────────────────────────────────── */
 #barraProgresoCurso { background: var(--bg3); border: 0.5px solid var(--border); border-radius: 8px; overflow: hidden; }
@@ -2968,6 +2975,25 @@ button:focus-visible, .tab:focus-visible, .sub-tab:focus-visible {
       <button class="btn btn-sm" onclick="abrirAyuda()" title="Manual de usuario · Ayuda" aria-label="Ayuda" style="width:32px;padding:0;border-color:transparent;background:transparent;min-height:32px;color:var(--text3);">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
       </button>
+      <!-- Selector de semestre — píldoras naranjas estilo iOS -->
+      <button id="semPill1" onclick="_setSemestre(1)" title="Ver 1° Semestre"
+        style="font-size:11px;font-weight:700;font-family:var(--font-mono);
+               background:var(--accent-bg);color:var(--accent);
+               border:0.5px solid var(--accent-border);
+               padding:4px 10px;border-radius:20px;cursor:pointer;
+               transition:background 0.15s,color 0.15s,border-color 0.15s;
+               white-space:nowrap;line-height:1.2;">
+        1° Sem
+      </button>
+      <button id="semPill2" onclick="_setSemestre(2)" title="Ver 2° Semestre"
+        style="font-size:11px;font-weight:700;font-family:var(--font-mono);
+               background:transparent;color:var(--text3);
+               border:0.5px solid var(--border);
+               padding:4px 10px;border-radius:20px;cursor:pointer;
+               transition:background 0.15s,color 0.15s,border-color 0.15s;
+               white-space:nowrap;line-height:1.2;">
+        2° Sem
+      </button>
       <button id="cloudBtn" class="cloud-btn" onclick="abrirPanelDrive()" title="Sincronización con Google Drive">
         <span id="cloudIcon" style="display:flex;align-items:center;line-height:0"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg></span>
         <span id="cloudStatus" class="cloud-status-text">Desconectado</span>
@@ -3151,7 +3177,10 @@ button:focus-visible, .tab:focus-visible, .sub-tab:focus-visible {
       </div>
       <div style="margin-bottom:10px;">
         <div style="font-size:10px;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;margin-bottom:3px;">Nota del profe (contexto general)</div>
-        <textarea id="ctxNota" rows="3" placeholder="Ej: Unidad Arte Románico. Faltan 3 alumnos por evaluar. Máx. exposición: viernes 21." style="width:100%;padding:6px 8px;border:1px solid var(--border2);border-radius:var(--rad);background:var(--bg);font-size:12px;font-family:var(--font-ui);resize:vertical;"></textarea>
+        <div class="obs-input-wrap">
+          <textarea id="ctxNota" rows="3" placeholder="Ej: Unidad Arte Románico. Faltan 3 alumnos por evaluar. Máx. exposición: viernes 21." style="width:100%;padding:6px 38px 6px 8px;border:1px solid var(--border2);border-radius:var(--rad);background:var(--bg);font-size:12px;font-family:var(--font-ui);resize:vertical;"></textarea>
+          <button class="mic-btn" title="Dictar nota" aria-label="Dictar" onclick="activarMicrofono(this,'ctxNota')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="9" y1="22" x2="15" y2="22"/></svg></button>
+        </div>
       </div>
       <!-- Resumen rápido -->
       <div id="ctxResumen" style="font-size:11px;color:var(--text3);background:var(--bg3);padding:8px 10px;border-radius:var(--rad);line-height:1.8;font-family:var(--font-mono);margin-bottom:10px;"></div>
@@ -3565,13 +3594,8 @@ button:focus-visible, .tab:focus-visible, .sub-tab:focus-visible {
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
               <div style="display:flex;flex-direction:column;gap:2px;">
                 <label style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;font-family:var(--font-mono);">Instancia evaluativa</label>
-                <select id="instanciaSelect" class="filter-select" style="font-size:12px;padding:5px 10px;min-width:130px;" onchange="actualizarBarraProgresoCurso()">
+                <select id="instanciaSelect" class="filter-select" style="font-size:12px;padding:5px 10px;min-width:130px;" onchange="actualizarBarraProgresoCurso();_sincronizarSemestrePorInstancia()">
                   <option value="Evaluación 1">Evaluación 1</option>
-                  <option value="Evaluación 2">Evaluación 2</option>
-                  <option value="Evaluación 3">Evaluación 3</option>
-                  <option value="Diagnóstico">Diagnóstico</option>
-                  <option value="Proceso">Proceso</option>
-                  <option value="Final">Final</option>
                 </select>
               </div>
               <button class="btn" onclick="limpiarEvaluacion()">Limpiar</button>
@@ -4213,6 +4237,54 @@ button:focus-visible, .tab:focus-visible, .sub-tab:focus-visible {
         <div id="alexiaPlantillasList" style="display:flex;flex-direction:column;gap:8px;"></div>
         <div id="alexiaPlantillasVacio" style="font-size:12px;color:var(--text3);font-family:'DM Mono',monospace;padding:8px 0;display:none;">
           Aún no hay plantillas guardadas. Sube el .xls de Alexia de cada curso para comenzar.
+        </div>
+      </div>
+
+      <!-- ══════ CONFIGURACIÓN DE SEMESTRES ══════ -->
+      <div class="config-card" id="semConfigCard">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
+          <div style="width:40px;height:40px;background:var(--accent-bg);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </div>
+          <div>
+            <h3 style="margin-bottom:2px;">Distribución de semestres</h3>
+            <div style="font-size:13px;color:var(--text3);">Elige qué evaluaciones pertenecen a cada semestre</div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;" id="semConfigGrid">
+          <!-- Col 1° Semestre -->
+          <div style="background:var(--bg3);border:0.5px solid var(--border);border-radius:12px;padding:14px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+              <div style="width:10px;height:10px;border-radius:50%;background:var(--accent);flex-shrink:0;"></div>
+              <span style="font-size:13px;font-weight:600;color:var(--text);">1° Semestre</span>
+            </div>
+            <div id="semCfgList1" style="display:flex;flex-direction:column;gap:6px;"></div>
+          </div>
+          <!-- Col 2° Semestre -->
+          <div style="background:var(--bg3);border:0.5px solid var(--border);border-radius:12px;padding:14px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+              <div style="width:10px;height:10px;border-radius:50%;background:var(--indigo);flex-shrink:0;"></div>
+              <span style="font-size:13px;font-weight:600;color:var(--text);">2° Semestre</span>
+            </div>
+            <div id="semCfgList2" style="display:flex;flex-direction:column;gap:6px;"></div>
+          </div>
+        </div>
+
+        <div style="background:var(--blue-bg);border:0.5px solid var(--blue);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--blue);line-height:1.6;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+          Mueve cada evaluación al semestre que corresponda. Los cambios se aplican al instante en todos los filtros y vistas de la app.
+        </div>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="_guardarSemConfig()" style="gap:6px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Guardar distribución
+          </button>
+          <button class="btn" onclick="_resetSemConfig()" style="gap:6px;color:var(--text3);">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
+            Restablecer por defecto
+          </button>
         </div>
       </div>
 
@@ -4923,7 +4995,21 @@ function saveRegistros() {
   _regsMapCache = null;
   _cursosUnicosCache = null;
   try {
+    try {
     localStorage.setItem('av_registros', JSON.stringify(registros));
+  } catch(e) {
+    if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
+      console.error('[ArtEval] localStorage lleno:', e);
+      // Fallback: guardar sin imágenes
+      try {
+        var _sinImg = registros.map(function(r){ var c=Object.assign({},r); delete c.imagenBase64; return c; });
+        localStorage.setItem('av_registros', JSON.stringify(_sinImg));
+        toast('⚠️ Almacenamiento lleno — guardado sin imágenes. Conecta Drive para respaldo completo.', 'err', 6000);
+      } catch(e2) {
+        toast('🚨 Sin espacio. Exporta backup desde Sistema → Datos.', 'err', 10000);
+      }
+    }
+  }
     localStorage.setItem('av_local_count', String(registros.length));
     localStorage.setItem('av_last_edit_ts', new Date().toISOString());
     _invalidarCandidatos();
@@ -5350,7 +5436,29 @@ async function toggleCamara() {
     const ba = document.getElementById('btnAnalizar'); if (ba) ba.disabled = false;
     const bau = document.getElementById('btnAuto'); if (bau) bau.style.display = 'inline-block';
     setStatus('Cámara activa — apunta al trabajo y presiona "Analizar con IA"');
-  } catch(e) { setStatus('Error de cámara: ' + e.message); }
+  } catch(e) {
+    var _camMsg = '';
+    if (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError') {
+      _camMsg = 'Permiso de cámara denegado — ve a Configuración del navegador → Cámara.';
+    } else if (e.name === 'NotFoundError' || e.name === 'DevicesNotFoundError') {
+      _camMsg = 'No se encontró ninguna cámara conectada.';
+    } else if (e.name === 'NotReadableError' || e.name === 'TrackStartError') {
+      _camMsg = 'La cámara está siendo usada por otra aplicación.';
+    } else if (e.name === 'OverconstrainedError') {
+      _camMsg = 'Resolución no soportada — intentando con cámara básica…';
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        var _v2 = document.getElementById('videoEl');
+        if (_v2) { _v2.srcObject = stream; _v2.style.display = 'block'; }
+        setStatus('Cámara activa (modo básico)'); return;
+      } catch(e2) { _camMsg = 'No se pudo acceder a la cámara: ' + e2.message; }
+    } else {
+      _camMsg = 'Error de cámara: ' + e.message;
+    }
+    setStatus('📷 ' + _camMsg);
+    toast(_camMsg, 'err', 5000);
+    console.warn('[ArtEval] cámara:', e.name, e.message);
+  }
 }
 
 function capturarFrame() {
@@ -5867,6 +5975,7 @@ function guardar() {
     pts, maxPts, pct, nota, conteo, detalle,
     rubricaNombre: rubricaEfectiva?.nombre || getRubrica().nombre,
     instancia: document.getElementById('instanciaSelect')?.value || 'Evaluación 1',
+    semestre: _semestrePorInstancia(document.getElementById('instanciaSelect')?.value || 'Evaluación 1'), // 1 o 2 según instancia (Ev.1-3 = sem1, Ev.4-6 = sem2)
     guidMatricula: _guidMat,
     // ── campos PIE ──
     pie: esPIE,
@@ -5955,6 +6064,201 @@ function guardar() {
   _avanzarAlSiguientePendiente();     // salta al próximo sin evaluación
 }
 
+// ══════════════════════════════════════════════════════
+//  SISTEMA DE SEMESTRES — filtrado y rendimiento
+// ══════════════════════════════════════════════════════
+var _semestreActivo = parseInt(localStorage.getItem('av_semestre_activo') || '1', 10);
+
+// Determinar semestre a partir de la instancia — usa config guardada
+function _semestrePorInstancia(instancia) {
+  var inst = (instancia || '').trim();
+  if (!inst) return _semestreActivo;
+  var cfg = _getSemConfig();
+  if (cfg.sem1.indexOf(inst) !== -1) return 1;
+  if (cfg.sem2.indexOf(inst) !== -1) return 2;
+  // Fallback numérico para compatibilidad
+  var m = inst.match(/Evaluaci[oó]n\s*(\d+)/i);
+  if (m) { var n = parseInt(m[1], 10); return n <= 3 ? 1 : 2; }
+  return _semestreActivo;
+}
+
+// ── Configuración de semestres — qué evaluaciones van en cada uno ──────────
+var _SEM_CONFIG_KEY = 'av_sem_config';
+
+function _getSemConfig() {
+  try {
+    var raw = localStorage.getItem(_SEM_CONFIG_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  // Default: Ev.1-2-3 → sem 1, Ev.4-5-6 → sem 2
+  return {
+    sem1: ['Evaluación 1','Evaluación 2','Evaluación 3'],
+    sem2: ['Evaluación 4','Evaluación 5','Evaluación 6'],
+    especiales: ['Diagnóstico','Proceso','Final']
+  };
+}
+
+function _saveSemConfig(cfg) {
+  localStorage.setItem(_SEM_CONFIG_KEY, JSON.stringify(cfg));
+}
+
+
+// ── Reconstruir instanciaSelect desde la configuración de semestres ────────
+// Se llama al abrir tab Evaluar y al guardar config de semestres
+function _reconstruirInstanciaSelect() {
+  var sel = document.getElementById('instanciaSelect');
+  if (!sel) return;
+
+  var cfg      = _getSemConfig();
+  var valorPrev = sel.value || '';
+
+  // Limpiar opciones actuales
+  sel.innerHTML = '';
+
+  // Crear optgroup 1° Semestre
+  if (cfg.sem1 && cfg.sem1.length) {
+    var g1 = document.createElement('optgroup');
+    g1.label = '1° Semestre';
+    cfg.sem1.forEach(function(inst) {
+      var opt = document.createElement('option');
+      opt.value = inst; opt.textContent = inst;
+      g1.appendChild(opt);
+    });
+    sel.appendChild(g1);
+  }
+
+  // Crear optgroup 2° Semestre
+  if (cfg.sem2 && cfg.sem2.length) {
+    var g2 = document.createElement('optgroup');
+    g2.label = '2° Semestre';
+    cfg.sem2.forEach(function(inst) {
+      var opt = document.createElement('option');
+      opt.value = inst; opt.textContent = inst;
+      g2.appendChild(opt);
+    });
+    sel.appendChild(g2);
+  }
+
+  // Crear optgroup Especiales
+  var especiales = cfg.especiales || [];
+  if (especiales.length) {
+    var g3 = document.createElement('optgroup');
+    g3.label = 'Especiales';
+    especiales.forEach(function(inst) {
+      var opt = document.createElement('option');
+      opt.value = inst; opt.textContent = inst;
+      g3.appendChild(opt);
+    });
+    sel.appendChild(g3);
+  }
+
+  // Restaurar valor previo si sigue existiendo, o usar primera del semestre activo
+  var opciones = Array.from(sel.options).map(function(o){ return o.value; });
+  if (valorPrev && opciones.indexOf(valorPrev) !== -1) {
+    sel.value = valorPrev;
+  } else {
+    // Primera instancia del semestre activo
+    var listaSem = _semestreActivo === 1 ? cfg.sem1 : cfg.sem2;
+    sel.value = (listaSem && listaSem[0]) ? listaSem[0] : (opciones[0] || 'Evaluación 1');
+  }
+}
+
+
+function _getSemestreActivo() { return _semestreActivo; }
+
+// Sincronizar el segmented control cuando cambia la instancia en el selector
+function _sincronizarSemestrePorInstancia() {
+  var instSel = document.getElementById('instanciaSelect');
+  if (!instSel) return;
+  var sem = _semestrePorInstancia(instSel.value);
+  if (sem !== _semestreActivo) {
+    _setSemestre(sem);
+  }
+}
+
+function _setSemestre(n) {
+  _semestreActivo = n;
+  localStorage.setItem('av_semestre_activo', String(n));
+  // Sincronizar instanciaSelect al primer valor del semestre activado (según config)
+  setTimeout(function() {
+    var sel = document.getElementById('instanciaSelect');
+    if (!sel) return;
+    var current    = sel.value || '';
+    var currentSem = _semestrePorInstancia(current);
+    if (currentSem !== n) {
+      // Saltar a la primera instancia del semestre según config guardada
+      var cfg       = _getSemConfig();
+      var listaSem  = n === 1 ? (cfg.sem1 || []) : (cfg.sem2 || []);
+      var primera   = listaSem[0] || (n === 1 ? 'Evaluación 1' : 'Evaluación 4');
+      // Verificar que esa opción existe en el select
+      var opciones  = Array.from(sel.options).map(function(o){ return o.value; });
+      sel.value     = opciones.indexOf(primera) !== -1 ? primera : (opciones[0] || primera);
+    }
+  }, 60);
+  // Actualizar UI del segmented control
+  _renderSemestreControls();
+  // Re-renderizar vistas que dependen del semestre
+  actualizarTodaLaApp();
+  // Toast informativo con datos relevantes del semestre
+  var _nRegs   = _registrosSemestre().length;
+  var _cfg     = _getSemConfig();
+  var _instLbl = (n === 1 ? _cfg.sem1 : _cfg.sem2).join(', ') || '—';
+  var _nCursos = [...new Set(_registrosSemestre().map(function(r){ return r.curso; }).filter(Boolean))].length;
+  var _label   = n + '° Semestre · ' + _nRegs + ' evaluacion' + (_nRegs!==1?'es':'');
+  if (_nCursos > 0) _label += ' · ' + _nCursos + ' curso' + (_nCursos!==1?'s':'');
+  toast(_label, 'info', 2500);
+}
+
+// Registros filtrados por semestre
+// REGLA CANÓNICA: Ev.1-2-3 = 1°Sem, Ev.4-5-6 = 2°Sem, Especiales = su semestre guardado
+// Los registros legacy sin atributo semestre se clasifican por instancia automáticamente
+function _registrosSemestre(sem) {
+  var s = sem || _semestreActivo;
+  return registros.filter(function(r) {
+    return _semestrePorInstancia(r.instancia || '') === s;
+  });
+}
+
+// Inyectar el segmented control de semestre en los toolbars relevantes
+function _renderSemestreControls() {
+  var p1 = document.getElementById('semPill1');
+  var p2 = document.getElementById('semPill2');
+  if (!p1 || !p2) return;
+
+  // Contar registros por semestre para mostrar en la píldora
+  var n1 = _registrosSemestre(1).length;
+  var n2 = _registrosSemestre(2).length;
+
+  // Obtener etiquetas configuradas de instancias
+  var cfg = _getSemConfig();
+  var lbl1 = '1° Sem' + (n1 > 0 ? ' · ' + n1 : '');
+  var lbl2 = '2° Sem' + (n2 > 0 ? ' · ' + n2 : '');
+
+  p1.textContent = lbl1;
+  p2.textContent = lbl2;
+
+  if (_semestreActivo === 1) {
+    // Píldora 1 activa — naranja sólido
+    p1.style.background    = 'var(--accent)';
+    p1.style.color         = '#ffffff';
+    p1.style.borderColor   = 'transparent';
+    // Píldora 2 inactiva
+    p2.style.background    = 'transparent';
+    p2.style.color         = 'var(--text3)';
+    p2.style.borderColor   = 'var(--border)';
+  } else {
+    // Píldora 2 activa — naranja sólido
+    p2.style.background    = 'var(--accent)';
+    p2.style.color         = '#ffffff';
+    p2.style.borderColor   = 'transparent';
+    // Píldora 1 inactiva
+    p1.style.background    = 'transparent';
+    p1.style.color         = 'var(--text3)';
+    p1.style.borderColor   = 'var(--border)';
+  }
+}
+
+
 // ── Avanzar automáticamente al siguiente alumno pendiente tras guardar ────
 // Llamada solo desde guardar() — respeta la serie activa y el curso seleccionado
 function _avanzarAlSiguientePendiente() {
@@ -5967,6 +6271,9 @@ function _avanzarAlSiguientePendiente() {
   // Buscar el siguiente alumno pendiente en la nómina
   var nombreActual = (document.getElementById('inputNombre')?.value || '').trim();
   var idxActual = nomina.findIndex(function(e){ return mismoEstudiante(e.nombre, nombreActual); });
+
+  // Solo buscar pendientes dentro del semestre de la instancia activa
+  var semInst = _semestrePorInstancia(instancia);
 
   var siguiente = null;
   for (var i = 1; i <= nomina.length; i++) {
@@ -7105,6 +7412,8 @@ function editarRegistro(idx) {
       <textarea class="obs-input" id="editObs_${i}" placeholder="Observación (opcional)">${d.nota||''}</textarea>`;
     cont.appendChild(div);
 
+    // Inyectar micrófono en los obs-input recién creados
+    setTimeout(_inyectarMicObsInput, 50);
     // Hacer el nombre del criterio editable al click
     const nameEl = div.querySelector('.crit-nombre-edit');
     if (nameEl) {
@@ -7403,7 +7712,7 @@ function renderEstadisticas() {
   const fc  = document.getElementById('statsCurso')?.value || '';
   const fi  = document.getElementById('statsInstancia')?.value || '';
   const bus = (document.getElementById('buscarEstadisticas')?.value || '').toLowerCase().trim();
-  const data = registros.filter(r =>
+  const data = _registrosSemestre().filter(r =>
     (!fr  || r.rubricaNombre === fr) &&
     (!fc  || r.curso === fc) &&
     (!fi  || (r.instancia || 'Evaluación 1') === fi) &&
@@ -9527,9 +9836,11 @@ function _renderDashKpiGlobal(instFiltro) {
   const obEl  = document.getElementById('dashOnboarding');
   if (!kpiEl) return;
 
+  // Filtrar siempre por semestre activo
+  const regsSem = _registrosSemestre();
   const regs = instFiltro
-    ? registros.filter(r => (r.instancia||'Evaluación 1') === instFiltro)
-    : registros;
+    ? regsSem.filter(r => (r.instancia||'Evaluación 1') === instFiltro)
+    : regsSem;
 
   // Determinar si es realmente un estado vacío de primer uso
   const sinRegistros = registros.length === 0;
@@ -9540,10 +9851,20 @@ function _renderDashKpiGlobal(instFiltro) {
   if (obEl) obEl.style.display = esPrimerUso ? 'block' : 'none';
 
   if (!regs.length) {
-    // Hay nómina pero sin evaluaciones aún — mensaje más útil
+    const otroSem = _semestreActivo === 1 ? 2 : 1;
+    const hayEnOtroSem = _registrosSemestre(otroSem).length > 0;
     const msg = sinNomina
-      ? '' // onboarding ya visible arriba
-      : '<div style="grid-column:1/-1;text-align:center;padding:24px;color:var(--text3);font-size:13px;">Nómina cargada. Empieza evaluando en <strong>Evaluar</strong> para ver estadísticas.</div>';
+      ? ''
+      : hayEnOtroSem
+        ? '<div style="grid-column:1/-1;text-align:center;padding:28px 20px;">'
+          + '<div style="font-size:28px;margin-bottom:8px;">📋</div>'
+          + '<div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px;">Sin evaluaciones en ' + _semestreActivo + '° Semestre</div>'
+          + '<div style="font-size:12px;color:var(--text3);margin-bottom:12px;">Hay ' + _registrosSemestre(otroSem).length + ' evaluaciones en el ' + otroSem + '° Semestre.</div>'
+          + '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">'
+          + '<button class="btn btn-primary" onclick="_setSemestre(' + otroSem + ')" style="font-size:12px;gap:5px;">Ver ' + otroSem + '° Semestre</button>'
+          + '<button class="btn" onclick="_activarTab(document.querySelector(\'[data-maintab=sistema]\'),\'config\',null)" style="font-size:12px;">Configurar semestres</button>'
+          + '</div></div>'
+        : '<div style="grid-column:1/-1;text-align:center;padding:24px;color:var(--text3);font-size:13px;">Nómina cargada. Empieza evaluando en <strong>Evaluar</strong> para ver estadísticas del ' + _semestreActivo + '° Semestre.</div>';
     kpiEl.innerHTML = msg;
     return;
   }
@@ -9709,7 +10030,22 @@ function _renderDashAlertas(instFiltro) {
 
       const nombreSpan = document.createElement('span');
       nombreSpan.className = 'dash-alerta-nombre';
-      nombreSpan.textContent = al.nombre;
+
+      // Ícono de alerta según severidad — no depender solo del color
+      var alertIcon = document.createElement('span');
+      alertIcon.style.cssText = 'margin-right:4px;font-size:11px;flex-shrink:0;';
+      alertIcon.setAttribute('aria-hidden', 'true');
+      if (al.promedio < 3.0) {
+        alertIcon.textContent = '⚠️';
+        alertIcon.title = 'Promedio crítico (bajo 3.0)';
+      } else if (al.promedio < 4.0) {
+        alertIcon.textContent = '↓';
+        alertIcon.style.color = 'var(--red)';
+        alertIcon.style.fontWeight = '700';
+        alertIcon.title = 'Promedio bajo el mínimo (4.0)';
+      }
+      nombreSpan.appendChild(alertIcon);
+      nombreSpan.appendChild(document.createTextNode(al.nombre));
 
       // Ícono PIE si corresponde
       if (al.pie) {
@@ -10048,6 +10384,8 @@ function renderSistema() {
   _renderSistemaSubNav();
   // Actualizar indicador de almacenamiento
   setTimeout(_mostrarStorageStats, 80);
+  // Renderizar UI de configuración de semestres
+  setTimeout(_renderSemConfigUI, 100);
   // Restaurar API Key guardada en el input (evita que aparezca vacío al recargar)
   try {
     var _savedKey = localStorage.getItem('av_gemini_key') || '';
@@ -10074,7 +10412,7 @@ function renderProgreso() {
   const selC = document.getElementById('filtroCursoProgreso');
   if (selC) {
     const val = selC.value;
-    selC.innerHTML = '<option value="">Todos los cursos</option>' + cursosUnicos().map(c=>`<option ${c===val?'selected':''}>${c}</option>`).join('');
+    selC.innerHTML = '<option value="">Todos los cursos</option>' + cursosUnicos().map(c=>`<option value="${_esc(c)}" ${c===val?'selected':''}>${_esc(c)}</option>`).join('');
   }
   const selI = document.getElementById('filtroInstanciaProgreso');
   if (selI) {
@@ -11140,6 +11478,226 @@ input[type="search"]:not(.noop), .global-search-input {
 
 /* Spin animation for IA loading */
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+
+/* ── DICTADO DE VOZ ─────────────────────────────────────── */
+.mic-wrap { position: relative; }
+.mic-btn {
+  position: absolute; bottom: 8px; right: 8px;
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--bg2); border: 0.5px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: background var(--t-fast), border-color var(--t-fast), box-shadow var(--t-fast);
+  z-index: 2; flex-shrink: 0;
+}
+.mic-btn:hover { background: var(--bg3); border-color: var(--accent); }
+.mic-btn.recording {
+  background: var(--red-bg); border-color: var(--red);
+  animation: micPulse 1s ease-in-out infinite;
+  box-shadow: 0 0 0 4px rgba(255,59,48,0.12);
+}
+.mic-btn svg { width: 13px; height: 13px; transition: stroke var(--t-fast); }
+.mic-btn.recording svg { stroke: var(--red); }
+@keyframes micPulse {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(255,59,48,0.15); }
+  50%       { box-shadow: 0 0 0 6px rgba(255,59,48,0.06); }
+}
+/* Textarea con espacio para el botón micrófono */
+.obs-input-wrap { position: relative; }
+.obs-input-wrap textarea,
+.obs-input-wrap .obs-input {
+  padding-right: 38px !important;
+}
+
+
+.modal-box { animation: slideUp 0.22s cubic-bezier(0.34, 1.2, 0.64, 1) !important; }
+
+/* ── UI POLISH v197 — micro-interacciones y respiración ─── */
+
+/* Botones: transición suave en hover y active */
+.btn {
+  transition: background var(--t-fast), border-color var(--t-fast),
+              color var(--t-fast), box-shadow var(--t-fast),
+              transform 0.1s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+.btn:hover  { transform: translateY(-1px); }
+.btn:active { transform: scale(0.96) translateY(0) !important; }
+.btn-primary:active { box-shadow: 0 1px 3px rgba(255,149,0,0.18) !important; }
+
+/* Nivel-btn: transición más viva */
+.nivel-btn {
+  transition: background var(--t-fast), border-color var(--t-fast),
+              color var(--t-fast), transform 0.12s cubic-bezier(0.34,1.56,0.64,1) !important;
+}
+.nivel-btn:hover  { transform: translateY(-1px) scale(1.02); }
+.nivel-btn:active { transform: scale(0.95) !important; }
+
+/* Cards: hover más suave */
+.card, .config-card, .reg-card, .ca-item, .perfil-eval-card {
+  transition: box-shadow var(--t-med), transform var(--t-med),
+              border-color var(--t-fast) !important;
+}
+
+/* Notas bajas: badge con icono ya tiene color, añadimos borde izquierdo */
+.reg-card[data-nota-baja="true"] {
+  border-left: 3px solid var(--red) !important;
+}
+
+/* Tabs con transición de fondo */
+.tab {
+  transition: background var(--t-fast), color var(--t-fast) !important;
+}
+
+/* Inputs: focus ring más suave */
+input:focus, textarea:focus, select:focus {
+  transition: border-color var(--t-fast), box-shadow var(--t-fast),
+              background var(--t-fast) !important;
+}
+
+/* Modal-box-wide: animación igual de suave */
+.modal-box-wide {
+  animation: slideUp 0.22s cubic-bezier(0.34, 1.2, 0.64, 1) !important;
+}
+
+/* ── MOBILE refinado (≤ 480px) ─────────────────────────── */
+@media (max-width: 480px) {
+  /* Topbar: solo logo + botones esenciales */
+  .topbar-search { display: none !important; }
+  .topbar { height: 48px !important; padding: 0 10px !important; gap: 6px !important; }
+  .logo-text { font-size: 14px !important; }
+  .logo-icon { height: 34px !important; }
+
+  /* Tabs: más compactas, sin texto largo */
+  .tabs { height: 42px !important; padding: 4px 6px !important; gap: 1px !important; }
+  .tab  { font-size: 11px !important; padding: 0 8px !important; height: 34px !important; }
+
+  /* Criterios: botones de nivel en 2x2 en vez de 1x4 */
+  .niveles {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .nivel-btn { min-height: 44px !important; font-size: 11px !important; }
+
+  /* Content más comprimido */
+  .content { padding: 10px 10px 24px !important; }
+
+  /* Config cards */
+  .config-card { padding: 12px 14px !important; }
+
+  /* Stats grid en 2 columnas */
+  .stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* Listas de alumnos más legibles */
+  .reg-nombre     { font-size: 13px !important; }
+  .reg-meta       { font-size: 10px !important; }
+  .reg-nota-num   { font-size: 18px !important; }
+
+  /* Perfil modal en móvil */
+  .perfil-prom-num { font-size: 26px !important; }
+  .perfil-evals    { max-height: 45vh !important; }
+
+  /* Sub-nav más compacto */
+  .ae-subnav { min-height: 38px !important; padding: 4px 10px !important; }
+  .sub-tab   { font-size: 12px !important; padding: 4px 10px !important; min-height: 30px !important; }
+
+  /* Barra de evolución flotante */
+  #_ctaSiguienteWrap { bottom: 60px !important; }
+
+  /* Botones de acción: texto más corto */
+  .cloud-status-text { display: none !important; }
+}
+
+/* ── TABLET (481-768px) ─────────────────────────────────── */
+@media (min-width: 481px) and (max-width: 768px) {
+  .topbar { padding: 0 14px !important; }
+  .content { padding: 14px 14px 28px !important; }
+  .niveles { grid-template-columns: repeat(4, 1fr) !important; }
+}
+
+
+/* ── SEGMENTED CONTROL — Semestre (Apple iOS style) ──── */
+.sem-seg {
+  display: inline-flex;
+  background: var(--bg4);
+  border-radius: 8px;
+  padding: 2px;
+  gap: 1px;
+  border: 0.5px solid var(--border);
+  flex-shrink: 0;
+}
+.sem-seg-btn {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text3);
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast), box-shadow var(--t-fast);
+  white-space: nowrap;
+  letter-spacing: -0.1px;
+  min-height: 26px;
+  line-height: 1;
+}
+.sem-seg-btn:hover:not(.sem-active) {
+  color: var(--text2);
+  background: rgba(0,0,0,0.05);
+}
+.sem-seg-btn.sem-active {
+  background: var(--bg2);
+  color: var(--accent);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.10), 0 0 0 0.5px rgba(0,0,0,0.05);
+}
+
+/* Indicador de semestre en la topbar/subnav */
+.sem-indicator {
+  font-size: 10px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  color: var(--accent);
+  background: var(--accent-bg);
+  border: 0.5px solid var(--accent-border);
+  padding: 2px 7px;
+  border-radius: 6px;
+  letter-spacing: 0.2px;
+}
+
+
+/* ── INDICADOR NOTA BAJA — estilo iOS ───────────────────── */
+.nota-baja-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--amber-bg);
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+.nota-baja-icon svg { width: 10px; height: 10px; }
+.nota-critica-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--red-bg);
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+.nota-critica-icon svg { width: 10px; height: 10px; }
+
+
+/* ── QA: overflow protection — nombres y texto largo ────── */
+.reg-nombre, .alumno-nombre-sm, .perfil-nombre,
+.ca-name, .dash-alerta-nombre, .email-alumno-nombre {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 100% !important;
+}
+.reg-card, .ca-item, .config-card, .perfil-eval-card { min-width: 0; }
 
 </style></head><body>
   <h1>📋 Informe de Evaluaciones · Artes Visuales</h1>
@@ -12641,6 +13199,8 @@ function abrirModalCorreosApoderados() {
     '</div>';
 
   document.body.appendChild(overlay);
+  // Inyectar micrófonos en textareas del modal
+  setTimeout(_inyectarMicObsInput, 80);
   overlay.addEventListener('click', function(e) {
     if (e.target === overlay) _cerrarEmailModal();
   });
@@ -13070,13 +13630,29 @@ function verDetalle(idx) {
 // ══════════════════════════════════════════════════════
 //  PERFIL DE ALUMNO — modal con historial + reporte compartir
 // ══════════════════════════════════════════════════════
-function abrirPerfilAlumno(nombre, cursoFiltro) {
+function abrirPerfilAlumno(nombre, cursoFiltro, _todosSemestres) {
+  // Por defecto filtrar por semestre activo; _todosSemestres=true muestra todo el año
+  var filtrarSem = !_todosSemestres;
+
   var regsAlumno = registros.filter(function(r) {
     if (!mismoEstudiante(r.nombre||'', nombre)) return false;
     if (cursoFiltro && _normCursoKey(r.curso||'') !== _normCursoKey(cursoFiltro)) return false;
+    if (filtrarSem && _semestrePorInstancia(r.instancia||'') !== _semestreActivo) return false;
     return true;
   }).sort(function(a,b){ return new Date(b.fechaISO||b.fecha||0) - new Date(a.fechaISO||a.fecha||0); });
 
+  // Si con filtro de semestre no hay resultados, mostrar aviso contextual
+  if (!regsAlumno.length && filtrarSem) {
+    var totalAlumno = registros.filter(function(r){ return mismoEstudiante(r.nombre||'', nombre); }).length;
+    if (totalAlumno > 0) {
+      toast('Sin evaluaciones de ' + nombre + ' en ' + _semestreActivo + '° semestre · tiene ' + totalAlumno + ' en otros semestres', 'info', 4000);
+      // Ofrecer ver todos
+      abrirPerfilAlumno(nombre, cursoFiltro, true);
+      return;
+    }
+    toast('Sin registros para ' + nombre, 'info', 2500);
+    return;
+  }
   if (!regsAlumno.length) { toast('Sin registros para ' + nombre, 'info', 2500); return; }
 
   var r0      = regsAlumno[0];
@@ -13126,7 +13702,11 @@ function abrirPerfilAlumno(nombre, cursoFiltro) {
     + '<div class="perfil-avatar">'+iniciales(nombre)+'</div>'
     + '<div class="perfil-info">'
     + '<div class="perfil-nombre">'+_esc(nombre)+pieHTML+'</div>'
-    + '<div class="perfil-curso">'+_esc(curso)+' · '+regsAlumno.length+' evaluacion'+(regsAlumno.length!==1?'es':'')+'</div>'
+    + '<div class="perfil-curso" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'
+    + _esc(curso) + ' · ' + regsAlumno.length + ' evaluacion' + (regsAlumno.length!==1?'es':'')
+    + ' · <span style="font-size:10px;font-weight:700;font-family:var(--font-mono);background:var(--accent-bg);color:var(--accent);border:0.5px solid var(--accent-border);padding:1px 7px;border-radius:10px;">' + _semestreActivo + '° Sem</span>'
+    + (!_todosSemestres ? '<button id="_perfilVerTodosBtn" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0;text-decoration:underline;">ver año completo</button>' : '')
+    + '</div>'
     + '</div>'
     + '<div class="perfil-prom-wrap">'
     + '<div class="perfil-prom-num" style="color:'+promClr+'">'+promedio.toFixed(1)+'</div>'
@@ -13148,8 +13728,13 @@ function abrirPerfilAlumno(nombre, cursoFiltro) {
   abrirModal(html, 'modal-box-wide');
 
   // Event listeners post-render (evita problemas de comillas en onclick inline)
-  var _nom = nombre, _cur = curso;
+  var _nom = nombre, _cur = curso, _allSem = !!_todosSemestres;
   setTimeout(function() {
+    var btnVerTodos = document.getElementById('_perfilVerTodosBtn');
+    if (btnVerTodos) btnVerTodos.addEventListener('click', function() {
+      cerrarModal();
+      setTimeout(function() { abrirPerfilAlumno(_nom, _cur, true); }, 120);
+    });
     var btnCurso = document.getElementById('_perfilCursoBtn');
     if (btnCurso) btnCurso.addEventListener('click', function(){ cerrarModal(); setTimeout(function(){ irACurso(_cur); }, 150); });
     var btnShare = document.getElementById('_perfilShareBtn');
@@ -13484,6 +14069,217 @@ async function _generarAnalisisIAAlumno(nombre) {
     btn.disabled = false;
     btn.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg> Analizar con IA';
   }
+}
+
+
+// ══════════════════════════════════════════════════════
+//  DICTADO DE VOZ — Web Speech API
+// ══════════════════════════════════════════════════════
+var _speechRec = null;
+var _speechBtn = null;
+var _speechTarget = null;
+
+function _initSpeech() {
+  var SpeechAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechAPI) return null;
+  var rec = new SpeechAPI();
+  rec.continuous = false;          // una frase por sesión
+  rec.interimResults = false;      // solo resultado final
+  rec.lang = 'es-CL';             // español de Chile
+  rec.maxAlternatives = 1;
+  return rec;
+}
+
+function activarMicrofono(btn, targetId) {
+  var SpeechAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechAPI) {
+    toast('Tu navegador no soporta dictado de voz. Usa Chrome o Safari.', 'err', 4000);
+    return;
+  }
+
+  // Si ya está grabando el mismo botón → detener
+  if (_speechBtn === btn && _speechRec) {
+    _speechRec.stop();
+    return;
+  }
+
+  // Si había otra grabación activa → detenerla
+  if (_speechRec) {
+    _speechRec.abort();
+    if (_speechBtn) { _speechBtn.classList.remove('recording'); _speechBtn.title = 'Dictar'; }
+  }
+
+  var target = document.getElementById(targetId);
+  if (!target) return;
+
+  _speechRec    = _initSpeech();
+  _speechBtn    = btn;
+  _speechTarget = target;
+
+  btn.classList.add('recording');
+  btn.title = 'Grabando… (toca para detener)';
+
+  _speechRec.onresult = function(e) {
+    var texto = e.results[0][0].transcript.trim();
+    if (!texto) return;
+    var actual = target.value || '';
+    // Concatenar con espacio si ya hay texto
+    target.value = actual ? actual.trimEnd() + ' ' + texto : texto;
+    // Disparar evento input para que otros listeners reaccionen
+    target.dispatchEvent(new Event('input', { bubbles: true }));
+    toast('✓ Dictado: "' + texto.slice(0, 50) + (texto.length > 50 ? '…' : '') + '"', 'ok', 2500);
+  };
+
+  _speechRec.onerror = function(e) {
+    var _sMsgs = {
+      'no-speech':          'No se detectó voz. Intenta de nuevo.',
+      'audio-capture':      'Sin acceso al micrófono. Revisa los permisos del navegador.',
+      'not-allowed':        'Permiso de micrófono denegado. Actívalo en Configuración del navegador.',
+      'network':            'Error de red al procesar el dictado. Verifica tu conexión.',
+      'aborted':            '',
+      'service-not-allowed':'El dictado de voz no está disponible en este dispositivo.'
+    };
+    var _msg = _sMsgs[e.error];
+    if (_msg === undefined) _msg = 'Error de dictado: ' + e.error;
+    if (_msg) toast(_msg, 'err', 4000);
+    // Limpiar estado del botón aunque sea error
+    if (_speechBtn) {
+      _speechBtn.classList.remove('recording');
+      _speechBtn.title    = 'Dictar observación';
+      _speechBtn.disabled = false;
+    }
+    _speechRec = null; _speechBtn = null; _speechTarget = null;
+  };
+
+  _speechRec.onend = function() {
+    if (_speechBtn) { _speechBtn.classList.remove('recording'); _speechBtn.title = 'Dictar observación'; }
+    _speechRec = null; _speechBtn = null; _speechTarget = null;
+  };
+
+  _speechRec.start();
+}
+
+// Generar HTML del botón micrófono para inyección dinámica
+function _micBtnHTML(targetId) {
+  var sup = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+  if (!sup) return '';
+  return '<button class="mic-btn" title="Dictar observación" aria-label="Dictar" '
+    + 'onclick="activarMicrofono(this,\'' + targetId + '\')">'
+    + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">'
+    + '<path d="rect x="9" y="2" width="6" height="12" rx="3""/>'
+    + '<path d="M19 10v2a7 7 0 0 1-14 0v-2"/>'
+    + '<line x1="12" y1="19" x2="12" y2="23"/>'
+    + '<line x1="8" y1="23" x2="16" y2="23"/>'
+    + '</svg></button>';
+}
+
+// Inyectar botones de micrófono en textareas .obs-input dinámicas
+function _inyectarMicObsInput() {
+  var sup = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+  if (!sup) return;
+  document.querySelectorAll('.obs-input').forEach(function(ta, i) {
+    if (ta.dataset.micOk) return; // ya procesado
+    ta.dataset.micOk = '1';
+    var id = ta.id || ('_obsTA_' + i);
+    ta.id = id;
+    // Wrap en un div relativo si no está ya wrapeado
+    if (!ta.parentElement.classList.contains('obs-input-wrap')) {
+      var wrap = document.createElement('div');
+      wrap.className = 'obs-input-wrap';
+      ta.parentElement.insertBefore(wrap, ta);
+      wrap.appendChild(ta);
+      wrap.insertAdjacentHTML('beforeend', _micBtnHTML(id));
+    }
+  });
+}
+
+
+// ── UI de configuración de semestres en Ajustes ───────────────────────────
+var _TODAS_INSTANCIAS = [
+  'Evaluación 1','Evaluación 2','Evaluación 3',
+  'Evaluación 4','Evaluación 5','Evaluación 6',
+  'Diagnóstico','Proceso','Final'
+];
+
+function _renderSemConfigUI() {
+  var l1 = document.getElementById('semCfgList1');
+  var l2 = document.getElementById('semCfgList2');
+  if (!l1 || !l2) return;
+
+  var cfg = _getSemConfig();
+  // Asegurar que toda instancia conocida aparezca en alguna columna
+  var enConfig = cfg.sem1.concat(cfg.sem2).concat(cfg.especiales || []);
+  _TODAS_INSTANCIAS.forEach(function(inst) {
+    if (enConfig.indexOf(inst) === -1) {
+      // Si no está en ninguna, añadir a especiales
+      (cfg.especiales = cfg.especiales || []).push(inst);
+    }
+  });
+
+  function makeRow(inst, sem) {
+    var div = document.createElement('div');
+    div.style.cssText = 'display:flex;align-items:center;justify-content:space-between;' +
+      'background:var(--bg2);border:0.5px solid var(--border);border-radius:8px;' +
+      'padding:7px 10px;gap:8px;';
+    div.innerHTML = '<span style="font-size:12px;font-weight:500;color:var(--text);">' + inst + '</span>'
+      + '<button style="font-size:10px;font-weight:600;font-family:var(--font-mono);'
+      + 'background:var(--bg3);border:0.5px solid var(--border);border-radius:6px;'
+      + 'padding:3px 8px;cursor:pointer;color:var(--text3);white-space:nowrap;" '
+      + 'onclick="_moverInstancia(\'' + inst + '\',' + sem + ')" '
+      + 'title="Mover al ' + (sem === 1 ? '2°' : '1°') + ' Semestre">'
+      + '→ ' + (sem === 1 ? '2° Sem' : '1° Sem') + '</button>';
+    return div;
+  }
+
+  l1.innerHTML = '';
+  l2.innerHTML = '';
+
+  cfg.sem1.forEach(function(inst) { l1.appendChild(makeRow(inst, 1)); });
+  cfg.sem2.forEach(function(inst) { l2.appendChild(makeRow(inst, 2)); });
+
+  // Especiales: mostrar como info sin botón de mover
+  if (cfg.especiales && cfg.especiales.length) {
+    var sep = document.createElement('div');
+    sep.style.cssText = 'grid-column:1/-1;font-size:11px;color:var(--text3);font-family:var(--font-mono);' +
+      'text-transform:uppercase;letter-spacing:0.5px;margin-top:4px;padding:0 2px;';
+    sep.textContent = 'Especiales (ambos semestres)';
+    // Agregar info de especiales debajo de las dos columnas
+  }
+}
+
+function _moverInstancia(inst, desdeS) {
+  var cfg = _getSemConfig();
+  var hacia = desdeS === 1 ? 'sem2' : 'sem1';
+  var desde = desdeS === 1 ? 'sem1' : 'sem2';
+  // Remover de origen
+  cfg[desde] = cfg[desde].filter(function(x){ return x !== inst; });
+  // Añadir a destino si no está ya
+  if (cfg[hacia].indexOf(inst) === -1) cfg[hacia].push(inst);
+  _saveSemConfig(cfg);
+  _renderSemConfigUI();
+  _reconstruirInstanciaSelect();
+  actualizarTodaLaApp();
+}
+
+function _guardarSemConfig() {
+  var cfg = _getSemConfig();
+  _saveSemConfig(cfg);
+  _reconstruirInstanciaSelect();
+  actualizarTodaLaApp();
+  toast('✓ Distribución de semestres guardada — ' + cfg.sem1.length + ' ev. en 1° Sem, ' + cfg.sem2.length + ' ev. en 2° Sem', 'ok', 3500);
+}
+
+function _resetSemConfig() {
+  var defCfg = {
+    sem1: ['Evaluación 1','Evaluación 2','Evaluación 3'],
+    sem2: ['Evaluación 4','Evaluación 5','Evaluación 6'],
+    especiales: ['Diagnóstico','Proceso','Final']
+  };
+  _saveSemConfig(defCfg);
+  _renderSemConfigUI();
+  _reconstruirInstanciaSelect();
+  actualizarTodaLaApp();
+  toast('✓ Distribución restablecida a valores por defecto (Ev.1-3 / Ev.4-6)', 'ok', 3000);
 }
 
 
@@ -16198,7 +16994,13 @@ function aplicarVincularPIE(i, nombrePIE) {
 // ═══════════════════════════════════════════════════════
 
 // ── 1. Función centralizada de actualización ──────────
+var _actualizarTodaTimer = null;
 function actualizarTodaLaApp() {
+  clearTimeout(_actualizarTodaTimer);
+  _actualizarTodaTimer = setTimeout(_actualizarTodaLaAppImpl, 80);
+}
+function _actualizarTodaLaAppImpl() {
+  _renderSemestreControls();
   try {
     // Invalidar cachés antes de cualquier render
     _regsMapCache = null;
@@ -17174,6 +17976,25 @@ async function _forzarRespaldoAhora() {
     _updateDrivePanel();
     if (btn) { btn.disabled = false; btn.textContent = '☁️ Forzar respaldo ahora'; }
   } catch(e) {
+    var _eName = e.name || '';
+    var _eMsg  = (e.message || '').toLowerCase();
+    var _driveErrMsg = '';
+    if (_eName === 'TypeError' && _eMsg.includes('fetch')) {
+      _driveErrMsg = 'Sin conexión. Los datos están guardados localmente y se sincronizarán al reconectarte.';
+    } else if (_eMsg.includes('401') || _eMsg.includes('unauthorized') || _eMsg.includes('invalid_token')) {
+      _driveErrMsg = 'Sesión de Drive expirada — reconéctate en Sistema → Drive.';
+      _driveToken = null; _driveTokenExp = 0;
+    } else if (_eMsg.includes('403') || _eMsg.includes('quota')) {
+      _driveErrMsg = 'Cuota de Drive alcanzada o permisos insuficientes.';
+    } else if (_eMsg.includes('404')) {
+      _driveErrMsg = 'Archivo de Drive no encontrado. Se creará uno nuevo.';
+      localStorage.removeItem('av_drive_file_id'); _driveFileId = null;
+    } else {
+      _driveErrMsg = 'Error de sincronización con Drive: ' + (e.message || 'desconocido');
+    }
+    toast('☁️ ' + _driveErrMsg, 'err', 6000);
+    _updateCloudUI('error');
+    console.warn('[ArtEval] syncToDrive:', _eName, e.message);
     var btn = document.querySelector('button[onclick="_forzarRespaldoAhora()"]');
     if (btn) { btn.disabled = false; btn.textContent = '☁️ Forzar respaldo ahora'; }
   }
@@ -17683,6 +18504,9 @@ function _activarTab(btnEl, tabName, subTab) {
   // 4. Activar sub-sección si corresponde
   if (subTab) {
     try { showEstudioSub(subTab); } catch(e) {}
+    if (subTab === 'evaluar' || subTab === 'estudio') {
+      setTimeout(_reconstruirInstanciaSelect, 80);
+    }
   }
 
   // 5. Resetear filtro de aula al cambiar de tab principal
@@ -17784,6 +18608,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Auto-retención de imágenes antiguas (silencioso)
   setTimeout(_autoRetencionImagen, 2000);
+  // Renderizar controles de semestre
+  setTimeout(_renderSemestreControls, 100);
+  // Reconstruir instanciaSelect desde config guardada
+  setTimeout(_reconstruirInstanciaSelect, 120);
 
   // Recuperar el último tab visitado
   var lastMaintab = null;
