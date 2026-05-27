@@ -2961,7 +2961,7 @@ button:focus-visible, .tab:focus-visible, .sub-tab:focus-visible {
           class="global-search-input"
           type="text"
           placeholder="Buscar estudiante en 3°–6° básico…"
-          oninput="mostrarAutocompletado(this.value);_limpiarCanvasParaNuevoAlumno();"
+          oninput="_debouncedSearch(this.value)"
           onkeydown="navAutocompletado(event)"
           onfocus="mostrarAutocompletado(this.value)"
           onblur="setTimeout(ocultarAutocompletado,180)"
@@ -4777,40 +4777,62 @@ function _mostrarStorageStats() {
   var el = document.getElementById('_storageStatBar');
   if (!el) return;
   var st = _calcularStorageStats();
-  var clr = st.pct > 80 ? 'var(--red)' : st.pct > 60 ? 'var(--amber)' : 'var(--green)';
-  var bgClr = st.pct > 80 ? 'var(--red-bg)' : st.pct > 60 ? 'var(--amber-bg)' : 'var(--green-bg)';
 
-  var msgExtra = '';
-  if (st.pct > 80) {
-    msgExtra = '<div style="font-size:11px;color:var(--red);margin-top:7px;line-height:1.5;">'
-      + '⚠️ Almacenamiento lleno. Las imágenes ocupan '+ st.imgKB +' KB — libéralas o conecta Google Drive para guardar en la nube.'
-      + '</div>';
-  } else if (st.pct > 60) {
-    msgExtra = '<div style="font-size:11px;color:var(--amber);margin-top:7px;">⚠️ El almacenamiento está al '+st.pct+'% de su capacidad.</div>';
-  }
+  // Colores semánticos según uso real
+  var pct    = st.pct;
+  var clrBar = pct > 80 ? 'var(--red)'   : pct > 60 ? 'var(--amber)' : 'var(--green)';
+  var clrBg  = pct > 80 ? 'var(--red-bg)': pct > 60 ? 'var(--amber-bg)' : 'var(--green-bg)';
 
+  // Botones de limpieza — solo aparecen si hay imágenes que liberar
   var botonesImg = '';
   if (st.imgKB > 50) {
-    botonesImg = '<button class="btn btn-sm" onclick="_limpiarImagenesAnteriores()" style="font-size:11px;flex-shrink:0;" title="Elimina imágenes con más de 30 días. Las notas y criterios se mantienen.">'
-      + 'Liberar antiguas (&gt;30 días)</button>'
-      + '<button class="btn btn-sm" onclick="_limpiarTodasLasImagenes()" style="font-size:11px;flex-shrink:0;color:var(--red);border-color:rgba(255,59,48,0.3);" title="Elimina TODAS las imágenes capturadas. Las notas, criterios y observaciones se mantienen intactas.">'
-      + 'Liberar todas las imágenes</button>';
+    botonesImg = '<button class="btn btn-sm" onclick="_limpiarImagenesAnteriores()"'
+      + ' style="font-size:11px;flex-shrink:0;" title="Elimina imágenes con más de 30 días. Notas y criterios intactos.">'
+      + '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>'
+      + ' Liberar antiguas</button>'
+      + '<button class="btn btn-sm" onclick="_limpiarTodasLasImagenes()"'
+      + ' style="font-size:11px;flex-shrink:0;color:var(--red);border-color:rgba(255,59,48,0.25);"'
+      + ' title="Elimina TODAS las fotos. Notas, criterios y observaciones se mantienen.">'
+      + 'Liberar todas</button>';
   }
 
-  el.innerHTML = '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">'
-    + '<div style="font-size:12px;color:var(--text2);flex:1;min-width:0;">'
-    +   'Almacenamiento local: <strong>' + st.totalKB + ' KB</strong>'
-    +   ' <span style="color:var(--text3);">/ ~5 MB</span>'
-    +   (st.imgKB > 0 ? ' <span style="font-size:11px;color:var(--text3);"> · '+ st.imgKB +' KB en imágenes</span>' : '')
+  // Mensaje contextual solo cuando supera umbrales significativos
+  var msgExtra = '';
+  if (pct > 80) {
+    msgExtra = '<div style="font-size:11px;line-height:1.55;margin-top:8px;padding:8px 10px;'
+      + 'background:var(--red-bg);border:0.5px solid rgba(255,59,48,0.25);border-radius:8px;color:var(--red);">'
+      + '<strong>Almacenamiento crítico</strong> — las imágenes ocupan '
+      + st.imgKB + ' KB. Libéralas o conecta Drive para usar la nube como almacén principal.'
+      + '</div>';
+  } else if (pct > 60) {
+    msgExtra = '<div style="font-size:11px;color:var(--amber);margin-top:6px;">'
+      + 'Almacenamiento al ' + pct + '%. Considera liberar imágenes antiguas.'
+      + '</div>';
+  }
+
+  el.innerHTML = ''
+    // Fila principal: texto + botones
+    + '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">'
+    +   '<div style="font-size:12px;color:var(--text2);flex:1;min-width:0;">'
+    +     'Almacenamiento local: <strong>' + st.totalKB + ' KB</strong>'
+    +     ' <span style="color:var(--text3);">/ ~5 MB</span>'
+    +     (st.imgKB > 0
+        ? ' <span style="font-size:11px;color:var(--text3);"> · ' + st.imgKB + ' KB en imágenes</span>'
+        : '')
+    +   '</div>'
+    +   botonesImg
     + '</div>'
-    + botonesImg
+    // Barra de progreso
+    + '<div style="height:5px;background:var(--bg4);border-radius:3px;overflow:hidden;">'
+    +   '<div style="height:100%;width:' + pct + '%;background:' + clrBar
+    +   ';border-radius:3px;transition:width 0.5s ease;"></div>'
     + '</div>'
-    + '<div style="height:6px;background:var(--bg4);border-radius:3px;overflow:hidden;">'
-    +   '<div style="height:100%;width:'+st.pct+'%;background:'+clr+';border-radius:3px;transition:width 0.5s ease;"></div>'
-    + '</div>'
+    // Leyenda inferior
     + '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;">'
-    +   '<span style="font-size:10px;color:var(--text3);font-family:var(--font-mono);">'+st.pct+'% usado</span>'
-    +   '<span style="font-size:10px;color:var(--text3);font-family:var(--font-mono);">'+Math.round((5120-st.totalKB))+' KB libres</span>'
+    +   '<span style="font-size:10px;color:var(--text3);font-family:var(--font-mono);">' + pct + '% usado</span>'
+    +   '<span style="font-size:10px;color:var(--text3);font-family:var(--font-mono);">'
+    +     Math.max(0, 5120 - st.totalKB) + ' KB libres'
+    +   '</span>'
     + '</div>'
     + msgExtra;
 }
@@ -4863,8 +4885,7 @@ function _autoRetencionImagen() {
 
 function _checkStorageSize() {
   try {
-    // Si Drive está conectado y sincronizado, no mostrar advertencia de almacenamiento.
-    // Drive actúa como almacén principal y el localStorage es solo caché.
+    // Si Drive está conectado, no molestar — Drive es el almacén principal
     if (_driveToken && Date.now() < _driveTokenExp) {
       var warn0 = document.getElementById('storageWarning');
       if (warn0) warn0.style.display = 'none';
@@ -4880,23 +4901,82 @@ function _checkStorageSize() {
         byKey[k] = sz;
       }
     }
-    var mb   = total / 1024 / 1024;
-    var warn = document.getElementById('storageWarning');
-    if (!warn) return;
+    var mb  = total / 1024 / 1024;
+    var pct = Math.min(Math.round(mb / 5 * 100), 100);
 
-    // Umbral: 4.5 MB (más realista — el límite del navegador es ~5 MB)
-    if (mb > 4.5) {
-      var alexiaSz = (byKey['av_alexia_datos'] || 0) / 1024 / 1024;
-      var regsSz   = (byKey['av_registros']    || 0) / 1024 / 1024;
-      warn.style.display = 'block';
-      warn.innerHTML =
-        '⚠️ Almacenamiento casi lleno (' + mb.toFixed(1) + ' MB / ~5 MB). ' +
-        'Plantillas Alexia: ' + alexiaSz.toFixed(1) + ' MB · Registros: ' + regsSz.toFixed(1) + ' MB. ' +
-        '<button onclick="optimizarStorage()" style="margin-left:10px;padding:3px 10px;' +
-        'background:#fff3;border:1px solid #fff5;border-radius:5px;cursor:pointer;' +
-        'font-size:12px;font-weight:600;color:#fff;">🗜 Liberar ahora</button>';
-    } else {
-      warn.style.display = 'none';
+    // Ocultar el banner flotante legacy — usamos toast no intrusivo
+    var warn = document.getElementById('storageWarning');
+    if (warn) warn.style.display = 'none';
+
+    // Solo avisar si superamos 85% Y no hemos avisado en las últimas 2 horas
+    var lastWarn = parseInt(localStorage.getItem('av_storage_last_warn') || '0', 10);
+    var ahora    = Date.now();
+    var dosTHoras = 2 * 60 * 60 * 1000;
+
+    if (pct > 85 && (ahora - lastWarn) > dosTHoras) {
+      localStorage.setItem('av_storage_last_warn', String(ahora));
+      var regsSzKB   = Math.round((byKey['av_registros']    || 0) / 1024);
+      var alexiaSzKB = Math.round((byKey['av_alexia_datos'] || 0) / 1024);
+
+      // Toast accionable — aparece 1 vez y desaparece
+      var _toastId = 'storageToast_' + ahora;
+      var _tEl = document.createElement('div');
+      _tEl.id  = _toastId;
+      _tEl.style.cssText = [
+        'position:fixed;bottom:76px;left:50%;transform:translateX(-50%)',
+        'z-index:9100;max-width:420px;width:calc(100% - 32px)',
+        'background:var(--bg2);border:0.5px solid var(--border)',
+        'border-radius:14px;padding:12px 14px',
+        'box-shadow:var(--shadow-lg)',
+        'font-family:var(--font-ui);animation:slideUp 0.22s var(--ease-out)'
+      ].join(';');
+
+      _tEl.innerHTML = ''
+        + '<div style="display:flex;align-items:flex-start;gap:10px;">'
+        +   '<div style="width:32px;height:32px;border-radius:8px;background:var(--amber-bg);'
+        +       'display:flex;align-items:center;justify-content:center;flex-shrink:0;">'
+        +     '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'
+        +       '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>'
+        +       '<line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>'
+        +     '</svg>'
+        +   '</div>'
+        +   '<div style="flex:1;min-width:0;">'
+        +     '<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px;">'
+        +       'Almacenamiento al ' + pct + '%'
+        +     '</div>'
+        +     '<div style="font-size:12px;color:var(--text3);margin-bottom:8px;">'
+        +       'Registros: ' + regsSzKB + ' KB'
+        +       (alexiaSzKB > 10 ? ' · Alexia: ' + alexiaSzKB + ' KB' : '')
+        +       '. Liberar imágenes antiguas recupera espacio sin perder notas.'
+        +     '</div>'
+        +     '<div style="display:flex;gap:6px;flex-wrap:wrap;">'
+        +       '<button class="btn btn-sm btn-primary" style="font-size:11px;" onclick="'
+        +           'document.getElementById(\'' + _toastId + '\')?.remove();'
+        +           '_activarTab(document.querySelector(\'[data-maintab=sistema]\'),\'sistema\',\'config\');'
+        +           'setTimeout(_mostrarStorageStats,200);">'
+        +         'Ver espacio'
+        +       '</button>'
+        +       '<button class="btn btn-sm" style="font-size:11px;" onclick="'
+        +           'document.getElementById(\'' + _toastId + '\')?.remove();'
+        +           '_limpiarImagenesAnteriores();">'
+        +         'Liberar imágenes'
+        +       '</button>'
+        +       '<button style="background:none;border:none;padding:5px;cursor:pointer;color:var(--text3);margin-left:auto;" '
+        +           'onclick="document.getElementById(\'' + _toastId + '\')?.remove();" aria-label="Cerrar">'
+        +         '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">'
+        +           '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'
+        +         '</svg>'
+        +       '</button>'
+        +     '</div>'
+        +   '</div>'
+        + '</div>';
+
+      document.body.appendChild(_tEl);
+      // Auto-cerrar después de 12 segundos
+      setTimeout(function() {
+        var el = document.getElementById(_toastId);
+        if (el) { el.style.opacity='0'; el.style.transition='opacity 0.3s'; setTimeout(function(){ el.remove(); }, 300); }
+      }, 12000);
     }
   } catch(e) { /* silencioso */ }
 }
@@ -5927,6 +6007,12 @@ function guardar() {
     if (inp) { inp.focus(); inp.style.borderColor = 'var(--red)'; setTimeout(() => inp.style.borderColor = '', 1500); }
     return;
   }
+  if (!curso) {
+    toast('⚠️ Selecciona un curso antes de guardar', 'err');
+    const inpC = document.getElementById('inputCurso');
+    if (inpC) { inpC.focus(); inpC.style.borderColor = 'var(--red)'; setTimeout(() => inpC.style.borderColor = '', 1500); }
+    return;
+  }
   const vals = Object.values(evaluacion).filter(v => v?.nivel);
   if (!vals.length) {
     toast('⚠️ Evalúa al menos un criterio antes de guardar', 'err', 4000);
@@ -6639,8 +6725,12 @@ function editarNotaRapida(idx, btnEl) {
     <div style="margin-top:8px;font-size:10px;color:var(--text3);">
       ${r.instancia||'Evaluación 1'} · ${r.rubricaNombre||''} · ${r.fecha||''}
     </div>
-    <div style="margin-top:6px;font-size:10px;color:var(--accent);">
-      ⚠ Solo cambia la nota final. Para editar criterios usa ✏️
+    <div style="margin-top:8px;display:flex;gap:6px;align-items:center;border-top:0.5px solid var(--border);padding-top:8px;">
+      <span style="font-size:10px;color:var(--text3);flex:1;">Solo nota final. Para criterios:</span>
+      <button class="btn btn-sm" style="font-size:10px;gap:4px;" onclick="document.getElementById('popoverNotaRapida')?.remove();editarRegistro(${idx});">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Editar completo
+      </button>
     </div>`;
 
   document.body.appendChild(pop);
@@ -6669,6 +6759,7 @@ function guardarNotaRapida(idx) {
   const eraNoEntregado = !!r.noEntregado;
   if (eraNoEntregado) r.noEntregado = false;
   saveRegistros();
+  if (typeof _driveSaveDebounced === 'function') _driveSaveDebounced();
   actualizarConteo();
   renderRegistros();
   actualizarTodaLaApp();
@@ -7340,12 +7431,28 @@ function editarRegistro(idx) {
       <div class="modal-field" style="margin:0;">
         <label>Instancia evaluativa</label>
         <select id="editInstancia" class="curso-select">
-          <option value="Evaluación 1" ${(r.instancia||'Evaluación 1')==='Evaluación 1'?'selected':''}>Evaluación 1</option>
-          <option value="Evaluación 2" ${(r.instancia||'')==='Evaluación 2'?'selected':''}>Evaluación 2</option>
-          <option value="Evaluación 3" ${(r.instancia||'')==='Evaluación 3'?'selected':''}>Evaluación 3</option>
-          <option value="Diagnóstico"  ${(r.instancia||'')==='Diagnóstico'?'selected':''}>Diagnóstico</option>
-          <option value="Proceso"      ${(r.instancia||'')==='Proceso'?'selected':''}>Proceso</option>
-          <option value="Final"        ${(r.instancia||'')==='Final'?'selected':''}>Final</option>
+          ${(function(){
+            var cfg = _getSemConfig();
+            var cur = r.instancia||'Evaluación 1';
+            var html = '';
+            if(cfg.sem1&&cfg.sem1.length){
+              html += '<optgroup label="1° Semestre">';
+              cfg.sem1.forEach(function(inst){ html += '<option value="'+_esc(inst)+'"'+(cur===inst?' selected':'')+'>'+_esc(inst)+'</option>'; });
+              html += '</optgroup>';
+            }
+            if(cfg.sem2&&cfg.sem2.length){
+              html += '<optgroup label="2° Semestre">';
+              cfg.sem2.forEach(function(inst){ html += '<option value="'+_esc(inst)+'"'+(cur===inst?' selected':'')+'>'+_esc(inst)+'</option>'; });
+              html += '</optgroup>';
+            }
+            var esp = cfg.especiales||['Diagnóstico','Proceso','Final'];
+            if(esp.length){
+              html += '<optgroup label="Especiales">';
+              esp.forEach(function(inst){ html += '<option value="'+_esc(inst)+'"'+(cur===inst?' selected':'')+'>'+_esc(inst)+'</option>'; });
+              html += '</optgroup>';
+            }
+            return html;
+          })()}
         </select>
       </div>
       <div class="modal-field" style="margin:0;"></div>
@@ -7440,48 +7547,89 @@ function toggleEditNivel(btn, nivel, idx) {
 
 // ── Al cambiar la rúbrica en edición, recarga los criterios ──
 function cambiarRubricaEdicion(regIdx) {
-  const sel = document.getElementById('editRubrica');
-  const rbIdx = parseInt(sel?.value ?? '-1');
-  const rb = rubricas[rbIdx];
+  const sel  = document.getElementById('editRubrica');
   const cont = document.getElementById('editCriterios');
-  if (!rb || !cont) return;
+  if (!sel || !cont) return;
+
+  const rbIdx = parseInt(sel.value ?? '-1');
+  const rb    = rubricas[rbIdx];
+  if (!rb) return;
+
+  // Feedback visual en el select
+  sel.style.borderColor = 'var(--accent)';
+  setTimeout(function(){ sel.style.borderColor = ''; }, 1500);
+
+  // Recuperar datos previos del registro para hacer smart-prefill
+  const existing    = registros[regIdx];
+  const oldName     = existing ? (existing.rubricaNombre || '') : '';
+  const isChange    = oldName && oldName !== rb.nombre;
+  const prevDetalle = existing ? (existing.detalle || []) : [];
+  const prevMap     = {};
+  prevDetalle.forEach(function(d){
+    if (d.criterio) prevMap[d.criterio.trim().toLowerCase()] = d;
+  });
 
   cont.innerHTML = '';
+
+  // Banner de cambio de rúbrica
+  if (isChange) {
+    const banner = document.createElement('div');
+    banner.style.cssText = 'background:var(--accent-bg);border:0.5px solid var(--accent-border);border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:12px;color:var(--accent);display:flex;align-items:center;gap:8px;';
+    banner.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>'
+      + '<span>Cambiando de <strong>' + _esc(oldName) + '</strong> → <strong>' + _esc(rb.nombre) + '</strong>. Se preservan niveles de criterios con igual nombre.</span>';
+    cont.appendChild(banner);
+  }
+
   rb.criterios.forEach(function(criterio, i) {
+    const prevD    = prevMap[criterio.nombre.trim().toLowerCase()];
+    const nivelPrev = prevD ? prevD.nivel : null;
+    const obsPrev   = prevD ? (prevD.nota || '') : '';
+
     const div = document.createElement('div');
     div.className = 'modal-criterio';
-    div.innerHTML = `
-      <div class="modal-criterio-name" style="display:flex;gap:6px;align-items:flex-start;">
-        <span class="num">${i+1}</span>
-        <span class="crit-nombre-edit" id="editCritNombre_${i}" title="Clic para editar nombre del criterio">${criterio.nombre}</span>
-      </div>
-      <div class="niveles" style="grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:6px;">
-        ${[['MB','Muy bien'],['L','Logrado'],['M','Med.'],['N','Por lograr']].map(([k,lbl]) =>
-          `<button class="nivel-btn" onclick="toggleEditNivel(this,'${k}',${i})">${lbl}</button>`
-        ).join('')}
-      </div>
-      <textarea class="obs-input" id="editObs_${i}" placeholder="Observación (opcional)"></textarea>`;
+    div.innerHTML =
+      '<div class="modal-criterio-name" style="display:flex;gap:6px;align-items:flex-start;">'
+      + '<span class="num">' + (i+1) + '</span>'
+      + '<span class="crit-nombre-edit" id="editCritNombre_' + i + '" title="Clic para editar">' + _esc(criterio.nombre) + '</span>'
+      + (nivelPrev ? '<span style="font-size:10px;font-family:var(--font-mono);background:var(--green-bg);color:var(--green);border-radius:4px;padding:1px 5px;margin-left:auto;flex-shrink:0;">↺ recuperado</span>' : '')
+      + '</div>'
+      + '<div class="niveles" style="grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:6px;">'
+      + [['MB','Muy bien'],['L','Logrado'],['M','En proceso'],['N','Por lograr']].map(function(pair){
+          var k = pair[0], lbl = pair[1];
+          return '<button class="nivel-btn' + (nivelPrev===k?' sel-'+k:'') + '" onclick="toggleEditNivel(this,&apos;' + k + '&apos;,' + i + ')">' + lbl + '</button>';
+        }).join('')
+      + '</div>'
+      + '<div class="obs-input-wrap"><textarea class="obs-input" id="editObs_' + i + '" placeholder="Observación (opcional)">' + _esc(obsPrev) + '</textarea></div>';
     cont.appendChild(div);
 
+    // Nombre de criterio editable
     const nameEl = div.querySelector('.crit-nombre-edit');
     if (nameEl) {
-      nameEl.addEventListener('click', () => { nameEl.contentEditable = 'true'; nameEl.focus(); });
-      nameEl.addEventListener('blur', () => { nameEl.contentEditable = 'false'; });
-      nameEl.addEventListener('keydown', e => { if (e.key==='Enter') { e.preventDefault(); nameEl.blur(); } });
+      nameEl.style.cursor = 'pointer';
+      nameEl.addEventListener('click', function() {
+        const input = document.createElement('input');
+        input.value = nameEl.textContent.trim();
+        input.style.cssText = 'width:100%;border:1px solid var(--accent);border-radius:4px;padding:2px 6px;font-size:13px;font-family:inherit;background:var(--bg2);color:var(--text);';
+        nameEl.replaceWith(input);
+        input.focus(); input.select();
+        function commit() {
+          var span = document.createElement('span');
+          span.className = 'crit-nombre-edit';
+          span.id = 'editCritNombre_' + i;
+          span.style.cursor = 'pointer';
+          span.textContent = input.value.trim() || criterio.nombre;
+          span.title = 'Clic para editar nombre';
+          input.replaceWith(span);
+        }
+        input.addEventListener('blur', commit);
+        input.addEventListener('keydown', function(e){ if(e.key==='Enter'||e.key==='Escape') input.blur(); });
+      });
     }
   });
 
-  // Avisar que los criterios fueron reiniciados
-  const lbl = document.querySelector('#editCriterios')?.closest('.modal-box')?.querySelector('.modal-title');
-  const info = document.getElementById('editRubricaInfo');
-  if (!info) {
-    const span = document.createElement('span');
-    span.id = 'editRubricaInfo';
-    span.style.cssText = 'font-size:11px;color:var(--accent);margin-left:8px;';
-    span.textContent = '← rúbrica cambiada, criterios reiniciados';
-    sel?.parentElement?.appendChild(span);
-  }
+  if (typeof _inyectarMicObsInput === 'function') setTimeout(_inyectarMicObsInput, 30);
 }
+
 
 function confirmarEdicion(idx) {
   const r = registros[idx]; if (!r) return;
@@ -7547,6 +7695,10 @@ function confirmarEdicion(idx) {
   const conteo = {MB:0,L:0,M:0,N:0};
   vals.forEach(v => conteo[v.nivel]++);
   r.conteo = conteo;
+
+  // Actualizar timestamps y semestre — necesarios para SmartSync y filtros
+  r._savedAt = new Date().toISOString();
+  r.semestre  = _semestrePorInstancia(instancia);
 
   // Si el registro era "No entregado", al confirmar la edición siempre se quita ese estado.
   // El profesor edita el registro porque el alumno ya entregó — no importa qué niveles tenga.
@@ -9773,7 +9925,7 @@ function renderDashboard() {
     const val = selInst.value;
     const insts = [...new Set(registros.map(r => r.instancia || 'Evaluación 1'))].sort();
     selInst.innerHTML = '<option value="">Todas las instancias</option>' +
-      insts.map(i => `<option value="${i}" ${i===val?'selected':''}>${i}</option>`).join('');
+      insts.map(i => `<option value="${_esc(i)}" ${i===val?'selected':''}>${_esc(i)}</option>`).join('');
   }
   const instFiltro = selInst?.value || '';
 
@@ -9963,7 +10115,7 @@ function _renderDashAlertas(instFiltro) {
   const porCurso = {};
 
   TODOS_LOS_CURSOS.forEach(function(curso) {
-    const regsAll = registros.filter(function(r) {
+    const regsAll = _registrosSemestre().filter(function(r) {
       return (r.curso || '') === curso && r.nota !== undefined && r.nota !== null;
     });
     if (!regsAll.length) return;
@@ -11699,6 +11851,28 @@ input:focus, textarea:focus, select:focus {
 }
 .reg-card, .ca-item, .config-card, .perfil-eval-card { min-width: 0; }
 
+
+/* ── QA: will-change para elementos animados ─── */
+.cloud-btn.saving, .cam-badge.live, .av-spinner, .mic-btn.recording { will-change: transform, opacity; }
+
+/* ── EDICIÓN DE REGISTRO — mejoras visuales ─────────── */
+/* Rúbrica select: highlight al cambiar */
+#editRubrica:focus { border-color: var(--accent) !important; }
+
+/* Criterio-item en edición: animación al renderizar */
+@keyframes critFadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
+#editCriterios .modal-criterio { animation: critFadeIn 0.15s ease both; }
+#editCriterios .modal-criterio:nth-child(1)  { animation-delay:.02s }
+#editCriterios .modal-criterio:nth-child(2)  { animation-delay:.04s }
+#editCriterios .modal-criterio:nth-child(3)  { animation-delay:.06s }
+#editCriterios .modal-criterio:nth-child(4)  { animation-delay:.08s }
+#editCriterios .modal-criterio:nth-child(5)  { animation-delay:.10s }
+#editCriterios .modal-criterio:nth-child(6)  { animation-delay:.12s }
+
+/* Popover nota rápida — mejoras */
+#popoverNotaRapida { animation: slideUp 0.18s var(--ease-out); }
+#inputNotaRapida:focus { border-color: var(--accent) !important; outline: none; }
+
 </style></head><body>
   <h1>📋 Informe de Evaluaciones · Artes Visuales</h1>
   <div class="meta">
@@ -11849,7 +12023,7 @@ function showTab(name) {
   }
 
   // Guardar tab activa
-  try { localStorage.setItem('av_last_tab', mappedName); } catch(e) {}
+  
 
   // Callbacks de renderizado por tab
   // Renderizadores aislados — cada uno con su propio try/catch
@@ -11927,6 +12101,12 @@ function showEstudioSub(sub) {
 
   _estudioSubTab = sub;
   _renderEstudioSubNav();
+
+  // Ocultar la barra de evaluación en serie si no estamos en evaluar
+  if (sub !== 'evaluar') {
+    var evalBar = document.getElementById('evalNavBar');
+    if (evalBar) evalBar.style.display = 'none';
+  }
   // requestAnimationFrame: cede el hilo al browser para pintar la navegación primero
   if (sub === 'cursos') {
     requestAnimationFrame(function() {
@@ -14493,6 +14673,15 @@ function _getActiveAutocompleteList() {
   return document.getElementById('autocompleteList') || document.getElementById('evalAutocompleteList');
 }
 
+var _searchTimer=null;
+function _debouncedSearch(val){
+  clearTimeout(_searchTimer);
+  _searchTimer=setTimeout(function(){
+    mostrarAutocompletado(val);
+    if(typeof _limpiarCanvasParaNuevoAlumno==='function')_limpiarCanvasParaNuevoAlumno();
+  },180);
+}
+
 function mostrarAutocompletado(val) {
   clearTimeout(_acDebounceTimer);
   _acDebounceTimer = setTimeout(function() { _mostrarAutocompletadoImmediate(val); }, 80);
@@ -15283,7 +15472,7 @@ function renderCursoMain() {
 
   // Selector de instancia evaluativa
   const instanciasDisponibles = [...new Set(
-    registros.filter(function(r){ return (r.curso||'') === curso; })
+    _registrosSemestre().filter(function(r){ return (r.curso||'') === curso; })
              .map(function(r){ return r.instancia || 'Evaluación 1'; })
   )].sort();
   if (instanciasDisponibles.length > 0) {
@@ -17486,9 +17675,22 @@ async function _driveRequest(method, url, body, extraHeaders) {
   var headers = Object.assign({ 'Authorization': 'Bearer ' + token }, extraHeaders || {});
   var opts = { method: method, headers: headers };
   if (body) opts.body = body;
-  var r = await fetch(url, opts);
-  if (!r.ok) throw new Error('Drive API ' + r.status + ': ' + await r.text());
-  return r;
+  var _transient = [429,500,502,503,504];
+  for (var _att = 0; _att <= 1; _att++) {
+    try {
+      var r = await fetch(url, opts);
+      if (r.ok) return r;
+      if (_transient.indexOf(r.status) !== -1 && _att === 0) {
+        await new Promise(function(res){ setTimeout(res,2000); }); continue;
+      }
+      throw new Error('Drive API ' + r.status + ': ' + await r.text());
+    } catch(e) {
+      if (e.name === 'TypeError' && _att === 0) {
+        await new Promise(function(res){ setTimeout(res,2000); }); continue;
+      }
+      throw e;
+    }
+  }
 }
 
 // Buscar o crear carpeta ArtEval_Backups
@@ -18521,6 +18723,23 @@ function _activarTab(btnEl, tabName, subTab) {
         b.removeAttribute('style');
       });
     }
+  }
+
+  // Ocultar barra de evaluación en serie si salimos del tab evaluar
+  if (tabName !== 'estudio' || (subTab && subTab !== 'evaluar')) {
+    var _evBar = document.getElementById('evalNavBar');
+    if (_evBar && tabName !== 'estudio') _evBar.style.display = 'none';
+  }
+  // Liberar stream de cámara al salir de estudio
+  if (tabName !== 'estudio') {
+    try {
+      if (typeof stream !== 'undefined' && stream) {
+        stream.getTracks().forEach(function(t){ t.stop(); });
+        stream = null;
+        var _vid = document.getElementById('videoEl');
+        if (_vid) { _vid.srcObject = null; _vid.style.display = 'none'; }
+      }
+    } catch(e) {}
   }
 
   // 6. Mostrar subnav: Inicio y Evaluar NO muestran subnav.
