@@ -2975,11 +2975,6 @@ button:focus-visible, .tab:focus-visible, .sub-tab:focus-visible {
       <button class="btn btn-sm" onclick="abrirAyuda()" title="Manual de usuario · Ayuda" aria-label="Ayuda" style="width:32px;padding:0;border-color:transparent;background:transparent;min-height:32px;color:var(--text3);">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
       </button>
-      <!-- Curso activo — badge clicable que lleva de vuelta al curso -->
-      <button id="topbarCursoBadge" onclick="_irAlCursoActivo()" aria-label="Ir al curso activo">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-        <span id="topbarCursoLabel">—</span>
-      </button>
       <!-- Selector de semestre — píldoras naranjas estilo iOS -->
       <button id="semPill1" onclick="_setSemestre(1)" title="Ver 1° Semestre"
         style="font-size:11px;font-weight:700;font-family:var(--font-mono);
@@ -3819,14 +3814,6 @@ button:focus-visible, .tab:focus-visible, .sub-tab:focus-visible {
             <input class="search-input" type="text" id="buscarRegistros" placeholder="Buscar estudiante..." style="padding-left:45px !important;" oninput="clearTimeout(window._regSearchTimer);window._regSearchTimer=setTimeout(renderRegistros,280)">
           </div>
           <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;margin-left:auto;">
-            <!-- Acceso rápido: Ir al curso activo en Cursos -->
-            <button id="btnIrACurso" onclick="_irAlCursoActivo()" title="Ver este curso en la vista Cursos"
-              style="display:none;gap:5px;font-size:11px;font-weight:600;padding:5px 10px;border-radius:20px;
-                     background:var(--accent-bg);color:var(--accent);border:0.5px solid var(--accent-border);
-                     cursor:pointer;font-family:var(--font-ui);white-space:nowrap;transition:background 0.15s;">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-              <span id="btnIrACursoLabel">Ver en Cursos</span>
-            </button>
             <!-- Libro de Clases -->
             <!-- Vista Lista / Libro — icono cambia, nunca emoji -->
             <button id="btnVistaLibro" onclick="toggleVistaLibro()" title="Cambiar vista" class="reg-curso-chip" style="gap:5px;min-height:30px;padding:5px 11px;">
@@ -6026,9 +6013,6 @@ function guardar() {
     if (inpC) { inpC.focus(); inpC.style.borderColor = 'var(--red)'; setTimeout(() => inpC.style.borderColor = '', 1500); }
     return;
   }
-  // Persistir curso activo para que Estudio → Cursos lo recuerde
-  try { localStorage.setItem('av_curso_activo', curso); } catch(e) {}
-  if (typeof cursoSeleccionado !== 'undefined' && !cursoSeleccionado) cursoSeleccionado = curso;
   const vals = Object.values(evaluacion).filter(v => v?.nivel);
   if (!vals.length) {
     toast('⚠️ Evalúa al menos un criterio antes de guardar', 'err', 4000);
@@ -6358,8 +6342,6 @@ function _renderSemestreControls() {
     p1.style.color         = 'var(--text3)';
     p1.style.borderColor   = 'var(--border)';
   }
-  // Actualizar badge de curso activo en topbar
-  if (typeof _actualizarBtnIrACurso === 'function') _actualizarBtnIrACurso();
 }
 
 
@@ -6887,8 +6869,6 @@ function filtrarPorInstancia(instancia) {
 
 function renderRegistros() {
   if (!Array.isArray(registros)) return;
-  // Actualizar botón de acceso rápido al curso
-  setTimeout(_actualizarBtnIrACurso, 50);
   const list   = document.getElementById('registrosList');
   const libro  = document.getElementById('libroClasesView');
   if (!list) return;
@@ -11893,33 +11873,6 @@ input:focus, textarea:focus, select:focus {
 #popoverNotaRapida { animation: slideUp 0.18s var(--ease-out); }
 #inputNotaRapida:focus { border-color: var(--accent) !important; outline: none; }
 
-
-/* ── NAVEGACIÓN RÁPIDA — píldoras y shortcuts ──────── */
-#btnIrACurso:hover { background: var(--accent-bg); opacity: 0.85; }
-
-/* Breadcrumb contextual de curso en la topbar */
-#topbarCursoBadge {
-  display: none;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  font-weight: 600;
-  font-family: var(--font-mono);
-  background: var(--bg3);
-  border: 0.5px solid var(--border);
-  padding: 4px 10px;
-  border-radius: 20px;
-  cursor: pointer;
-  color: var(--text2);
-  white-space: nowrap;
-  transition: background var(--t-fast), color var(--t-fast);
-  max-width: 120px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-#topbarCursoBadge:hover { background: var(--bg4); color: var(--accent); border-color: var(--accent-border); }
-#topbarCursoBadge svg { flex-shrink: 0; }
-
 </style></head><body>
   <h1>📋 Informe de Evaluaciones · Artes Visuales</h1>
   <div class="meta">
@@ -12157,19 +12110,7 @@ function showEstudioSub(sub) {
   // requestAnimationFrame: cede el hilo al browser para pintar la navegación primero
   if (sub === 'cursos') {
     requestAnimationFrame(function() {
-      // Restaurar curso activo si se viene de otra sección o tab
-      if (!cursoSeleccionado) {
-        var saved = localStorage.getItem('av_curso_activo');
-        var inputC = document.getElementById('inputCurso');
-        var fromInput = inputC ? (inputC.value || '') : '';
-        cursoSeleccionado = saved || fromInput || null;
-      }
-      if (cursoSeleccionado) {
-        document.querySelectorAll('.curso-sidebar-btn').forEach(function(b){
-          b.classList.toggle('active', b.dataset.curso === cursoSeleccionado);
-        });
-        try { renderCursoMain(); } catch(e) {}
-      }
+      if (cursoSeleccionado) { try { renderCursoMain(); } catch(e) {} }
       _restoreScroll('estudio-sec-cursos');
     });
   }
@@ -14741,60 +14682,6 @@ function _debouncedSearch(val){
   },180);
 }
 
-// ── Helpers de navegación rápida entre secciones ────────────────────────────
-
-// Ir al curso activo desde Registros → Cursos
-function _irAlCursoActivo() {
-  var curso = localStorage.getItem('av_curso_activo') || cursoSeleccionado;
-  if (curso) cursoSeleccionado = curso;
-  _activarTab(
-    document.querySelector('[data-maintab="estudio"]') || document.getElementById('tabBtnEvaluar'),
-    'estudio', 'cursos'
-  );
-}
-
-// Ir al curso activo desde cualquier vista → Evaluar
-function _irAEvaluarCurso(curso) {
-  curso = curso || localStorage.getItem('av_curso_activo') || cursoSeleccionado;
-  if (!curso) return;
-  var inputC = document.getElementById('inputCurso');
-  if (inputC) inputC.value = curso;
-  try { localStorage.setItem('av_curso_activo', curso); } catch(e) {}
-  _activarTab(document.getElementById('tabBtnEvaluar'), 'estudio', 'evaluar');
-}
-
-// Actualizar el botón "Ver en Cursos" en la toolbar de Registros
-function _actualizarBtnIrACurso() {
-  var btn   = document.getElementById('btnIrACurso');
-  var label = document.getElementById('btnIrACursoLabel');
-  if (!btn) return;
-  var curso = localStorage.getItem('av_curso_activo') || cursoSeleccionado;
-  var filtroCurso = (document.getElementById('statsCurso') ? document.getElementById('statsCurso').value : '')
-                 || (document.getElementById('filtroCurso') ? document.getElementById('filtroCurso').value : '');
-  var cursoMostrar = filtroCurso || curso;
-  if (cursoMostrar) {
-    btn.style.display = 'inline-flex';
-    if (label) label.textContent = cursoMostrar;
-    btn.title = 'Ver ' + cursoMostrar + ' en la vista Cursos';
-  } else {
-    btn.style.display = 'none';
-  }
-
-  // Actualizar también el badge de la topbar
-  var tbBadge = document.getElementById('topbarCursoBadge');
-  var tbLabel = document.getElementById('topbarCursoLabel');
-  if (tbBadge && tbLabel) {
-    if (cursoMostrar) {
-      tbBadge.style.display = 'inline-flex';
-      tbLabel.textContent   = cursoMostrar;
-      tbBadge.title         = 'Curso activo: ' + cursoMostrar + ' — clic para ver en Cursos';
-    } else {
-      tbBadge.style.display = 'none';
-    }
-  }
-}
-
-
 function mostrarAutocompletado(val) {
   clearTimeout(_acDebounceTimer);
   _acDebounceTimer = setTimeout(function() { _mostrarAutocompletadoImmediate(val); }, 80);
@@ -15336,13 +15223,6 @@ function sincronizarRegistrosACursos() {
 // ── Seleccionar curso en sidebar ──
 function selCurso(curso) {
   cursoSeleccionado = curso;
-  // ── Persistir para restaurar al volver desde Evaluar ──────────────────
-  try { localStorage.setItem('av_curso_activo', curso); } catch(e) {}
-  // ── Sincronizar con inputCurso del panel Evaluar ───────────────────────
-  var inputC = document.getElementById('inputCurso');
-  if (inputC && curso) inputC.value = curso;
-  // ── Actualizar badge topbar y botón "Ver en Cursos" ─────────────────────
-  setTimeout(_actualizarBtnIrACurso, 30);
   estFiltro = 'todos';
   // Preservar instanciaCursoFiltro para poder navegar cursos con el mismo filtro de instancia
   // Solo se resetea si el usuario selecciona "Todas" en el sidebar
@@ -15590,19 +15470,7 @@ function renderCursoMain() {
   hdrBtns.appendChild(btnDedup);
   hdrBtns.appendChild(btnExport);
 
-  // ── Acceso directo: Evaluar este curso ──────────────────────────────────
-  var btnEvalCurso = document.createElement('button');
-  btnEvalCurso.className = 'btn btn-primary';
-  btnEvalCurso.style.cssText = 'gap:6px;';
-  btnEvalCurso.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg> Evaluar este curso';
-  btnEvalCurso.title = 'Ir a Evaluar con ' + curso + ' ya seleccionado';
-  btnEvalCurso.onclick = function() {
-    var inputC = document.getElementById('inputCurso');
-    if (inputC) inputC.value = curso;
-    try { localStorage.setItem('av_curso_activo', curso); } catch(e) {}
-    _activarTab(document.getElementById('tabBtnEvaluar'), 'estudio', 'evaluar');
-  };
-  hdrBtns.appendChild(btnEvalCurso);
+  // Selector de instancia evaluativa
   const instanciasDisponibles = [...new Set(
     _registrosSemestre().filter(function(r){ return (r.curso||'') === curso; })
              .map(function(r){ return r.instancia || 'Evaluación 1'; })
@@ -18840,14 +18708,6 @@ function _activarTab(btnEl, tabName, subTab) {
     try { showEstudioSub(subTab); } catch(e) {}
     if (subTab === 'evaluar' || subTab === 'estudio') {
       setTimeout(_reconstruirInstanciaSelect, 80);
-      // Sincronizar inputCurso con el último curso activo en Cursos
-      setTimeout(function() {
-        var saved = localStorage.getItem('av_curso_activo');
-        if (saved) {
-          var inputC = document.getElementById('inputCurso');
-          if (inputC && !inputC.value) inputC.value = saved;
-        }
-      }, 50);
     }
   }
 
