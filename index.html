@@ -5234,12 +5234,11 @@ function renderCriterios() {
   const list = document.getElementById('criteriosList');
   if (!list) return;
   const crits = getCriterios();
+  if (!crits || !crits.length) return;
   setEl('totalPts', crits.length * 3);
   setEl('rubricaNombreHeader', getRubrica().nombre);
 
-  // ── Performance: DocumentFragment + requestAnimationFrame ──────────────
-  // Construye todos los elementos en memoria, luego los inyecta en un único
-  // reflow del navegador. Evita N repaints encadenados en el bucle.
+  // DocumentFragment — construye en memoria, un solo reflow al final
   const frag = document.createDocumentFragment();
 
   crits.forEach((c, i) => {
@@ -5260,7 +5259,6 @@ function renderCriterios() {
       .forEach(([k, lbl, pts]) => {
         const btn = document.createElement('button');
         btn.className = 'nivel-btn' + (ev?.nivel === k ? ' sel-' + k : '');
-        // data attributes para event delegation — sin onclick inline
         btn.dataset.critIdx = i;
         btn.dataset.nivel   = k;
         btn.innerHTML = `${lbl}<br><span style="font-family:'DM Mono',monospace;font-size:9px;opacity:0.7">${pts}pts</span>`;
@@ -5271,7 +5269,6 @@ function renderCriterios() {
     div.appendChild(nameDiv);
     div.appendChild(nivelesDiv);
 
-    // Nota IA si existe
     if (ev?.nota) {
       const notaDiv = document.createElement('div');
       notaDiv.className = 'ia-nota';
@@ -5282,16 +5279,14 @@ function renderCriterios() {
     frag.appendChild(div);
   });
 
-  // Única mutación al DOM — un solo reflow
-  requestAnimationFrame(function() {
-    try {
-      list.innerHTML = '';        // limpiar
-      list.appendChild(frag);    // insertar todo de una vez
-      actualizarResumen();
-    } catch(e) {
-      console.error('[ArtEval] renderCriterios error:', e.message);
-    }
-  });
+  // Mutación única — un solo reflow
+  try {
+    list.innerHTML = '';
+    list.appendChild(frag);
+    actualizarResumen();
+  } catch(e) {
+    console.error('[ArtEval] renderCriterios:', e.message);
+  }
 }
 
 function setNivel(i, k) {
@@ -5419,12 +5414,25 @@ function _evalSerie(dir) {
   toast('\u2708\ufe0f '+(_evalSerieIdx+1)+' / '+_evalSerieLista.length+': '+nombre,'info',2000);
 }
 function _actualizarEvalNavBar() {
-  var bar=document.getElementById('evalNavBar');
-  var lbl=document.getElementById('evalNavLabel');
-  if(!bar)return;
-  bar.style.display=_evalSerieActivo?'flex':'none';
-  if(lbl&&_evalSerieLista.length){
-    lbl.textContent=(_evalSerieIdx+1)+' / '+_evalSerieLista.length+' — '+(_evalSerieLista[_evalSerieIdx]||'—');
+  var bar = document.getElementById('evalNavBar');
+  var lbl = document.getElementById('evalNavLabel');
+  if (!bar) return;
+  bar.style.display = _evalSerieActivo ? 'flex' : 'none';
+  if (lbl && _evalSerieLista.length) {
+    var alumno   = _evalSerieLista[_evalSerieIdx] || '—';
+    var pos      = _evalSerieIdx + 1;
+    var total    = _evalSerieLista.length;
+    // Nombre compacto: solo apellidos (primera y segunda palabra)
+    var partes   = alumno.trim().split(/\s+/);
+    var nombreCorto = partes.length > 2
+      ? partes[0] + ' ' + partes[1]
+      : alumno;
+    lbl.innerHTML =
+      '<span style="font-size:10px;color:var(--text3);font-family:var(--font-mono);'
+      + 'letter-spacing:0.3px;">' + pos + ' / ' + total + '</span>'
+      + '<span style="display:inline-block;max-width:180px;overflow:hidden;text-overflow:ellipsis;'
+      + 'white-space:nowrap;font-size:13px;font-weight:600;color:var(--text);">'
+      + _esc(nombreCorto) + '</span>';
   }
 }
 function _irAEvaluarAlumno(nombre) {
@@ -6073,7 +6081,7 @@ function guardar() {
   if (!vals.length) {
     toast('⚠️ Evalúa al menos un criterio antes de guardar', 'err', 4000);
     // Resaltar los criterios para guiar al usuario
-    document.querySelectorAll('.nivel-row').forEach(function(row) {
+    document.querySelectorAll('.criterio-item').forEach(function(row) {
       row.style.outline = '2px solid var(--accent)';
       row.style.borderRadius = '6px';
       setTimeout(() => { row.style.outline = ''; row.style.borderRadius = ''; }, 2000);
@@ -11507,22 +11515,34 @@ body { background: var(--ios-bg); }
 
 /* Eval nav (modo serie) */
 .eval-nav {
-  display: flex; align-items: center; justify-content: space-between; gap: 8px;
-  padding: 10px 16px; background: rgba(255,255,255,0.92);
-  backdrop-filter: blur(10px); border-top: 0.5px solid var(--ios-sep-solid);
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 10px 16px;
+  background: var(--bg2);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-top: 0.5px solid var(--border);
+  box-shadow: 0 -1px 0 rgba(0,0,0,0.04);
+  position: relative;
+  z-index: 100;
 }
 .eval-nav-btn {
-  display: inline-flex; align-items: center; gap: 5px; padding: 8px 14px;
-  border: none; border-radius: 10px; background: var(--ios-fill2);
-  color: var(--ios-label); font-size: 13px; font-weight: 500; font-family: var(--font-ui);
-  cursor: pointer; min-height: 40px; transition: all 0.18s ease;
+  display: inline-flex; align-items: center; gap: 5px; padding: 7px 14px;
+  border: 0.5px solid var(--border);
+  border-radius: 20px;
+  background: var(--bg3);
+  color: var(--accent);
+  font-size: 13px; font-weight: 600; font-family: var(--font-ui);
+  cursor: pointer; min-height: 36px;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
   -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+  white-space: nowrap; flex-shrink: 0;
 }
-.eval-nav-btn:hover { background: var(--ios-fill); }
-.eval-nav-btn:active { transform: scale(0.96); opacity: 0.82; }
+.eval-nav-btn:hover  { background: var(--bg4); border-color: var(--accent-border); }
+.eval-nav-btn:active { transform: scale(0.96); }
 .eval-nav-label {
-  flex: 1; text-align: center; font-size: 13px; font-weight: 600;
-  color: var(--ios-label); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  flex: 1; text-align: center; display: flex; flex-direction: column;
+  align-items: center; gap: 1px;
+  overflow: hidden; min-width: 0;
 }
 
 /* NE interactiva */
