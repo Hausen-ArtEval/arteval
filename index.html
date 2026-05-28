@@ -2976,8 +2976,7 @@ button:focus-visible, .tab:focus-visible, .sub-tab:focus-visible {
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
       </button>
       <!-- Curso activo — badge clicable que lleva de vuelta al curso -->
-      <button id="topbarCursoBadge" onclick="_irAlCursoActivo()" aria-label="Ir al curso activo">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+      <button id="topbarCursoBadge" onclick="_irAlCursoActivo()" title="Curso activo — clic para ir a Cursos" aria-label="Ir al curso activo">
         <span id="topbarCursoLabel">—</span>
       </button>
       <!-- Selector de semestre — píldoras naranjas estilo iOS -->
@@ -12050,9 +12049,9 @@ input:focus, textarea:focus, select:focus {
 #topbarCursoBadge {
   display: none;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
   font-family: var(--font-mono);
   background: var(--bg3);
   border: 0.5px solid var(--border);
@@ -12061,12 +12060,16 @@ input:focus, textarea:focus, select:focus {
   cursor: pointer;
   color: var(--text2);
   white-space: nowrap;
-  transition: background var(--t-fast), color var(--t-fast);
-  max-width: 120px;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  max-width: 130px;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.2;
 }
-#topbarCursoBadge:hover { background: var(--bg4); color: var(--accent); border-color: var(--accent-border); }
+#topbarCursoBadge:hover {
+  background: var(--bg4);
+  color: var(--text);
+}
 #topbarCursoBadge svg { flex-shrink: 0; }
 
 
@@ -12336,6 +12339,15 @@ function showEstudioSub(sub) {
     if (evalBar) evalBar.style.display = 'none';
   }
   // requestAnimationFrame: cede el hilo al browser para pintar la navegación primero
+  if (sub === 'evaluar') {
+    // Inicializar panel de evaluación al entrar
+    try {
+      renderCriterios();
+      actualizarResumen();
+      actualizarBarraProgresoCurso();
+      _reconstruirInstanciaSelect();
+    } catch(e) { console.warn('[ArtEval] evaluar init:', e.message); }
+  }
   if (sub === 'cursos') {
     requestAnimationFrame(function() {
       // Restaurar curso activo si se viene de otra sección o tab
@@ -15040,33 +15052,45 @@ function _irAEvaluarCurso(curso) {
 function _actualizarBtnIrACurso() {
   var btn   = document.getElementById('btnIrACurso');
   var label = document.getElementById('btnIrACursoLabel');
-  if (!btn) return;
+  var tbBadge = document.getElementById('topbarCursoBadge');
+  var tbLabel = document.getElementById('topbarCursoLabel');
+
   var curso = localStorage.getItem('av_curso_activo') || cursoSeleccionado;
   var filtroCurso = (document.getElementById('statsCurso') ? document.getElementById('statsCurso').value : '')
                  || (document.getElementById('filtroCurso') ? document.getElementById('filtroCurso').value : '');
   var cursoMostrar = filtroCurso || curso;
-  if (cursoMostrar) {
-    btn.style.display = 'inline-flex';
-    if (label) label.textContent = cursoMostrar;
-    btn.title = 'Ver ' + cursoMostrar + ' en la vista Cursos';
-  } else {
-    btn.style.display = 'none';
+
+  // ── Botón "Ver en Cursos" en toolbar de Registros ────────────────────────
+  if (btn) {
+    if (cursoMostrar) {
+      btn.style.display = 'inline-flex';
+      if (label) label.textContent = cursoMostrar;
+      btn.title = 'Ver ' + cursoMostrar + ' en la vista Cursos';
+    } else {
+      btn.style.display = 'none';
+    }
   }
 
-  // Actualizar también el badge de la topbar
-  var tbBadge = document.getElementById('topbarCursoBadge');
-  var tbLabel = document.getElementById('topbarCursoLabel');
+  // ── Badge topbar — mismo estilo que píldoras de semestre ─────────────────
   if (tbBadge && tbLabel) {
     if (cursoMostrar) {
+      // Contar registros del curso en semestre activo
+      var nRegs = 0;
+      try {
+        nRegs = _registrosSemestre().filter(function(r){
+          return (r.curso || '') === cursoMostrar;
+        }).length;
+      } catch(e) {}
+      // Formato: "4°C · 40" igual que "1° Sem · 1226"
+      var txt = cursoMostrar + (nRegs > 0 ? ' · ' + nRegs : '');
+      tbLabel.textContent = txt;
       tbBadge.style.display = 'inline-flex';
-      tbLabel.textContent   = cursoMostrar;
-      tbBadge.title         = 'Curso activo: ' + cursoMostrar + ' — clic para ver en Cursos';
+      tbBadge.title = 'Curso activo: ' + cursoMostrar + (nRegs ? ' (' + nRegs + ' evaluaciones)' : '') + ' — clic para ir a Cursos';
     } else {
       tbBadge.style.display = 'none';
     }
   }
 }
-
 
 function mostrarAutocompletado(val) {
   clearTimeout(_acDebounceTimer);
