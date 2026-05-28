@@ -6053,6 +6053,33 @@ function toggleAuto() {
 //  GUARDAR REGISTRO
 // ═══════════════════════════════════════════════════════
 function guardar() {
+  // Feedback visual inmediato — confirma al usuario que el click se registró
+  var _btnG = document.querySelector('.btn-success[onclick="guardar()"]');
+  if (_btnG) {
+    _btnG.disabled = true;
+    var _textoOriginal = _btnG.innerHTML;
+    _btnG.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 0.7s linear infinite"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Guardando…';
+    // Restaurar tras 3s por si algo falla
+    setTimeout(function() {
+      if (_btnG) { _btnG.disabled = false; _btnG.innerHTML = _textoOriginal; }
+    }, 3000);
+  }
+
+  try {
+    _guardarImpl();
+  } catch(e) {
+    console.error('[ArtEval] guardar() error:', e.message, e.stack);
+    toast('❌ Error al guardar: ' + e.message + '. Revisa la consola.', 'err', 6000);
+    if (_btnG) { _btnG.disabled = false; _btnG.innerHTML = _textoOriginal; }
+  } finally {
+    // Restaurar botón siempre, con pequeño delay para UX
+    setTimeout(function() {
+      if (_btnG) { _btnG.disabled = false; _btnG.innerHTML = _textoOriginal; }
+    }, 400);
+  }
+}
+
+function _guardarImpl() {
   // Normalizar nombre: title-case estricto — primera letra mayúscula, RESTO MINÚSCULA por palabra
   // Previene "Rivas PeñAloza" → fuerza "Rivas Peñaloza"
   // Palabras de 1-2 letras (DE, LA, Y) se respetan tal como vienen
@@ -6211,7 +6238,7 @@ function guardar() {
   // Activar/actualizar la serie para el curso actual y mostrar CTA de siguiente alumno
   _iniciarEvalSerie(nombre);          // reconstruye la lista del curso actual
   _avanzarAlSiguientePendiente();     // salta al próximo sin evaluación
-}
+}  // fin _guardarImpl
 
 // ══════════════════════════════════════════════════════
 //  SISTEMA DE SEMESTRES — filtrado y rendimiento
@@ -10096,14 +10123,15 @@ function _actualizarPasosOnboarding() {
 
 var _kpiCache = { hash: '', lastFiltro: null };
 function _renderDashKpiGlobal(instFiltro) {
-  // (kpiEl ya obtenido arriba)
+  const kpiEl = document.getElementById('dashKpiGlobal');
+  if (!kpiEl) return;
+
   // Cache ligero: si los datos no cambiaron, no re-renderizar
   var _hash = _registrosSemestre().length + '|' + (instFiltro||'') + '|' + _semestreActivo;
   if (_hash === _kpiCache.hash && _kpiCache.lastFiltro === instFiltro) return;
   _kpiCache.hash = _hash;
   _kpiCache.lastFiltro = instFiltro;
-  const obEl  = document.getElementById('dashOnboarding');
-  if (!kpiEl) return;
+  const obEl = document.getElementById('dashOnboarding');
 
   // Filtrar siempre por semestre activo
   const regsSem = _registrosSemestre();
@@ -12104,6 +12132,10 @@ input:focus, textarea:focus, select:focus {
   contain-intrinsic-size: 0 80px;
 }
 
+
+/* ── Spinner para botón Guardar ─── */
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
 </style></head><body>
   <h1>📋 Informe de Evaluaciones · Artes Visuales</h1>
   <div class="meta">
@@ -12340,9 +12372,11 @@ function showEstudioSub(sub) {
   }
   // requestAnimationFrame: cede el hilo al browser para pintar la navegación primero
   if (sub === 'evaluar') {
-    // Inicializar panel de evaluación al entrar
+    // Solo inicializar si el panel está vacío — no resetear trabajo del usuario
     try {
-      renderCriterios();
+      var _clist = document.getElementById('criteriosList');
+      var _isEmpty = !_clist || !_clist.children.length;
+      if (_isEmpty) renderCriterios();
       actualizarResumen();
       actualizarBarraProgresoCurso();
       _reconstruirInstanciaSelect();
