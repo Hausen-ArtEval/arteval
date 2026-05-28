@@ -3648,13 +3648,21 @@ button:focus-visible, .tab:focus-visible, .sub-tab:focus-visible {
       </div>
   <!-- Barra de Navegación en Serie — Modo Evaluación en Aula -->
   <div class="eval-nav" id="evalNavBar" style="display:none;">
-    <button class="eval-nav-btn ios-btn" id="btnEvalAnterior" onclick="_evalSerie(-1)">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    <!-- Botón Anterior — píldora iOS -->
+    <button class="eval-nav-btn" id="btnEvalAnterior" onclick="_evalSerie(-1)" aria-label="Alumno anterior">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
       Anterior
     </button>
-    <div class="eval-nav-label" id="evalNavLabel">—</div>
-    <button class="eval-nav-btn ios-btn" id="btnEvalSiguiente" onclick="_evalSerie(1)">
+    <!-- Indicador central — posición + nombre compacto -->
+    <div class="eval-nav-label" id="evalNavLabel">
+      <span class="eval-nav-pos" id="evalNavPos">—</span>
+      <span class="eval-nav-name" id="evalNavName">—</span>
+    </div>
+    <!-- Botón Siguiente — píldora iOS naranja -->
+    <button class="eval-nav-btn eval-nav-btn-next" id="btnEvalSiguiente" onclick="_evalSerie(1)" aria-label="Alumno siguiente">
       Siguiente
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>     Siguiente
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
     </button>
   </div>
@@ -5238,7 +5246,7 @@ function renderCriterios() {
   setEl('totalPts', crits.length * 3);
   setEl('rubricaNombreHeader', getRubrica().nombre);
 
-  // DocumentFragment — construye en memoria, un solo reflow al final
+  // DocumentFragment — un solo reflow, sin rAF (el guardado es síncrono)
   const frag = document.createDocumentFragment();
 
   crits.forEach((c, i) => {
@@ -5246,12 +5254,10 @@ function renderCriterios() {
     const div = document.createElement('div');
     div.className = 'criterio-item' + (ev?.nivel ? ' done' : '');
 
-    // Nombre del criterio
     const nameDiv = document.createElement('div');
     nameDiv.className = 'criterio-name';
     nameDiv.innerHTML = `<span class="crit-num">${i+1}</span>${_esc ? _esc(c) : c}`;
 
-    // Contenedor de niveles
     const nivelesDiv = document.createElement('div');
     nivelesDiv.className = 'niveles';
 
@@ -5259,10 +5265,10 @@ function renderCriterios() {
       .forEach(([k, lbl, pts]) => {
         const btn = document.createElement('button');
         btn.className = 'nivel-btn' + (ev?.nivel === k ? ' sel-' + k : '');
-        btn.dataset.critIdx = i;
-        btn.dataset.nivel   = k;
-        btn.innerHTML = `${lbl}<br><span style="font-family:'DM Mono',monospace;font-size:9px;opacity:0.7">${pts}pts</span>`;
+        // onclick directo — más confiable que delegation para flujo crítico de notas
+        btn.onclick = (function(ci, nv){ return function(){ setNivel(ci, nv); }; })(i, k);
         btn.setAttribute('aria-label', `${lbl} — criterio ${i+1}`);
+        btn.innerHTML = `${lbl}<br><span style="font-family:'DM Mono',monospace;font-size:9px;opacity:0.7">${pts}pts</span>`;
         nivelesDiv.appendChild(btn);
       });
 
@@ -5279,7 +5285,6 @@ function renderCriterios() {
     frag.appendChild(div);
   });
 
-  // Mutación única — un solo reflow
   try {
     list.innerHTML = '';
     list.appendChild(frag);
@@ -5414,25 +5419,20 @@ function _evalSerie(dir) {
   toast('\u2708\ufe0f '+(_evalSerieIdx+1)+' / '+_evalSerieLista.length+': '+nombre,'info',2000);
 }
 function _actualizarEvalNavBar() {
-  var bar = document.getElementById('evalNavBar');
-  var lbl = document.getElementById('evalNavLabel');
+  var bar     = document.getElementById('evalNavBar');
+  var posEl   = document.getElementById('evalNavPos');
+  var nameEl  = document.getElementById('evalNavName');
   if (!bar) return;
   bar.style.display = _evalSerieActivo ? 'flex' : 'none';
-  if (lbl && _evalSerieLista.length) {
-    var alumno   = _evalSerieLista[_evalSerieIdx] || '—';
-    var pos      = _evalSerieIdx + 1;
-    var total    = _evalSerieLista.length;
-    // Nombre compacto: solo apellidos (primera y segunda palabra)
-    var partes   = alumno.trim().split(/\s+/);
-    var nombreCorto = partes.length > 2
-      ? partes[0] + ' ' + partes[1]
-      : alumno;
-    lbl.innerHTML =
-      '<span style="font-size:10px;color:var(--text3);font-family:var(--font-mono);'
-      + 'letter-spacing:0.3px;">' + pos + ' / ' + total + '</span>'
-      + '<span style="display:inline-block;max-width:180px;overflow:hidden;text-overflow:ellipsis;'
-      + 'white-space:nowrap;font-size:13px;font-weight:600;color:var(--text);">'
-      + _esc(nombreCorto) + '</span>';
+  if (_evalSerieLista.length) {
+    var alumno  = _evalSerieLista[_evalSerieIdx] || '—';
+    var pos     = _evalSerieIdx + 1;
+    var total   = _evalSerieLista.length;
+    // Nombre compacto: máx 2 palabras para caber en la barra
+    var partes  = alumno.trim().split(/\s+/);
+    var nombre  = partes.length > 2 ? partes[0] + ' ' + partes[1] : alumno;
+    if (posEl)  posEl.textContent  = pos + ' / ' + total;
+    if (nameEl) nameEl.textContent = nombre;
   }
 }
 function _irAEvaluarAlumno(nombre) {
@@ -11515,34 +11515,73 @@ body { background: var(--ios-bg); }
 
 /* Eval nav (modo serie) */
 .eval-nav {
-  display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
   background: var(--bg2);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border-top: 0.5px solid var(--border);
-  box-shadow: 0 -1px 0 rgba(0,0,0,0.04);
+  box-shadow: 0 -2px 12px rgba(0,0,0,0.05);
+  min-height: 52px;
   position: relative;
   z-index: 100;
 }
 .eval-nav-btn {
-  display: inline-flex; align-items: center; gap: 5px; padding: 7px 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
   border: 0.5px solid var(--border);
   border-radius: 20px;
   background: var(--bg3);
-  color: var(--accent);
-  font-size: 13px; font-weight: 600; font-family: var(--font-ui);
-  cursor: pointer; min-height: 36px;
-  transition: background 0.15s, border-color 0.15s, transform 0.1s;
-  -webkit-tap-highlight-color: transparent; touch-action: manipulation;
-  white-space: nowrap; flex-shrink: 0;
+  color: var(--text2);
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  min-height: 34px;
+  flex-shrink: 0;
+  transition: background 0.12s, border-color 0.12s, transform 0.08s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  white-space: nowrap;
 }
-.eval-nav-btn:hover  { background: var(--bg4); border-color: var(--accent-border); }
-.eval-nav-btn:active { transform: scale(0.96); }
+.eval-nav-btn:hover  { background: var(--bg4); }
+.eval-nav-btn:active { transform: scale(0.95); }
+.eval-nav-btn-next {
+  background: var(--accent);
+  color: #fff;
+  border-color: transparent;
+  font-weight: 600;
+}
+.eval-nav-btn-next:hover { opacity: 0.85; }
 .eval-nav-label {
-  flex: 1; text-align: center; display: flex; flex-direction: column;
-  align-items: center; gap: 1px;
-  overflow: hidden; min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  overflow: hidden;
+  min-width: 0;
+}
+.eval-nav-pos {
+  font-size: 10px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  color: var(--text3);
+  letter-spacing: 0.3px;
+  line-height: 1;
+}
+.eval-nav-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+  line-height: 1.3;
 }
 
 /* NE interactiva */
@@ -15824,12 +15863,22 @@ function renderCursoMain() {
   hdrBtns.appendChild(btnDedup);
   hdrBtns.appendChild(btnExport);
 
-  // ── Acceso directo: Evaluar este curso ──────────────────────────────────
+  // ── Acceso directo: Evaluar este curso — estilo píldora iOS ─────────────
   var btnEvalCurso = document.createElement('button');
-  btnEvalCurso.className = 'btn btn-primary';
-  btnEvalCurso.style.cssText = 'gap:6px;';
-  btnEvalCurso.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg> Evaluar este curso';
-  btnEvalCurso.title = 'Ir a Evaluar con ' + curso + ' ya seleccionado';
+  btnEvalCurso.className = 'btn';
+  btnEvalCurso.style.cssText = [
+    'display:inline-flex', 'align-items:center', 'gap:6px',
+    'font-size:12px', 'font-weight:600', 'font-family:var(--font-ui)',
+    'padding:6px 14px', 'border-radius:20px',
+    'background:var(--accent)', 'color:#fff',
+    'border:none', 'cursor:pointer',
+    'transition:opacity 0.15s, transform 0.1s',
+    'white-space:nowrap', 'flex-shrink:0'
+  ].join(';');
+  btnEvalCurso.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg> Evaluar';
+  btnEvalCurso.title = 'Ir a Evaluar con ' + curso + ' seleccionado';
+  btnEvalCurso.onmouseenter = function(){ this.style.opacity='0.85'; };
+  btnEvalCurso.onmouseleave = function(){ this.style.opacity='1'; };
   btnEvalCurso.onclick = function() {
     var inputC = document.getElementById('inputCurso');
     if (inputC) inputC.value = curso;
