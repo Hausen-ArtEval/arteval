@@ -6211,7 +6211,7 @@ function _guardarImpl() {
   evaluacion = {};
   cerrarSugerencia();
   // Persistir curso seleccionado entre evaluaciones del mismo curso
-  const cursoSeleccionado = document.getElementById('inputCurso')?.value;
+  const _cursoActualInput = document.getElementById('inputCurso')?.value;
   if (document.getElementById('inputNombre')) document.getElementById('inputNombre').value = '';
   // Reset PIE panel
   const pieCheck = document.getElementById('pieCheck');
@@ -6221,7 +6221,7 @@ function _guardarImpl() {
   // Restaurar curso después del reset
   setTimeout(() => {
     const sel = document.getElementById('inputCurso');
-    if (sel && cursoSeleccionado) sel.value = cursoSeleccionado;
+    if (sel && _cursoActualInput) sel.value = _cursoActualInput;
     document.getElementById('inputNombre')?.focus();
   }, 50);
   renderCriterios();
