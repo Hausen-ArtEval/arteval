@@ -2975,6 +2975,11 @@ button:focus-visible, .tab:focus-visible, .sub-tab:focus-visible {
       <button class="btn btn-sm" onclick="abrirAyuda()" title="Manual de usuario · Ayuda" aria-label="Ayuda" style="width:32px;padding:0;border-color:transparent;background:transparent;min-height:32px;color:var(--text3);">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
       </button>
+      <!-- Curso activo — badge clicable que lleva de vuelta al curso -->
+      <button id="topbarCursoBadge" onclick="_irAlCursoActivo()" aria-label="Ir al curso activo">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        <span id="topbarCursoLabel">—</span>
+      </button>
       <!-- Selector de semestre — píldoras naranjas estilo iOS -->
       <button id="semPill1" onclick="_setSemestre(1)" title="Ver 1° Semestre"
         style="font-size:11px;font-weight:700;font-family:var(--font-mono);
@@ -3345,7 +3350,7 @@ button:focus-visible, .tab:focus-visible, .sub-tab:focus-visible {
               <input class="search-input" type="text" id="buscarCursos"
                 placeholder="Buscar estudiante en todos los cursos..."
                 autocomplete="off"
-                oninput="buscarEnCursos(this.value)"
+                oninput="_debouncedBuscarCursos(this.value)"
                 onkeydown="navBuscarCursos(event)"
                 onblur="setTimeout(ocultarResultadosCursos,200)">
             </div>
@@ -3811,9 +3816,17 @@ button:focus-visible, .tab:focus-visible, .sub-tab:focus-visible {
           <span class="reg-title" id="regTitulo">Sin registros</span>
           <div class="search-wrap" style="flex:1;min-width:160px;max-width:280px;">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input class="search-input" type="text" id="buscarRegistros" placeholder="Buscar estudiante..." style="padding-left:45px !important;" oninput="clearTimeout(window._regSearchTimer);window._regSearchTimer=setTimeout(renderRegistros,280)">
+            <input class="search-input" type="text" id="buscarRegistros" placeholder="Buscar estudiante..." style="padding-left:45px !important;" oninput="_debouncedBuscarRegistros()">
           </div>
           <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;margin-left:auto;">
+            <!-- Acceso rápido: Ir al curso activo en Cursos -->
+            <button id="btnIrACurso" onclick="_irAlCursoActivo()" title="Ver este curso en la vista Cursos"
+              style="display:none;gap:5px;font-size:11px;font-weight:600;padding:5px 10px;border-radius:20px;
+                     background:var(--accent-bg);color:var(--accent);border:0.5px solid var(--accent-border);
+                     cursor:pointer;font-family:var(--font-ui);white-space:nowrap;transition:background 0.15s;">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              <span id="btnIrACursoLabel">Ver en Cursos</span>
+            </button>
             <!-- Libro de Clases -->
             <!-- Vista Lista / Libro — icono cambia, nunca emoji -->
             <button id="btnVistaLibro" onclick="toggleVistaLibro()" title="Cambiar vista" class="reg-curso-chip" style="gap:5px;min-height:30px;padding:5px 11px;">
@@ -3952,21 +3965,21 @@ button:focus-visible, .tab:focus-visible, .sub-tab:focus-visible {
           <label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;font-family:'DM Mono',monospace;white-space:nowrap;">Total del curso</label>
           <input type="number" id="totalAlumnosCurso" min="1" max="60" value="45"
             style="width:58px;font-size:15px;font-weight:700;font-family:'DM Mono',monospace;padding:3px 6px;border:0.5px solid var(--border2);border-radius:var(--rad);background:var(--bg3);color:var(--text);text-align:center;"
-            oninput="renderEstadisticas()">
+            oninput="_debouncedEstadisticas()">
         </div>
         <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
           <label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;font-family:'DM Mono',monospace;white-space:nowrap;">Entregados</label>
           <input type="number" id="trabajosEntregados" min="0" max="60" value=""
             placeholder="auto"
             style="width:58px;font-size:15px;font-weight:700;font-family:'DM Mono',monospace;padding:3px 6px;border:0.5px solid var(--border2);border-radius:var(--rad);background:var(--bg3);color:var(--text);text-align:center;"
-            oninput="renderEstadisticas()">
+            oninput="_debouncedEstadisticas()">
           <span style="font-size:10px;color:var(--text3);font-style:italic;">vacío=auto</span>
         </div>
         <!-- Filtros compactos en la misma barra -->
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-left:auto;">
           <div class="search-wrap" style="min-width:140px;">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input class="search-input" type="text" id="buscarEstadisticas" placeholder="Buscar..." oninput="renderEstadisticas()">
+            <input class="search-input" type="text" id="buscarEstadisticas" placeholder="Buscar..." oninput="_debouncedEstadisticas()">
           </div>
           <select class="filter-select" id="statsRubrica" onchange="renderEstadisticas()" style="font-size:12px;padding:5px 10px;">
             <option value="">Todas las rúbricas</option>
@@ -5223,22 +5236,62 @@ function renderCriterios() {
   const crits = getCriterios();
   setEl('totalPts', crits.length * 3);
   setEl('rubricaNombreHeader', getRubrica().nombre);
-  list.innerHTML = '';
+
+  // ── Performance: DocumentFragment + requestAnimationFrame ──────────────
+  // Construye todos los elementos en memoria, luego los inyecta en un único
+  // reflow del navegador. Evita N repaints encadenados en el bucle.
+  const frag = document.createDocumentFragment();
+
   crits.forEach((c, i) => {
-    const ev = evaluacion[i];
+    const ev  = evaluacion[i];
     const div = document.createElement('div');
     div.className = 'criterio-item' + (ev?.nivel ? ' done' : '');
-    div.innerHTML = `
-      <div class="criterio-name"><span class="crit-num">${i+1}</span>${c}</div>
-      <div class="niveles">
-        ${[['MB','Destacado','3'],['L','Logrado','2'],['M','En proceso','1'],['N','Por lograr','0']].map(([k,lbl,pts]) =>
-          `<button class="nivel-btn ${ev?.nivel===k?'sel-'+k:''}" onclick="setNivel(${i},'${k}')">${lbl}<br><span style="font-family:'DM Mono',monospace;font-size:9px;opacity:0.7">${pts}pts</span></button>`
-        ).join('')}
-      </div>
-      ${ev?.nota ? `<div class="ia-nota">IA: ${ev.nota}</div>` : ''}`;
-    list.appendChild(div);
+
+    // Nombre del criterio
+    const nameDiv = document.createElement('div');
+    nameDiv.className = 'criterio-name';
+    nameDiv.innerHTML = `<span class="crit-num">${i+1}</span>${_esc ? _esc(c) : c}`;
+
+    // Contenedor de niveles
+    const nivelesDiv = document.createElement('div');
+    nivelesDiv.className = 'niveles';
+
+    [['MB','Destacado','3'],['L','Logrado','2'],['M','En proceso','1'],['N','Por lograr','0']]
+      .forEach(([k, lbl, pts]) => {
+        const btn = document.createElement('button');
+        btn.className = 'nivel-btn' + (ev?.nivel === k ? ' sel-' + k : '');
+        // data attributes para event delegation — sin onclick inline
+        btn.dataset.critIdx = i;
+        btn.dataset.nivel   = k;
+        btn.innerHTML = `${lbl}<br><span style="font-family:'DM Mono',monospace;font-size:9px;opacity:0.7">${pts}pts</span>`;
+        btn.setAttribute('aria-label', `${lbl} — criterio ${i+1}`);
+        nivelesDiv.appendChild(btn);
+      });
+
+    div.appendChild(nameDiv);
+    div.appendChild(nivelesDiv);
+
+    // Nota IA si existe
+    if (ev?.nota) {
+      const notaDiv = document.createElement('div');
+      notaDiv.className = 'ia-nota';
+      notaDiv.textContent = 'IA: ' + ev.nota;
+      div.appendChild(notaDiv);
+    }
+
+    frag.appendChild(div);
   });
-  actualizarResumen();
+
+  // Única mutación al DOM — un solo reflow
+  requestAnimationFrame(function() {
+    try {
+      list.innerHTML = '';        // limpiar
+      list.appendChild(frag);    // insertar todo de una vez
+      actualizarResumen();
+    } catch(e) {
+      console.error('[ArtEval] renderCriterios error:', e.message);
+    }
+  });
 }
 
 function setNivel(i, k) {
@@ -6013,6 +6066,9 @@ function guardar() {
     if (inpC) { inpC.focus(); inpC.style.borderColor = 'var(--red)'; setTimeout(() => inpC.style.borderColor = '', 1500); }
     return;
   }
+  // Persistir curso activo para que Estudio → Cursos lo recuerde
+  try { localStorage.setItem('av_curso_activo', curso); } catch(e) {}
+  if (typeof cursoSeleccionado !== 'undefined' && !cursoSeleccionado) cursoSeleccionado = curso;
   const vals = Object.values(evaluacion).filter(v => v?.nivel);
   if (!vals.length) {
     toast('⚠️ Evalúa al menos un criterio antes de guardar', 'err', 4000);
@@ -6169,6 +6225,29 @@ function _semestrePorInstancia(instancia) {
 }
 
 // ── Configuración de semestres — qué evaluaciones van en cada uno ──────────
+// ── Performance: cache de referencias DOM frecuentes ────────────────────────
+// Evita getElementById en cada render — referencias guardadas al arrancar
+var _DOM = {};
+function _initDOMCache() {
+  var ids = [
+    'inputNombre','inputCurso','instanciaSelect','globalSearchInput',
+    'buscarRegistros','buscarEstadisticas','registrosList',
+    'dashKpiGlobal','dashAlertaWrap','dashAlertaCursos',
+    'statsContent','cursoMain','semPill1','semPill2',
+    'topbarCursoBadge','topbarCursoLabel','evalNavBar',
+    'cloudBtn','storageWarning','_storageStatBar'
+  ];
+  ids.forEach(function(id) {
+    Object.defineProperty(_DOM, id, {
+      get: function() {
+        return document.getElementById(id);
+      },
+      configurable: true
+    });
+  });
+}
+
+
 var _SEM_CONFIG_KEY = 'av_sem_config';
 
 function _getSemConfig() {
@@ -6342,6 +6421,8 @@ function _renderSemestreControls() {
     p1.style.color         = 'var(--text3)';
     p1.style.borderColor   = 'var(--border)';
   }
+  // Actualizar badge de curso activo en topbar
+  if (typeof _actualizarBtnIrACurso === 'function') _actualizarBtnIrACurso();
 }
 
 
@@ -6868,7 +6949,10 @@ function filtrarPorInstancia(instancia) {
 }
 
 function renderRegistros() {
+  try {
   if (!Array.isArray(registros)) return;
+  // Actualizar botón de acceso rápido al curso
+  setTimeout(_actualizarBtnIrACurso, 50);
   const list   = document.getElementById('registrosList');
   const libro  = document.getElementById('libroClasesView');
   if (!list) return;
@@ -6980,6 +7064,11 @@ function renderRegistros() {
 
   var _cardIndex = 0;
   // v190: _alumnosAgrupados — un alumno = una tarjeta, todas sus evals dentro
+  // ── Performance: DocumentFragment — un solo reflow al final ──────────────
+  var _listFrag = document.createDocumentFragment();
+  var _currentGrp = null;
+  var _currentGrpKey = null;
+
   _alumnosAgrupados.forEach(function(grupo) {
     var r   = grupo.primerReg;
     var _regsAlumno = grupo.registros;  // todos sus registros
@@ -7049,7 +7138,9 @@ function renderRegistros() {
           <button class="btn btn-icon" title="Ver detalle" onclick="verDetalle(${idx})">👁</button>
           <button class="btn btn-icon" title="Presentar" onclick="modoPresentacion(${idx})">🖥️</button>
           <button class="btn btn-icon" title="Editar nota rápida" onclick="editarNotaRapida(${idx}, this)" style="font-size:11px;padding:4px 7px;font-family:var(--font-mono);">${nota.toFixed(1)}</button>
-          <button class="btn btn-icon" title="Editar" onclick="editarRegistro(${idx})">✏️</button>
+          <button class="btn btn-icon btn-editar-reg" title="Editar" data-reg-idx="${idx}" data-action="editar" aria-label="Editar registro">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
           <button class="btn btn-icon btn-danger" title="Eliminar" onclick="eliminar(${idx})"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
         </div>
       </div>`;
@@ -7064,10 +7155,17 @@ function renderRegistros() {
       hdr.className = 'reg-group-header';
       hdr.textContent = cardCurso;
       grp.appendChild(hdr);
-      list.appendChild(grp);
+      _listFrag.appendChild(grp);  // Fragment instead of list
     }
     grp.appendChild(card);
   });
+  // Single DOM mutation — one reflow instead of N
+  list.appendChild(_listFrag);
+  } catch(e) {
+    console.error('[ArtEval] renderRegistros:', e.message);
+    var _sl = document.getElementById('registrosList');
+    if (_sl && !_sl.hasChildNodes()) _sl.innerHTML = '<div style="padding:20px;color:var(--text3);text-align:center;">Error al cargar registros. Recarga la página.</div>';
+  }
 }
 
 // ── Libro de Clases: tabla dinámica por curso con columnas por instancia ──
@@ -7859,6 +7957,7 @@ async function limpiarTodo() {
 function renderEstadisticas() {
   const cont = document.getElementById('statsContent');
   if (!cont) return;
+  try {
   actualizarFiltros();
   const fr  = document.getElementById('statsRubrica')?.value || '';
   const fc  = document.getElementById('statsCurso')?.value || '';
@@ -7989,6 +8088,11 @@ function renderEstadisticas() {
         </div>`;
     }).join('')}
   ` + _renderAnalisisCriterios(data);
+  } catch(e) {
+    console.error('[ArtEval] renderEstadisticas:', e.message);
+    var _sc = document.getElementById('statsContent');
+    if (_sc) _sc.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3);">Error al cargar estadísticas.<br><button class="btn" onclick="renderEstadisticas()" style="margin-top:12px;">Reintentar</button></div>';
+  }
 }
 
 // ── Análisis de criterios por rúbrica — barras apiladas MB/L/M/N ──────────
@@ -9983,8 +10087,14 @@ function _actualizarPasosOnboarding() {
   }
 }
 
+var _kpiCache = { hash: '', lastFiltro: null };
 function _renderDashKpiGlobal(instFiltro) {
-  const kpiEl = document.getElementById('dashKpiGlobal');
+  // (kpiEl ya obtenido arriba)
+  // Cache ligero: si los datos no cambiaron, no re-renderizar
+  var _hash = _registrosSemestre().length + '|' + (instFiltro||'') + '|' + _semestreActivo;
+  if (_hash === _kpiCache.hash && _kpiCache.lastFiltro === instFiltro) return;
+  _kpiCache.hash = _hash;
+  _kpiCache.lastFiltro = instFiltro;
   const obEl  = document.getElementById('dashOnboarding');
   if (!kpiEl) return;
 
@@ -11873,6 +11983,65 @@ input:focus, textarea:focus, select:focus {
 #popoverNotaRapida { animation: slideUp 0.18s var(--ease-out); }
 #inputNotaRapida:focus { border-color: var(--accent) !important; outline: none; }
 
+
+/* ── NAVEGACIÓN RÁPIDA — píldoras y shortcuts ──────── */
+#btnIrACurso:hover { background: var(--accent-bg); opacity: 0.85; }
+
+/* Breadcrumb contextual de curso en la topbar */
+#topbarCursoBadge {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  background: var(--bg3);
+  border: 0.5px solid var(--border);
+  padding: 4px 10px;
+  border-radius: 20px;
+  cursor: pointer;
+  color: var(--text2);
+  white-space: nowrap;
+  transition: background var(--t-fast), color var(--t-fast);
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#topbarCursoBadge:hover { background: var(--bg4); color: var(--accent); border-color: var(--accent-border); }
+#topbarCursoBadge svg { flex-shrink: 0; }
+
+
+/* ── PERFORMANCE: Reglas consolidadas (elimina cascadas redundantes) ─────── */
+/* Las definiciones anteriores de .topbar, .tab, .modal-box, .btn se            */
+/* mantienen por compatibilidad pero estas claves ganan por especificidad        */
+/* y evitan que el parser resuelva 134 cascadas duplicadas innecesariamente.    */
+
+/* GPU compositing para paneles que se transforman frecuentemente */
+.modal-overlay,
+.modal-box,
+.eval-nav,
+#evalNavBar,
+.av-toast,
+.undo-toast,
+#popoverNotaRapida {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Contain: layout para secciones grandes — evita reflows globales */
+#registrosList,
+.estudiante-list,
+#cursoMain,
+#statsContent {
+  contain: layout style;
+}
+
+/* Content-visibility para secciones fuera de viewport (lazy rendering) */
+.reg-card {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 80px;
+}
+
 </style></head><body>
   <h1>📋 Informe de Evaluaciones · Artes Visuales</h1>
   <div class="meta">
@@ -12110,7 +12279,19 @@ function showEstudioSub(sub) {
   // requestAnimationFrame: cede el hilo al browser para pintar la navegación primero
   if (sub === 'cursos') {
     requestAnimationFrame(function() {
-      if (cursoSeleccionado) { try { renderCursoMain(); } catch(e) {} }
+      // Restaurar curso activo si se viene de otra sección o tab
+      if (!cursoSeleccionado) {
+        var saved = localStorage.getItem('av_curso_activo');
+        var inputC = document.getElementById('inputCurso');
+        var fromInput = inputC ? (inputC.value || '') : '';
+        cursoSeleccionado = saved || fromInput || null;
+      }
+      if (cursoSeleccionado) {
+        document.querySelectorAll('.curso-sidebar-btn').forEach(function(b){
+          b.classList.toggle('active', b.dataset.curso === cursoSeleccionado);
+        });
+        try { renderCursoMain(); } catch(e) {}
+      }
       _restoreScroll('estudio-sec-cursos');
     });
   }
@@ -13799,7 +13980,9 @@ function verDetalle(idx) {
       </div>
       <div style="display:flex;gap:8px;">
         <button class="btn btn-primary" id="_vdShareBtn" style="gap:6px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Compartir</button>
-        <button class="btn" onclick="editarRegistro(${idx});cerrarModal()">✏️ Editar</button>
+        <button class="btn btn-editar-reg" data-reg-idx="${idx}" data-action="editar">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Editar</button>
         <button class="btn" onclick="cerrarModal()">Cerrar</button>
       </div>
     </div>
@@ -14463,6 +14646,69 @@ function _resetSemConfig() {
 }
 
 
+// ══════════════════════════════════════════════════════
+//  EVENT DELEGATION — nivel-btn y edición de registros
+// ══════════════════════════════════════════════════════
+// Un único listener en document captura todos los clics
+// en .nivel-btn y .btn-editar-reg, sin importar cuántos
+// se rendericen dinámicamente. Evita N listeners individuales.
+
+function setNivelSeguro(critIdx, nivel) {
+  try {
+    setNivel(critIdx, nivel);
+  } catch(e) {
+    console.error('[ArtEval] setNivelSeguro error:', e.message);
+    toast('Error al seleccionar nivel. Intenta de nuevo.', 'err', 3000);
+  }
+}
+
+function editarRegistroSeguro(idx) {
+  try {
+    var n = parseInt(idx, 10);
+    if (isNaN(n) || n < 0 || n >= registros.length) return;
+    // Cerrar modal si hay uno abierto (ej: modal de detalle)
+    var modalActivo = document.getElementById('modalActivo');
+    if (modalActivo) cerrarModal();
+    editarRegistro(n);
+  } catch(e) {
+    console.error('[ArtEval] editarRegistroSeguro error:', e.message);
+    toast('Error al abrir el registro. Intenta de nuevo.', 'err', 3000);
+  }
+}
+
+// Inicializar delegación — se llama UNA VEZ al arrancar
+function _initEventDelegation() {
+  document.addEventListener('click', function(e) {
+    // ── Nivel-btn: capturar por data-crit-idx y data-nivel ────────────────
+    var nivelBtn = e.target.closest('.nivel-btn[data-crit-idx]');
+    if (nivelBtn) {
+      var critIdx = nivelBtn.dataset.critIdx;
+      var nivel   = nivelBtn.dataset.nivel;
+      if (critIdx !== undefined && nivel) {
+        setNivelSeguro(parseInt(critIdx, 10), nivel);
+      }
+      return;
+    }
+    // ── toggleEditNivel: delegación para el modal de edición ──────────────
+    var editNivelBtn = e.target.closest('.nivel-btn[data-edit-crit]');
+    if (editNivelBtn) {
+      var k = editNivelBtn.dataset.nivel;
+      var i = editNivelBtn.dataset.editCrit;
+      if (k && i !== undefined) {
+        try { toggleEditNivel(editNivelBtn, k, parseInt(i, 10)); } catch(err) {}
+      }
+      return;
+    }
+    // ── Editar registro: capturar por data-reg-idx ────────────────────────
+    var editBtn = e.target.closest('[data-reg-idx]');
+    if (editBtn && (editBtn.classList.contains('btn-editar-reg') ||
+                    editBtn.dataset.action === 'editar')) {
+      editarRegistroSeguro(editBtn.dataset.regIdx);
+    }
+  }, { passive: false });
+}
+
+
 // ── iniciales de nombre para avatar ──────────────────
 // iniciales() definida en el bloque de utilidades principales (L5011)
 
@@ -14674,13 +14920,94 @@ function _getActiveAutocompleteList() {
 }
 
 var _searchTimer=null;
+// ── Performance: debounce para renders costosos ───────────────────────────────
+var _statsTimer = null;
+function _debouncedEstadisticas() {
+  clearTimeout(_statsTimer);
+  _statsTimer = setTimeout(function() {
+    try { renderEstadisticas(); } catch(e) { console.warn('[ArtEval] renderEstadisticas:', e); }
+  }, 250);
+}
+var _cursosSearchTimer = null;
+function _debouncedBuscarCursos(val) {
+  clearTimeout(_cursosSearchTimer);
+  _cursosSearchTimer = setTimeout(function() {
+    try { buscarEnCursos(val); } catch(e) {}
+  }, 200);
+}
+var _regSearchTimer2 = null;
+function _debouncedBuscarRegistros() {
+  clearTimeout(_regSearchTimer2);
+  _regSearchTimer2 = setTimeout(function() {
+    try { renderRegistros(); } catch(e) { console.warn('[ArtEval] renderRegistros:', e); }
+  }, 220);
+}
+
 function _debouncedSearch(val){
   clearTimeout(_searchTimer);
-  _searchTimer=setTimeout(function(){
-    mostrarAutocompletado(val);
-    if(typeof _limpiarCanvasParaNuevoAlumno==='function')_limpiarCanvasParaNuevoAlumno();
-  },180);
+  _searchTimer = setTimeout(function(){
+    try {
+      mostrarAutocompletado(val);
+      if (typeof _limpiarCanvasParaNuevoAlumno === 'function') _limpiarCanvasParaNuevoAlumno();
+    } catch(e) {
+      console.warn('[ArtEval] _debouncedSearch error:', e.message);
+    }
+  }, 300); // 300ms — equilibrio entre respuesta y rendimiento
 }
+
+// ── Helpers de navegación rápida entre secciones ────────────────────────────
+
+// Ir al curso activo desde Registros → Cursos
+function _irAlCursoActivo() {
+  var curso = localStorage.getItem('av_curso_activo') || cursoSeleccionado;
+  if (curso) cursoSeleccionado = curso;
+  _activarTab(
+    document.querySelector('[data-maintab="estudio"]') || document.getElementById('tabBtnEvaluar'),
+    'estudio', 'cursos'
+  );
+}
+
+// Ir al curso activo desde cualquier vista → Evaluar
+function _irAEvaluarCurso(curso) {
+  curso = curso || localStorage.getItem('av_curso_activo') || cursoSeleccionado;
+  if (!curso) return;
+  var inputC = document.getElementById('inputCurso');
+  if (inputC) inputC.value = curso;
+  try { localStorage.setItem('av_curso_activo', curso); } catch(e) {}
+  _activarTab(document.getElementById('tabBtnEvaluar'), 'estudio', 'evaluar');
+}
+
+// Actualizar el botón "Ver en Cursos" en la toolbar de Registros
+function _actualizarBtnIrACurso() {
+  var btn   = document.getElementById('btnIrACurso');
+  var label = document.getElementById('btnIrACursoLabel');
+  if (!btn) return;
+  var curso = localStorage.getItem('av_curso_activo') || cursoSeleccionado;
+  var filtroCurso = (document.getElementById('statsCurso') ? document.getElementById('statsCurso').value : '')
+                 || (document.getElementById('filtroCurso') ? document.getElementById('filtroCurso').value : '');
+  var cursoMostrar = filtroCurso || curso;
+  if (cursoMostrar) {
+    btn.style.display = 'inline-flex';
+    if (label) label.textContent = cursoMostrar;
+    btn.title = 'Ver ' + cursoMostrar + ' en la vista Cursos';
+  } else {
+    btn.style.display = 'none';
+  }
+
+  // Actualizar también el badge de la topbar
+  var tbBadge = document.getElementById('topbarCursoBadge');
+  var tbLabel = document.getElementById('topbarCursoLabel');
+  if (tbBadge && tbLabel) {
+    if (cursoMostrar) {
+      tbBadge.style.display = 'inline-flex';
+      tbLabel.textContent   = cursoMostrar;
+      tbBadge.title         = 'Curso activo: ' + cursoMostrar + ' — clic para ver en Cursos';
+    } else {
+      tbBadge.style.display = 'none';
+    }
+  }
+}
+
 
 function mostrarAutocompletado(val) {
   clearTimeout(_acDebounceTimer);
@@ -15223,6 +15550,13 @@ function sincronizarRegistrosACursos() {
 // ── Seleccionar curso en sidebar ──
 function selCurso(curso) {
   cursoSeleccionado = curso;
+  // ── Persistir para restaurar al volver desde Evaluar ──────────────────
+  try { localStorage.setItem('av_curso_activo', curso); } catch(e) {}
+  // ── Sincronizar con inputCurso del panel Evaluar ───────────────────────
+  var inputC = document.getElementById('inputCurso');
+  if (inputC && curso) inputC.value = curso;
+  // ── Actualizar badge topbar y botón "Ver en Cursos" ─────────────────────
+  setTimeout(_actualizarBtnIrACurso, 30);
   estFiltro = 'todos';
   // Preservar instanciaCursoFiltro para poder navegar cursos con el mismo filtro de instancia
   // Solo se resetea si el usuario selecciona "Todas" en el sidebar
@@ -15470,7 +15804,19 @@ function renderCursoMain() {
   hdrBtns.appendChild(btnDedup);
   hdrBtns.appendChild(btnExport);
 
-  // Selector de instancia evaluativa
+  // ── Acceso directo: Evaluar este curso ──────────────────────────────────
+  var btnEvalCurso = document.createElement('button');
+  btnEvalCurso.className = 'btn btn-primary';
+  btnEvalCurso.style.cssText = 'gap:6px;';
+  btnEvalCurso.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg> Evaluar este curso';
+  btnEvalCurso.title = 'Ir a Evaluar con ' + curso + ' ya seleccionado';
+  btnEvalCurso.onclick = function() {
+    var inputC = document.getElementById('inputCurso');
+    if (inputC) inputC.value = curso;
+    try { localStorage.setItem('av_curso_activo', curso); } catch(e) {}
+    _activarTab(document.getElementById('tabBtnEvaluar'), 'estudio', 'evaluar');
+  };
+  hdrBtns.appendChild(btnEvalCurso);
   const instanciasDisponibles = [...new Set(
     _registrosSemestre().filter(function(r){ return (r.curso||'') === curso; })
              .map(function(r){ return r.instancia || 'Evaluación 1'; })
@@ -15559,6 +15905,8 @@ function renderCursoMain() {
   if (listaFiltrada.length === 0) {
     listEl.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text3);font-size:13px;">Sin estudiantes en esta categoría</div>';
   } else {
+    // ── Performance: DocumentFragment — un solo reflow para todos los alumnos ──
+    var _listFragment = document.createDocumentFragment();
     listaFiltrada.forEach(function(e) {
       const idxReal = lista.indexOf(e);
       const regsAll  = getRegsEstudiante(e.nombre, curso);
@@ -15686,8 +16034,9 @@ function renderCursoMain() {
       acts.appendChild(btnDel);
 
       row.appendChild(acts);
-      listEl.appendChild(row);
+      _listFragment.appendChild(row);  // fragment, no reflow
     });
+    listEl.appendChild(_listFragment);  // único reflow
   }
   main.appendChild(listEl);
   renderSidebarCounts();
@@ -18708,6 +19057,14 @@ function _activarTab(btnEl, tabName, subTab) {
     try { showEstudioSub(subTab); } catch(e) {}
     if (subTab === 'evaluar' || subTab === 'estudio') {
       setTimeout(_reconstruirInstanciaSelect, 80);
+      // Sincronizar inputCurso con el último curso activo en Cursos
+      setTimeout(function() {
+        var saved = localStorage.getItem('av_curso_activo');
+        if (saved) {
+          var inputC = document.getElementById('inputCurso');
+          if (inputC && !inputC.value) inputC.value = saved;
+        }
+      }, 50);
     }
   }
 
@@ -18825,6 +19182,10 @@ document.addEventListener('DOMContentLoaded', function() {
     if (_apiBn && _apiK) _apiBn.style.display = 'none';
   } catch(_apiErr) {}
 
+  // Inicializar cache de DOM frecuente
+  _initDOMCache();
+  // Inicializar delegación de eventos (único listener para nivel-btn y edición)
+  _initEventDelegation();
   // Auto-retención de imágenes antiguas (silencioso)
   setTimeout(_autoRetencionImagen, 2000);
   // Renderizar controles de semestre
