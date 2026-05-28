@@ -2976,7 +2976,8 @@ button:focus-visible, .tab:focus-visible, .sub-tab:focus-visible {
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
       </button>
       <!-- Curso activo — badge clicable que lleva de vuelta al curso -->
-      <button id="topbarCursoBadge" onclick="_irAlCursoActivo()" title="Curso activo — clic para ir a Cursos" aria-label="Ir al curso activo">
+      <button id="topbarCursoBadge" onclick="_irAlCursoActivo()" aria-label="Ir al curso activo">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
         <span id="topbarCursoLabel">—</span>
       </button>
       <!-- Selector de semestre — píldoras naranjas estilo iOS -->
@@ -3349,7 +3350,7 @@ button:focus-visible, .tab:focus-visible, .sub-tab:focus-visible {
               <input class="search-input" type="text" id="buscarCursos"
                 placeholder="Buscar estudiante en todos los cursos..."
                 autocomplete="off"
-                oninput="_debouncedBuscarCursos(this.value)"
+                oninput="buscarEnCursos(this.value)"
                 onkeydown="navBuscarCursos(event)"
                 onblur="setTimeout(ocultarResultadosCursos,200)">
             </div>
@@ -3647,21 +3648,13 @@ button:focus-visible, .tab:focus-visible, .sub-tab:focus-visible {
       </div>
   <!-- Barra de Navegación en Serie — Modo Evaluación en Aula -->
   <div class="eval-nav" id="evalNavBar" style="display:none;">
-    <!-- Botón Anterior — píldora iOS -->
-    <button class="eval-nav-btn" id="btnEvalAnterior" onclick="_evalSerie(-1)" aria-label="Alumno anterior">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    <button class="eval-nav-btn ios-btn" id="btnEvalAnterior" onclick="_evalSerie(-1)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
       Anterior
     </button>
-    <!-- Indicador central — posición + nombre compacto -->
-    <div class="eval-nav-label" id="evalNavLabel">
-      <span class="eval-nav-pos" id="evalNavPos">—</span>
-      <span class="eval-nav-name" id="evalNavName">—</span>
-    </div>
-    <!-- Botón Siguiente — píldora iOS naranja -->
-    <button class="eval-nav-btn eval-nav-btn-next" id="btnEvalSiguiente" onclick="_evalSerie(1)" aria-label="Alumno siguiente">
+    <div class="eval-nav-label" id="evalNavLabel">—</div>
+    <button class="eval-nav-btn ios-btn" id="btnEvalSiguiente" onclick="_evalSerie(1)">
       Siguiente
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-    </button>     Siguiente
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
     </button>
   </div>
@@ -3823,7 +3816,7 @@ button:focus-visible, .tab:focus-visible, .sub-tab:focus-visible {
           <span class="reg-title" id="regTitulo">Sin registros</span>
           <div class="search-wrap" style="flex:1;min-width:160px;max-width:280px;">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input class="search-input" type="text" id="buscarRegistros" placeholder="Buscar estudiante..." style="padding-left:45px !important;" oninput="_debouncedBuscarRegistros()">
+            <input class="search-input" type="text" id="buscarRegistros" placeholder="Buscar estudiante..." style="padding-left:45px !important;" oninput="clearTimeout(window._regSearchTimer);window._regSearchTimer=setTimeout(renderRegistros,280)">
           </div>
           <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;margin-left:auto;">
             <!-- Acceso rápido: Ir al curso activo en Cursos -->
@@ -3972,21 +3965,21 @@ button:focus-visible, .tab:focus-visible, .sub-tab:focus-visible {
           <label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;font-family:'DM Mono',monospace;white-space:nowrap;">Total del curso</label>
           <input type="number" id="totalAlumnosCurso" min="1" max="60" value="45"
             style="width:58px;font-size:15px;font-weight:700;font-family:'DM Mono',monospace;padding:3px 6px;border:0.5px solid var(--border2);border-radius:var(--rad);background:var(--bg3);color:var(--text);text-align:center;"
-            oninput="_debouncedEstadisticas()">
+            oninput="renderEstadisticas()">
         </div>
         <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
           <label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;font-family:'DM Mono',monospace;white-space:nowrap;">Entregados</label>
           <input type="number" id="trabajosEntregados" min="0" max="60" value=""
             placeholder="auto"
             style="width:58px;font-size:15px;font-weight:700;font-family:'DM Mono',monospace;padding:3px 6px;border:0.5px solid var(--border2);border-radius:var(--rad);background:var(--bg3);color:var(--text);text-align:center;"
-            oninput="_debouncedEstadisticas()">
+            oninput="renderEstadisticas()">
           <span style="font-size:10px;color:var(--text3);font-style:italic;">vacío=auto</span>
         </div>
         <!-- Filtros compactos en la misma barra -->
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-left:auto;">
           <div class="search-wrap" style="min-width:140px;">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input class="search-input" type="text" id="buscarEstadisticas" placeholder="Buscar..." oninput="_debouncedEstadisticas()">
+            <input class="search-input" type="text" id="buscarEstadisticas" placeholder="Buscar..." oninput="renderEstadisticas()">
           </div>
           <select class="filter-select" id="statsRubrica" onchange="renderEstadisticas()" style="font-size:12px;padding:5px 10px;">
             <option value="">Todas las rúbricas</option>
@@ -5241,56 +5234,24 @@ function renderCriterios() {
   const list = document.getElementById('criteriosList');
   if (!list) return;
   const crits = getCriterios();
-  if (!crits || !crits.length) return;
   setEl('totalPts', crits.length * 3);
   setEl('rubricaNombreHeader', getRubrica().nombre);
-
-  // DocumentFragment — un solo reflow, sin rAF (el guardado es síncrono)
-  const frag = document.createDocumentFragment();
-
+  list.innerHTML = '';
   crits.forEach((c, i) => {
-    const ev  = evaluacion[i];
+    const ev = evaluacion[i];
     const div = document.createElement('div');
     div.className = 'criterio-item' + (ev?.nivel ? ' done' : '');
-
-    const nameDiv = document.createElement('div');
-    nameDiv.className = 'criterio-name';
-    nameDiv.innerHTML = `<span class="crit-num">${i+1}</span>${_esc ? _esc(c) : c}`;
-
-    const nivelesDiv = document.createElement('div');
-    nivelesDiv.className = 'niveles';
-
-    [['MB','Destacado','3'],['L','Logrado','2'],['M','En proceso','1'],['N','Por lograr','0']]
-      .forEach(([k, lbl, pts]) => {
-        const btn = document.createElement('button');
-        btn.className = 'nivel-btn' + (ev?.nivel === k ? ' sel-' + k : '');
-        // onclick directo — más confiable que delegation para flujo crítico de notas
-        btn.onclick = (function(ci, nv){ return function(){ setNivel(ci, nv); }; })(i, k);
-        btn.setAttribute('aria-label', `${lbl} — criterio ${i+1}`);
-        btn.innerHTML = `${lbl}<br><span style="font-family:'DM Mono',monospace;font-size:9px;opacity:0.7">${pts}pts</span>`;
-        nivelesDiv.appendChild(btn);
-      });
-
-    div.appendChild(nameDiv);
-    div.appendChild(nivelesDiv);
-
-    if (ev?.nota) {
-      const notaDiv = document.createElement('div');
-      notaDiv.className = 'ia-nota';
-      notaDiv.textContent = 'IA: ' + ev.nota;
-      div.appendChild(notaDiv);
-    }
-
-    frag.appendChild(div);
+    div.innerHTML = `
+      <div class="criterio-name"><span class="crit-num">${i+1}</span>${c}</div>
+      <div class="niveles">
+        ${[['MB','Destacado','3'],['L','Logrado','2'],['M','En proceso','1'],['N','Por lograr','0']].map(([k,lbl,pts]) =>
+          `<button class="nivel-btn ${ev?.nivel===k?'sel-'+k:''}" onclick="setNivel(${i},'${k}')">${lbl}<br><span style="font-family:'DM Mono',monospace;font-size:9px;opacity:0.7">${pts}pts</span></button>`
+        ).join('')}
+      </div>
+      ${ev?.nota ? `<div class="ia-nota">IA: ${ev.nota}</div>` : ''}`;
+    list.appendChild(div);
   });
-
-  try {
-    list.innerHTML = '';
-    list.appendChild(frag);
-    actualizarResumen();
-  } catch(e) {
-    console.error('[ArtEval] renderCriterios:', e.message);
-  }
+  actualizarResumen();
 }
 
 function setNivel(i, k) {
@@ -5418,20 +5379,12 @@ function _evalSerie(dir) {
   toast('\u2708\ufe0f '+(_evalSerieIdx+1)+' / '+_evalSerieLista.length+': '+nombre,'info',2000);
 }
 function _actualizarEvalNavBar() {
-  var bar     = document.getElementById('evalNavBar');
-  var posEl   = document.getElementById('evalNavPos');
-  var nameEl  = document.getElementById('evalNavName');
-  if (!bar) return;
-  bar.style.display = _evalSerieActivo ? 'flex' : 'none';
-  if (_evalSerieLista.length) {
-    var alumno  = _evalSerieLista[_evalSerieIdx] || '—';
-    var pos     = _evalSerieIdx + 1;
-    var total   = _evalSerieLista.length;
-    // Nombre compacto: máx 2 palabras para caber en la barra
-    var partes  = alumno.trim().split(/\s+/);
-    var nombre  = partes.length > 2 ? partes[0] + ' ' + partes[1] : alumno;
-    if (posEl)  posEl.textContent  = pos + ' / ' + total;
-    if (nameEl) nameEl.textContent = nombre;
+  var bar=document.getElementById('evalNavBar');
+  var lbl=document.getElementById('evalNavLabel');
+  if(!bar)return;
+  bar.style.display=_evalSerieActivo?'flex':'none';
+  if(lbl&&_evalSerieLista.length){
+    lbl.textContent=(_evalSerieIdx+1)+' / '+_evalSerieLista.length+' — '+(_evalSerieLista[_evalSerieIdx]||'—');
   }
 }
 function _irAEvaluarAlumno(nombre) {
@@ -6053,33 +6006,6 @@ function toggleAuto() {
 //  GUARDAR REGISTRO
 // ═══════════════════════════════════════════════════════
 function guardar() {
-  // Feedback visual inmediato — confirma al usuario que el click se registró
-  var _btnG = document.querySelector('.btn-success[onclick="guardar()"]');
-  if (_btnG) {
-    _btnG.disabled = true;
-    var _textoOriginal = _btnG.innerHTML;
-    _btnG.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 0.7s linear infinite"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Guardando…';
-    // Restaurar tras 3s por si algo falla
-    setTimeout(function() {
-      if (_btnG) { _btnG.disabled = false; _btnG.innerHTML = _textoOriginal; }
-    }, 3000);
-  }
-
-  try {
-    _guardarImpl();
-  } catch(e) {
-    console.error('[ArtEval] guardar() error:', e.message, e.stack);
-    toast('❌ Error al guardar: ' + e.message + '. Revisa la consola.', 'err', 6000);
-    if (_btnG) { _btnG.disabled = false; _btnG.innerHTML = _textoOriginal; }
-  } finally {
-    // Restaurar botón siempre, con pequeño delay para UX
-    setTimeout(function() {
-      if (_btnG) { _btnG.disabled = false; _btnG.innerHTML = _textoOriginal; }
-    }, 400);
-  }
-}
-
-function _guardarImpl() {
   // Normalizar nombre: title-case estricto — primera letra mayúscula, RESTO MINÚSCULA por palabra
   // Previene "Rivas PeñAloza" → fuerza "Rivas Peñaloza"
   // Palabras de 1-2 letras (DE, LA, Y) se respetan tal como vienen
@@ -6107,7 +6033,7 @@ function _guardarImpl() {
   if (!vals.length) {
     toast('⚠️ Evalúa al menos un criterio antes de guardar', 'err', 4000);
     // Resaltar los criterios para guiar al usuario
-    document.querySelectorAll('.criterio-item').forEach(function(row) {
+    document.querySelectorAll('.nivel-row').forEach(function(row) {
       row.style.outline = '2px solid var(--accent)';
       row.style.borderRadius = '6px';
       setTimeout(() => { row.style.outline = ''; row.style.borderRadius = ''; }, 2000);
@@ -6211,7 +6137,7 @@ function _guardarImpl() {
   evaluacion = {};
   cerrarSugerencia();
   // Persistir curso seleccionado entre evaluaciones del mismo curso
-  const _cursoActualInput = document.getElementById('inputCurso')?.value;
+  const cursoSeleccionado = document.getElementById('inputCurso')?.value;
   if (document.getElementById('inputNombre')) document.getElementById('inputNombre').value = '';
   // Reset PIE panel
   const pieCheck = document.getElementById('pieCheck');
@@ -6221,7 +6147,7 @@ function _guardarImpl() {
   // Restaurar curso después del reset
   setTimeout(() => {
     const sel = document.getElementById('inputCurso');
-    if (sel && _cursoActualInput) sel.value = _cursoActualInput;
+    if (sel && cursoSeleccionado) sel.value = cursoSeleccionado;
     document.getElementById('inputNombre')?.focus();
   }, 50);
   renderCriterios();
@@ -6238,7 +6164,7 @@ function _guardarImpl() {
   // Activar/actualizar la serie para el curso actual y mostrar CTA de siguiente alumno
   _iniciarEvalSerie(nombre);          // reconstruye la lista del curso actual
   _avanzarAlSiguientePendiente();     // salta al próximo sin evaluación
-}  // fin _guardarImpl
+}
 
 // ══════════════════════════════════════════════════════
 //  SISTEMA DE SEMESTRES — filtrado y rendimiento
@@ -6259,29 +6185,6 @@ function _semestrePorInstancia(instancia) {
 }
 
 // ── Configuración de semestres — qué evaluaciones van en cada uno ──────────
-// ── Performance: cache de referencias DOM frecuentes ────────────────────────
-// Evita getElementById en cada render — referencias guardadas al arrancar
-var _DOM = {};
-function _initDOMCache() {
-  var ids = [
-    'inputNombre','inputCurso','instanciaSelect','globalSearchInput',
-    'buscarRegistros','buscarEstadisticas','registrosList',
-    'dashKpiGlobal','dashAlertaWrap','dashAlertaCursos',
-    'statsContent','cursoMain','semPill1','semPill2',
-    'topbarCursoBadge','topbarCursoLabel','evalNavBar',
-    'cloudBtn','storageWarning','_storageStatBar'
-  ];
-  ids.forEach(function(id) {
-    Object.defineProperty(_DOM, id, {
-      get: function() {
-        return document.getElementById(id);
-      },
-      configurable: true
-    });
-  });
-}
-
-
 var _SEM_CONFIG_KEY = 'av_sem_config';
 
 function _getSemConfig() {
@@ -6983,7 +6886,6 @@ function filtrarPorInstancia(instancia) {
 }
 
 function renderRegistros() {
-  try {
   if (!Array.isArray(registros)) return;
   // Actualizar botón de acceso rápido al curso
   setTimeout(_actualizarBtnIrACurso, 50);
@@ -7098,11 +7000,6 @@ function renderRegistros() {
 
   var _cardIndex = 0;
   // v190: _alumnosAgrupados — un alumno = una tarjeta, todas sus evals dentro
-  // ── Performance: DocumentFragment — un solo reflow al final ──────────────
-  var _listFrag = document.createDocumentFragment();
-  var _currentGrp = null;
-  var _currentGrpKey = null;
-
   _alumnosAgrupados.forEach(function(grupo) {
     var r   = grupo.primerReg;
     var _regsAlumno = grupo.registros;  // todos sus registros
@@ -7172,9 +7069,7 @@ function renderRegistros() {
           <button class="btn btn-icon" title="Ver detalle" onclick="verDetalle(${idx})">👁</button>
           <button class="btn btn-icon" title="Presentar" onclick="modoPresentacion(${idx})">🖥️</button>
           <button class="btn btn-icon" title="Editar nota rápida" onclick="editarNotaRapida(${idx}, this)" style="font-size:11px;padding:4px 7px;font-family:var(--font-mono);">${nota.toFixed(1)}</button>
-          <button class="btn btn-icon btn-editar-reg" title="Editar" data-reg-idx="${idx}" data-action="editar" aria-label="Editar registro">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                </button>
+          <button class="btn btn-icon" title="Editar" onclick="editarRegistro(${idx})">✏️</button>
           <button class="btn btn-icon btn-danger" title="Eliminar" onclick="eliminar(${idx})"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
         </div>
       </div>`;
@@ -7189,17 +7084,10 @@ function renderRegistros() {
       hdr.className = 'reg-group-header';
       hdr.textContent = cardCurso;
       grp.appendChild(hdr);
-      _listFrag.appendChild(grp);  // Fragment instead of list
+      list.appendChild(grp);
     }
     grp.appendChild(card);
   });
-  // Single DOM mutation — one reflow instead of N
-  list.appendChild(_listFrag);
-  } catch(e) {
-    console.error('[ArtEval] renderRegistros:', e.message);
-    var _sl = document.getElementById('registrosList');
-    if (_sl && !_sl.hasChildNodes()) _sl.innerHTML = '<div style="padding:20px;color:var(--text3);text-align:center;">Error al cargar registros. Recarga la página.</div>';
-  }
 }
 
 // ── Libro de Clases: tabla dinámica por curso con columnas por instancia ──
@@ -7991,7 +7879,6 @@ async function limpiarTodo() {
 function renderEstadisticas() {
   const cont = document.getElementById('statsContent');
   if (!cont) return;
-  try {
   actualizarFiltros();
   const fr  = document.getElementById('statsRubrica')?.value || '';
   const fc  = document.getElementById('statsCurso')?.value || '';
@@ -8122,11 +8009,6 @@ function renderEstadisticas() {
         </div>`;
     }).join('')}
   ` + _renderAnalisisCriterios(data);
-  } catch(e) {
-    console.error('[ArtEval] renderEstadisticas:', e.message);
-    var _sc = document.getElementById('statsContent');
-    if (_sc) _sc.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3);">Error al cargar estadísticas.<br><button class="btn" onclick="renderEstadisticas()" style="margin-top:12px;">Reintentar</button></div>';
-  }
 }
 
 // ── Análisis de criterios por rúbrica — barras apiladas MB/L/M/N ──────────
@@ -10121,17 +10003,10 @@ function _actualizarPasosOnboarding() {
   }
 }
 
-var _kpiCache = { hash: '', lastFiltro: null };
 function _renderDashKpiGlobal(instFiltro) {
   const kpiEl = document.getElementById('dashKpiGlobal');
+  const obEl  = document.getElementById('dashOnboarding');
   if (!kpiEl) return;
-
-  // Cache ligero: si los datos no cambiaron, no re-renderizar
-  var _hash = _registrosSemestre().length + '|' + (instFiltro||'') + '|' + _semestreActivo;
-  if (_hash === _kpiCache.hash && _kpiCache.lastFiltro === instFiltro) return;
-  _kpiCache.hash = _hash;
-  _kpiCache.lastFiltro = instFiltro;
-  const obEl = document.getElementById('dashOnboarding');
 
   // Filtrar siempre por semestre activo
   const regsSem = _registrosSemestre();
@@ -11542,73 +11417,22 @@ body { background: var(--ios-bg); }
 
 /* Eval nav (modo serie) */
 .eval-nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 8px 12px;
-  background: var(--bg2);
-  border-top: 0.5px solid var(--border);
-  box-shadow: 0 -2px 12px rgba(0,0,0,0.05);
-  min-height: 52px;
-  position: relative;
-  z-index: 100;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 10px 16px; background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(10px); border-top: 0.5px solid var(--ios-sep-solid);
 }
 .eval-nav-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 7px 14px;
-  border: 0.5px solid var(--border);
-  border-radius: 20px;
-  background: var(--bg3);
-  color: var(--text2);
-  font-size: 12px;
-  font-weight: 500;
-  font-family: var(--font-ui);
-  cursor: pointer;
-  min-height: 34px;
-  flex-shrink: 0;
-  transition: background 0.12s, border-color 0.12s, transform 0.08s;
-  -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
-  white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 5px; padding: 8px 14px;
+  border: none; border-radius: 10px; background: var(--ios-fill2);
+  color: var(--ios-label); font-size: 13px; font-weight: 500; font-family: var(--font-ui);
+  cursor: pointer; min-height: 40px; transition: all 0.18s ease;
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation;
 }
-.eval-nav-btn:hover  { background: var(--bg4); }
-.eval-nav-btn:active { transform: scale(0.95); }
-.eval-nav-btn-next {
-  background: var(--accent);
-  color: #fff;
-  border-color: transparent;
-  font-weight: 600;
-}
-.eval-nav-btn-next:hover { opacity: 0.85; }
+.eval-nav-btn:hover { background: var(--ios-fill); }
+.eval-nav-btn:active { transform: scale(0.96); opacity: 0.82; }
 .eval-nav-label {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1px;
-  overflow: hidden;
-  min-width: 0;
-}
-.eval-nav-pos {
-  font-size: 10px;
-  font-weight: 600;
-  font-family: var(--font-mono);
-  color: var(--text3);
-  letter-spacing: 0.3px;
-  line-height: 1;
-}
-.eval-nav-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 100%;
-  line-height: 1.3;
+  flex: 1; text-align: center; font-size: 13px; font-weight: 600;
+  color: var(--ios-label); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
 /* NE interactiva */
@@ -12077,9 +11901,9 @@ input:focus, textarea:focus, select:focus {
 #topbarCursoBadge {
   display: none;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   font-family: var(--font-mono);
   background: var(--bg3);
   border: 0.5px solid var(--border);
@@ -12088,53 +11912,13 @@ input:focus, textarea:focus, select:focus {
   cursor: pointer;
   color: var(--text2);
   white-space: nowrap;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
-  max-width: 130px;
+  transition: background var(--t-fast), color var(--t-fast);
+  max-width: 120px;
   overflow: hidden;
   text-overflow: ellipsis;
-  line-height: 1.2;
 }
-#topbarCursoBadge:hover {
-  background: var(--bg4);
-  color: var(--text);
-}
+#topbarCursoBadge:hover { background: var(--bg4); color: var(--accent); border-color: var(--accent-border); }
 #topbarCursoBadge svg { flex-shrink: 0; }
-
-
-/* ── PERFORMANCE: Reglas consolidadas (elimina cascadas redundantes) ─────── */
-/* Las definiciones anteriores de .topbar, .tab, .modal-box, .btn se            */
-/* mantienen por compatibilidad pero estas claves ganan por especificidad        */
-/* y evitan que el parser resuelva 134 cascadas duplicadas innecesariamente.    */
-
-/* GPU compositing para paneles que se transforman frecuentemente */
-.modal-overlay,
-.modal-box,
-.eval-nav,
-#evalNavBar,
-.av-toast,
-.undo-toast,
-#popoverNotaRapida {
-  transform: translateZ(0);
-  backface-visibility: hidden;
-}
-
-/* Contain: layout para secciones grandes — evita reflows globales */
-#registrosList,
-.estudiante-list,
-#cursoMain,
-#statsContent {
-  contain: layout style;
-}
-
-/* Content-visibility para secciones fuera de viewport (lazy rendering) */
-.reg-card {
-  content-visibility: auto;
-  contain-intrinsic-size: 0 80px;
-}
-
-
-/* ── Spinner para botón Guardar ─── */
-@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
 </style></head><body>
   <h1>📋 Informe de Evaluaciones · Artes Visuales</h1>
@@ -12371,17 +12155,6 @@ function showEstudioSub(sub) {
     if (evalBar) evalBar.style.display = 'none';
   }
   // requestAnimationFrame: cede el hilo al browser para pintar la navegación primero
-  if (sub === 'evaluar') {
-    // Solo inicializar si el panel está vacío — no resetear trabajo del usuario
-    try {
-      var _clist = document.getElementById('criteriosList');
-      var _isEmpty = !_clist || !_clist.children.length;
-      if (_isEmpty) renderCriterios();
-      actualizarResumen();
-      actualizarBarraProgresoCurso();
-      _reconstruirInstanciaSelect();
-    } catch(e) { console.warn('[ArtEval] evaluar init:', e.message); }
-  }
   if (sub === 'cursos') {
     requestAnimationFrame(function() {
       // Restaurar curso activo si se viene de otra sección o tab
@@ -14085,9 +13858,7 @@ function verDetalle(idx) {
       </div>
       <div style="display:flex;gap:8px;">
         <button class="btn btn-primary" id="_vdShareBtn" style="gap:6px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Compartir</button>
-        <button class="btn btn-editar-reg" data-reg-idx="${idx}" data-action="editar">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            Editar</button>
+        <button class="btn" onclick="editarRegistro(${idx});cerrarModal()">✏️ Editar</button>
         <button class="btn" onclick="cerrarModal()">Cerrar</button>
       </div>
     </div>
@@ -14751,69 +14522,6 @@ function _resetSemConfig() {
 }
 
 
-// ══════════════════════════════════════════════════════
-//  EVENT DELEGATION — nivel-btn y edición de registros
-// ══════════════════════════════════════════════════════
-// Un único listener en document captura todos los clics
-// en .nivel-btn y .btn-editar-reg, sin importar cuántos
-// se rendericen dinámicamente. Evita N listeners individuales.
-
-function setNivelSeguro(critIdx, nivel) {
-  try {
-    setNivel(critIdx, nivel);
-  } catch(e) {
-    console.error('[ArtEval] setNivelSeguro error:', e.message);
-    toast('Error al seleccionar nivel. Intenta de nuevo.', 'err', 3000);
-  }
-}
-
-function editarRegistroSeguro(idx) {
-  try {
-    var n = parseInt(idx, 10);
-    if (isNaN(n) || n < 0 || n >= registros.length) return;
-    // Cerrar modal si hay uno abierto (ej: modal de detalle)
-    var modalActivo = document.getElementById('modalActivo');
-    if (modalActivo) cerrarModal();
-    editarRegistro(n);
-  } catch(e) {
-    console.error('[ArtEval] editarRegistroSeguro error:', e.message);
-    toast('Error al abrir el registro. Intenta de nuevo.', 'err', 3000);
-  }
-}
-
-// Inicializar delegación — se llama UNA VEZ al arrancar
-function _initEventDelegation() {
-  document.addEventListener('click', function(e) {
-    // ── Nivel-btn: capturar por data-crit-idx y data-nivel ────────────────
-    var nivelBtn = e.target.closest('.nivel-btn[data-crit-idx]');
-    if (nivelBtn) {
-      var critIdx = nivelBtn.dataset.critIdx;
-      var nivel   = nivelBtn.dataset.nivel;
-      if (critIdx !== undefined && nivel) {
-        setNivelSeguro(parseInt(critIdx, 10), nivel);
-      }
-      return;
-    }
-    // ── toggleEditNivel: delegación para el modal de edición ──────────────
-    var editNivelBtn = e.target.closest('.nivel-btn[data-edit-crit]');
-    if (editNivelBtn) {
-      var k = editNivelBtn.dataset.nivel;
-      var i = editNivelBtn.dataset.editCrit;
-      if (k && i !== undefined) {
-        try { toggleEditNivel(editNivelBtn, k, parseInt(i, 10)); } catch(err) {}
-      }
-      return;
-    }
-    // ── Editar registro: capturar por data-reg-idx ────────────────────────
-    var editBtn = e.target.closest('[data-reg-idx]');
-    if (editBtn && (editBtn.classList.contains('btn-editar-reg') ||
-                    editBtn.dataset.action === 'editar')) {
-      editarRegistroSeguro(editBtn.dataset.regIdx);
-    }
-  }, { passive: false });
-}
-
-
 // ── iniciales de nombre para avatar ──────────────────
 // iniciales() definida en el bloque de utilidades principales (L5011)
 
@@ -15025,39 +14733,12 @@ function _getActiveAutocompleteList() {
 }
 
 var _searchTimer=null;
-// ── Performance: debounce para renders costosos ───────────────────────────────
-var _statsTimer = null;
-function _debouncedEstadisticas() {
-  clearTimeout(_statsTimer);
-  _statsTimer = setTimeout(function() {
-    try { renderEstadisticas(); } catch(e) { console.warn('[ArtEval] renderEstadisticas:', e); }
-  }, 250);
-}
-var _cursosSearchTimer = null;
-function _debouncedBuscarCursos(val) {
-  clearTimeout(_cursosSearchTimer);
-  _cursosSearchTimer = setTimeout(function() {
-    try { buscarEnCursos(val); } catch(e) {}
-  }, 200);
-}
-var _regSearchTimer2 = null;
-function _debouncedBuscarRegistros() {
-  clearTimeout(_regSearchTimer2);
-  _regSearchTimer2 = setTimeout(function() {
-    try { renderRegistros(); } catch(e) { console.warn('[ArtEval] renderRegistros:', e); }
-  }, 220);
-}
-
 function _debouncedSearch(val){
   clearTimeout(_searchTimer);
-  _searchTimer = setTimeout(function(){
-    try {
-      mostrarAutocompletado(val);
-      if (typeof _limpiarCanvasParaNuevoAlumno === 'function') _limpiarCanvasParaNuevoAlumno();
-    } catch(e) {
-      console.warn('[ArtEval] _debouncedSearch error:', e.message);
-    }
-  }, 300); // 300ms — equilibrio entre respuesta y rendimiento
+  _searchTimer=setTimeout(function(){
+    mostrarAutocompletado(val);
+    if(typeof _limpiarCanvasParaNuevoAlumno==='function')_limpiarCanvasParaNuevoAlumno();
+  },180);
 }
 
 // ── Helpers de navegación rápida entre secciones ────────────────────────────
@@ -15086,45 +14767,33 @@ function _irAEvaluarCurso(curso) {
 function _actualizarBtnIrACurso() {
   var btn   = document.getElementById('btnIrACurso');
   var label = document.getElementById('btnIrACursoLabel');
-  var tbBadge = document.getElementById('topbarCursoBadge');
-  var tbLabel = document.getElementById('topbarCursoLabel');
-
+  if (!btn) return;
   var curso = localStorage.getItem('av_curso_activo') || cursoSeleccionado;
   var filtroCurso = (document.getElementById('statsCurso') ? document.getElementById('statsCurso').value : '')
                  || (document.getElementById('filtroCurso') ? document.getElementById('filtroCurso').value : '');
   var cursoMostrar = filtroCurso || curso;
-
-  // ── Botón "Ver en Cursos" en toolbar de Registros ────────────────────────
-  if (btn) {
-    if (cursoMostrar) {
-      btn.style.display = 'inline-flex';
-      if (label) label.textContent = cursoMostrar;
-      btn.title = 'Ver ' + cursoMostrar + ' en la vista Cursos';
-    } else {
-      btn.style.display = 'none';
-    }
+  if (cursoMostrar) {
+    btn.style.display = 'inline-flex';
+    if (label) label.textContent = cursoMostrar;
+    btn.title = 'Ver ' + cursoMostrar + ' en la vista Cursos';
+  } else {
+    btn.style.display = 'none';
   }
 
-  // ── Badge topbar — mismo estilo que píldoras de semestre ─────────────────
+  // Actualizar también el badge de la topbar
+  var tbBadge = document.getElementById('topbarCursoBadge');
+  var tbLabel = document.getElementById('topbarCursoLabel');
   if (tbBadge && tbLabel) {
     if (cursoMostrar) {
-      // Contar registros del curso en semestre activo
-      var nRegs = 0;
-      try {
-        nRegs = _registrosSemestre().filter(function(r){
-          return (r.curso || '') === cursoMostrar;
-        }).length;
-      } catch(e) {}
-      // Formato: "4°C · 40" igual que "1° Sem · 1226"
-      var txt = cursoMostrar + (nRegs > 0 ? ' · ' + nRegs : '');
-      tbLabel.textContent = txt;
       tbBadge.style.display = 'inline-flex';
-      tbBadge.title = 'Curso activo: ' + cursoMostrar + (nRegs ? ' (' + nRegs + ' evaluaciones)' : '') + ' — clic para ir a Cursos';
+      tbLabel.textContent   = cursoMostrar;
+      tbBadge.title         = 'Curso activo: ' + cursoMostrar + ' — clic para ver en Cursos';
     } else {
       tbBadge.style.display = 'none';
     }
   }
 }
+
 
 function mostrarAutocompletado(val) {
   clearTimeout(_acDebounceTimer);
@@ -15921,22 +15590,12 @@ function renderCursoMain() {
   hdrBtns.appendChild(btnDedup);
   hdrBtns.appendChild(btnExport);
 
-  // ── Acceso directo: Evaluar este curso — estilo píldora iOS ─────────────
+  // ── Acceso directo: Evaluar este curso ──────────────────────────────────
   var btnEvalCurso = document.createElement('button');
-  btnEvalCurso.className = 'btn';
-  btnEvalCurso.style.cssText = [
-    'display:inline-flex', 'align-items:center', 'gap:6px',
-    'font-size:12px', 'font-weight:600', 'font-family:var(--font-ui)',
-    'padding:6px 14px', 'border-radius:20px',
-    'background:var(--accent)', 'color:#fff',
-    'border:none', 'cursor:pointer',
-    'transition:opacity 0.15s, transform 0.1s',
-    'white-space:nowrap', 'flex-shrink:0'
-  ].join(';');
-  btnEvalCurso.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg> Evaluar';
-  btnEvalCurso.title = 'Ir a Evaluar con ' + curso + ' seleccionado';
-  btnEvalCurso.onmouseenter = function(){ this.style.opacity='0.85'; };
-  btnEvalCurso.onmouseleave = function(){ this.style.opacity='1'; };
+  btnEvalCurso.className = 'btn btn-primary';
+  btnEvalCurso.style.cssText = 'gap:6px;';
+  btnEvalCurso.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg> Evaluar este curso';
+  btnEvalCurso.title = 'Ir a Evaluar con ' + curso + ' ya seleccionado';
   btnEvalCurso.onclick = function() {
     var inputC = document.getElementById('inputCurso');
     if (inputC) inputC.value = curso;
@@ -16032,8 +15691,6 @@ function renderCursoMain() {
   if (listaFiltrada.length === 0) {
     listEl.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text3);font-size:13px;">Sin estudiantes en esta categoría</div>';
   } else {
-    // ── Performance: DocumentFragment — un solo reflow para todos los alumnos ──
-    var _listFragment = document.createDocumentFragment();
     listaFiltrada.forEach(function(e) {
       const idxReal = lista.indexOf(e);
       const regsAll  = getRegsEstudiante(e.nombre, curso);
@@ -16161,9 +15818,8 @@ function renderCursoMain() {
       acts.appendChild(btnDel);
 
       row.appendChild(acts);
-      _listFragment.appendChild(row);  // fragment, no reflow
+      listEl.appendChild(row);
     });
-    listEl.appendChild(_listFragment);  // único reflow
   }
   main.appendChild(listEl);
   renderSidebarCounts();
@@ -19309,10 +18965,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (_apiBn && _apiK) _apiBn.style.display = 'none';
   } catch(_apiErr) {}
 
-  // Inicializar cache de DOM frecuente
-  _initDOMCache();
-  // Inicializar delegación de eventos (único listener para nivel-btn y edición)
-  _initEventDelegation();
   // Auto-retención de imágenes antiguas (silencioso)
   setTimeout(_autoRetencionImagen, 2000);
   // Renderizar controles de semestre
