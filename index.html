@@ -5686,6 +5686,37 @@ async function toggleCamara() {
   }
 }
 
+// ── _buildImgHTML: genera el bloque <div><img></div> para un registro ──────────
+// Usa _renderImgSrc para resolver base64 legacy o referencia Drive.
+// Devuelve cadena HTML segura (sin template literals anidados).
+function _buildImgHTML(reg) {
+  var src = _renderImgSrc(reg);
+  if (!src) return '';
+  return '<div style="margin:10px 0;border-radius:var(--rad);overflow:hidden;'
+       + 'max-height:200px;display:flex;justify-content:center;background:#000;">'
+       + '<img src="' + src.replace(/"/g, '%22')
+       + '" style="max-height:200px;object-fit:contain;border-radius:var(--rad);"'
+       + ' alt="Trabajo capturado"'
+       + ' onerror="this.parentElement.style.display=\'none\'">'
+       + '</div>';
+}
+
+
+// Registros nuevos → imagenDriveId (URL de Drive).
+// Registros legacy → imagenBase64 (data: URL).
+// Sin imagen → null.
+function _renderImgSrc(reg) {
+  if (!reg) return null;
+  if (reg.imagenDriveId) {
+    if (reg.imagenWebContentLink) return reg.imagenWebContentLink;
+    if (reg.imagenWebViewLink)    return reg.imagenWebViewLink;
+    return 'https://drive.google.com/thumbnail?id=' + reg.imagenDriveId + '&sz=w400';
+  }
+  if (reg.imagenBase64) return reg.imagenBase64;
+  return null;
+}
+
+
 // ══ COMPRESIÓN DE IMÁGENES EN CLIENTE ════════════════════════════════════════
 // Recibe un HTMLImageElement, HTMLVideoElement o HTMLCanvasElement.
 // Devuelve la cadena base64 (sin prefijo data:...) redimensionada a MAX_W y
@@ -6189,7 +6220,7 @@ function toggleAuto() {
 // ═══════════════════════════════════════════════════════
 //  GUARDAR REGISTRO
 // ═══════════════════════════════════════════════════════
-function guardar() {
+async function guardar() {
   // Normalizar nombre: title-case estricto — primera letra mayúscula, RESTO MINÚSCULA por palabra
   // Previene "Rivas PeñAloza" → fuerza "Rivas Peñaloza"
   // Palabras de 1-2 letras (DE, LA, Y) se respetan tal como vienen
@@ -6304,11 +6335,32 @@ function guardar() {
     );
     if (canvas && canvas.width > 0 && canvas.height > 0 && capturaFresca && capturaEsDeEsteAlumno) {
       // Comprimir con el helper: redimensiona a MAX 800px y convierte a JPEG 70%
-      // Si el canvas ya tiene 800px (capturado por capturarFrame), ratio=1 y no crece.
       var b64Comprimido = _comprimirImagenBase64(canvas);
-      nuevoReg.imagenBase64 = b64Comprimido
-        ? 'data:image/jpeg;base64,' + b64Comprimido
-        : canvas.toDataURL('image/jpeg', 0.4); // fallback si helper falla
+      if (b64Comprimido) {
+        // ── Intentar subir a Drive primero (no bloquea el flujo) ───────────
+        // Si Drive no está disponible, se guarda el base64 local como fallback.
+        var _driveResult = null;
+        try {
+          if (_driveToken) {
+            _driveResult = await _subirFotoDrive(b64Comprimido, nombre);
+          }
+        } catch(_uploadErr) {
+          console.warn('[ArtEval] Upload foto Drive falló, usando base64 local:', _uploadErr.message);
+        }
+
+        if (_driveResult && _driveResult.driveId) {
+          // ✅ Drive: guardar referencia Drive (sin base64 pesado)
+          nuevoReg.imagenDriveId      = _driveResult.driveId;
+          nuevoReg.imagenWebViewLink  = _driveResult.webViewLink  || null;
+          nuevoReg.imagenWebContentLink = _driveResult.webContentLink || null;
+          nuevoReg.imagenBase64       = null; // no duplicar en local
+        } else {
+          // ⚠️ Fallback local: sin conexión Drive o error de subida
+          nuevoReg.imagenBase64 = 'data:image/jpeg;base64,' + b64Comprimido;
+        }
+      } else {
+        nuevoReg.imagenBase64 = canvas.toDataURL('image/jpeg', 0.4); // fallback si helper falla
+      }
     } else if (canvas && canvas.width > 0 && !capturaEsDeEsteAlumno && _captureForNombre) {
       // La imagen en canvas pertenece a otro alumno — NO contaminar
       console.warn('[ArtEval] Canvas descartado: pertenece a "' + _captureForNombre + '", no a "' + nombreGuardado + '"');
@@ -14464,9 +14516,7 @@ function verDetalle(idx) {
       <div class="detalle-info">
         <div class="detalle-nombre">${r.nombre}</div>
         <div class="detalle-meta">${[r.curso, r.instancia||'Evaluación 1', r.rubricaNombre, r.fecha].filter(Boolean).join(' · ')}</div>
-        ${r.imagenBase64 ? `<div style="margin:10px 0;border-radius:var(--rad);overflow:hidden;max-height:200px;display:flex;justify-content:center;background:#000;">
-          <img src="${r.imagenBase64}" style="max-height:200px;object-fit:contain;border-radius:var(--rad);" alt="Trabajo capturado">
-        </div>` : ''}
+        ${_buildImgHTML(r)}
         <span class="detalle-resultado" style="background:${resBg};color:${resClr}">${resLabel}</span>
         ${pieInfo}
       </div>
@@ -18096,6 +18146,8 @@ var GOOG_CLIENT_ID = localStorage.getItem('av_goog_client_id') || '';
 var DRIVE_SCOPE    = 'https://www.googleapis.com/auth/drive.file';
 var DRIVE_FOLDER   = 'ArtEval_Backups';
 var DRIVE_FILENAME        = 'arteval_database.json';
+var DRIVE_FOTOS_FOLDER    = 'ArtEval_Fotos';    // carpeta exclusiva para imágenes
+var _driveFotosFolderId   = null;               // se cachea tras la primera búsqueda
 var DRIVE_BACKUP_FILENAME = 'ArtEval_DailyBackup.json';
 var _autoBackupEnabled    = localStorage.getItem('av_auto_backup_enabled') !== 'false'; // true por defecto
 var _autoBackupRunning    = false; // evitar ejecuciones paralelas
@@ -18395,6 +18447,89 @@ async function _getOrCreateFolder() {
   );
   return (await cr.json()).id;
 }
+
+// ── Carpeta ArtEval_Fotos — se crea automáticamente la primera vez ──────────
+async function _getOrCreateFotoFolder() {
+  if (_driveFotosFolderId) return _driveFotosFolderId;
+  try {
+    var q = "name='" + DRIVE_FOTOS_FOLDER
+          + "' and mimeType='application/vnd.google-apps.folder'"
+          + " and trashed=false";
+    var r = await _driveRequest('GET',
+      'https://www.googleapis.com/drive/v3/files?q='
+      + encodeURIComponent(q) + '&fields=files(id,name)');
+    var d = await r.json();
+    if (d.files && d.files.length) {
+      _driveFotosFolderId = d.files[0].id;
+      return _driveFotosFolderId;
+    }
+    var cr = await _driveRequest('POST',
+      'https://www.googleapis.com/drive/v3/files',
+      JSON.stringify({ name: DRIVE_FOTOS_FOLDER,
+                       mimeType: 'application/vnd.google-apps.folder' }),
+      { 'Content-Type': 'application/json' });
+    _driveFotosFolderId = (await cr.json()).id;
+    return _driveFotosFolderId;
+  } catch(e) {
+    console.warn('[ArtEval] _getOrCreateFotoFolder:', e.message);
+    return null;
+  }
+}
+
+// ── Subir foto a Drive y devolver objeto con id+links ─────────────────────────
+// b64: cadena base64 pura (sin prefijo data:...) resultado de _comprimirImagenBase64.
+// Devuelve { driveId, webViewLink, webContentLink } o null si falla (fallback local).
+async function _subirFotoDrive(b64, nombreAlumno) {
+  try {
+    var token = await _getToken();
+    if (!token) return null;
+
+    var folderId = await _getOrCreateFotoFolder();
+    if (!folderId) return null;
+
+    // base64 -> Uint8Array
+    var byteStr = atob(b64);
+    var byteArr = new Uint8Array(byteStr.length);
+    for (var i = 0; i < byteStr.length; i++) byteArr[i] = byteStr.charCodeAt(i);
+
+    // Nombre de archivo único
+    var safeName = (nombreAlumno || 'alumno')
+                     .replace(/[^a-zA-Z0-9\s_-]/g, '').trim()
+                     .replace(/\s+/g, '_').substring(0, 40);
+    var fileName = 'foto_' + safeName + '_' + Date.now() + '.jpg';
+
+    // Cuerpo multipart: metadata + binario JPEG
+    var boundary = 'arteval_foto_' + Date.now();
+    var metaJSON = JSON.stringify({
+      name: fileName, parents: [folderId], mimeType: 'image/jpeg'
+    });
+    var enc      = new TextEncoder();
+    var metaBuf  = enc.encode('--' + boundary + '\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n' + metaJSON + '\r\n');
+    var midBuf   = enc.encode('--' + boundary + '\r\nContent-Type: image/jpeg\r\n\r\n');
+    var endBuf   = enc.encode('\r\n--' + boundary + '--');
+    var body     = new Uint8Array(metaBuf.length + midBuf.length + byteArr.length + endBuf.length);
+    var off = 0;
+    body.set(metaBuf, off); off += metaBuf.length;
+    body.set(midBuf,  off); off += midBuf.length;
+    body.set(byteArr, off); off += byteArr.length;
+    body.set(endBuf,  off);
+
+    var resp = await fetch(
+      'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink,webContentLink',
+      { method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token,
+                   'Content-Type': 'multipart/related; boundary="' + boundary + '"' },
+        body: body.buffer }
+    );
+    if (!resp.ok) { console.warn('[ArtEval] _subirFotoDrive HTTP', resp.status); return null; }
+    var fd = await resp.json();
+    return { driveId: fd.id, webViewLink: fd.webViewLink || null, webContentLink: fd.webContentLink || null };
+  } catch(e) {
+    console.warn('[ArtEval] _subirFotoDrive:', e.message);
+    return null;
+  }
+}
+
 
 // Buscar archivo arteval_database.json en la carpeta
 async function _findDbFile(folderId) {
