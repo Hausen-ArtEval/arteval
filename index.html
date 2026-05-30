@@ -3222,6 +3222,45 @@ button:focus-visible, .tab:focus-visible, .sub-tab:focus-visible {
 
   </div>
 
+  <!-- ══ BARRA DE CONTINUIDAD — cápsula iOS con inline styles blindados ══ -->
+  <div id="barraContinuidadWrap" style="display:none;justify-content:center;align-items:center;width:100%;padding:8px 0;background:transparent;position:relative;z-index:100;">
+    <div id="barraContinuidad"
+         style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.85);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border:1px solid rgba(0,0,0,0.10);border-radius:999px;padding:6px 18px;box-shadow:0 4px 14px rgba(0,0,0,0.08);font-size:13px;font-weight:500;color:#333;white-space:nowrap;"
+         aria-label="Contexto de evaluación activo">
+
+      <!-- Chip Curso — span clicable para evitar reglas button !important -->
+      <span id="bcCurso"
+            onclick="actualizarBarraContinuidad._irCurso()"
+            title="Ir a la vista del curso"
+            style="display:inline-flex;align-items:center;gap:5px;color:#FF9500;font-weight:600;font-size:13px;cursor:pointer;text-decoration:none;padding:0;margin:0;border:none;background:transparent;-webkit-tap-highlight-color:transparent;">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.8;flex-shrink:0;"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span id="bcCursoLabel">—</span>
+      </span>
+
+      <span style="color:#8e8e93;font-size:14px;font-weight:300;margin:0 1px;user-select:none;" aria-hidden="true">›</span>
+
+      <!-- Chip Alumno -->
+      <span id="bcAlumno"
+            onclick="actualizarBarraContinuidad._irEvaluar()"
+            title="Ir a evaluar este alumno"
+            style="display:inline-flex;align-items:center;gap:5px;color:#007aff;font-weight:500;font-size:13px;cursor:pointer;text-decoration:none;padding:0;margin:0;border:none;background:transparent;-webkit-tap-highlight-color:transparent;">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.6;flex-shrink:0;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span id="bcAlumnoLabel">—</span>
+      </span>
+
+      <span style="color:#8e8e93;font-size:14px;font-weight:300;margin:0 1px;user-select:none;" aria-hidden="true">›</span>
+
+      <!-- Chip Rúbrica — solo informativo -->
+      <span id="bcRubrica"
+            title="Rúbrica activa"
+            style="display:inline-flex;align-items:center;gap:4px;color:#8e8e93;font-size:12px;font-weight:400;padding:0;margin:0;pointer-events:none;">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.45;flex-shrink:0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <span id="bcRubricaLabel">—</span>
+      </span>
+
+    </div>
+  </div>
+
   <!-- ══ SUBNAV LAYER — fuera de .content, ancho completo ══ -->
   <div id="subnavLayer">
     <!-- Estudio: Cursos | Registros -->
@@ -3952,21 +3991,21 @@ button:focus-visible, .tab:focus-visible, .sub-tab:focus-visible {
           <label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;font-family:'DM Mono',monospace;white-space:nowrap;">Total del curso</label>
           <input type="number" id="totalAlumnosCurso" min="1" max="60" value="45"
             style="width:58px;font-size:15px;font-weight:700;font-family:'DM Mono',monospace;padding:3px 6px;border:0.5px solid var(--border2);border-radius:var(--rad);background:var(--bg3);color:var(--text);text-align:center;"
-            oninput="renderEstadisticas()">
+            oninput="_debouncedEstadisticas()">
         </div>
         <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
           <label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;font-family:'DM Mono',monospace;white-space:nowrap;">Entregados</label>
           <input type="number" id="trabajosEntregados" min="0" max="60" value=""
             placeholder="auto"
             style="width:58px;font-size:15px;font-weight:700;font-family:'DM Mono',monospace;padding:3px 6px;border:0.5px solid var(--border2);border-radius:var(--rad);background:var(--bg3);color:var(--text);text-align:center;"
-            oninput="renderEstadisticas()">
+            oninput="_debouncedEstadisticas()">
           <span style="font-size:10px;color:var(--text3);font-style:italic;">vacío=auto</span>
         </div>
         <!-- Filtros compactos en la misma barra -->
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-left:auto;">
           <div class="search-wrap" style="min-width:140px;">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input class="search-input" type="text" id="buscarEstadisticas" placeholder="Buscar..." oninput="renderEstadisticas()">
+            <input class="search-input" type="text" id="buscarEstadisticas" placeholder="Buscar..." oninput="_debouncedEstadisticas()">
           </div>
           <select class="filter-select" id="statsRubrica" onchange="renderEstadisticas()" style="font-size:12px;padding:5px 10px;">
             <option value="">Todas las rúbricas</option>
@@ -3979,7 +4018,28 @@ button:focus-visible, .tab:focus-visible, .sub-tab:focus-visible {
           </select>
         </div>
       </div>
-      <!-- Contenido dinámico de estadísticas -->
+      <!-- Botón Acta UTP — generador de informe para UTP -->
+      <div style="display:flex;justify-content:flex-end;padding:0 2px 8px;">
+        <button onclick="generarActaUTP()"
+          style="display:inline-flex;align-items:center;gap:7px;
+                 padding:8px 16px;border-radius:20px;border:none;
+                 background:var(--accent);color:#fff;
+                 font-size:13px;font-weight:600;font-family:var(--font-ui);
+                 cursor:pointer;box-shadow:0 2px 8px rgba(255,149,0,0.28);
+                 transition:opacity 0.15s;-webkit-tap-highlight-color:transparent;"
+          onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'"
+          title="Genera un acta resumen para entregar a la UTP">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+          </svg>
+          Acta UTP
+        </button>
+      </div>
+<!-- Contenido dinámico de estadísticas -->
       <div id="statsContent"></div>
     </div>
     <div id="progreso-sec-progreso-oa" style="display:none;">
@@ -5221,24 +5281,57 @@ function renderCriterios() {
   const list = document.getElementById('criteriosList');
   if (!list) return;
   const crits = getCriterios();
+  if (!crits || !crits.length) return;
   setEl('totalPts', crits.length * 3);
   setEl('rubricaNombreHeader', getRubrica().nombre);
-  list.innerHTML = '';
+
+  // DocumentFragment — un solo reflow al final
+  const frag = document.createDocumentFragment();
+
   crits.forEach((c, i) => {
-    const ev = evaluacion[i];
+    const ev  = evaluacion[i];
     const div = document.createElement('div');
     div.className = 'criterio-item' + (ev?.nivel ? ' done' : '');
-    div.innerHTML = `
-      <div class="criterio-name"><span class="crit-num">${i+1}</span>${c}</div>
-      <div class="niveles">
-        ${[['MB','Destacado','3'],['L','Logrado','2'],['M','En proceso','1'],['N','Por lograr','0']].map(([k,lbl,pts]) =>
-          `<button class="nivel-btn ${ev?.nivel===k?'sel-'+k:''}" onclick="setNivel(${i},'${k}')">${lbl}<br><span style="font-family:'DM Mono',monospace;font-size:9px;opacity:0.7">${pts}pts</span></button>`
-        ).join('')}
-      </div>
-      ${ev?.nota ? `<div class="ia-nota">IA: ${ev.nota}</div>` : ''}`;
-    list.appendChild(div);
+
+    const nameDiv = document.createElement('div');
+    nameDiv.className = 'criterio-name';
+    nameDiv.innerHTML = '<span class="crit-num">' + (i+1) + '</span>' + (_esc ? _esc(c) : c);
+
+    const nivelesDiv = document.createElement('div');
+    nivelesDiv.className = 'niveles';
+
+    [['MB','Destacado','3'],['L','Logrado','2'],['M','En proceso','1'],['N','Por lograr','0']]
+      .forEach(function(pair) {
+        var k = pair[0], lbl = pair[1], pts = pair[2];
+        var btn = document.createElement('button');
+        btn.className = 'nivel-btn' + (ev && ev.nivel === k ? ' sel-' + k : '');
+        // Closure seguro: captura ci y nv en el momento de creación
+        btn.onclick = (function(ci, nv) { return function() { setNivel(ci, nv); }; })(i, k);
+        btn.setAttribute('aria-label', lbl + ' — criterio ' + (i+1));
+        btn.innerHTML = lbl + '<br><span style="font-family:\'DM Mono\',monospace;font-size:9px;opacity:0.7">' + pts + 'pts</span>';
+        nivelesDiv.appendChild(btn);
+      });
+
+    div.appendChild(nameDiv);
+    div.appendChild(nivelesDiv);
+
+    if (ev && ev.nota) {
+      var notaDiv = document.createElement('div');
+      notaDiv.className = 'ia-nota';
+      notaDiv.textContent = 'IA: ' + ev.nota;
+      div.appendChild(notaDiv);
+    }
+
+    frag.appendChild(div);
   });
-  actualizarResumen();
+
+  try {
+    list.innerHTML = '';
+    list.appendChild(frag);
+    actualizarResumen();
+  } catch(e) {
+    console.error('[ArtEval] renderCriterios:', e.message);
+  }
 }
 
 function setNivel(i, k) {
@@ -5248,7 +5341,9 @@ function setNivel(i, k) {
 }
 
 function actualizarResumen() {
+  try {
   const crits = getCriterios();
+  if (!crits) return;
   const vals = Object.values(evaluacion).filter(v => v?.nivel);
   const maxPts = crits.length * 3;
   const pill = document.getElementById('nivelPill');
@@ -5273,9 +5368,53 @@ function actualizarResumen() {
   else if (nota >= 5.0) { pill.textContent='Muy bien logrado'; pill.style.background='var(--green-bg)'; pill.style.color='var(--green)'; }
   else if (nota >= 4.0) { pill.textContent='Logrado'; pill.style.background='var(--green-bg)'; pill.style.color='var(--green)'; }
   else { pill.textContent='No logrado — bajo 4.0'; pill.style.background='var(--red-bg)'; pill.style.color='var(--red)'; }
+  } catch(e) { console.warn('[ArtEval] actualizarResumen:', e.message); }
 }
 
-// ── Barra de progreso del curso activo en tab Evaluar ────────────────────────
+// ── mostrarToast — alias iOS de la función toast() del sistema ───────────────
+// Muestra una cápsula flotante estilo iOS sin interrumpir el flujo del programa.
+// Parámetros: mensaje (string), duración en ms (default 2500).
+// Úsala en lugar de alert() para mensajes informativos.
+function mostrarToast(mensaje, duracion) {
+  duracion = duracion || 2500;
+  try {
+    // Usar el sistema toast() existente con estilo neutro
+    if (typeof toast === 'function') {
+      toast(mensaje, 'ok', duracion);
+      return;
+    }
+    // Fallback: cápsula flotante propia si toast() no está disponible
+    var existing = document.getElementById('_mostrarToastCap');
+    if (existing) existing.remove();
+    var cap = document.createElement('div');
+    cap.id = '_mostrarToastCap';
+    cap.textContent = mensaje;
+    cap.style.cssText = [
+      'position:fixed', 'bottom:32px', 'left:50%', 'transform:translateX(-50%)',
+      'background:rgba(0,0,0,0.78)', '-webkit-backdrop-filter:blur(10px)',
+      'backdrop-filter:blur(10px)', 'color:#fff', 'font-size:14px',
+      'font-weight:500', 'font-family:-apple-system,sans-serif',
+      'border-radius:999px', 'padding:10px 22px', 'z-index:99999',
+      'box-shadow:0 4px 20px rgba(0,0,0,0.25)', 'opacity:0',
+      'transition:opacity 0.25s ease', 'pointer-events:none',
+      'white-space:nowrap', 'max-width:calc(100vw - 48px)',
+      'text-align:center'
+    ].join(';');
+    document.body.appendChild(cap);
+    // Animar entrada
+    requestAnimationFrame(function() {
+      cap.style.opacity = '1';
+      setTimeout(function() {
+        cap.style.opacity = '0';
+        setTimeout(function() { cap.remove(); }, 280);
+      }, duracion);
+    });
+  } catch(e) {
+    console.warn('[ArtEval] mostrarToast:', e.message);
+  }
+}
+
+
 function actualizarBarraProgresoCurso() {
   var barra   = document.getElementById('barraProgresoCurso');
   var label   = document.getElementById('barraProgresoCursoLabel');
@@ -5462,16 +5601,22 @@ function cargarFotoRef(e) {
   if (!file) return;
   const reader = new FileReader();
   reader.onload = ev => {
-    fotoRefData = ev.target.result.split(',')[1];
-    const preview = document.getElementById('fotoRefPreview');
-    const wrap    = document.getElementById('fotoRefPreviewWrap');
-    const label   = document.getElementById('fotoRefLabel');
-    const btnQ    = document.getElementById('btnQuitarFoto');
-    if (preview) preview.src = ev.target.result;
-    if (wrap)    wrap.style.display = 'block';
-    if (label)   label.textContent = '✓ ' + file.name;
-    if (btnQ)    btnQ.style.display = 'inline-block';
-    setStatus('Imagen referencial cargada — la IA la usará como modelo de comparación');
+    const dataURLOriginal = ev.target.result;
+
+    // ── Comprimir antes de guardar — puede ser una foto de 4K del iPhone ────
+    _comprimirDataURL(dataURLOriginal, function(dataURLFinal) {
+      fotoRefData = dataURLFinal.split(',')[1];
+
+      const preview = document.getElementById('fotoRefPreview');
+      const wrap    = document.getElementById('fotoRefPreviewWrap');
+      const label   = document.getElementById('fotoRefLabel');
+      const btnQ    = document.getElementById('btnQuitarFoto');
+      if (preview) preview.src = dataURLFinal;
+      if (wrap)    wrap.style.display = 'block';
+      if (label)   label.textContent = '✓ ' + file.name;
+      if (btnQ)    btnQ.style.display = 'inline-block';
+      setStatus('Imagen referencial cargada — la IA la usará como modelo de comparación');
+    });
   };
   reader.readAsDataURL(file);
 }
@@ -5541,23 +5686,75 @@ async function toggleCamara() {
   }
 }
 
+// ══ COMPRESIÓN DE IMÁGENES EN CLIENTE ════════════════════════════════════════
+// Recibe un HTMLImageElement, HTMLVideoElement o HTMLCanvasElement.
+// Devuelve la cadena base64 (sin prefijo data:...) redimensionada a MAX_W y
+// comprimida como JPEG al 70% — ~5–10× más pequeña que el original.
+var _IMG_MAX_W = 800;   // ancho máximo de salida
+var _IMG_MAX_H = 800;   // alto máximo de salida
+var _IMG_Q     = 0.70;  // calidad JPEG (0–1)
+
+function _comprimirImagenBase64(source) {
+  try {
+    var sw = source.videoWidth  || source.naturalWidth  || source.width  || 640;
+    var sh = source.videoHeight || source.naturalHeight || source.height || 480;
+    // Mantener relación de aspecto
+    var ratio = Math.min(_IMG_MAX_W / sw, _IMG_MAX_H / sh, 1);
+    var tw    = Math.max(1, Math.floor(sw * ratio));
+    var th    = Math.max(1, Math.floor(sh * ratio));
+    var tmp   = document.createElement('canvas');
+    tmp.width  = tw;
+    tmp.height = th;
+    var ctx = tmp.getContext('2d');
+    ctx.drawImage(source, 0, 0, tw, th);
+    // JPEG 70% — ideal para fotos de obras, sin canal alfa
+    return tmp.toDataURL('image/jpeg', _IMG_Q).split(',')[1];
+  } catch(e) {
+    console.warn('[ArtEval] _comprimirImagenBase64:', e.message);
+    return null;
+  }
+}
+
+// Versión asíncrona para imágenes cargadas desde archivo (FileReader → src)
+function _comprimirDataURL(dataURL, callback) {
+  try {
+    var img = new Image();
+    img.onload = function() {
+      var b64 = _comprimirImagenBase64(img);
+      callback(b64 ? ('data:image/jpeg;base64,' + b64) : dataURL);
+    };
+    img.onerror = function() { callback(dataURL); };
+    img.src = dataURL;
+  } catch(e) {
+    console.warn('[ArtEval] _comprimirDataURL:', e.message);
+    callback(dataURL);
+  }
+}
+
 function capturarFrame() {
-  const video = document.getElementById('videoEl');
+  const video  = document.getElementById('videoEl');
   const canvas = document.getElementById('canvasEl');
   if (!video || !canvas) return '';
-  const MAX = 800;
+
+  // ── Redimensionar y comprimir con el helper compartido ────────────────────
+  // _comprimirImagenBase64 aplica MAX 800px y JPEG 0.70
+  const b64 = _comprimirImagenBase64(video);
+  if (!b64) return '';
+
+  // Actualizar el canvas del DOM (para que guardar() lo pueda leer si lo necesita)
+  const MAX = _IMG_MAX_W;
   let w = video.videoWidth||640, vh = video.videoHeight||480;
   const ratio = Math.min(MAX/w, MAX/vh, 1);
   w = Math.floor(w*ratio); vh = Math.floor(vh*ratio);
   canvas.width = w; canvas.height = vh;
   canvas.getContext('2d').drawImage(video, 0, 0, w, vh);
-  // ── Registrar a qué alumno pertenece esta captura ─────────
+
+  // ── Registrar a qué alumno pertenece esta captura ────────────────────────
   const nombreActual = (document.getElementById('inputNombre')?.value||'').trim().toUpperCase();
-  _captureForNombre = nombreActual;
-  _captureTimestamp = Date.now();
-  // ─────────────────────────────────────────────────────────
-  const webp = canvas.toDataURL('image/webp', 0.6);
-  return (webp.startsWith('data:image/webp') ? webp : canvas.toDataURL('image/jpeg', 0.65)).split(',')[1];
+  _captureForNombre  = nombreActual;
+  _captureTimestamp  = Date.now();
+
+  return b64;
 }
 
 // ═══════════════════════════════════════════════════════
@@ -6106,7 +6303,12 @@ function guardar() {
        nombreGuardado.split(' ').some(function(p){ return _captureForNombre.includes(p) && p.length > 2; }))
     );
     if (canvas && canvas.width > 0 && canvas.height > 0 && capturaFresca && capturaEsDeEsteAlumno) {
-      nuevoReg.imagenBase64 = canvas.toDataURL('image/jpeg', 0.4);
+      // Comprimir con el helper: redimensiona a MAX 800px y convierte a JPEG 70%
+      // Si el canvas ya tiene 800px (capturado por capturarFrame), ratio=1 y no crece.
+      var b64Comprimido = _comprimirImagenBase64(canvas);
+      nuevoReg.imagenBase64 = b64Comprimido
+        ? 'data:image/jpeg;base64,' + b64Comprimido
+        : canvas.toDataURL('image/jpeg', 0.4); // fallback si helper falla
     } else if (canvas && canvas.width > 0 && !capturaEsDeEsteAlumno && _captureForNombre) {
       // La imagen en canvas pertenece a otro alumno — NO contaminar
       console.warn('[ArtEval] Canvas descartado: pertenece a "' + _captureForNombre + '", no a "' + nombreGuardado + '"');
@@ -6121,7 +6323,7 @@ function guardar() {
   evaluacion = {};
   cerrarSugerencia();
   // Persistir curso seleccionado entre evaluaciones del mismo curso
-  const cursoSeleccionado = document.getElementById('inputCurso')?.value;
+  var _cursoPostGuardar = document.getElementById('inputCurso')?.value;
   if (document.getElementById('inputNombre')) document.getElementById('inputNombre').value = '';
   // Reset PIE panel
   const pieCheck = document.getElementById('pieCheck');
@@ -6131,7 +6333,7 @@ function guardar() {
   // Restaurar curso después del reset
   setTimeout(() => {
     const sel = document.getElementById('inputCurso');
-    if (sel && cursoSeleccionado) sel.value = cursoSeleccionado;
+    if (sel && _cursoPostGuardar) sel.value = _cursoPostGuardar;
     document.getElementById('inputNombre')?.focus();
   }, 50);
   renderCriterios();
@@ -6348,6 +6550,7 @@ function _renderSemestreControls() {
 // ── Avanzar automáticamente al siguiente alumno pendiente tras guardar ────
 // Llamada solo desde guardar() — respeta la serie activa y el curso seleccionado
 function _avanzarAlSiguientePendiente() {
+  setTimeout(actualizarBarraContinuidad, 80);
   var curso     = (document.getElementById('inputCurso')?.value || '').trim();
   var instancia = document.getElementById('instanciaSelect')?.value || 'Evaluación 1';
   var nomina    = listaCursos[curso] || [];
@@ -7856,6 +8059,111 @@ async function limpiarTodo() {
 // ═══════════════════════════════════════════════════════
 //  ESTADÍSTICAS
 // ═══════════════════════════════════════════════════════
+// ── Debounce para estadísticas — evita congelar al escribir ────────────────
+var _statsDebounceTimer = null;
+// ══ BARRA DE CONTINUIDAD ════════════════════════════════════════════════════
+// Lee el estado actual y actualiza las migas de pan en tiempo real.
+// Llamada desde selCurso, guardar, _activarTab y _actualizarTodaLaAppImpl.
+function actualizarBarraContinuidad() {
+  try {
+    var barra    = document.getElementById('barraContinuidad');
+    if (!barra) return;
+
+    // ── Leer estado actual ──────────────────────────────────────────────────
+    var cursoVal   = (document.getElementById('inputCurso')?.value || '').trim()
+                     || (typeof cursoSeleccionado !== 'undefined' ? cursoSeleccionado : '')
+                     || localStorage.getItem('av_curso_activo') || '';
+    var alumnoVal  = '';
+    // Alumno activo: desde _evalSerieLista o desde inputNombre
+    try {
+      if (typeof _evalSerieLista !== 'undefined' && _evalSerieLista.length && typeof _evalSerieIdx !== 'undefined') {
+        alumnoVal = _evalSerieLista[_evalSerieIdx] || '';
+      }
+    } catch(e) {}
+    if (!alumnoVal) {
+      alumnoVal = (document.getElementById('inputNombre')?.value || '').trim();
+    }
+    // Nombre compacto: máximo 2 palabras (apellidos)
+    if (alumnoVal) {
+      var partes = alumnoVal.trim().split(/\s+/);
+      alumnoVal  = partes.length > 2 ? partes[0] + ' ' + partes[1] : alumnoVal;
+    }
+    var rubricaVal = '';
+    try {
+      if (typeof getRubrica === 'function') {
+        rubricaVal = getRubrica()?.nombre || '';
+      }
+    } catch(e) {}
+
+    // ── Actualizar chips ────────────────────────────────────────────────────
+    var bcCursoLbl   = document.getElementById('bcCursoLabel');
+    var bcAlumnoLbl  = document.getElementById('bcAlumnoLabel');
+    var bcRubricaLbl = document.getElementById('bcRubricaLabel');
+
+    if (bcCursoLbl)   bcCursoLbl.textContent   = cursoVal   || '—';
+    if (bcAlumnoLbl)  bcAlumnoLbl.textContent   = alumnoVal  || 'Sin alumno';
+    if (bcRubricaLbl) bcRubricaLbl.textContent  = rubricaVal || 'Sin rúbrica';
+
+    // Chip alumno: reducir opacidad si no hay alumno activo
+    var bcAlumno = document.getElementById('bcAlumno');
+    if (bcAlumno) {
+      bcAlumno.style.opacity       = alumnoVal ? '1' : '0.4';
+      bcAlumno.style.cursor        = alumnoVal ? 'pointer' : 'default';
+      bcAlumno.style.pointerEvents = alumnoVal ? 'auto' : 'none';
+    }
+
+    // ── Visibilidad de la barra ─────────────────────────────────────────────
+    var visible = !!(cursoVal || alumnoVal);
+    // Controlar solo el wrapper — la cápsula interior mantiene sus inline styles
+    var wrap = document.getElementById('barraContinuidadWrap');
+    if (wrap) wrap.style.display = visible ? 'flex' : 'none';
+
+  } catch(e) {
+    console.warn('[ArtEval] actualizarBarraContinuidad:', e.message);
+  }
+}
+
+// Navegación rápida — métodos adjuntos a la función
+actualizarBarraContinuidad._irCurso = function() {
+  try {
+    var curso = document.getElementById('bcCursoLabel')?.textContent;
+    if (curso && curso !== '—') {
+      if (typeof cursoSeleccionado !== 'undefined') cursoSeleccionado = curso;
+      try { localStorage.setItem('av_curso_activo', curso); } catch(e) {}
+    }
+    if (typeof _activarTab !== 'function') return;
+    var tabEl = document.querySelector('[data-maintab="estudio"]')
+             || document.getElementById('tabBtnEstudio');
+    if (!tabEl) return;
+    _activarTab(tabEl, 'estudio', 'cursos');
+  } catch(e) { console.warn('[ArtEval] bc irCurso:', e.message); }
+};
+
+actualizarBarraContinuidad._irEvaluar = function() {
+  try {
+    var alumno = document.getElementById('bcAlumnoLabel')?.textContent;
+    var curso  = document.getElementById('bcCursoLabel')?.textContent;
+    if (!alumno || alumno === 'Sin alumno') return;
+    if (typeof _activarTab !== 'function') return;
+    var inputN = document.getElementById('inputNombre');
+    var inputC = document.getElementById('inputCurso');
+    if (inputN) inputN.value = alumno;
+    if (inputC && curso && curso !== '—') inputC.value = curso;
+    var tabEl = document.getElementById('tabBtnEvaluar');
+    if (!tabEl) return;
+    _activarTab(tabEl, 'estudio', 'evaluar');
+  } catch(e) { console.warn('[ArtEval] bc irEvaluar:', e.message); }
+};
+
+
+function _debouncedEstadisticas() {
+  clearTimeout(_statsDebounceTimer);
+  _statsDebounceTimer = setTimeout(function() {
+    try { renderEstadisticas(); } catch(e) { console.warn('[ArtEval] renderEstadisticas:', e); }
+  }, 250);
+}
+
+
 function renderEstadisticas() {
   const cont = document.getElementById('statsContent');
   if (!cont) return;
@@ -9567,6 +9875,52 @@ function alexiaMatchNombreConKey(notasMap, apellidos, nombrePila) {
   return mejorKey; // devuelve la clave, no el valor
 }
 
+// ── Funciones de interacción del Panel Alexia ───────────────────────────────
+// Colapsar/expandir el cuerpo del panel Alexia
+function toggleAlexiaPanel() {
+  try {
+    var body    = document.getElementById('alexiaPanelBody');
+    var chevron = document.getElementById('alexiaPanelChevron');
+    if (!body) return;
+    var isOpen = body.style.display !== 'none';
+    body.style.display    = isOpen ? 'none' : 'flex';
+    if (chevron) chevron.textContent = isOpen ? '▶' : '▼';
+  } catch(e) { console.warn('[ArtEval] toggleAlexiaPanel:', e.message); }
+}
+
+// Exportar XLS de todos los cursos que tienen plantilla Alexia cargada
+function exportarTodosAlexia() {
+  try {
+    if (typeof alexiaDatos === 'undefined' || !alexiaDatos) {
+      toast('No hay plantillas Alexia cargadas aún.', 'err', 3000);
+      return;
+    }
+    var cursos = Object.keys(alexiaDatos);
+    if (!cursos.length) {
+      toast('No hay plantillas Alexia cargadas aún.', 'err', 3000);
+      return;
+    }
+    var exportados = 0;
+    cursos.forEach(function(key) {
+      try {
+        if (typeof alexiaGenerarXLS === 'function') {
+          alexiaGenerarXLS(key);
+          exportados++;
+        }
+      } catch(e) { console.warn('[ArtEval] exportar curso', key, e.message); }
+    });
+    if (exportados > 0) {
+      toast('✓ ' + exportados + ' archivo(s) XLS exportado(s)', 'ok', 3000);
+    } else {
+      toast('No se pudo exportar. Verifica que las plantillas estén cargadas.', 'err', 3000);
+    }
+  } catch(e) {
+    console.warn('[ArtEval] exportarTodosAlexia:', e.message);
+    toast('Error al exportar: ' + e.message, 'err', 4000);
+  }
+}
+
+
 function renderAlexiaPlantillasList() {
   var list  = document.getElementById('alexiaPlantillasList');
   var vacio = document.getElementById('alexiaPlantillasVacio');
@@ -10694,6 +11048,218 @@ function toggleProgresoDetail(id) {
 // ═══════════════════════════════════════════════════════════════
 //  INFORME UTP
 // ═══════════════════════════════════════════════════════════════
+// ══ GENERADOR DE ACTA UTP ════════════════════════════════════════════════════
+// Analiza los registros del semestre activo y muestra un acta profesional
+// en un modal iOS con opciones de copiar al portapapeles y descargar como TXT.
+function generarActaUTP(cursoFiltro) {
+  try {
+    // ── 1. Recopilar datos ──────────────────────────────────────────────────
+    var hoy       = new Date().toLocaleDateString('es-CL', {
+                      weekday:'long', year:'numeric', month:'long', day:'numeric' });
+    var semLabel  = _semestreActivo === 1 ? '1° Semestre' : '2° Semestre';
+    var regsBase  = _registrosSemestre();
+    var nombreProf = localStorage.getItem('av_nombre_prof')
+                  || localStorage.getItem('av_email_prof')
+                  || 'Docente';
+    var colegio   = localStorage.getItem('av_email_colegio') || '';
+
+    // Si se pasó un curso específico, filtrar; si no, todos los cursos
+    var regsTotal = cursoFiltro
+      ? regsBase.filter(function(r){ return r.curso === cursoFiltro; })
+      : regsBase;
+
+    if (!regsTotal.length) {
+      mostrarToast('No hay evaluaciones en el semestre activo para generar el acta.', 3000);
+      return;
+    }
+
+    // ── 2. Agrupar por curso ────────────────────────────────────────────────
+    var porCurso = {};
+    regsTotal.forEach(function(r) {
+      var c = r.curso || 'Sin curso';
+      if (!porCurso[c]) porCurso[c] = [];
+      porCurso[c].push(r);
+    });
+    var cursos = Object.keys(porCurso).sort(function(a,b){ return a.localeCompare(b,'es'); });
+
+    // ── 3. Calcular estadísticas por curso ──────────────────────────────────
+    var bloques = cursos.map(function(curso) {
+      var regs      = porCurso[curso];
+      var notas     = regs.map(function(r){ return r.nota || 1; });
+      var prom      = notas.reduce(function(s,n){ return s+n; }, 0) / notas.length;
+      var logrados  = regs.filter(function(r){ return (r.nota||1) >= 4.0; });
+      var riesgo    = regs.filter(function(r){ return (r.nota||1) <  4.0; });
+      var destacados= regs.filter(function(r){ return (r.nota||1) >= 6.0; });
+      var ne        = regs.filter(function(r){ return r.noEntregado; });
+      var pie       = regs.filter(function(r){ return r.pie; });
+      var pctLogro  = Math.round(logrados.length / regs.length * 100);
+      // Total alumnos de la nómina (si existe)
+      var nomina    = listaCursos[curso] || [];
+      var totalNom  = nomina.length || regs.length;
+      var cobertura = Math.min(100, Math.round(regs.length / totalNom * 100));
+      // Instancias evaluadas
+      var instancias = [...new Set(regs.map(function(r){ return r.instancia||'Evaluación 1'; }))].sort();
+
+      return {
+        curso, regs, prom, logrados, riesgo, destacados, ne, pie,
+        pctLogro, totalNom, cobertura, instancias
+      };
+    });
+
+    // ── 4. Construir texto plano del acta (para copiar/Word) ─────────────────
+    var lineSep = '─'.repeat(52);
+    var txtLines = [
+      'ACTA DE EVALUACIÓN — ARTES VISUALES',
+      colegio ? colegio.toUpperCase() : '',
+      '',
+      'Docente   : ' + nombreProf,
+      'Semestre  : ' + semLabel,
+      'Fecha     : ' + hoy.charAt(0).toUpperCase() + hoy.slice(1),
+      lineSep,
+    ];
+
+    bloques.forEach(function(b) {
+      txtLines.push('');
+      txtLines.push('CURSO: ' + b.curso.toUpperCase());
+      txtLines.push('  Alumnos evaluados : ' + b.regs.length + ' / ' + b.totalNom
+                    + ' (' + b.cobertura + '% cobertura)');
+      txtLines.push('  Instancias        : ' + b.instancias.join(', '));
+      txtLines.push('  Promedio general  : ' + b.prom.toFixed(1));
+      txtLines.push('  Logrado (≥ 4.0)   : ' + b.logrados.length + ' alumnos ('
+                    + b.pctLogro + '%)');
+      txtLines.push('  Destacado (≥ 6.0) : ' + b.destacados.length + ' alumnos');
+      txtLines.push('  En riesgo (< 4.0) : ' + b.riesgo.length + ' alumnos'
+                    + (b.riesgo.length ? ' → ' + b.riesgo.map(function(r){
+                        return r.nombre.split(' ')[0];}).join(', ') : ''));
+      if (b.ne.length)  txtLines.push('  No entregado      : ' + b.ne.length  + ' alumnos');
+      if (b.pie.length) txtLines.push('  Con PIE           : ' + b.pie.length + ' alumnos');
+      txtLines.push('  ' + lineSep.slice(0,48));
+    });
+
+    txtLines.push('');
+    txtLines.push('Generado por ArtEval · arteval.app');
+    var textoActa = txtLines.filter(Boolean).join('\n');
+
+    // ── 5. Construir HTML del modal ─────────────────────────────────────────
+    var blocksHTML = bloques.map(function(b) {
+      var promClr = b.prom >= 6 ? 'var(--blue)'
+                  : b.prom >= 4 ? 'var(--green)'
+                  : 'var(--red)';
+      var riesgoNombres = b.riesgo.length
+        ? b.riesgo.slice(0,5).map(function(r){
+            return '<span style="display:inline-block;background:var(--red-bg);color:var(--red);'
+              + 'border-radius:6px;padding:1px 7px;font-size:11px;margin:2px;">'
+              + _esc(r.nombre.split(' ').slice(0,2).join(' ')) + '</span>';
+          }).join('') + (b.riesgo.length > 5
+            ? '<span style="font-size:11px;color:var(--text3);">+' + (b.riesgo.length-5) + ' más</span>'
+            : '')
+        : '<span style="color:var(--green);font-size:12px;">✓ Ninguno en riesgo</span>';
+
+      return '<div style="background:var(--bg3);border:0.5px solid var(--border);'
+        + 'border-radius:14px;padding:14px 16px;margin-bottom:10px;">'
+        // Encabezado del curso
+        + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">'
+        +   '<span style="font-size:14px;font-weight:700;font-family:var(--font-mono);">'
+        +     _esc(b.curso) + '</span>'
+        +   '<span style="font-size:22px;font-weight:700;color:' + promClr + ';font-family:var(--font-mono);">'
+        +     b.prom.toFixed(1) + '</span>'
+        + '</div>'
+        // KPIs en grid
+        + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;">'
+        + _actaKpi('Evaluados', b.regs.length + '/' + b.totalNom, b.cobertura + '%')
+        + _actaKpi('Logrado', b.logrados.length + ' alum.', b.pctLogro + '%', 'var(--green)')
+        + _actaKpi('Destacado', b.destacados.length + ' alum.', '≥ 6.0', 'var(--blue)')
+        + '</div>'
+        // Alumnos en riesgo
+        + '<div style="margin-top:4px;">'
+        +   '<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;'
+        +        'font-weight:600;margin-bottom:4px;">En riesgo (< 4.0)</div>'
+        +   '<div>' + riesgoNombres + '</div>'
+        + '</div>'
+        // Instancias y PIE
+        + '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">'
+        + (b.ne.length  ? '<span style="font-size:11px;background:var(--amber-bg);color:var(--amber);'
+            + 'border-radius:6px;padding:2px 8px;">NE: ' + b.ne.length + '</span>' : '')
+        + (b.pie.length ? '<span style="font-size:11px;background:var(--pie-bg);color:var(--pie);'
+            + 'border-radius:6px;padding:2px 8px;">PIE: ' + b.pie.length + '</span>' : '')
+        + '<span style="font-size:11px;color:var(--text3);">'
+        + b.instancias.join(' · ') + '</span>'
+        + '</div>'
+        + '</div>';
+    }).join('');
+
+    var modalHTML = '<div class="modal-title" style="margin-bottom:4px;">Acta UTP</div>'
+      + '<div style="font-size:12px;color:var(--text3);margin-bottom:14px;">'
+      + semLabel + ' · ' + hoy.charAt(0).toUpperCase() + hoy.slice(1) + '</div>'
+      // Cuerpo scrollable
+      + '<div style="max-height:58vh;overflow-y:auto;margin:0 -4px;padding:0 4px;">'
+      + blocksHTML
+      + '</div>'
+      // Botones de acción
+      + '<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">'
+      +   '<button onclick="_copiarActaUTP()" class="btn btn-primary" style="flex:1;min-width:130px;">'
+      +     '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"'
+      +          ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round"'
+      +          ' style="margin-right:5px;">'
+      +       '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>'
+      +       '<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>'
+      +     '</svg>Copiar texto</button>'
+      +   '<button onclick="cerrarModal()" class="btn" style="flex:1;min-width:100px;">Cerrar</button>'
+      + '</div>';
+
+    // Guardar texto en variable global para copiar
+    window._actaUTPTexto = textoActa;
+
+    abrirModal(modalHTML, 'modal-acta-utp');
+
+  } catch(e) {
+    console.error('[ArtEval] generarActaUTP:', e.message);
+    mostrarToast('Error al generar el acta: ' + e.message, 4000);
+  }
+}
+
+// Helper: KPI card para el modal del acta
+function _actaKpi(label, valor, sub, color) {
+  color = color || 'var(--text)';
+  return '<div style="background:var(--bg2);border:0.5px solid var(--border);'
+    + 'border-radius:10px;padding:8px 10px;text-align:center;">'
+    + '<div style="font-size:10px;color:var(--text3);text-transform:uppercase;'
+    +      'letter-spacing:.4px;font-weight:500;margin-bottom:2px;">' + label + '</div>'
+    + '<div style="font-size:15px;font-weight:700;color:' + color + ';font-family:var(--font-mono);">'
+    +   valor + '</div>'
+    + '<div style="font-size:10px;color:var(--text3);margin-top:1px;">' + sub + '</div>'
+    + '</div>';
+}
+
+// Copiar texto plano al portapapeles
+function _copiarActaUTP() {
+  var txt = window._actaUTPTexto || '';
+  if (!txt) return;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt)
+      .then(function() { mostrarToast('✓ Acta copiada al portapapeles', 2200); })
+      .catch(function()  { _copiarActaUTPFallback(txt); });
+  } else {
+    _copiarActaUTPFallback(txt);
+  }
+}
+
+function _copiarActaUTPFallback(txt) {
+  try {
+    var ta = document.createElement('textarea');
+    ta.value = txt;
+    ta.style.cssText = 'position:fixed;opacity:0;top:-9999px;left:-9999px;';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    ta.remove();
+    mostrarToast('✓ Acta copiada al portapapeles', 2200);
+  } catch(e) {
+    mostrarToast('No se pudo copiar. Selecciona el texto manualmente.', 3000);
+  }
+}
+
+
 function generarInformeUTP() {
   const hoy = new Date().toLocaleDateString('es-CL', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
   const instancias = [...new Set(registros.map(r=>r.instancia||'Evaluación 1'))].sort();
@@ -10730,6 +11296,10 @@ function generarInformeUTP() {
   const promGen   = totalRegs ? (registros.reduce((s,r)=>s+(r.nota||1),0)/totalRegs).toFixed(1) : '—';
 
   const win = window.open('', '_blank');
+  if (!win) {
+    toast('⚠️ El navegador bloqueó la ventana emergente. Permite los pop-ups para este sitio e intenta nuevamente.', 'err', 5000);
+    return;
+  }
   win.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
   <title>Informe UTP · ArtEval</title>
   <style>.reg-group {
@@ -11873,6 +12443,84 @@ input:focus, textarea:focus, select:focus {
 #popoverNotaRapida { animation: slideUp 0.18s var(--ease-out); }
 #inputNotaRapida:focus { border-color: var(--accent) !important; outline: none; }
 
+
+/* ══ BARRA DE CONTINUIDAD — cápsula pill iOS ══════════════════════════════ */
+.ios-capsule-breadcrumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 999px;
+  padding: 6px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text, #333);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  white-space: nowrap;
+  transition: opacity 0.2s ease;
+}
+.ios-capsule-breadcrumb a,
+.ios-capsule-breadcrumb span.link,
+.ios-capsule-breadcrumb button.bc-chip {
+  color: #007aff;
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.ios-capsule-breadcrumb a:active,
+.ios-capsule-breadcrumb span.link:active,
+.ios-capsule-breadcrumb button.bc-chip:active {
+  opacity: 0.4;
+}
+.ios-capsule-breadcrumb .separator {
+  color: #8e8e93;
+  margin: 0 2px;
+  font-size: 14px;
+  font-weight: 300;
+  user-select: none;
+}
+/* Chip rúbrica — solo texto, color terciario */
+.ios-capsule-breadcrumb .bc-chip-rubrica {
+  color: #8e8e93;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  pointer-events: none;
+}
+/* Curso — naranja acento */
+.ios-capsule-breadcrumb .bc-chip-curso span.link { color: var(--accent, #FF9500); font-weight: 600; }
+.ios-capsule-breadcrumb .bc-chip-curso { color: var(--accent, #FF9500); }
+/* SVG dentro de chips */
+.ios-capsule-breadcrumb .bc-chip svg { opacity: 0.55; flex-shrink: 0; }
+.ios-capsule-breadcrumb .bc-chip-curso svg { opacity: 0.80; }
+
+
+/* ══ MODAL ACTA UTP ════════════════════════════════════════════════════════ */
+.modal-acta-utp {
+  max-width: 540px !important;
+  width: 100% !important;
+}
+/* Scrollbar discreta dentro del modal */
+.modal-acta-utp ::-webkit-scrollbar { width: 4px; }
+.modal-acta-utp ::-webkit-scrollbar-track { background: transparent; }
+.modal-acta-utp ::-webkit-scrollbar-thumb {
+  background: var(--border2);
+  border-radius: 4px;
+}
+
 </style></head><body>
   <h1>📋 Informe de Evaluaciones · Artes Visuales</h1>
   <div class="meta">
@@ -12095,6 +12743,8 @@ function _restoreScroll(secId) {
 }
 
 function showEstudioSub(sub) {
+  // Actualizar contexto al cambiar sección
+  setTimeout(actualizarBarraContinuidad, 60);
   // Guardar scroll de la sección que estamos dejando
   var prevSec = 'estudio-sec-' + _estudioSubTab;
   _saveScroll(prevSec);
@@ -12106,6 +12756,15 @@ function showEstudioSub(sub) {
   if (sub !== 'evaluar') {
     var evalBar = document.getElementById('evalNavBar');
     if (evalBar) evalBar.style.display = 'none';
+  }
+  if (sub === 'evaluar') {
+    try {
+      var _clist = document.getElementById('criteriosList');
+      if (!_clist || !_clist.children.length) renderCriterios();
+      actualizarResumen();
+      actualizarBarraProgresoCurso();
+      _reconstruirInstanciaSelect();
+    } catch(e) { console.warn('[ArtEval] evaluar init:', e.message); }
   }
   // requestAnimationFrame: cede el hilo al browser para pintar la navegación primero
   if (sub === 'cursos') {
@@ -12177,7 +12836,28 @@ function showProgresoSub(sub) {
   try {
     if (sub === 'estadisticas') {
       actualizarConteo();
-      if (typeof renderEstadisticas === 'function') renderEstadisticas();
+      // ── Lazy loading: mostrar estado de carga inmediatamente,
+      // luego calcular estadísticas sin bloquear el hilo principal ──────────
+      var _statsCont = document.getElementById('statsContent');
+      if (_statsCont && (!_statsCont.hasChildNodes() || _statsCont.dataset.stale === '1')) {
+        _statsCont.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;'
+          + 'justify-content:center;padding:48px 24px;gap:10px;color:var(--text3);">'
+          + '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+          + 'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" '
+          + 'style="animation:spin 0.9s linear infinite;opacity:0.4;">'
+          + '<path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83'
+          + 'M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>'
+          + '<span style="font-size:13px;font-weight:500;font-family:var(--font-ui);">'
+          + 'Calculando estadísticas…</span></div>';
+      }
+      setTimeout(function() {
+        try {
+          if (typeof renderEstadisticas === 'function') {
+            renderEstadisticas();
+            if (_statsCont) _statsCont.dataset.stale = '0';
+          }
+        } catch(e) { console.warn('[ArtEval] renderEstadisticas lazy:', e.message); }
+      }, 50);
     }
     if (sub === 'progreso-oa') { if(typeof renderProgreso==='function')renderProgreso(); }
   } catch(e) { console.warn('[ArtEval] showProgresoSub:', e.message); }
@@ -15224,6 +15904,8 @@ function sincronizarRegistrosACursos() {
 function selCurso(curso) {
   cursoSeleccionado = curso;
   estFiltro = 'todos';
+  // Actualizar barra de continuidad
+  setTimeout(actualizarBarraContinuidad, 40);
   // Preservar instanciaCursoFiltro para poder navegar cursos con el mismo filtro de instancia
   // Solo se resetea si el usuario selecciona "Todas" en el sidebar
   document.querySelectorAll('.curso-sidebar-btn').forEach(function(b){ b.classList.remove('active'); });
@@ -17190,6 +17872,7 @@ function actualizarTodaLaApp() {
 }
 function _actualizarTodaLaAppImpl() {
   _renderSemestreControls();
+  actualizarBarraContinuidad();
   try {
     // Invalidar cachés antes de cualquier render
     _regsMapCache = null;
@@ -17203,6 +17886,11 @@ function _actualizarTodaLaAppImpl() {
     if (tabActiva === 'registros')    { renderRegistros(); renderCursosChips(); }
     if (tabActiva === 'cursos')       { renderTabCursos(); }
     if (tabActiva === 'estadisticas') { renderEstadisticas(); }
+    if (tabActiva === 'progreso') {
+      var _sc = document.getElementById('statsContent');
+      if (_sc) _sc.dataset.stale = '1';
+      renderProgreso();
+    }
     if (tabActiva === 'inicio')       { renderDashboard(); }
     if (tabActiva === 'progreso')     { renderProgreso(); }
   } catch(e) { /* silencioso — nunca debe romper flujo principal */ }
@@ -18691,6 +19379,8 @@ function _syncFilterPillStates() {
 // cambia la sección visible y activa el sub-tab correcto.
 // Garantía: nunca quedan dos tabs naranjas simultáneamente.
 function _activarTab(btnEl, tabName, subTab) {
+  // Guard: tolerar btnEl null (barra de continuidad puede llamar antes de que el DOM pinte)
+  if (!tabName) return;
   // 1. Quitar .active de TODOS los tabs de la barra principal
   document.querySelectorAll('.tabs-inner .tab').forEach(function(b) {
     b.classList.remove('active');
