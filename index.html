@@ -15071,19 +15071,10 @@ function _renderCriticosList(criticos) {
     });
   }
 
-  ct.innerHTML = headerHtml
-    + '<div class="search-wrap" id="_correoSearchWrap" style="margin:0 0 12px;">'
-    + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"'
-    + ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round"'
-    + ' style="position:absolute;left:14px;top:50%;transform:translateY(-50%);opacity:.45;pointer-events:none;">'
-    + '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'
-    + '<input class="search-input" id="buscarHistorialCorreo" type="text"'
-    + ' placeholder="Buscar estudiante en correos enviados…"'
-    + ' oninput="_debouncedFiltrarCorreo(this.value)"'
-    + ' style="padding-left:45px !important;width:100%;"'
-    + ' autocomplete="off" autocorrect="off" spellcheck="false">'
-    + '</div>'
-    + listHtml;
+  ct.innerHTML =
+      // ── Buscador al INICIO — profesor busca primero, luego filtra ────────
+      '<div class="search-wrap" style="margin:0 0 10px;">'    + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"'    + ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round"'    + ' style="position:absolute;left:14px;top:50%;transform:translateY(-50%);opacity:.45;pointer-events:none;">'    + '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'    + '<input class="search-input" id="buscarHistorialCorreo" type="text"'    + ' placeholder="Buscar estudiante en correos enviados…"'    + ' oninput="_debouncedFiltrarCorreo(this.value)"'    + ' style="padding-left:45px !important;width:100%;"'    + ' autocomplete="off" autocorrect="off" spellcheck="false">'    + '</div>'    // ── Tabs de filtro (Enviados / Pendientes) ────────────────────────────
+    + headerHtml    + listHtml;
   window._correoTabCriticos = criticos;
 
   // Auto-resize textareas
@@ -16837,30 +16828,16 @@ function cerrarSugerencia() {
 }
 
 function seleccionarAutocompletado(nombre, curso) {
-  // Limpiar el buscador global
+  // Limpiar buscador global
   const gsi = document.getElementById('globalSearchInput');
-  if (gsi) gsi.value = '';
+  if (gsi) { gsi.value = ''; gsi.blur(); }
   ocultarAutocompletado();
-  // Saltar a Evaluar y pre-rellenar campos
-  showTab('evaluar');
-  setTimeout(function() {
-    const inpNombre = document.getElementById('inputNombre');
-    const inpCurso  = document.getElementById('inputCurso');
-    if (inpNombre) {
-      inpNombre.value = nombre;
-      inpNombre.style.borderColor = 'var(--green)';
-      setTimeout(function(){ inpNombre.style.borderColor = ''; }, 1200);
-    }
-    if (inpCurso && curso) {
-      inpCurso.value = curso;
-      _sugerirRubricaPorCurso(curso);
-    }
-    inpNombre?.select();
-    // Activar serie del curso para que la barra Anterior/Siguiente funcione
-    if (typeof _iniciarEvalSerie === 'function') _iniciarEvalSerie(nombre);
-    // Mostrar sugerencia de siguiente evaluación si el estudiante ya tiene historial
-    _mostrarSugerenciaSiguienteEval(nombre, curso);
-  }, 60);
+
+  // Abrir perfil completo del alumno — vista libro con todas sus evaluaciones
+  // El profesor ve historial de notas, promedio y detalle por criterio
+  if (typeof abrirPerfilAlumno === 'function') {
+    abrirPerfilAlumno(nombre, curso || null, false);
+  }
 }
 
 // Sugiere la rúbrica más apropiada para el nivel del curso si hay solo una por nivel
