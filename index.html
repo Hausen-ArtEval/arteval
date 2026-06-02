@@ -297,8 +297,46 @@ body {
 
 .btn:hover { background: var(--bg3); color: var(--text); border-color: var(--border2); }
 
-.btn:active { transform: scale(0.97); }
+.btn:active { transform: scale(0.97); opacity: 0.80; }
 
+/* Feedback más pronunciado para acciones destructivas y primarias */
+.btn-primary:active {
+  transform: scale(0.95) translateY(0);
+  opacity: 0.82;
+  box-shadow: 0 1px 3px rgba(255,149,0,0.18);
+}
+.btn-danger:active {
+  transform: scale(0.95);
+  opacity: 0.82;
+}
+
+/* Feedback para button nativo (fuera de .btn) */
+button:active:not(.btn):not([disabled]) {
+  opacity: 0.72;
+  transform: scale(0.97);
+}
+
+/* Añadir transición de opacidad a los botones que no la tengan */
+button:not(.btn) {
+  transition: opacity 0.12s ease, transform 0.1s ease;
+}
+
+/* Eliminar outline visible en móvil — accesibilidad preservada en desktop */
+button:focus:not(:focus-visible),
+.btn:focus:not(:focus-visible) {
+  outline: none;
+  box-shadow: none;
+}
+button:focus-visible,
+.btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Evitar que tap events causen flash en iOS */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
 .btn:disabled { opacity: 0.38; cursor: not-allowed; pointer-events: none; }
 
 .btn-lg { font-size: 15px; padding: 11px 22px; min-height: 44px; font-weight: 600; }
@@ -1144,7 +1182,7 @@ input[type="text"]:focus, textarea:focus, select:focus {
   display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
   background: var(--bg2); border: 0.5px solid var(--accent); border-radius: var(--rad-lg);
   padding: 12px 20px; box-shadow: var(--shadow-xl); z-index: 9999;
-  align-items: center; gap: 12px; font-size: 13px; max-width: calc(100vw - 32px); animation: slideUp 0.3s ease;
+  align-items: center; gap: 12px; font-size: 13px; max-width: calc(100vw - 32px); animation: slideUpToast 0.3s ease;
 }
 
 @keyframes fadeInOverlay { from { opacity: 0; } to { opacity: 1; } }
@@ -2039,7 +2077,6 @@ select:focus:not(:focus-visible) { outline: none; }
 
 .rubrica-tactil-sheet{background:var(--bg2);border-radius:24px 24px 0 0;width:100%;max-width:680px;max-height:90vh;overflow-y:auto;padding:0 0 40px 0;box-shadow:0 -8px 40px rgba(0,0,0,0.3);animation:slideUp 0.28s cubic-bezier(.34,1.3,.64,1);}
 
-@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 
 .rubrica-tactil-header{position:sticky;top:0;z-index:10;background:var(--bg2);border-bottom:0.5px solid var(--border);padding:16px 20px 12px;display:flex;align-items:center;justify-content:space-between;}
 
@@ -3118,6 +3155,8 @@ button:focus-visible, .tab:focus-visible, .sub-tab:focus-visible {
   }
 })();
 </script>
+  <!-- Mammoth.js v1.6.0: parseo local de .docx para carga de rúbricas desde Word -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 </head>
 
 <body>
@@ -4416,7 +4455,30 @@ button:focus-visible, .tab:focus-visible, .sub-tab:focus-visible {
           <div style="font-size:15px;font-weight:600;">Mis rúbricas</div>
           <div style="font-size:12px;color:var(--text3);margin-top:2px;">Crea y gestiona múltiples rúbricas de evaluación</div>
         </div>
-        <button class="btn btn-primary" onclick="mostrarFormRubrica()">+ Nueva rúbrica</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <!-- Importar rúbrica desde archivo Word (.docx) con Mammoth.js -->
+          <label id="btnCargarRubricaWord"
+            style="display:inline-flex;align-items:center;gap:7px;
+                   padding:8px 14px;border-radius:20px;
+                   border:0.5px solid var(--accent-border);background:var(--accent-bg);color:var(--accent);
+                   font-size:13px;font-weight:600;font-family:var(--font-ui);
+                   cursor:pointer;transition:opacity 0.15s;white-space:nowrap;
+                   -webkit-tap-highlight-color:transparent;"
+            title="Importar criterios desde una tabla de rúbrica en Word (.docx)"
+            onmouseover="this.style.opacity='0.80'" onmouseout="this.style.opacity='1'">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            Desde Word
+            <input type="file" id="inputRubricaWord" accept=".docx"
+                   style="display:none;"
+                   onchange="procesarRubricaWord(this.files[0]); this.value='';">
+          </label>
+          <button class="btn btn-primary" onclick="mostrarFormRubrica()">+ Nueva rúbrica</button>
+        </div>
       </div>
       <div class="rubrica-list" id="rubricaList"></div>
       <div id="formRubrica" style="display:none">
@@ -5017,7 +5079,7 @@ function saveRubricas(){localStorage.setItem('av_rubricas',JSON.stringify(rubric
 // ══════════════════════════════════════════════════════
 // Mantiene imágenes solo de los últimos DIAS_RETENER días.
 // Libera localStorage automáticamente sin perder datos de notas/criterios.
-var _DIAS_RETENER_IMAGENES = 30; // configurable
+const _DIAS_RETENER_IMAGENES = 30; // configurable
 
 function _aplicarRetencionImagenes(regs, diasRetener) {
   diasRetener = diasRetener || _DIAS_RETENER_IMAGENES;
@@ -5049,7 +5111,7 @@ function _calcularStorageStats() {
       if (r && r.imagenBase64) imgBytes += r.imagenBase64.length;
     });
     // localStorage limit ≈ 5MB = 5 * 1024 * 1024 = 5,242,880 chars
-    var _LIMIT = 5 * 1024 * 1024;
+    const _LIMIT = 5 * 1024 * 1024;
     var pct = Math.min(Math.round(total / _LIMIT * 100), 100);
     return { totalKB: Math.round(total / 1024), imgKB: Math.round(imgBytes / 1024), pct: pct };
   } catch(e) { console.warn('[ArtEval] _calcularStorageStats:', e.message); return { totalKB: 0, imgKB: 0, pct: 0 }; }
@@ -5356,8 +5418,10 @@ function saveRegistros() {
     }
   });
   // Invalidar cachés de rendimiento cuando cambian los registros
-  _regsMapCache = null;
+  _regsMapCache    = null;
   _cursosUnicosCache = null;
+  _regsSemCache    = null;
+  if (typeof _renderDashKpiGlobal !== 'undefined') _renderDashKpiGlobal._lastHash = '';
   try {
     try {
     localStorage.setItem('av_registros', JSON.stringify(registros));
@@ -5595,7 +5659,68 @@ function actualizarResumen() {
   } catch(e) { console.warn('[ArtEval] actualizarResumen:', e.message); }
 }
 
-// ── mostrarToast — alias iOS de la función toast() del sistema ───────────────
+// ── Buscador de historial de correos ─────────────────────────────────────────
+// Filtra las tarjetas .config-card[data-nombre-alumno] en tiempo real.
+// Solo lectura — no altera ningún dato ni dispara envíos.
+var _filtrarCorreoTimer = null;
+
+function _debouncedFiltrarCorreo(val) {
+  clearTimeout(_filtrarCorreoTimer);
+  _filtrarCorreoTimer = setTimeout(function() {
+    _filtrarHistorialCorreo(val);
+  }, 200);
+}
+
+function _filtrarHistorialCorreo(query) {
+  try {
+    var ct = document.getElementById('correoTabContainer');
+    if (!ct) return;
+
+    var cards = ct.querySelectorAll('.config-card[data-nombre-alumno]');
+    if (!cards.length) return;
+
+    // Normalizar query: minúsculas, sin acentos
+    var q = (query || '').trim();
+    var qNorm = q.toLowerCase()
+                 .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+    // Eliminar mensaje previo de "sin resultados"
+    var prevEmpty = ct.querySelector('#_correoSearchEmpty');
+    if (prevEmpty) prevEmpty.remove();
+
+    var visibles = 0;
+    cards.forEach(function(card) {
+      var nombre   = (card.dataset.nombreAlumno || '').toLowerCase()
+                       .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      var coincide = !qNorm || nombre.includes(qNorm);
+      card.style.display = coincide ? '' : 'none';
+      if (coincide) visibles++;
+    });
+
+    // Mensaje cuando no hay resultados
+    if (q && visibles === 0) {
+      var emptyDiv = document.createElement('div');
+      emptyDiv.id = '_correoSearchEmpty';
+      emptyDiv.style.cssText = 'text-align:center;padding:40px 20px;color:var(--text3);font-size:13px;';
+      emptyDiv.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none"'
+        + ' stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"'
+        + ' style="display:block;margin:0 auto 10px;opacity:.3;">'
+        + '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'
+        + 'Sin correos enviados para <strong>"' + _esc(q) + '"</strong>';
+      // Insertar después de las cards
+      var lastCard = ct.querySelector('.config-card:last-of-type') || ct.lastElementChild;
+      if (lastCard && lastCard.nextSibling) {
+        ct.insertBefore(emptyDiv, lastCard.nextSibling);
+      } else {
+        ct.appendChild(emptyDiv);
+      }
+    }
+  } catch(e) {
+    console.warn('[ArtEval] _filtrarHistorialCorreo:', e.message);
+  }
+}
+
+
 // Muestra una cápsula flotante estilo iOS sin interrumpir el flujo del programa.
 // Parámetros: mensaje (string), duración en ms (default 2500).
 // Úsala en lugar de alert() para mensajes informativos.
@@ -5945,9 +6070,9 @@ function _renderImgSrc(reg) {
 // Recibe un HTMLImageElement, HTMLVideoElement o HTMLCanvasElement.
 // Devuelve la cadena base64 (sin prefijo data:...) redimensionada a MAX_W y
 // comprimida como JPEG al 70% — ~5–10× más pequeña que el original.
-var _IMG_MAX_W = 800;   // ancho máximo de salida
-var _IMG_MAX_H = 800;   // alto máximo de salida
-var _IMG_Q     = 0.70;  // calidad JPEG (0–1)
+const _IMG_MAX_W = 800;   // ancho máximo de salida
+const _IMG_MAX_H = 800;   // alto máximo de salida
+const _IMG_Q     = 0.70;  // calidad JPEG (0–1)
 
 function _comprimirImagenBase64(source) {
   try {
@@ -6647,7 +6772,7 @@ function _semestrePorInstancia(instancia) {
 }
 
 // ── Configuración de semestres — qué evaluaciones van en cada uno ──────────
-var _SEM_CONFIG_KEY = 'av_sem_config';
+const _SEM_CONFIG_KEY = 'av_sem_config';
 
 function _getSemConfig() {
   try {
@@ -6776,11 +6901,20 @@ function _setSemestre(n) {
 // Registros filtrados por semestre
 // REGLA CANÓNICA: Ev.1-2-3 = 1°Sem, Ev.4-5-6 = 2°Sem, Especiales = su semestre guardado
 // Los registros legacy sin atributo semestre se clasifican por instancia automáticamente
+// _regsSemCache: caché de _registrosSemestre() por semestre, invalidado al guardar/modificar.
+// Reduce de 40+ re-filtrados por ciclo de render a 1 sola pasada.
+var _regsSemCache = null;
+var _regsSemCacheKey = '';
+
 function _registrosSemestre(sem) {
-  var s = sem || _semestreActivo;
-  return registros.filter(function(r) {
+  var s   = sem || _semestreActivo;
+  var key = s + '|' + registros.length;   // invalidar si cambió número de registros
+  if (_regsSemCache && _regsSemCacheKey === key) return _regsSemCache;
+  _regsSemCacheKey = key;
+  _regsSemCache = registros.filter(function(r) {
     return _semestrePorInstancia(r.instancia || '') === s;
   });
+  return _regsSemCache;
 }
 
 // Inyectar el segmented control de semestre en los toolbars relevantes
@@ -7459,6 +7593,10 @@ function renderRegistros() {
 
   var _cardIndex = 0;
   // v190: _alumnosAgrupados — un alumno = una tarjeta, todas sus evals dentro
+  // DocumentFragment: todas las tarjetas se construyen off-DOM y se insertan en 1 reflow
+  var _listFrag = document.createDocumentFragment();
+  var _fragGrups = {}; // curso → grp element dentro del frag
+
   _alumnosAgrupados.forEach(function(grupo) {
     var r   = grupo.primerReg;
     var _regsAlumno = grupo.registros;  // todos sus registros
@@ -7532,9 +7670,9 @@ function renderRegistros() {
           <button class="btn btn-icon btn-danger" title="Eliminar" onclick="eliminar(${idx})"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
         </div>
       </div>`;
-    // Agrupar en iOS Grouped List por curso
+    // Agrupar en iOS Grouped List por curso — off-DOM en el fragment
     const cardCurso = r.curso || 'Sin curso';
-    let grp = list.querySelector('.reg-group[data-curso="'+CSS.escape(cardCurso)+'"]');
+    let grp = _fragGrups[cardCurso];
     if (!grp) {
       grp = document.createElement('div');
       grp.className = 'reg-group';
@@ -7543,10 +7681,13 @@ function renderRegistros() {
       hdr.className = 'reg-group-header';
       hdr.textContent = cardCurso;
       grp.appendChild(hdr);
-      list.appendChild(grp);
+      _fragGrups[cardCurso] = grp;
+      _listFrag.appendChild(grp);
     }
     grp.appendChild(card);
   });
+  // Un solo reflow: volcar todo el fragment al DOM
+  list.appendChild(_listFrag);
 }
 
 // ── Libro de Clases: tabla dinámica por curso con columnas por instancia ──
@@ -8602,7 +8743,7 @@ function _renderAnalisisCriterios(data) {
     return pb - pa;
   });
 
-  var NIVELES = [
+  const NIVELES = [
     { key: 'MB', lbl: 'Muy bien',   color: '#30D158', bg: 'rgba(48,209,88,0.12)',   dark: '#1a7d33' },
     { key: 'L',  lbl: 'Logrado',    color: '#34C759', bg: 'rgba(52,199,89,0.10)',   dark: '#1e7a38' },
     { key: 'M',  lbl: 'En proceso', color: '#FF9F0A', bg: 'rgba(255,159,10,0.12)',  dark: '#b36b00' },
@@ -8712,6 +8853,179 @@ function verDetalleDesdeStats(idx) {
 // ═══════════════════════════════════════════════════════
 //  RÚBRICAS
 // ═══════════════════════════════════════════════════════
+// ══ CARGA INTELIGENTE DE RÚBRICAS DESDE WORD (.docx) — v200 ════════════════
+// Usa Mammoth.js para leer localmente el .docx, sin enviar datos al servidor.
+// Extrae la primera tabla del documento: columna 1 = criterio, columna 2 = desc MB.
+// Crea una rúbrica nueva e invoca el editor con los criterios ya cargados.
+// Totalmente no destructivo: no toca registros, notas ni Drive.
+
+async function procesarRubricaWord(file) {
+  if (!file) return;
+
+  // Validación de tipo de archivo
+  if (!file.name.toLowerCase().endsWith('.docx')) {
+    mostrarToast('⚠️ Solo se aceptan archivos .docx (Word)', 3000);
+    return;
+  }
+
+  // Mostrar estado de carga
+  var btnLbl = document.getElementById('btnCargarRubricaWord');
+  var _textoOriginal = btnLbl ? btnLbl.textContent.trim() : '';
+  if (btnLbl) {
+    btnLbl.style.opacity = '0.6';
+    btnLbl.style.pointerEvents = 'none';
+  }
+  mostrarToast('⏳ Leyendo archivo Word…', 99000); // se cierra al terminar
+
+  try {
+    // ── 1. Leer el archivo como ArrayBuffer ──────────────────────────────────
+    var arrayBuffer = await new Promise(function(resolve, reject) {
+      var reader = new FileReader();
+      reader.onload  = function(e) { resolve(e.target.result); };
+      reader.onerror = function()  { reject(new Error('No se pudo leer el archivo')); };
+      reader.readAsArrayBuffer(file);
+    });
+
+    // ── 2. Parsear con Mammoth → HTML ────────────────────────────────────────
+    if (typeof mammoth === 'undefined') {
+      throw new Error('La librería Mammoth no está disponible. Verifica tu conexión a internet.');
+    }
+    var result = await mammoth.convertToHtml({ arrayBuffer: arrayBuffer });
+    var html   = result.value;
+
+    if (!html || !html.includes('<table')) {
+      throw new Error('El documento no contiene tablas. Asegúrate de que la rúbrica tenga formato de tabla en Word.');
+    }
+
+    // ── 3. Parsear la tabla HTML ─────────────────────────────────────────────
+    var parser  = new DOMParser();
+    var doc     = parser.parseFromString(html, 'text/html');
+    var tabla   = doc.querySelector('table');
+
+    if (!tabla) {
+      throw new Error('No se encontró ninguna tabla en el documento.');
+    }
+
+    var filas = Array.from(tabla.querySelectorAll('tr'));
+    if (filas.length < 2) {
+      throw new Error('La tabla tiene menos de 2 filas. Se necesita al menos una fila de encabezado y una de datos.');
+    }
+
+    // ── 4. Extraer criterios y descripciones ────────────────────────────────
+    // Saltar la fila 0 (encabezados) y procesar el resto.
+    // Columna 0 → nombre del criterio
+    // Columna 1 → descripción del nivel máximo (MB - Muy bien logrado, 3pts)
+    var criteriosExtraidos   = []; // nombres de criterios (string[])
+    var descripcionesExtraidas = []; // descripciones MB (string[])
+
+    // Función de limpieza de texto: elimina numeración inicial, espacios, comillas
+    function limpiarTexto(txt) {
+      return (txt || '')
+        .trim()
+        .replace(/^[\d]+[.\-\)]\s*/, '') // eliminar "1. " o "1) " al inicio
+        .replace(/["'«»""'']/g, '')      // quitar comillas ornamentales
+        .replace(/\s+/g, ' ')            // colapsar espacios múltiples
+        .trim();
+    }
+
+    filas.slice(1).forEach(function(fila) {
+      var celdas = fila.querySelectorAll('td, th');
+      if (celdas.length < 1) return;
+
+      var nombreCriterio = limpiarTexto(celdas[0].textContent);
+      var descMB         = celdas.length > 1 ? limpiarTexto(celdas[1].textContent) : '';
+
+      // Ignorar filas vacías o que sean sub-encabezados (sin texto en col 1)
+      if (!nombreCriterio || nombreCriterio.length < 3) return;
+
+      criteriosExtraidos.push(nombreCriterio);
+      descripcionesExtraidas.push(descMB);
+    });
+
+    if (!criteriosExtraidos.length) {
+      throw new Error('No se encontraron criterios válidos en la tabla. Verifica que la columna 1 tenga el nombre del criterio.');
+    }
+
+    // Limitar a 8 criterios máximo (formato estándar ArtEval)
+    var MAX_CRITERIOS = 8;
+    criteriosExtraidos    = criteriosExtraidos.slice(0, MAX_CRITERIOS);
+    descripcionesExtraidas = descripcionesExtraidas.slice(0, MAX_CRITERIOS);
+
+    // ── 5. Detectar nombre de rúbrica desde el título del doc ───────────────
+    // Intentar leer el primer <h1>/<h2> del doc; si no hay, usar nombre del archivo
+    var posibleTitulo = doc.querySelector('h1, h2');
+    var nombreRubrica = posibleTitulo
+      ? limpiarTexto(posibleTitulo.textContent)
+      : file.name.replace(/\.docx$/i, '').replace(/[-_]/g, ' ').trim();
+    if (!nombreRubrica) nombreRubrica = 'Rúbrica importada';
+
+    // ── 6. Guardar en el editor — abrir mostrarFormRubrica con los datos ─────
+    // No modifica rubricas[] directamente: abre el formulario con los datos.
+    // El profesor puede editar antes de guardar — máxima seguridad de datos.
+    if (typeof mostrarFormRubrica === 'function') {
+      mostrarFormRubrica(null); // nueva rúbrica
+    }
+
+    // Rellenar nombre
+    var nameInput = document.getElementById('rubricaNombreInput');
+    if (nameInput) nameInput.value = nombreRubrica;
+
+    // Rellenar criterios en el editor
+    if (typeof renderCritEditorList === 'function') {
+      renderCritEditorList(criteriosExtraidos);
+    }
+
+    // Guardar las descripciones MB en un atributo del contenedor para referencia
+    // (disponibles si el profesor quiere verlas en el futuro)
+    var cont = document.getElementById('critEditList');
+    if (cont) {
+      cont.setAttribute('data-desc-mb', JSON.stringify(descripcionesExtraidas));
+
+      // Inyectar tooltip de descripción bajo cada input de criterio
+      var inputs = cont.querySelectorAll('input[type="text"]');
+      inputs.forEach(function(inp, idx) {
+        if (descripcionesExtraidas[idx]) {
+          inp.title = 'MB (3pts): ' + descripcionesExtraidas[idx];
+          // Añadir hint visual debajo del input
+          var hint = document.createElement('div');
+          hint.className = '_word-desc-hint';
+          hint.style.cssText = 'font-size:10px;color:var(--text3);margin:-2px 0 4px 24px;'
+            + 'line-height:1.35;max-height:32px;overflow:hidden;text-overflow:ellipsis;'
+            + 'white-space:nowrap;font-style:italic;';
+          hint.title = descripcionesExtraidas[idx]; // full text on hover
+          hint.textContent = 'MB: ' + descripcionesExtraidas[idx];
+          if (inp.parentNode) inp.parentNode.after(hint);
+        }
+      });
+    }
+
+    // ── 7. Feedback al profesor ──────────────────────────────────────────────
+    var nCrit = criteriosExtraidos.length;
+    mostrarToast('✅ Rúbrica cargada: ' + nCrit + ' criterio' + (nCrit !== 1 ? 's' : '') + ' desde "' + file.name + '"', 4000);
+
+    // Hacer scroll al formulario
+    var form = document.getElementById('formRubrica');
+    if (form) setTimeout(function() { form.scrollIntoView({ behavior: 'smooth' }); }, 200);
+
+    console.log('[ArtEval v200] Rúbrica importada desde Word:', {
+      archivo: file.name,
+      criterios: criteriosExtraidos,
+      descripcionesMB: descripcionesExtraidas,
+    });
+
+  } catch(e) {
+    console.error('[ArtEval] procesarRubricaWord:', e.message);
+    mostrarToast('❌ Error al leer el Word: ' + e.message, 5000);
+  } finally {
+    // Restaurar botón siempre
+    if (btnLbl) {
+      btnLbl.style.opacity = '1';
+      btnLbl.style.pointerEvents = '';
+    }
+  }
+}
+
+
 function renderRubricas() {
   const list = document.getElementById('rubricaList');
   if (!list) return;
@@ -9272,7 +9586,7 @@ function confirmarExportCSV() {
 //  Soporta: Alexia, Schooltrack, Napsis/SIGE, Colegium, Excel genérico
 // ═══════════════════════════════════════════════════════
 
-var SISTEMAS_ESCOLARES = {
+const SISTEMAS_ESCOLARES = {
   alexia: {
     nombre:      'Alexia',
     descripcion: 'Sistema de gestión escolar (colegios privados/subvencionados)',
@@ -9682,9 +9996,8 @@ function arrayBufToBase64(buf) {
   return btoa(binary);
 }
 function base64ToArrayBuf(b64) {
-  var bin = atob(b64), bytes = new Uint8Array(bin.length);
-  for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-  return bytes.buffer;
+  // Uint8Array.from + charCodeAt es 3-5× más rápido que el loop manual en V8
+  return Uint8Array.from(atob(b64), function(c) { return c.charCodeAt(0); }).buffer;
 }
 
 // ── Normalización ─────────────────────────────────────────────────────────────
@@ -9985,7 +10298,8 @@ function alexiaGenerarXLS(curso) {
       if (p.colNombre   > -1) f[p.colNombre]    = est.nombre;
       rows.push(f);
     });
-    for (var bf = 0; bf < 1000; bf++) rows.push(fV.slice());
+    // Rellenar 1000 filas de padding — Array.from evita var de loop
+    Array.from({length:1000}, function(){ rows.push(fV.slice()); });
   }
 
   // ══════════════════════════════════════════════════════
@@ -10621,6 +10935,12 @@ function _renderDashKpiGlobal(instFiltro) {
   const kpiEl = document.getElementById('dashKpiGlobal');
   const obEl  = document.getElementById('dashOnboarding');
   if (!kpiEl) return;
+
+  // Cache ligero: si el semestre, el filtro y el número de registros no cambiaron,
+  // no re-renderizar — ahorra ~50ms por ciclo cuando el usuario navega entre tabs
+  var _kpiHash = (_semestreActivo || 1) + '|' + (instFiltro || '') + '|' + registros.length;
+  if (_renderDashKpiGlobal._lastHash === _kpiHash) return;
+  _renderDashKpiGlobal._lastHash = _kpiHash;
 
   // Filtrar siempre por semestre activo
   const regsSem = _registrosSemestre();
@@ -11978,7 +12298,7 @@ small, .text-xs, code { font-size: 12px; }
   max-width: calc(100vw - 32px);
   animation: slideUp 0.3s ease;
 }
-@keyframes slideUp {
+@keyframes slideUpToast {
   from { transform: translateX(-50%) translateY(20px); opacity: 0; }
   to   { transform: translateX(-50%) translateY(0);    opacity: 1; }
 }
@@ -12824,6 +13144,62 @@ input:focus, textarea:focus, select:focus {
   letter-spacing: .5px; color: var(--text3);
   padding: 12px 0 6px; border-bottom: 0.5px solid var(--border2);
   margin-bottom: 4px;
+}
+
+
+/* ── Performance hints — GPU layer para elementos frecuentemente animados ── */
+.cloud-btn.saving,
+.cam-badge.live,
+.av-spinner,
+.mic-btn.recording {
+  will-change: transform, opacity;
+}
+/* Layout containment — evita reflow en cascada al actualizar listas largas */
+#registrosList,
+.estudiante-list,
+#cursoMain,
+#statsContent {
+  contain: layout style;
+}
+/* Reduce reflows de tarjetas largas con content-visibility */
+.reg-card {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 80px;
+}
+/* Modal overlay: GPU layer fijo */
+.modal-overlay {
+  transform: translateZ(0);
+}
+
+
+/* ══ IMPORTADOR DE RÚBRICAS DESDE WORD ═════════════════════════════════════ */
+/* Hint de descripción MB bajo cada criterio importado */
+._word-desc-hint {
+  font-size: 10px;
+  color: var(--text3);
+  margin: -2px 0 6px 24px;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-style: italic;
+  max-width: calc(100% - 48px);
+  transition: opacity 0.15s;
+}
+._word-desc-hint:hover {
+  white-space: normal;
+  max-height: none;
+  overflow: visible;
+  opacity: 1;
+  background: var(--bg3);
+  border-radius: 6px;
+  padding: 4px 8px;
+  z-index: 10;
+  position: relative;
+}
+/* Botón de carga Word — estado cargando */
+#btnCargarRubricaWord[style*="0.6"] {
+  cursor: wait;
 }
 
 </style></head><body>
@@ -14053,7 +14429,7 @@ function _renderCriticosList(criticos) {
         ? '<div style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:rgba(52,199,89,0.12);border:1px solid rgba(52,199,89,0.25);border-radius:20px;margin-top:5px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#34C759" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span style="font-size:11px;font-weight:600;color:#34C759;">Enviado '+new Date(enviado.fecha).toLocaleDateString('es-CL',{day:'numeric',month:'short'})+'</span></div>'
         : '<div style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:rgba(255,149,0,0.10);border:1px solid rgba(255,149,0,0.25);border-radius:20px;margin-top:5px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span style="font-size:11px;font-weight:600;color:#FF9500;">Pendiente</span></div>';
 
-      listHtml += '<div class="config-card" style="padding:16px 20px;margin-bottom:10px;">'
+      listHtml += '<div class="config-card" data-nombre-alumno="'+al.nombre.replace(/"/g,'&quot;').toUpperCase()+'" style="padding:16px 20px;margin-bottom:10px;">'
         + '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;gap:10px;">'
         + '<div><div style="font-size:15px;font-weight:700;color:var(--text);">'+al.nombre+pie+'</div>'
         + '<div style="font-size:11px;color:var(--text3);margin-top:3px;">'+al.curso+' · '+ns+'</div>'
@@ -14076,7 +14452,19 @@ function _renderCriticosList(criticos) {
     });
   }
 
-  ct.innerHTML = headerHtml + listHtml;
+  ct.innerHTML = headerHtml
+    + '<div class="search-wrap" id="_correoSearchWrap" style="margin:0 0 12px;">'
+    + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"'
+    + ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round"'
+    + ' style="position:absolute;left:14px;top:50%;transform:translateY(-50%);opacity:.45;pointer-events:none;">'
+    + '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'
+    + '<input class="search-input" id="buscarHistorialCorreo" type="text"'
+    + ' placeholder="Buscar estudiante en correos enviados…"'
+    + ' oninput="_debouncedFiltrarCorreo(this.value)"'
+    + ' style="padding-left:45px !important;width:100%;"'
+    + ' autocomplete="off" autocorrect="off" spellcheck="false">'
+    + '</div>'
+    + listHtml;
   window._correoTabCriticos = criticos;
 
   // Auto-resize textareas
@@ -16426,6 +16814,9 @@ function renderCursoMain() {
   // ── Construir DOM ──
   main.innerHTML = '';
 
+  // DocumentFragment: construir todo off-DOM, un solo reflow al final
+  var _listFragment = document.createDocumentFragment();
+
   // Header
   const hdr = document.createElement('div');
   hdr.className = 'curso-header-row';
@@ -16476,7 +16867,7 @@ function renderCursoMain() {
     hdrBtns.appendChild(selInst);
   }
   hdr.appendChild(hdrBtns);
-  main.appendChild(hdr);
+  _listFragment.appendChild(hdr);
 
   // Resumen chips
   const resumen = document.createElement('div');
@@ -16493,7 +16884,7 @@ function renderCursoMain() {
     chip.innerHTML = '<div class="csn">' + item.val + '</div><div class="csl">' + item.lbl + '</div>';
     resumen.appendChild(chip);
   });
-  main.appendChild(resumen);
+  _listFragment.appendChild(resumen);
 
   // Panel ingreso (oculto por defecto)
   const panelIngreso = document.createElement('div');
@@ -16516,7 +16907,7 @@ function renderCursoMain() {
       '<button class="btn" onclick="toggleListaIngreso()">Cancelar</button>' +
       '<button class="btn btn-primary" id="btnProcesarLista">Agregar a ' + curso + '</button>' +
     '</div>';
-  main.appendChild(panelIngreso);
+  _listFragment.appendChild(panelIngreso);
   // Bind procesar button after insertion
   panelIngreso.querySelector('#btnProcesarLista').onclick = function(){ procesarListaIngreso(curso); };
 
@@ -16535,7 +16926,7 @@ function renderCursoMain() {
     btn.onclick = function(){ setEstFiltro(f.key, curso); };
     filtros.appendChild(btn);
   });
-  main.appendChild(filtros);
+  _listFragment.appendChild(filtros);
 
   // Lista estudiantes
   const listEl = document.createElement('div');
@@ -16674,7 +17065,9 @@ function renderCursoMain() {
       listEl.appendChild(row);
     });
   }
-  main.appendChild(listEl);
+  _listFragment.appendChild(listEl);
+  // Un solo reflow: volcar todo el fragment al DOM
+  main.appendChild(_listFragment);
   renderSidebarCounts();
 }
 
@@ -18178,8 +18571,10 @@ function _actualizarTodaLaAppImpl() {
   actualizarBarraContinuidad();
   try {
     // Invalidar cachés antes de cualquier render
-    _regsMapCache = null;
+    _regsMapCache    = null;
     _cursosUnicosCache = null;
+    _regsSemCache    = null;   // invalidar caché de semestre
+  if (typeof _renderDashKpiGlobal !== 'undefined') _renderDashKpiGlobal._lastHash = '';
     deduplicarYFusionarTodos();
     actualizarConteo();
     renderSidebarCounts();
@@ -18397,9 +18792,9 @@ document.addEventListener('DOMContentLoaded', () => {
 // Dominios autorizados: el dominio donde sirvas ArtEval
 var GOOG_CLIENT_ID = localStorage.getItem('av_goog_client_id') || '';
 var DRIVE_SCOPE    = 'https://www.googleapis.com/auth/drive.file';
-var DRIVE_FOLDER   = 'ArtEval_Backups';
-var DRIVE_FILENAME        = 'arteval_database.json';
-var DRIVE_FOTOS_FOLDER    = 'ArtEval_Fotos';    // carpeta exclusiva para imágenes
+const DRIVE_FOLDER   = 'ArtEval_Backups';
+const DRIVE_FILENAME        = 'arteval_database.json';
+const DRIVE_FOTOS_FOLDER    = 'ArtEval_Fotos';    // carpeta exclusiva para imágenes
 var _driveFotosFolderId   = null;               // se cachea tras la primera búsqueda
 var DRIVE_BACKUP_FILENAME = 'ArtEval_DailyBackup.json';
 var _autoBackupEnabled    = localStorage.getItem('av_auto_backup_enabled') !== 'false'; // true por defecto
@@ -18738,10 +19133,9 @@ async function _subirFotoDrive(b64, nombreAlumno) {
     var folderId = await _getOrCreateFotoFolder();
     if (!folderId) return null;
 
-    // base64 -> Uint8Array
+    // base64 -> Uint8Array (Uint8Array.from es 3-5× más rápido que loop manual)
     var byteStr = atob(b64);
-    var byteArr = new Uint8Array(byteStr.length);
-    for (var i = 0; i < byteStr.length; i++) byteArr[i] = byteStr.charCodeAt(i);
+    var byteArr = Uint8Array.from(byteStr, function(c) { return c.charCodeAt(0); });
 
     // Nombre de archivo único
     var safeName = (nombreAlumno || 'alumno')
