@@ -8897,45 +8897,115 @@ async function procesarRubricaWord(file) {
       throw new Error('El documento no contiene tablas. Asegúrate de que la rúbrica tenga formato de tabla en Word.');
     }
 
-    // ── 3. Parsear la tabla HTML ─────────────────────────────────────────────
+    // ── 3. Identificar la tabla correcta con heurística inteligente ──────────
+    // El documento puede tener varias tablas (metadatos, instrucciones, rúbrica real).
+    // Estrategia de detección en orden de prioridad:
+    //   P1 — Tabla cuya fila 0 contiene "criterio", "evaluacion" o "indicador"
+    //   P2 — Tabla con exactamente 5 columnas (criterio + 3pts + 2pts + 1pt + 0pts)
+    //   P3 — Tabla con ≥ 4 columnas Y ≥ 5 filas (estructura más probable de rúbrica)
+    //   P4 — Fallback: tabla con mayor número de filas
+
     var parser  = new DOMParser();
     var doc     = parser.parseFromString(html, 'text/html');
-    var tabla   = doc.querySelector('table');
+    var todasTablas = Array.from(doc.querySelectorAll('table'));
 
-    if (!tabla) {
+    if (!todasTablas.length) {
       throw new Error('No se encontró ninguna tabla en el documento.');
     }
 
+    function _primeraFilaCeldas(tbl) {
+      var pf = tbl.querySelector('tr');
+      return pf ? pf.querySelectorAll('td, th').length : 0;
+    }
+    function _textoEncabezado(tbl) {
+      var pf = tbl.querySelector('tr');
+      return pf ? pf.textContent.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'') : '';
+    }
+
+    var tabla = null;
+    console.log('[ArtEval] Tablas en .docx:', todasTablas.map(function(t,ti){
+      return {idx:ti, cols:_primeraFilaCeldas(t), filas:t.querySelectorAll('tr').length};
+    }));
+
+    // P1: encabezado contiene keyword de criterio/evaluación
+    tabla = todasTablas.find(function(t) {
+      var enc = _textoEncabezado(t);
+      return enc.includes('criterio') || enc.includes('evaluacion') || enc.includes('indicador');
+    }) || null;
+
+    // P2: exactamente 5 columnas (formato estándar ArtEval: criterio, 3pts, 2pts, 1pt, 0pts)
+    if (!tabla) {
+      tabla = todasTablas.find(function(t) { return _primeraFilaCeldas(t) === 5; }) || null;
+    }
+
+    // P3: ≥ 4 columnas y ≥ 5 filas de datos
+    if (!tabla) {
+      tabla = todasTablas.find(function(t) {
+        return _primeraFilaCeldas(t) >= 4 && t.querySelectorAll('tr').length >= 5;
+      }) || null;
+    }
+
+    // P4: fallback — tabla con más filas (la más densa de datos)
+    if (!tabla) {
+      tabla = todasTablas.reduce(function(max, t) {
+        return t.querySelectorAll('tr').length > max.querySelectorAll('tr').length ? t : max;
+      }, todasTablas[0]);
+    }
+
+    console.log('[ArtEval] Tabla seleccionada:', {
+      cols: _primeraFilaCeldas(tabla), filas: tabla.querySelectorAll('tr').length
+    });
+
     var filas = Array.from(tabla.querySelectorAll('tr'));
     if (filas.length < 2) {
-      throw new Error('La tabla tiene menos de 2 filas. Se necesita al menos una fila de encabezado y una de datos.');
+      throw new Error('La tabla de rúbrica tiene menos de 2 filas. Verifica el formato del documento.');
     }
 
     // ── 4. Extraer criterios y descripciones ────────────────────────────────
-    // Saltar la fila 0 (encabezados) y procesar el resto.
+    // Saltar fila 0 (encabezado principal) y cualquier sub-encabezado detectado.
     // Columna 0 → nombre del criterio
-    // Columna 1 → descripción del nivel máximo (MB - Muy bien logrado, 3pts)
-    var criteriosExtraidos   = []; // nombres de criterios (string[])
-    var descripcionesExtraidas = []; // descripciones MB (string[])
+    // Columna 1 → descripción del nivel máximo (MB - Muy bien logrado, 3 pts)
+    var criteriosExtraidos    = [];
+    var descripcionesExtraidas = [];
 
-    // Función de limpieza de texto: elimina numeración inicial, espacios, comillas
+    // Keywords que indican que una celda es encabezado, no criterio real
+    var _headKeywords = ['criterio','indicador','nivel','puntaje','descriptor',
+                         'evaluacion','calificacion','3 pt','2 pt','1 pt','0 pt',
+                         'muy bien','logrado','proceso','por lograr'];
+
     function limpiarTexto(txt) {
       return (txt || '')
         .trim()
-        .replace(/^[\d]+[.\-\)]\s*/, '') // eliminar "1. " o "1) " al inicio
-        .replace(/["'«»""'']/g, '')      // quitar comillas ornamentales
-        .replace(/\s+/g, ' ')            // colapsar espacios múltiples
+        .replace(/^\d+[.\-\)]\s*/, '')  // eliminar "1. " o "1) " inicial
+        .replace(/[\u00ab\u00bb\u201c\u201d\u2018\u2019]/g, '')  // comillas ornamentales
+        .replace(/\s+/g, ' ')
         .trim();
     }
 
-    filas.slice(1).forEach(function(fila) {
-      var celdas = fila.querySelectorAll('td, th');
+    function _esFilaEncabezado(celdas) {
+      var txt0 = (celdas[0] ? celdas[0].textContent : '').toLowerCase()
+                   .normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+      if (!txt0 || txt0.length < 2) return true;
+      return _headKeywords.some(function(kw){ return txt0.includes(kw); });
+    }
+
+    filas.forEach(function(fila, filaIdx) {
+      var celdas = Array.from(fila.querySelectorAll('td, th'));
       if (celdas.length < 1) return;
 
-      var nombreCriterio = limpiarTexto(celdas[0].textContent);
-      var descMB         = celdas.length > 1 ? limpiarTexto(celdas[1].textContent) : '';
+      // Saltamos siempre la primera fila (encabezado principal de la tabla)
+      if (filaIdx === 0) return;
 
-      // Ignorar filas vacías o que sean sub-encabezados (sin texto en col 1)
+      // Saltamos sub-encabezados detectados por heurística
+      if (_esFilaEncabezado(celdas)) {
+        console.log('[ArtEval] Fila saltada (encabezado secundario):', celdas[0]?.textContent?.slice(0,40));
+        return;
+      }
+
+      var nombreCriterio = limpiarTexto(celdas[0].textContent);
+      // Columna 1 = descripción MB (nivel máximo, 3 puntos)
+      var descMB = celdas.length > 1 ? limpiarTexto(celdas[1].textContent) : '';
+
       if (!nombreCriterio || nombreCriterio.length < 3) return;
 
       criteriosExtraidos.push(nombreCriterio);
