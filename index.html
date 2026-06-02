@@ -8862,23 +8862,19 @@ function verDetalleDesdeStats(idx) {
 async function procesarRubricaWord(file) {
   if (!file) return;
 
-  // Validación de tipo de archivo
+  // Validar extensión
   if (!file.name.toLowerCase().endsWith('.docx')) {
     mostrarToast('⚠️ Solo se aceptan archivos .docx (Word)', 3000);
     return;
   }
 
-  // Mostrar estado de carga
+  // Estado visual: botón desactivado mientras carga
   var btnLbl = document.getElementById('btnCargarRubricaWord');
-  var _textoOriginal = btnLbl ? btnLbl.textContent.trim() : '';
-  if (btnLbl) {
-    btnLbl.style.opacity = '0.6';
-    btnLbl.style.pointerEvents = 'none';
-  }
-  mostrarToast('⏳ Leyendo archivo Word…', 99000); // se cierra al terminar
+  if (btnLbl) { btnLbl.style.opacity = '0.6'; btnLbl.style.pointerEvents = 'none'; }
+  mostrarToast('⏳ Leyendo archivo Word…', 99000);
 
   try {
-    // ── 1. Leer el archivo como ArrayBuffer ──────────────────────────────────
+    // ── 1. Leer el archivo como ArrayBuffer ───────────────────────────────
     var arrayBuffer = await new Promise(function(resolve, reject) {
       var reader = new FileReader();
       reader.onload  = function(e) { resolve(e.target.result); };
@@ -8886,215 +8882,191 @@ async function procesarRubricaWord(file) {
       reader.readAsArrayBuffer(file);
     });
 
-    // ── 2. Parsear con Mammoth → HTML ────────────────────────────────────────
+    // ── 2. Convertir .docx → HTML con Mammoth.js ─────────────────────────
     if (typeof mammoth === 'undefined') {
-      throw new Error('La librería Mammoth no está disponible. Verifica tu conexión a internet.');
+      throw new Error('Mammoth.js no está disponible. Verifica tu conexión a internet.');
     }
     var result = await mammoth.convertToHtml({ arrayBuffer: arrayBuffer });
-    var html   = result.value;
-
-    if (!html || !html.includes('<table')) {
-      throw new Error('El documento no contiene tablas. Asegúrate de que la rúbrica tenga formato de tabla en Word.');
+    if (!result.value || !result.value.includes('<table')) {
+      throw new Error('El documento no contiene tablas. La rúbrica debe estar en formato de tabla Word.');
     }
 
-    // ── 3. Identificar la tabla correcta con heurística inteligente ──────────
-    // El documento puede tener varias tablas (metadatos, instrucciones, rúbrica real).
-    // Estrategia de detección en orden de prioridad:
-    //   P1 — Tabla cuya fila 0 contiene "criterio", "evaluacion" o "indicador"
-    //   P2 — Tabla con exactamente 5 columnas (criterio + 3pts + 2pts + 1pt + 0pts)
-    //   P3 — Tabla con ≥ 4 columnas Y ≥ 5 filas (estructura más probable de rúbrica)
-    //   P4 — Fallback: tabla con mayor número de filas
+    // ── 3. Cargar HTML en div temporal para usar selectores del DOM ───────
+    // (más confiable que DOMParser + queryAll en ciertos entornos)
+    var contenedorTemporal = document.createElement('div');
+    contenedorTemporal.style.display = 'none';
+    contenedorTemporal.innerHTML = result.value;
+    document.body.appendChild(contenedorTemporal);
 
-    var parser  = new DOMParser();
-    var doc     = parser.parseFromString(html, 'text/html');
-    var todasTablas = Array.from(doc.querySelectorAll('table'));
+    try {
+      var tablas = Array.from(contenedorTemporal.querySelectorAll('table'));
+      if (!tablas.length) throw new Error('No se encontró ninguna tabla en el documento.');
 
-    if (!todasTablas.length) {
-      throw new Error('No se encontró ninguna tabla en el documento.');
-    }
+      // ── 4. Identificar la tabla de rúbrica ───────────────────────────────
+      // Criterio A: primera fila tiene exactamente 5 columnas
+      //             (Criterio | 3pts MB | 2pts L | 1pt M | 0pts N)
+      // Criterio B: el texto de la tabla contiene "Criterio de Evaluación"
+      // Se itera en orden: la PRIMERA tabla que cumple A o B es la correcta.
+      // Las tablas de metadatos (Nombre/Profesor/Puntaje) tienen 2-3 cols → se saltan.
+      var tablaRubrica = null;
 
-    function _primeraFilaCeldas(tbl) {
-      var pf = tbl.querySelector('tr');
-      return pf ? pf.querySelectorAll('td, th').length : 0;
-    }
-    function _textoEncabezado(tbl) {
-      var pf = tbl.querySelector('tr');
-      return pf ? pf.textContent.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'') : '';
-    }
+      for (var ti = 0; ti < tablas.length; ti++) {
+        var tbl        = tablas[ti];
+        var primeraFila = tbl.querySelector('tr');
+        if (!primeraFila) continue;
 
-    var tabla = null;
-    console.log('[ArtEval] Tablas en .docx:', todasTablas.map(function(t,ti){
-      return {idx:ti, cols:_primeraFilaCeldas(t), filas:t.querySelectorAll('tr').length};
-    }));
+        var celdas1raFila = primeraFila.querySelectorAll('td, th').length;
+        var textoTabla    = tbl.textContent;
 
-    // P1: encabezado contiene keyword de criterio/evaluación
-    tabla = todasTablas.find(function(t) {
-      var enc = _textoEncabezado(t);
-      return enc.includes('criterio') || enc.includes('evaluacion') || enc.includes('indicador');
-    }) || null;
+        // Criterio A: 5 columnas exactas
+        var cumpleA = (celdas1raFila === 5);
 
-    // P2: exactamente 5 columnas (formato estándar ArtEval: criterio, 3pts, 2pts, 1pt, 0pts)
-    if (!tabla) {
-      tabla = todasTablas.find(function(t) { return _primeraFilaCeldas(t) === 5; }) || null;
-    }
+        // Criterio B: contiene la frase clave (normalizada para acentos y mayúsculas)
+        var textNorm   = textoTabla.toLowerCase()
+                           .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        var cumpleB = textNorm.includes('criterio de evaluacion')
+                   || textNorm.includes('criterio de evaluaci')
+                   || textNorm.includes('criterio');
 
-    // P3: ≥ 4 columnas y ≥ 5 filas de datos
-    if (!tabla) {
-      tabla = todasTablas.find(function(t) {
-        return _primeraFilaCeldas(t) >= 4 && t.querySelectorAll('tr').length >= 5;
-      }) || null;
-    }
+        console.log('[ArtEval] Tabla ' + ti + ': ' + celdas1raFila + ' cols, A=' + cumpleA + ' B=' + cumpleB);
 
-    // P4: fallback — tabla con más filas (la más densa de datos)
-    if (!tabla) {
-      tabla = todasTablas.reduce(function(max, t) {
-        return t.querySelectorAll('tr').length > max.querySelectorAll('tr').length ? t : max;
-      }, todasTablas[0]);
-    }
-
-    console.log('[ArtEval] Tabla seleccionada:', {
-      cols: _primeraFilaCeldas(tabla), filas: tabla.querySelectorAll('tr').length
-    });
-
-    var filas = Array.from(tabla.querySelectorAll('tr'));
-    if (filas.length < 2) {
-      throw new Error('La tabla de rúbrica tiene menos de 2 filas. Verifica el formato del documento.');
-    }
-
-    // ── 4. Extraer criterios y descripciones ────────────────────────────────
-    // Saltar fila 0 (encabezado principal) y cualquier sub-encabezado detectado.
-    // Columna 0 → nombre del criterio
-    // Columna 1 → descripción del nivel máximo (MB - Muy bien logrado, 3 pts)
-    var criteriosExtraidos    = [];
-    var descripcionesExtraidas = [];
-
-    // Keywords que indican que una celda es encabezado, no criterio real
-    var _headKeywords = ['criterio','indicador','nivel','puntaje','descriptor',
-                         'evaluacion','calificacion','3 pt','2 pt','1 pt','0 pt',
-                         'muy bien','logrado','proceso','por lograr'];
-
-    function limpiarTexto(txt) {
-      return (txt || '')
-        .trim()
-        .replace(/^\d+[.\-\)]\s*/, '')  // eliminar "1. " o "1) " inicial
-        .replace(/[\u00ab\u00bb\u201c\u201d\u2018\u2019]/g, '')  // comillas ornamentales
-        .replace(/\s+/g, ' ')
-        .trim();
-    }
-
-    function _esFilaEncabezado(celdas) {
-      var txt0 = (celdas[0] ? celdas[0].textContent : '').toLowerCase()
-                   .normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
-      if (!txt0 || txt0.length < 2) return true;
-      return _headKeywords.some(function(kw){ return txt0.includes(kw); });
-    }
-
-    filas.forEach(function(fila, filaIdx) {
-      var celdas = Array.from(fila.querySelectorAll('td, th'));
-      if (celdas.length < 1) return;
-
-      // Saltamos siempre la primera fila (encabezado principal de la tabla)
-      if (filaIdx === 0) return;
-
-      // Saltamos sub-encabezados detectados por heurística
-      if (_esFilaEncabezado(celdas)) {
-        console.log('[ArtEval] Fila saltada (encabezado secundario):', celdas[0]?.textContent?.slice(0,40));
-        return;
+        if (cumpleA || cumpleB) {
+          tablaRubrica = tbl;
+          console.log('[ArtEval] ✓ Tabla de rúbrica seleccionada: índice ' + ti);
+          break;
+        }
       }
 
-      var nombreCriterio = limpiarTexto(celdas[0].textContent);
-      // Columna 1 = descripción MB (nivel máximo, 3 puntos)
-      var descMB = celdas.length > 1 ? limpiarTexto(celdas[1].textContent) : '';
+      // Fallback: tabla con más filas si ninguna pasó el filtro
+      if (!tablaRubrica) {
+        tablaRubrica = tablas.reduce(function(max, t) {
+          return t.querySelectorAll('tr').length > max.querySelectorAll('tr').length ? t : max;
+        }, tablas[0]);
+        console.warn('[ArtEval] Ninguna tabla pasó el filtro — usando la de mayor número de filas (fallback).');
+      }
 
-      if (!nombreCriterio || nombreCriterio.length < 3) return;
+      // ── 5. Extraer filas de datos ─────────────────────────────────────────
+      // La fila 0 es la cabecera (Criterio | 3pts | 2pts…) — se salta siempre.
+      // Las filas siguientes contienen los criterios reales.
+      var todasFilas = Array.from(tablaRubrica.querySelectorAll('tr'));
+      if (todasFilas.length < 2) {
+        throw new Error('La tabla tiene menos de 2 filas. Se esperan 1 encabezado + criterios.');
+      }
 
-      criteriosExtraidos.push(nombreCriterio);
-      descripcionesExtraidas.push(descMB);
-    });
+      // Función de limpieza: quita numeración inicial, comillas y espacios extra
+      function limpiarTexto(txt) {
+        return (txt || '')
+          .replace(/[«»“”‘’„‟]/g, '') // comillas especiales
+          .trim()
+          .replace(/^\d+[\.\-\)]\s+/, '')  // "1. " o "1) " al inicio
+          .replace(/\s+/g, ' ')
+          .trim();
+      }
 
-    if (!criteriosExtraidos.length) {
-      throw new Error('No se encontraron criterios válidos en la tabla. Verifica que la columna 1 tenga el nombre del criterio.');
-    }
+      // Función: detecta si una fila es encabezado secundario
+      // (sus celdas contienen "pts", "puntos", "logrado", etc.)
+      function esEncabezadoSecundario(fila) {
+        var txt = fila.textContent.toLowerCase()
+                    .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        return txt.includes(' pts') || txt.includes('puntos')
+            || txt.includes('logrado') || txt.includes('descriptor')
+            || txt.includes('por lograr') || txt.includes('en proceso');
+      }
 
-    // Limitar a 8 criterios máximo (formato estándar ArtEval)
-    var MAX_CRITERIOS = 8;
-    criteriosExtraidos    = criteriosExtraidos.slice(0, MAX_CRITERIOS);
-    descripcionesExtraidas = descripcionesExtraidas.slice(0, MAX_CRITERIOS);
+      var criteriosExtraidos    = [];
+      var descripcionesExtraidas = [];
 
-    // ── 5. Detectar nombre de rúbrica desde el título del doc ───────────────
-    // Intentar leer el primer <h1>/<h2> del doc; si no hay, usar nombre del archivo
-    var posibleTitulo = doc.querySelector('h1, h2');
-    var nombreRubrica = posibleTitulo
-      ? limpiarTexto(posibleTitulo.textContent)
-      : file.name.replace(/\.docx$/i, '').replace(/[-_]/g, ' ').trim();
-    if (!nombreRubrica) nombreRubrica = 'Rúbrica importada';
+      for (var fi = 1; fi < todasFilas.length; fi++) {
+        var fila   = todasFilas[fi];
+        var cells  = fila.cells;           // HTMLCollection nativa — siempre disponible
+        if (!cells || cells.length < 1) continue;
 
-    // ── 6. Guardar en el editor — abrir mostrarFormRubrica con los datos ─────
-    // No modifica rubricas[] directamente: abre el formulario con los datos.
-    // El profesor puede editar antes de guardar — máxima seguridad de datos.
-    if (typeof mostrarFormRubrica === 'function') {
-      mostrarFormRubrica(null); // nueva rúbrica
-    }
+        // Saltar filas que parecen ser sub-encabezados
+        if (esEncabezadoSecundario(fila)) {
+          console.log('[ArtEval] Fila ' + fi + ' omitida (sub-encabezado):', fila.textContent.slice(0,50));
+          continue;
+        }
 
-    // Rellenar nombre
-    var nameInput = document.getElementById('rubricaNombreInput');
-    if (nameInput) nameInput.value = nombreRubrica;
+        // cells[0] → Nombre del criterio
+        var nombreCriterio = limpiarTexto(cells[0].textContent);
+        if (!nombreCriterio || nombreCriterio.length < 3) continue;
 
-    // Rellenar criterios en el editor
-    if (typeof renderCritEditorList === 'function') {
-      renderCritEditorList(criteriosExtraidos);
-    }
+        // cells[1] → Descripción nivel máximo (3 pts – Muy bien logrado)
+        var descMB = cells.length > 1 ? limpiarTexto(cells[1].textContent) : '';
 
-    // Guardar las descripciones MB en un atributo del contenedor para referencia
-    // (disponibles si el profesor quiere verlas en el futuro)
-    var cont = document.getElementById('critEditList');
-    if (cont) {
-      cont.setAttribute('data-desc-mb', JSON.stringify(descripcionesExtraidas));
+        criteriosExtraidos.push(nombreCriterio);
+        descripcionesExtraidas.push(descMB);
 
-      // Inyectar tooltip de descripción bajo cada input de criterio
-      var inputs = cont.querySelectorAll('input[type="text"]');
-      inputs.forEach(function(inp, idx) {
-        if (descripcionesExtraidas[idx]) {
-          inp.title = 'MB (3pts): ' + descripcionesExtraidas[idx];
-          // Añadir hint visual debajo del input
+        // Respetar límite de 8 criterios (formato estándar ArtEval)
+        if (criteriosExtraidos.length >= 8) break;
+      }
+
+      if (!criteriosExtraidos.length) {
+        throw new Error('No se encontraron criterios válidos. Verifica que la columna 1 de la tabla tenga el nombre de cada criterio.');
+      }
+
+      // ── 6. Detectar nombre de la rúbrica ──────────────────────────────────
+      var h1h2 = contenedorTemporal.querySelector('h1, h2, h3');
+      var nombreRubrica = h1h2
+        ? limpiarTexto(h1h2.textContent)
+        : file.name.replace(/\.docx$/i, '').replace(/[-_]/g, ' ').trim();
+      if (!nombreRubrica) nombreRubrica = 'Rúbrica importada';
+
+      // ── 7. Inyectar en el formulario de ArtEval ───────────────────────────
+      // NUNCA modifica rubricas[] directamente — abre el editor para que el
+      // profesor revise antes de guardar. Máxima seguridad de datos.
+      if (typeof mostrarFormRubrica === 'function') mostrarFormRubrica(null);
+
+      var nameInput = document.getElementById('rubricaNombreInput');
+      if (nameInput) nameInput.value = nombreRubrica;
+
+      if (typeof renderCritEditorList === 'function') {
+        renderCritEditorList(criteriosExtraidos);
+      }
+
+      // Añadir hint visual de descripción MB bajo cada input de criterio
+      var cont = document.getElementById('critEditList');
+      if (cont) {
+        cont.setAttribute('data-desc-mb', JSON.stringify(descripcionesExtraidas));
+        var inputs = cont.querySelectorAll('input[type="text"]');
+        inputs.forEach(function(inp, i) {
+          if (!descripcionesExtraidas[i]) return;
+          inp.title = 'MB (3pts): ' + descripcionesExtraidas[i];
           var hint = document.createElement('div');
           hint.className = '_word-desc-hint';
-          hint.style.cssText = 'font-size:10px;color:var(--text3);margin:-2px 0 4px 24px;'
-            + 'line-height:1.35;max-height:32px;overflow:hidden;text-overflow:ellipsis;'
+          hint.style.cssText = 'font-size:10px;color:var(--text3);margin:-2px 0 6px 24px;'
+            + 'line-height:1.35;overflow:hidden;text-overflow:ellipsis;'
             + 'white-space:nowrap;font-style:italic;';
-          hint.title = descripcionesExtraidas[idx]; // full text on hover
-          hint.textContent = 'MB: ' + descripcionesExtraidas[idx];
+          hint.title       = descripcionesExtraidas[i];
+          hint.textContent = 'MB: ' + descripcionesExtraidas[i];
           if (inp.parentNode) inp.parentNode.after(hint);
-        }
+        });
+      }
+
+      // ── 8. Feedback ────────────────────────────────────────────────────────
+      var n = criteriosExtraidos.length;
+      mostrarToast('✅ Rúbrica cargada: ' + n + ' criterio' + (n !== 1 ? 's' : '')
+                   + ' desde "' + file.name + '"', 4000);
+
+      var form = document.getElementById('formRubrica');
+      if (form) setTimeout(function() { form.scrollIntoView({ behavior: 'smooth' }); }, 200);
+
+      console.log('[ArtEval v200] Rúbrica importada:', {
+        archivo: file.name, criterios: criteriosExtraidos, descripcionesMB: descripcionesExtraidas
       });
+
+    } finally {
+      // Limpiar el div temporal del DOM siempre, pase lo que pase
+      if (contenedorTemporal.parentNode) contenedorTemporal.parentNode.removeChild(contenedorTemporal);
     }
-
-    // ── 7. Feedback al profesor ──────────────────────────────────────────────
-    var nCrit = criteriosExtraidos.length;
-    mostrarToast('✅ Rúbrica cargada: ' + nCrit + ' criterio' + (nCrit !== 1 ? 's' : '') + ' desde "' + file.name + '"', 4000);
-
-    // Hacer scroll al formulario
-    var form = document.getElementById('formRubrica');
-    if (form) setTimeout(function() { form.scrollIntoView({ behavior: 'smooth' }); }, 200);
-
-    console.log('[ArtEval v200] Rúbrica importada desde Word:', {
-      archivo: file.name,
-      criterios: criteriosExtraidos,
-      descripcionesMB: descripcionesExtraidas,
-    });
 
   } catch(e) {
-    console.error('[ArtEval] procesarRubricaWord:', e.message);
+    console.error('[ArtEval] procesarRubricaWord:', e.message, e);
     mostrarToast('❌ Error al leer el Word: ' + e.message, 5000);
   } finally {
-    // Restaurar botón siempre
-    if (btnLbl) {
-      btnLbl.style.opacity = '1';
-      btnLbl.style.pointerEvents = '';
-    }
+    if (btnLbl) { btnLbl.style.opacity = '1'; btnLbl.style.pointerEvents = ''; }
   }
 }
-
 
 function renderRubricas() {
   const list = document.getElementById('rubricaList');
