@@ -5069,6 +5069,13 @@ function getDefaultRubricas() {
 }
 
 function getRubrica() { return rubricas[rubricaActiva] || rubricas[0]; }
+// _critNombre: helper retrocompatible — devuelve el nombre del criterio
+// sea string (legacy) u objeto {nombre, mb} (importado desde Word)
+function _critNombre(c) {
+  if (typeof c === 'object' && c !== null) return c.nombre || '';
+  return c || '';
+}
+
 function getCriterios() { return getRubrica().criterios; }
 function saveRubricas(){localStorage.setItem('av_rubricas',JSON.stringify(rubricas));localStorage.setItem('av_rubrica_activa',String(rubricaActiva));actualizarRubricaSelect();}
 // ── BLOQUE 2: Estabilidad crítica ────────────────────────────────────────────
@@ -5577,13 +5584,28 @@ function renderCriterios() {
   const frag = document.createDocumentFragment();
 
   crits.forEach((c, i) => {
+    // Normalizar: criterio puede ser string (legacy) u objeto {nombre, mb}
+    var nombreCriterio = typeof c === 'object' && c !== null ? (c.nombre || '') : (c || '');
+    var descMB         = typeof c === 'object' && c !== null ? (c.mb     || '') : '';
+
     const ev  = evaluacion[i];
     const div = document.createElement('div');
     div.className = 'criterio-item' + (ev?.nivel ? ' done' : '');
 
+    // ── Nombre del criterio ──────────────────────────────────────────────────
     const nameDiv = document.createElement('div');
     nameDiv.className = 'criterio-name';
-    nameDiv.innerHTML = '<span class="crit-num">' + (i+1) + '</span>' + (_esc ? _esc(c) : c);
+    nameDiv.innerHTML = '<span class="crit-num">' + (i+1) + '</span>'
+                      + (_esc ? _esc(nombreCriterio) : nombreCriterio);
+
+    // ── Descripción MB (Guía de logro máximo) — solo si existe ───────────────
+    if (descMB) {
+      const descDiv = document.createElement('div');
+      descDiv.className = 'criterio-desc-mb';
+      descDiv.title     = descMB; // texto completo en tooltip
+      descDiv.textContent = descMB;
+      nameDiv.appendChild(descDiv);
+    }
 
     const nivelesDiv = document.createElement('div');
     nivelesDiv.className = 'niveles';
@@ -9140,14 +9162,39 @@ function renderCritEditorList(crits) {
   const cont = document.getElementById('critEditList');
   if (!cont) return;
   cont.innerHTML = '';
+
+  // Separar nombres y descripciones MB (retrocompatible: criterio puede ser string u objeto)
+  var descMBActuales = [];
+
   crits.forEach((c, i) => {
-    const div = document.createElement('div'); div.className = 'crit-editor-row';
+    // Normalizar: string → {nombre, mb:''}
+    var nombre = typeof c === 'object' && c !== null ? (c.nombre || '') : (c || '');
+    var mb     = typeof c === 'object' && c !== null ? (c.mb     || '') : '';
+    descMBActuales[i] = mb;
+
+    const div = document.createElement('div');
+    div.className = 'crit-editor-row';
     div.innerHTML = `
       <span style="font-size:11px;color:var(--text3);min-width:20px;font-family:'DM Mono',monospace;">${i+1}</span>
-      <input type="text" value="${c}" id="cr-${i}" placeholder="Nombre del criterio">
+      <input type="text" value="${_esc ? _esc(nombre) : nombre}" id="cr-${i}" placeholder="Nombre del criterio">
       <button class="btn-del-crit" onclick="eliminarCritEditor(${i})">×</button>`;
     cont.appendChild(div);
+
+    // Hint de descripción MB importada (si existe), editable opcionalmente
+    if (mb) {
+      var hint = document.createElement('div');
+      hint.className = '_word-desc-hint';
+      hint.style.cssText = 'font-size:10px;color:var(--text3);margin:-2px 0 6px 24px;'
+        + 'line-height:1.4;overflow:hidden;text-overflow:ellipsis;'
+        + 'white-space:nowrap;font-style:italic;cursor:default;';
+      hint.title = mb;
+      hint.textContent = '★ MB: ' + mb;
+      cont.appendChild(hint);
+    }
   });
+
+  // Persistir las descripciones MB en el contenedor para que guardarRubrica() las lea
+  cont.setAttribute('data-desc-mb', JSON.stringify(descMBActuales));
 }
 
 function agregarCritEditor() {
@@ -9181,8 +9228,23 @@ function guardarRubrica() {
   if (!nombre) { toast('⚠️ Ingresa un nombre para la rúbrica', 'err'); return; }
   const cont = document.getElementById('critEditList');
   if (!cont) return;
-  const crits = Array.from(cont.querySelectorAll('input')).map(i=>i.value.trim()).filter(Boolean);
-  if (crits.length < 2) { toast('⚠️ Agrega al menos 2 criterios', 'err'); return; }
+
+  // Leer nombres de criterios desde los inputs
+  const inputs = Array.from(cont.querySelectorAll('input[type="text"]'));
+  const critNombres = inputs.map(i => i.value.trim()).filter(Boolean);
+  if (critNombres.length < 2) { toast('⚠️ Agrega al menos 2 criterios', 'err'); return; }
+
+  // Leer descripciones MB importadas desde Word (guardadas en data-desc-mb)
+  var descMB = [];
+  try { descMB = JSON.parse(cont.getAttribute('data-desc-mb') || '[]'); } catch(e) {}
+
+  // Construir array de criterios: objeto {nombre, mb} si hay descripción, string si no
+  // Retrocompatible: el sistema acepta ambos formatos
+  const crits = critNombres.map(function(nom, i) {
+    var mb = (descMB[i] || '').trim();
+    return mb ? { nombre: nom, mb: mb } : nom;
+  });
+
   if (editandoRubrica !== null) {
     rubricas[editandoRubrica] = { nombre, criterios: crits };
     if (rubricaActiva === editandoRubrica) { evaluacion = {}; renderCriterios(); }
@@ -13242,6 +13304,37 @@ input:focus, textarea:focus, select:focus {
 /* Botón de carga Word — estado cargando */
 #btnCargarRubricaWord[style*="0.6"] {
   cursor: wait;
+}
+
+
+/* ── Descripción de logro máximo (MB) bajo el nombre del criterio ─────────── */
+.criterio-desc-mb {
+  font-size: 11.5px;
+  color: var(--text3);
+  font-style: italic;
+  margin-top: 4px;
+  margin-left: 22px;          /* alineado con el texto del criterio (no el número) */
+  line-height: 1.4;
+  /* Truncar a 2 líneas en móvil — el tooltip muestra el texto completo */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  /* Fondo tenue tipo cápsula — denota que es una guía, no el criterio en sí */
+  background: var(--bg3);
+  border-left: 2px solid var(--border);
+  border-radius: 0 6px 6px 0;
+  padding: 3px 8px;
+  transition: -webkit-line-clamp 0.2s, max-height 0.2s;
+  cursor: default;
+}
+/* En desktop se puede hacer hover para expandir */
+@media (hover: hover) {
+  .criterio-desc-mb:hover {
+    -webkit-line-clamp: unset;
+    overflow: visible;
+    background: var(--bg4);
+  }
 }
 
 </style></head><body>
