@@ -9158,21 +9158,27 @@ function renderRubricas() {
   const list = document.getElementById('rubricaList');
   if (!list) return;
 
-  // Determinar semestre de filtro
-  var semFiltro = _rubricasFiltroSem !== null ? _rubricasFiltroSem : (_semestreActivo || 1);
-
-  // Normalizar retrocompatibilidad: rúbricas antiguas sin curso/semestre
+  // ── Paso 1: normalizar ANTES de filtrar (retrocompat con rúbricas antiguas) ──
+  // Si una rúbrica no tiene semestre asignado, se considera de AMBOS semestres
+  // (o del activo). Hacemos la asignación aquí, no durante el filtro.
+  var semActivo = parseInt(_semestreActivo || 1, 10);
   rubricas.forEach(function(r) {
-    if (!r.curso)    r.curso    = 'Sin clasificar';
-    if (!r.semestre) r.semestre = semFiltro; // asignar semestre activo como default
+    if (!r.curso || r.curso === '') r.curso = 'Sin clasificar';
+    if (!r.semestre)                r.semestre = semActivo;
+    // Garantizar que semestre sea número
+    r.semestre = parseInt(r.semestre, 10) || semActivo;
   });
 
-  // Filtrar por semestre activo
+  // ── Paso 2: filtro de semestre ────────────────────────────────────────────
+  var semFiltro = (_rubricasFiltroSem !== null && _rubricasFiltroSem !== undefined)
+                  ? parseInt(_rubricasFiltroSem, 10)
+                  : semActivo;
+
   var rubsFiltradas = rubricas
     .map(function(r, i) { return { r: r, i: i }; })
-    .filter(function(obj) { return obj.r.semestre == semFiltro; });
+    .filter(function(obj) { return obj.r.semestre === semFiltro; });
 
-  // Agrupar por curso
+  // ── Paso 3: agrupar por curso ─────────────────────────────────────────────
   var porCurso = {};
   rubsFiltradas.forEach(function(obj) {
     var curso = obj.r.curso || 'Sin clasificar';
@@ -9185,29 +9191,28 @@ function renderRubricas() {
     return a.localeCompare(b, 'es');
   });
 
-  // Construir DOM con DocumentFragment — cero reflows intermedios
+  // ── Paso 4: construir DOM ─────────────────────────────────────────────────
   var frag = document.createDocumentFragment();
 
-  // ── Pills de semestre ─────────────────────────────────────────────────────
+  // Pills de semestre
   var pillsDiv = document.createElement('div');
   pillsDiv.className = 'rubrica-sem-pills';
   [1, 2].forEach(function(s) {
     var pill = document.createElement('button');
-    pill.className = 'rubrica-sem-pill' + (s == semFiltro ? ' active' : '');
+    pill.className = 'rubrica-sem-pill' + (s === semFiltro ? ' active' : '');
     pill.textContent = s + '° Semestre';
-    pill.onclick = function() {
-      _rubricasFiltroSem = s;
-      renderRubricas();
-    };
+    pill.onclick = function() { _rubricasFiltroSem = s; renderRubricas(); };
     pillsDiv.appendChild(pill);
   });
   frag.appendChild(pillsDiv);
 
+  // Empty state
   if (!rubsFiltradas.length) {
     var empty = document.createElement('div');
     empty.className = 'rubrica-folder-empty';
     empty.innerHTML = '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" style="display:block;margin:0 auto 10px;opacity:.3;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>'
-      + 'No hay rúbricas en el ' + semFiltro + '° semestre.<br><span style="font-size:11px;opacity:.7;">Crea una nueva o cambia el filtro de semestre.</span>';
+      + 'No hay rúbricas en el ' + semFiltro + '° semestre.'
+      + '<br><span style="font-size:11px;opacity:.7;">Crea una nueva o cambia el filtro de semestre arriba.</span>';
     frag.appendChild(empty);
     list.innerHTML = '';
     list.appendChild(frag);
@@ -9215,33 +9220,29 @@ function renderRubricas() {
     return;
   }
 
-  // ── Carpetas por curso ────────────────────────────────────────────────────
+  // Carpetas por curso — todas abiertas por defecto para máxima visibilidad
   cursosSorted.forEach(function(curso) {
     var rubsDelCurso = porCurso[curso];
-    var isOpen = rubsDelCurso.some(function(obj) { return obj.i === rubricaActiva; });
+    // Carpeta abierta si: tiene la rúbrica activa O solo hay una carpeta
+    var tieneActiva = rubsDelCurso.some(function(obj) { return obj.i === rubricaActiva; });
+    var isOpen = tieneActiva || cursosSorted.length === 1;
 
     var carpeta = document.createElement('div');
     carpeta.className = 'rubrica-carpeta' + (isOpen ? ' open' : '');
-    carpeta.setAttribute('data-curso', curso);
 
-    // ── Header de carpeta
+    // Header
     var header = document.createElement('div');
     header.className = 'rubrica-carpeta-header';
-    header.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    header.setAttribute('aria-expanded', String(isOpen));
     header.onclick = function() {
-      carpeta.classList.toggle('open');
-      header.setAttribute('aria-expanded', carpeta.classList.contains('open') ? 'true' : 'false');
+      var abierta = carpeta.classList.toggle('open');
+      header.setAttribute('aria-expanded', String(abierta));
+      icon.textContent = abierta ? '📂' : '📁';
     };
 
     var icon = document.createElement('span');
     icon.className = 'rubrica-carpeta-icon';
     icon.textContent = isOpen ? '📂' : '📁';
-    // Actualizar icono al abrir/cerrar
-    header.addEventListener('click', function() {
-      setTimeout(function() {
-        icon.textContent = carpeta.classList.contains('open') ? '📂' : '📁';
-      }, 20);
-    }, { passive: true });
 
     var tituloSpan = document.createElement('span');
     tituloSpan.className = 'rubrica-carpeta-titulo';
@@ -9249,15 +9250,13 @@ function renderRubricas() {
 
     var badge = document.createElement('span');
     badge.className = 'rubrica-carpeta-badge';
-    badge.textContent = rubsDelCurso.length + ' rúbrica' + (rubsDelCurso.length !== 1 ? 's' : '');
+    badge.textContent = rubsDelCurso.length + (rubsDelCurso.length === 1 ? ' rúbrica' : ' rúbricas');
 
     var chevron = document.createElement('svg');
-    chevron.setAttribute('width', '14'); chevron.setAttribute('height', '14');
-    chevron.setAttribute('viewBox', '0 0 24 24');
-    chevron.setAttribute('fill', 'none');
-    chevron.setAttribute('stroke', 'currentColor');
-    chevron.setAttribute('stroke-width', '2');
-    chevron.setAttribute('stroke-linecap', 'round');
+    chevron.setAttribute('width','14'); chevron.setAttribute('height','14');
+    chevron.setAttribute('viewBox','0 0 24 24'); chevron.setAttribute('fill','none');
+    chevron.setAttribute('stroke','currentColor'); chevron.setAttribute('stroke-width','2');
+    chevron.setAttribute('stroke-linecap','round');
     chevron.className = 'rubrica-carpeta-chevron';
     chevron.innerHTML = '<polyline points="9 18 15 12 9 6"/>';
 
@@ -9266,16 +9265,15 @@ function renderRubricas() {
     header.appendChild(badge);
     header.appendChild(chevron);
 
-    // ── Cuerpo de carpeta (accordion)
+    // Cuerpo accordion
     var body = document.createElement('div');
     body.className = 'rubrica-carpeta-body';
-
     var bodyInner = document.createElement('div');
     bodyInner.className = 'rubrica-carpeta-body-inner';
 
     rubsDelCurso.forEach(function(obj) {
-      var r = obj.r, i = obj.i;
-      var isActive = (i === rubricaActiva);
+      var r = obj.r, ri = obj.i;
+      var isActive = (ri === rubricaActiva);
 
       var card = document.createElement('div');
       card.className = 'rubrica-card-mini' + (isActive ? ' active-rub' : '');
@@ -9286,17 +9284,18 @@ function renderRubricas() {
       var info = document.createElement('div');
       info.className = 'rubrica-card-mini-info';
 
-      var nombre = document.createElement('div');
-      nombre.className = 'rubrica-card-mini-nombre';
-      nombre.textContent = r.nombre;
+      var nombreEl = document.createElement('div');
+      nombreEl.className = 'rubrica-card-mini-nombre';
+      nombreEl.textContent = r.nombre;
 
-      var meta = document.createElement('div');
-      meta.className = 'rubrica-card-mini-meta';
-      meta.textContent = r.criterios.length + ' criterios · máx ' + (r.criterios.length * 3) + ' pts'
+      var metaEl = document.createElement('div');
+      metaEl.className = 'rubrica-card-mini-meta';
+      metaEl.textContent = r.criterios.length + ' criterios · máx '
+        + (r.criterios.length * 3) + ' pts'
         + (isActive ? ' · ✓ Activa' : '');
 
-      info.appendChild(nombre);
-      info.appendChild(meta);
+      info.appendChild(nombreEl);
+      info.appendChild(metaEl);
 
       var actions = document.createElement('div');
       actions.className = 'rubrica-card-mini-actions';
@@ -9306,7 +9305,7 @@ function renderRubricas() {
         btnUsar.className = 'btn';
         btnUsar.style.cssText = 'font-size:11px;padding:5px 10px;';
         btnUsar.textContent = 'Usar';
-        btnUsar.onclick = (function(idx) { return function(e) { e.stopPropagation(); seleccionarRubrica(idx); }; })(i);
+        btnUsar.onclick = (function(idx){ return function(e){ e.stopPropagation(); seleccionarRubrica(idx); }; })(ri);
         actions.appendChild(btnUsar);
       }
 
@@ -9314,7 +9313,7 @@ function renderRubricas() {
       btnEdit.className = 'btn';
       btnEdit.style.cssText = 'font-size:11px;padding:5px 10px;';
       btnEdit.textContent = 'Editar';
-      btnEdit.onclick = (function(idx) { return function(e) { e.stopPropagation(); editarRubrica(idx); }; })(i);
+      btnEdit.onclick = (function(idx){ return function(e){ e.stopPropagation(); editarRubrica(idx); }; })(ri);
       actions.appendChild(btnEdit);
 
       if (rubricas.length > 1) {
@@ -9322,8 +9321,8 @@ function renderRubricas() {
         btnDel.className = 'btn btn-danger';
         btnDel.style.cssText = 'font-size:11px;padding:5px 9px;';
         btnDel.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-        btnDel.setAttribute('aria-label', 'Eliminar rúbrica');
-        btnDel.onclick = (function(idx) { return function(e) { e.stopPropagation(); eliminarRubrica(idx); }; })(i);
+        btnDel.setAttribute('aria-label', 'Eliminar');
+        btnDel.onclick = (function(idx){ return function(e){ e.stopPropagation(); eliminarRubrica(idx); }; })(ri);
         actions.appendChild(btnDel);
       }
 
@@ -9343,7 +9342,6 @@ function renderRubricas() {
   list.appendChild(frag);
   actualizarRubricaSelect();
 }
-
 function seleccionarRubrica(i) {
   rubricaActiva = i;
   localStorage.setItem('av_rubrica_activa', i);
