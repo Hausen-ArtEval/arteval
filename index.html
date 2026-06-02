@@ -4485,6 +4485,25 @@ button:focus-visible, .tab:focus-visible, .sub-tab:focus-visible {
         <div class="rubrica-form">
           <h3 id="formRubricaTitulo">Nueva rúbrica</h3>
           <input class="rubrica-nombre-input" id="rubricaNombreInput" placeholder="Nombre de la rúbrica (ej: Arte Románico 5°B)">
+          <!-- Curso y semestre — clasificación para las carpetas -->
+          <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:130px;">
+              <label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;font-family:'DM Mono',monospace;display:block;margin-bottom:4px;">Curso</label>
+              <input class="rubrica-nombre-input" id="rubricaCursoInput"
+                     placeholder="Ej: 5° Básico"
+                     style="margin-bottom:0;font-size:13px;"
+                     list="cursosSugeridos">
+              <datalist id="cursosSugeridos"></datalist>
+            </div>
+            <div style="min-width:110px;">
+              <label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;font-family:'DM Mono',monospace;display:block;margin-bottom:4px;">Semestre</label>
+              <select id="rubricaSemestreInput"
+                      style="width:100%;padding:9px 12px;border-radius:var(--rad);border:0.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:13px;font-family:var(--font-ui);">
+                <option value="1">1° Semestre</option>
+                <option value="2">2° Semestre</option>
+              </select>
+            </div>
+          </div>
           <div style="font-size:11px;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.4px;font-family:'DM Mono',monospace;">Criterios (cada uno vale MB=3 / L=2 / M=1 / N=0 pts)</div>
           <div id="critEditList"></div>
           <button class="btn-add-crit" onclick="agregarCritEditor()">+ Agregar criterio</button>
@@ -5681,7 +5700,38 @@ function actualizarResumen() {
   } catch(e) { console.warn('[ArtEval] actualizarResumen:', e.message); }
 }
 
-// ── Buscador de historial de correos ─────────────────────────────────────────
+// ── Detección automática de curso desde texto del documento Word ──────────────
+// Busca patrones como "6° BÁSICO", "7° B", "IIMedia", "KINDER" etc.
+function _detectarCursoDesdeTexto(texto) {
+  try {
+    var t = (texto || '').replace(/\s+/g, ' ').slice(0, 800); // analizar solo encabezado
+    // Patrón chileno: 1°-8° Básico, I-IV Medio
+    var patterns = [
+      /(\d+\s*[°º]\s*B[áa]sic[oa][\s\-A-Z]*)/i,   // "6° Básico A"
+      /([IVXLC]+\s*Medio[\s\-A-Z]*)/i,             // "III Medio B"
+      /(\d+\s*[°º]\s*[A-Z])\b/,                    // "6°A", "7° B"
+      /(Pre[\-\s]?Kinder|Kinder|Pre[\-\s]?Básica)/i,
+    ];
+    for (var p = 0; p < patterns.length; p++) {
+      var m = t.match(patterns[p]);
+      if (m) return m[1].trim().replace(/\s+/g, ' ');
+    }
+    return null;
+  } catch(e) { return null; }
+}
+
+// ── Detección automática de semestre desde texto del documento ──────────────
+// Busca "1° SEMESTRE", "SEGUNDO SEMESTRE", "EVALUACIÓN N°3" (→ sem 2), etc.
+function _detectarSemestreDesdeTexto(texto) {
+  try {
+    var t = (texto || '').toLowerCase().slice(0, 800);
+    if (/2[°º]\s*semestre|segundo\s*semestre|evaluaci[oó]n\s*[n°]*\s*[456]/i.test(t)) return 2;
+    if (/1[°º]\s*semestre|primer\s*semestre|evaluaci[oó]n\s*[n°]*\s*[123]/i.test(t))  return 1;
+    return null;
+  } catch(e) { return null; }
+}
+
+
 // Filtra las tarjetas .config-card[data-nombre-alumno] en tiempo real.
 // Solo lectura — no altera ningún dato ni dispara envíos.
 var _filtrarCorreoTimer = null;
@@ -6941,6 +6991,10 @@ function _registrosSemestre(sem) {
 
 // Inyectar el segmented control de semestre en los toolbars relevantes
 function _renderSemestreControls() {
+  // Sincronizar el filtro de carpetas de rúbricas con el semestre activo
+  if (_rubricasFiltroSem === null || _rubricasFiltroSem !== _semestreActivo) {
+    _rubricasFiltroSem = null; // reset para que use el semestre activo
+  }
   var p1 = document.getElementById('semPill1');
   var p2 = document.getElementById('semPill2');
   if (!p1 || !p2) return;
@@ -9027,20 +9081,27 @@ async function procesarRubricaWord(file) {
         throw new Error('No se encontraron criterios válidos. Verifica que la columna 1 de la tabla tenga el nombre de cada criterio.');
       }
 
-      // ── 6. Detectar nombre de la rúbrica ──────────────────────────────────
+      // ── 6. Detectar nombre, curso y semestre del documento ────────────────────
       var h1h2 = contenedorTemporal.querySelector('h1, h2, h3');
       var nombreRubrica = h1h2
         ? limpiarTexto(h1h2.textContent)
         : file.name.replace(/\.docx$/i, '').replace(/[-_]/g, ' ').trim();
       if (!nombreRubrica) nombreRubrica = 'Rúbrica importada';
 
-      // ── 7. Inyectar en el formulario de ArtEval ───────────────────────────
-      // NUNCA modifica rubricas[] directamente — abre el editor para que el
-      // profesor revise antes de guardar. Máxima seguridad de datos.
+      // Autodetección de curso y semestre desde texto del documento
+      var textoCompleto = contenedorTemporal.textContent || '';
+      var cursoDet = _detectarCursoDesdeTexto(textoCompleto);
+      var semDet   = _detectarSemestreDesdeTexto(textoCompleto);
+
+      // ── 7. Inyectar en el formulario ──────────────────────────────────────
       if (typeof mostrarFormRubrica === 'function') mostrarFormRubrica(null);
 
-      var nameInput = document.getElementById('rubricaNombreInput');
-      if (nameInput) nameInput.value = nombreRubrica;
+      var nameInput  = document.getElementById('rubricaNombreInput');
+      var cursoInput = document.getElementById('rubricaCursoInput');
+      var semInput   = document.getElementById('rubricaSemestreInput');
+      if (nameInput)  nameInput.value  = nombreRubrica;
+      if (cursoInput) cursoInput.value = cursoDet || '';
+      if (semInput)   semInput.value   = semDet || _semestreActivo || 1;
 
       if (typeof renderCritEditorList === 'function') {
         renderCritEditorList(criteriosExtraidos);
@@ -9050,22 +9111,22 @@ async function procesarRubricaWord(file) {
       var cont = document.getElementById('critEditList');
       if (cont) {
         cont.setAttribute('data-desc-mb', JSON.stringify(descripcionesExtraidas));
-        var inputs = cont.querySelectorAll('input[type="text"]');
-        inputs.forEach(function(inp, i) {
+        var inputsCrit = cont.querySelectorAll('input[type="text"]');
+        inputsCrit.forEach(function(inp, i) {
           if (!descripcionesExtraidas[i]) return;
           inp.title = 'MB (3pts): ' + descripcionesExtraidas[i];
           var hint = document.createElement('div');
           hint.className = '_word-desc-hint';
           hint.style.cssText = 'font-size:10px;color:var(--text3);margin:-2px 0 6px 24px;'
-            + 'line-height:1.35;overflow:hidden;text-overflow:ellipsis;'
-            + 'white-space:nowrap;font-style:italic;';
+            + 'line-height:1.4;overflow:hidden;text-overflow:ellipsis;'
+            + 'white-space:nowrap;font-style:italic;cursor:default;';
           hint.title       = descripcionesExtraidas[i];
-          hint.textContent = 'MB: ' + descripcionesExtraidas[i];
+          hint.textContent = '\u2605 MB: ' + descripcionesExtraidas[i];
           if (inp.parentNode) inp.parentNode.after(hint);
         });
       }
 
-      // ── 8. Feedback ────────────────────────────────────────────────────────
+// ── 8. Feedback ────────────────────────────────────────────────────────
       var n = criteriosExtraidos.length;
       mostrarToast('✅ Rúbrica cargada: ' + n + ' criterio' + (n !== 1 ? 's' : '')
                    + ' desde "' + file.name + '"', 4000);
@@ -9090,24 +9151,196 @@ async function procesarRubricaWord(file) {
   }
 }
 
+// ── Estado del filtro de semestre en la vista de rúbricas ─────────────────────
+var _rubricasFiltroSem = null; // null = usa _semestreActivo
+
 function renderRubricas() {
   const list = document.getElementById('rubricaList');
   if (!list) return;
-  list.innerHTML = '';
-  rubricas.forEach((r, i) => {
-    const div = document.createElement('div');
-    div.className = 'rubrica-card' + (i===rubricaActiva?' active':'');
-    div.innerHTML = `
-      <div class="rubrica-check"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>
-      <div class="rubrica-card-name">${r.nombre}</div>
-      <div class="rubrica-card-meta">${r.criterios.length} criterios · máx ${r.criterios.length*3} pts</div>
-      <div style="display:flex;gap:6px;margin-top:10px;">
-        <button class="btn" style="font-size:11px;padding:5px 10px;" onclick="event.stopPropagation();seleccionarRubrica(${i})">Usar esta</button>
-        <button class="btn" style="font-size:11px;padding:5px 10px;" onclick="event.stopPropagation();editarRubrica(${i})">Editar</button>
-        ${rubricas.length>1?`<button class="btn btn-danger" style="font-size:11px;padding:5px 10px;" onclick="event.stopPropagation();eliminarRubrica(${i})"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`:''}
-      </div>`;
-    list.appendChild(div);
+
+  // Determinar semestre de filtro
+  var semFiltro = _rubricasFiltroSem !== null ? _rubricasFiltroSem : (_semestreActivo || 1);
+
+  // Normalizar retrocompatibilidad: rúbricas antiguas sin curso/semestre
+  rubricas.forEach(function(r) {
+    if (!r.curso)    r.curso    = 'Sin clasificar';
+    if (!r.semestre) r.semestre = semFiltro; // asignar semestre activo como default
   });
+
+  // Filtrar por semestre activo
+  var rubsFiltradas = rubricas
+    .map(function(r, i) { return { r: r, i: i }; })
+    .filter(function(obj) { return obj.r.semestre == semFiltro; });
+
+  // Agrupar por curso
+  var porCurso = {};
+  rubsFiltradas.forEach(function(obj) {
+    var curso = obj.r.curso || 'Sin clasificar';
+    if (!porCurso[curso]) porCurso[curso] = [];
+    porCurso[curso].push(obj);
+  });
+  var cursosSorted = Object.keys(porCurso).sort(function(a,b) {
+    if (a === 'Sin clasificar') return 1;
+    if (b === 'Sin clasificar') return -1;
+    return a.localeCompare(b, 'es');
+  });
+
+  // Construir DOM con DocumentFragment — cero reflows intermedios
+  var frag = document.createDocumentFragment();
+
+  // ── Pills de semestre ─────────────────────────────────────────────────────
+  var pillsDiv = document.createElement('div');
+  pillsDiv.className = 'rubrica-sem-pills';
+  [1, 2].forEach(function(s) {
+    var pill = document.createElement('button');
+    pill.className = 'rubrica-sem-pill' + (s == semFiltro ? ' active' : '');
+    pill.textContent = s + '° Semestre';
+    pill.onclick = function() {
+      _rubricasFiltroSem = s;
+      renderRubricas();
+    };
+    pillsDiv.appendChild(pill);
+  });
+  frag.appendChild(pillsDiv);
+
+  if (!rubsFiltradas.length) {
+    var empty = document.createElement('div');
+    empty.className = 'rubrica-folder-empty';
+    empty.innerHTML = '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" style="display:block;margin:0 auto 10px;opacity:.3;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>'
+      + 'No hay rúbricas en el ' + semFiltro + '° semestre.<br><span style="font-size:11px;opacity:.7;">Crea una nueva o cambia el filtro de semestre.</span>';
+    frag.appendChild(empty);
+    list.innerHTML = '';
+    list.appendChild(frag);
+    actualizarRubricaSelect();
+    return;
+  }
+
+  // ── Carpetas por curso ────────────────────────────────────────────────────
+  cursosSorted.forEach(function(curso) {
+    var rubsDelCurso = porCurso[curso];
+    var isOpen = rubsDelCurso.some(function(obj) { return obj.i === rubricaActiva; });
+
+    var carpeta = document.createElement('div');
+    carpeta.className = 'rubrica-carpeta' + (isOpen ? ' open' : '');
+    carpeta.setAttribute('data-curso', curso);
+
+    // ── Header de carpeta
+    var header = document.createElement('div');
+    header.className = 'rubrica-carpeta-header';
+    header.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    header.onclick = function() {
+      carpeta.classList.toggle('open');
+      header.setAttribute('aria-expanded', carpeta.classList.contains('open') ? 'true' : 'false');
+    };
+
+    var icon = document.createElement('span');
+    icon.className = 'rubrica-carpeta-icon';
+    icon.textContent = isOpen ? '📂' : '📁';
+    // Actualizar icono al abrir/cerrar
+    header.addEventListener('click', function() {
+      setTimeout(function() {
+        icon.textContent = carpeta.classList.contains('open') ? '📂' : '📁';
+      }, 20);
+    }, { passive: true });
+
+    var tituloSpan = document.createElement('span');
+    tituloSpan.className = 'rubrica-carpeta-titulo';
+    tituloSpan.textContent = curso;
+
+    var badge = document.createElement('span');
+    badge.className = 'rubrica-carpeta-badge';
+    badge.textContent = rubsDelCurso.length + ' rúbrica' + (rubsDelCurso.length !== 1 ? 's' : '');
+
+    var chevron = document.createElement('svg');
+    chevron.setAttribute('width', '14'); chevron.setAttribute('height', '14');
+    chevron.setAttribute('viewBox', '0 0 24 24');
+    chevron.setAttribute('fill', 'none');
+    chevron.setAttribute('stroke', 'currentColor');
+    chevron.setAttribute('stroke-width', '2');
+    chevron.setAttribute('stroke-linecap', 'round');
+    chevron.className = 'rubrica-carpeta-chevron';
+    chevron.innerHTML = '<polyline points="9 18 15 12 9 6"/>';
+
+    header.appendChild(icon);
+    header.appendChild(tituloSpan);
+    header.appendChild(badge);
+    header.appendChild(chevron);
+
+    // ── Cuerpo de carpeta (accordion)
+    var body = document.createElement('div');
+    body.className = 'rubrica-carpeta-body';
+
+    var bodyInner = document.createElement('div');
+    bodyInner.className = 'rubrica-carpeta-body-inner';
+
+    rubsDelCurso.forEach(function(obj) {
+      var r = obj.r, i = obj.i;
+      var isActive = (i === rubricaActiva);
+
+      var card = document.createElement('div');
+      card.className = 'rubrica-card-mini' + (isActive ? ' active-rub' : '');
+
+      var dot = document.createElement('div');
+      dot.className = 'rubrica-card-mini-dot';
+
+      var info = document.createElement('div');
+      info.className = 'rubrica-card-mini-info';
+
+      var nombre = document.createElement('div');
+      nombre.className = 'rubrica-card-mini-nombre';
+      nombre.textContent = r.nombre;
+
+      var meta = document.createElement('div');
+      meta.className = 'rubrica-card-mini-meta';
+      meta.textContent = r.criterios.length + ' criterios · máx ' + (r.criterios.length * 3) + ' pts'
+        + (isActive ? ' · ✓ Activa' : '');
+
+      info.appendChild(nombre);
+      info.appendChild(meta);
+
+      var actions = document.createElement('div');
+      actions.className = 'rubrica-card-mini-actions';
+
+      if (!isActive) {
+        var btnUsar = document.createElement('button');
+        btnUsar.className = 'btn';
+        btnUsar.style.cssText = 'font-size:11px;padding:5px 10px;';
+        btnUsar.textContent = 'Usar';
+        btnUsar.onclick = (function(idx) { return function(e) { e.stopPropagation(); seleccionarRubrica(idx); }; })(i);
+        actions.appendChild(btnUsar);
+      }
+
+      var btnEdit = document.createElement('button');
+      btnEdit.className = 'btn';
+      btnEdit.style.cssText = 'font-size:11px;padding:5px 10px;';
+      btnEdit.textContent = 'Editar';
+      btnEdit.onclick = (function(idx) { return function(e) { e.stopPropagation(); editarRubrica(idx); }; })(i);
+      actions.appendChild(btnEdit);
+
+      if (rubricas.length > 1) {
+        var btnDel = document.createElement('button');
+        btnDel.className = 'btn btn-danger';
+        btnDel.style.cssText = 'font-size:11px;padding:5px 9px;';
+        btnDel.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+        btnDel.setAttribute('aria-label', 'Eliminar rúbrica');
+        btnDel.onclick = (function(idx) { return function(e) { e.stopPropagation(); eliminarRubrica(idx); }; })(i);
+        actions.appendChild(btnDel);
+      }
+
+      card.appendChild(dot);
+      card.appendChild(info);
+      card.appendChild(actions);
+      bodyInner.appendChild(card);
+    });
+
+    body.appendChild(bodyInner);
+    carpeta.appendChild(header);
+    carpeta.appendChild(body);
+    frag.appendChild(carpeta);
+  });
+
+  list.innerHTML = '';
+  list.appendChild(frag);
   actualizarRubricaSelect();
 }
 
@@ -9133,21 +9366,46 @@ function actualizarRubricaSelect() {
 
 function mostrarFormRubrica(idx=null) {
   editandoRubrica = idx;
-  const form = document.getElementById('formRubrica');
-  const titulo = document.getElementById('formRubricaTitulo');
+  const form      = document.getElementById('formRubrica');
+  const titulo    = document.getElementById('formRubricaTitulo');
   const nameInput = document.getElementById('rubricaNombreInput');
+  const cursoInput= document.getElementById('rubricaCursoInput');
+  const semInput  = document.getElementById('rubricaSemestreInput');
   if (!form) return;
+
+  // Poblar datalist de cursos con los cursos ya existentes
+  _actualizarCursosSugeridos();
+
   form.style.display = 'block';
   if (idx !== null) {
-    if (titulo) titulo.textContent = 'Editar rúbrica';
-    if (nameInput) nameInput.value = rubricas[idx].nombre;
-    renderCritEditorList(rubricas[idx].criterios);
+    const r = rubricas[idx];
+    if (titulo)    titulo.textContent = 'Editar rúbrica';
+    if (nameInput) nameInput.value    = r.nombre;
+    if (cursoInput) cursoInput.value  = r.curso    || '';
+    if (semInput)   semInput.value    = r.semestre || _semestreActivo || 1;
+    renderCritEditorList(r.criterios);
   } else {
-    if (titulo) titulo.textContent = 'Nueva rúbrica';
-    if (nameInput) nameInput.value = '';
+    if (titulo)    titulo.textContent = 'Nueva rúbrica';
+    if (nameInput) nameInput.value    = '';
+    if (cursoInput) cursoInput.value  = '';
+    if (semInput)   semInput.value    = _semestreActivo || 1;
     renderCritEditorList(['','','']);
   }
   form.scrollIntoView({ behavior: 'smooth' });
+}
+
+// Poblar datalist #cursosSugeridos con los cursos presentes en rubricas + listaCursos
+function _actualizarCursosSugeridos() {
+  var dl = document.getElementById('cursosSugeridos');
+  if (!dl) return;
+  var cursos = new Set();
+  rubricas.forEach(function(r) { if (r.curso && r.curso !== 'Sin clasificar') cursos.add(r.curso); });
+  if (typeof listaCursos !== 'undefined') {
+    Object.keys(listaCursos || {}).forEach(function(c) { cursos.add(c); });
+  }
+  dl.innerHTML = Array.from(cursos).sort().map(function(c) {
+    return '<option value="' + (c || '').replace(/"/g,'&quot;') + '">';
+  }).join('');
 }
 
 function editarRubrica(idx) { mostrarFormRubrica(idx); }
@@ -9239,17 +9497,22 @@ function guardarRubrica() {
   try { descMB = JSON.parse(cont.getAttribute('data-desc-mb') || '[]'); } catch(e) {}
 
   // Construir array de criterios: objeto {nombre, mb} si hay descripción, string si no
-  // Retrocompatible: el sistema acepta ambos formatos
   const crits = critNombres.map(function(nom, i) {
     var mb = (descMB[i] || '').trim();
     return mb ? { nombre: nom, mb: mb } : nom;
   });
 
+  // Leer curso y semestre del formulario
+  var curso    = (document.getElementById('rubricaCursoInput')?.value || '').trim() || 'Sin clasificar';
+  var semestre = parseInt(document.getElementById('rubricaSemestreInput')?.value || '1', 10);
+
+  const rubObj = { nombre, criterios: crits, curso: curso, semestre: semestre };
+
   if (editandoRubrica !== null) {
-    rubricas[editandoRubrica] = { nombre, criterios: crits };
+    rubricas[editandoRubrica] = rubObj;
     if (rubricaActiva === editandoRubrica) { evaluacion = {}; renderCriterios(); }
   } else {
-    rubricas.push({ nombre, criterios: crits });
+    rubricas.push(rubObj);
   }
   saveRubricas();
   cancelarFormRubrica();
@@ -13335,6 +13598,158 @@ input:focus, textarea:focus, select:focus {
     overflow: visible;
     background: var(--bg4);
   }
+}
+
+
+/* ══ CARPETAS DE RÚBRICAS — Sistema de archivos iOS ════════════════════════ */
+.rubrica-carpeta {
+  border: 0.5px solid var(--border);
+  border-radius: var(--rad-lg);
+  overflow: hidden;
+  margin-bottom: 10px;
+  background: var(--bg2);
+  transition: box-shadow 0.2s;
+}
+.rubrica-carpeta:hover { box-shadow: var(--shadow-sm); }
+
+.rubrica-carpeta-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 16px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s;
+}
+.rubrica-carpeta-header:hover  { background: var(--bg3); }
+.rubrica-carpeta-header:active { background: var(--bg4); }
+
+.rubrica-carpeta-icon {
+  font-size: 18px;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: transform 0.2s;
+}
+.rubrica-carpeta.open .rubrica-carpeta-icon { transform: rotate(0deg); }
+
+.rubrica-carpeta-titulo {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+.rubrica-carpeta-badge {
+  font-size: 11px;
+  background: var(--accent-bg);
+  color: var(--accent);
+  border: 0.5px solid var(--accent-border);
+  border-radius: 20px;
+  padding: 2px 9px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+.rubrica-carpeta-chevron {
+  color: var(--text3);
+  transition: transform 0.25s cubic-bezier(0.34,1.3,0.64,1);
+  flex-shrink: 0;
+}
+.rubrica-carpeta.open .rubrica-carpeta-chevron { transform: rotate(90deg); }
+
+/* Cuerpo de la carpeta — accordion suave */
+.rubrica-carpeta-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.32s cubic-bezier(0.4,0,0.2,1);
+}
+.rubrica-carpeta.open .rubrica-carpeta-body {
+  max-height: 2000px; /* suficiente para cualquier número de rúbricas */
+}
+.rubrica-carpeta-body-inner {
+  border-top: 0.5px solid var(--border);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Sem filter pills */
+.rubrica-sem-pills {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.rubrica-sem-pill {
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 0.5px solid var(--border);
+  background: var(--bg3);
+  color: var(--text2);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.rubrica-sem-pill.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+/* Tarjeta de rúbrica dentro de la carpeta */
+.rubrica-card-mini {
+  background: var(--bg3);
+  border: 0.5px solid var(--border);
+  border-radius: var(--rad);
+  padding: 12px 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  transition: border-color 0.15s, background 0.15s;
+}
+.rubrica-card-mini:hover { border-color: rgba(255,149,0,.35); background: var(--bg4); }
+.rubrica-card-mini.active-rub {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+.rubrica-card-mini-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--border2);
+  flex-shrink: 0;
+  margin-top: 5px;
+  transition: background 0.15s;
+}
+.rubrica-card-mini.active-rub .rubrica-card-mini-dot { background: var(--accent); }
+.rubrica-card-mini-info { flex: 1; min-width: 0; }
+.rubrica-card-mini-nombre {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rubrica-card-mini.active-rub .rubrica-card-mini-nombre { color: var(--accent); }
+.rubrica-card-mini-meta {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 2px;
+}
+.rubrica-card-mini-actions {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  flex-shrink: 0;
+}
+/* Empty state de carpetas */
+.rubrica-folder-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text3);
+  font-size: 13px;
 }
 
 </style></head><body>
