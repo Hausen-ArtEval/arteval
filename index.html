@@ -870,7 +870,7 @@ input[type="text"]:focus, textarea:focus, select:focus {
 .alumno-nota-sm { font-size: 13px; font-weight: 700; font-family: var(--font-mono); padding: 3px 10px; border-radius: 20px; }
 
 /* ── RÚBRICAS ────────────────────────────────────────────── */
-.rubrica-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); gap: 12px; margin-bottom: 20px; }
+.rubrica-list { display: flex; flex-direction: column; gap: 0; margin-bottom: 24px; }
 
 .rubrica-card { background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--rad-lg); padding: 16px; cursor: pointer; transition: all 0.15s; position: relative; }
 
@@ -3692,6 +3692,180 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
 @media(prefers-color-scheme:dark){
   .rub-seg{background:rgba(116,116,128,.22);}
   .rub-folder{box-shadow:0 1px 3px rgba(0,0,0,.28);}
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RÚBRICAS — Lista vertical iOS con carpetas por semestre/curso
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Segmented control semestre */
+.rub-seg {
+  display: flex; gap: 3px;
+  background: rgba(116,116,128,.12);
+  border-radius: 12px; padding: 3px;
+  margin: 0 0 20px;
+}
+.rub-seg-btn {
+  flex: 1; text-align: center; padding: 8px 6px;
+  border-radius: 9px; border: none;
+  font-size: 13px; font-weight: 500;
+  font-family: var(--font-ui); color: var(--text3);
+  background: transparent; cursor: pointer;
+  transition: background .15s, color .15s, box-shadow .15s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation; line-height: 1.3;
+}
+.rub-seg-btn.active {
+  background: var(--bg2); color: var(--accent);
+  font-weight: 700;
+  box-shadow: 0 1px 4px rgba(0,0,0,.10), 0 .5px 1.5px rgba(0,0,0,.07);
+}
+.rub-seg-btn:active:not(.active) { opacity: .65; }
+
+/* Carpeta */
+.rub-folder {
+  background: var(--bg2);
+  border: 0.5px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
+  transition: box-shadow .18s;
+}
+.rub-folder:hover { box-shadow: 0 3px 10px rgba(0,0,0,.09); }
+
+/* Header carpeta */
+.rub-folder-hdr {
+  display: flex; align-items: center; gap: 11px;
+  padding: 13px 16px; cursor: pointer;
+  user-select: none; -webkit-tap-highlight-color: transparent;
+  background: var(--bg2); transition: background .12s;
+}
+.rub-folder-hdr:hover  { background: rgba(0,0,0,.025); }
+.rub-folder-hdr:active { background: rgba(0,0,0,.055); }
+
+/* Ícono de carpeta — SF-style SVG, no emoji */
+.rub-folder-ico {
+  width: 36px; height: 36px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--accent-bg);
+  border: 0.5px solid var(--accent-border);
+  border-radius: 10px;
+  color: var(--accent);
+}
+.rub-folder-ico svg { display: block; }
+
+.rub-folder-txt { flex: 1; min-width: 0; }
+.rub-folder-title {
+  font-size: 14px; font-weight: 700;
+  color: var(--text); letter-spacing: -.15px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.rub-folder-sub {
+  font-size: 11px; color: var(--text3);
+  font-family: var(--font-mono); margin-top: 1px;
+}
+.rub-folder-chev {
+  color: var(--text3); flex-shrink: 0; opacity: .45;
+  transition: transform .22s cubic-bezier(.34,1.3,.64,1),
+              color .15s, opacity .15s;
+}
+.rub-folder.open .rub-folder-chev {
+  transform: rotate(90deg);
+  color: var(--accent); opacity: 1;
+}
+
+/* Accordion body */
+.rub-folder-body {
+  max-height: 0; overflow: hidden;
+  transition: max-height .32s cubic-bezier(.4,0,.2,1);
+}
+.rub-folder.open .rub-folder-body { max-height: 3200px; }
+
+.rub-folder-inner {
+  border-top: 0.5px solid var(--border);
+  padding: 6px; background: var(--bg3);
+  display: flex; flex-direction: column; gap: 5px;
+}
+
+/* Tarjeta de rúbrica */
+.rub-card {
+  background: var(--bg2);
+  border: 0.5px solid var(--border);
+  border-radius: 11px;
+  padding: 11px 14px;
+  display: flex; align-items: center; gap: 11px;
+  transition: border-color .12s, background .12s, box-shadow .12s;
+}
+.rub-card:hover {
+  border-color: rgba(255,149,0,.30);
+  background: var(--bg3);
+}
+.rub-card.rub-active {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+  box-shadow: 0 0 0 3px rgba(255,149,0,.10);
+}
+
+/* Dot de estado */
+.rub-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--border2); flex-shrink: 0;
+  transition: background .15s, box-shadow .15s, transform .15s;
+}
+.rub-card.rub-active .rub-dot {
+  background: var(--accent); transform: scale(1.35);
+  box-shadow: 0 0 0 3px rgba(255,149,0,.20);
+}
+
+/* Info */
+.rub-info { flex: 1; min-width: 0; }
+.rub-nombre {
+  font-size: 13px; font-weight: 600;
+  color: var(--text); letter-spacing: -.1px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.rub-card.rub-active .rub-nombre { color: var(--accent); }
+.rub-meta {
+  font-size: 11px; color: var(--text3);
+  font-family: var(--font-mono); margin-top: 2px;
+}
+
+/* Acciones — alineadas a la derecha */
+.rub-actions {
+  display: flex; gap: 4px; align-items: center;
+  flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end;
+}
+
+/* Botón mover semestre */
+.rub-move-btn {
+  font-size: 10px; font-weight: 600;
+  padding: 4px 9px; border-radius: 7px;
+  border: 0.5px solid var(--accent-border);
+  background: var(--accent-bg); color: var(--accent);
+  cursor: pointer; font-family: var(--font-ui);
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity .12s, transform .1s;
+}
+.rub-move-btn:hover   { opacity: .80; }
+.rub-move-btn:active  { transform: scale(.96); opacity: .70; }
+
+/* Empty state */
+.rub-empty {
+  text-align: center; padding: 48px 20px;
+  color: var(--text3); font-size: 13px;
+  font-family: var(--font-ui); line-height: 1.6;
+  background: var(--bg2); border: 0.5px solid var(--border);
+  border-radius: 14px;
+}
+.rub-empty svg { opacity: .22; margin: 0 auto 14px; display: block; }
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .rub-seg { background: rgba(116,116,128,.22); }
+  .rub-folder:hover { box-shadow: 0 3px 10px rgba(0,0,0,.22); }
+  .rub-folder-hdr:hover  { background: rgba(255,255,255,.04); }
+  .rub-folder-hdr:active { background: rgba(255,255,255,.08); }
 }
 </style>
 
@@ -9894,7 +10068,7 @@ function renderRubricas() {
   var list = document.getElementById('rubricaList');
   if (!list) return;
 
-  // Normalizar retrocompat
+  /* Normalizar retrocompat */
   var semActivo = parseInt(_semestreActivo || 1, 10);
   rubricas.forEach(function(r) {
     if (!r.curso || r.curso === '') r.curso = 'Sin clasificar';
@@ -9904,14 +10078,12 @@ function renderRubricas() {
 
   var semFiltro = (_rubricasFiltroSem !== null && _rubricasFiltroSem !== undefined)
     ? parseInt(_rubricasFiltroSem, 10) : semActivo;
-
   var otroSem = semFiltro === 1 ? 2 : 1;
 
-  // Filtrar y agrupar por curso
+  /* Filtrar y agrupar por curso */
   var filtradas = rubricas
     .map(function(r, i) { return { r: r, i: i }; })
     .filter(function(o) { return o.r.semestre === semFiltro; });
-
   var grupos = {};
   filtradas.forEach(function(o) {
     var c = o.r.curso || 'Sin clasificar';
@@ -9926,80 +10098,89 @@ function renderRubricas() {
 
   var frag = document.createDocumentFragment();
 
-  // ── Segmented control con conteo ─────────────────────────────────────────
+  /* ── Segmented control con conteo por semestre ─────────────────────────── */
   var seg = document.createElement('div');
   seg.className = 'rub-seg';
   [1, 2].forEach(function(s) {
     var cnt = rubricas.filter(function(r) { return parseInt(r.semestre || 1) === s; }).length;
     var btn = document.createElement('button');
     btn.className = 'rub-seg-btn' + (s === semFiltro ? ' active' : '');
-    btn.innerHTML = s + '\u00b0 Semestre'
-      + (cnt > 0 ? ' <span style="font-size:10px;font-family:var(--font-mono);opacity:.65;font-weight:500;">(' + cnt + ')</span>' : '');
+    btn.innerHTML = s + '\u00b0&nbsp;Semestre'
+      + (cnt > 0 ? '<br><span style="font-size:9px;font-family:var(--font-mono);opacity:.6;font-weight:400;">'
+         + cnt + (cnt === 1 ? ' r\u00fabrica' : ' r\u00fabricas') + '</span>' : '');
     btn.onclick = function() { _rubricasFiltroSem = s; renderRubricas(); };
     seg.appendChild(btn);
   });
   frag.appendChild(seg);
 
-  // ── Empty state ───────────────────────────────────────────────────────────
+  /* ── Empty state ───────────────────────────────────────────────────────── */
   if (!filtradas.length) {
     var em = document.createElement('div');
     em.className = 'rub-empty';
-    em.innerHTML = '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" style="display:block;margin:0 auto 14px;opacity:.2;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>'
-      + '<strong>Sin r\u00fabricas en el ' + semFiltro + '\u00b0 semestre</strong><br>'
-      + '<span style="font-size:12px;">Crea una nueva con &ldquo;+ Nueva r\u00fabrica&rdquo;<br>'
-      + 'o mueve una del ' + otroSem + '\u00b0 semestre usando el bot\u00f3n \u201c\u2192 Sem\u201d.</span>';
+    em.innerHTML = '<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>'
+      + '<strong style="display:block;margin-bottom:6px;color:var(--text);">Sin r\u00fabricas en el ' + semFiltro + '\u00b0 semestre</strong>'
+      + '<span style="font-size:12px;">Crea una con \u201c+ Nueva r\u00fabrica\u201d<br>o mueve una del ' + otroSem + '\u00b0 semestre usando \u201c\u2192 Sem\u201d.</span>';
     frag.appendChild(em);
-    list.innerHTML = '';
-    list.appendChild(frag);
-    actualizarRubricaSelect();
-    return;
+    list.innerHTML = ''; list.appendChild(frag);
+    actualizarRubricaSelect(); return;
   }
 
-  // ── Carpetas por curso ────────────────────────────────────────────────────
+  /* ── Carpetas por curso ────────────────────────────────────────────────── */
   cursos.forEach(function(curso) {
-    var items     = grupos[curso];
-    var tieneAct  = items.some(function(o) { return o.i === rubricaActiva; });
-    var isOpen    = tieneAct || cursos.length === 1 || items.length <= 3;
+    var items    = grupos[curso];
+    var tieneAct = items.some(function(o) { return o.i === rubricaActiva; });
+    var isOpen   = tieneAct || cursos.length === 1 || items.length <= 3;
 
     var folder = document.createElement('div');
     folder.className = 'rub-folder' + (isOpen ? ' open' : '');
 
-    // Header
+    /* Header */
     var hdr = document.createElement('div');
     hdr.className = 'rub-folder-hdr';
     hdr.setAttribute('role', 'button');
     hdr.setAttribute('aria-expanded', String(isOpen));
 
-    var icon = document.createElement('span');
-    icon.className = 'rub-folder-icon';
-    icon.setAttribute('aria-hidden', 'true');
-    icon.textContent = isOpen ? '\uD83D\uDCC2' : '\uD83D\uDCC1';
+    /* Ícono SVG (no emoji) */
+    var icoWrap = document.createElement('div');
+    icoWrap.className = 'rub-folder-ico';
+    var icoSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    icoSvg.setAttribute('width', '18'); icoSvg.setAttribute('height', '18');
+    icoSvg.setAttribute('viewBox', '0 0 24 24'); icoSvg.setAttribute('fill', 'none');
+    icoSvg.setAttribute('stroke', 'currentColor'); icoSvg.setAttribute('stroke-width', '2');
+    icoSvg.setAttribute('stroke-linecap', 'round'); icoSvg.setAttribute('stroke-linejoin', 'round');
+    icoSvg.innerHTML = isOpen
+      ? '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>'
+      : '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>';
+    icoWrap.appendChild(icoSvg);
 
-    var name = document.createElement('span');
-    name.className = 'rub-folder-name';
-    name.textContent = curso;
+    /* Texto */
+    var txt = document.createElement('div');
+    txt.className = 'rub-folder-txt';
+    var title = document.createElement('div');
+    title.className = 'rub-folder-title';
+    title.textContent = curso;
+    var sub = document.createElement('div');
+    sub.className = 'rub-folder-sub';
+    sub.textContent = items.length + (items.length === 1 ? ' r\u00fabrica' : ' r\u00fabricas')
+      + ' \u00b7 ' + semFiltro + '\u00b0 semestre';
+    txt.appendChild(title); txt.appendChild(sub);
 
-    var badge = document.createElement('span');
-    badge.className = 'rub-folder-badge';
-    badge.textContent = items.length + (items.length === 1 ? ' r\u00fabrica' : ' r\u00fabricas');
+    /* Chevron SVG */
+    var chevSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    chevSvg.setAttribute('width', '15'); chevSvg.setAttribute('height', '15');
+    chevSvg.setAttribute('viewBox', '0 0 24 24'); chevSvg.setAttribute('fill', 'none');
+    chevSvg.setAttribute('stroke', 'currentColor'); chevSvg.setAttribute('stroke-width', '2.5');
+    chevSvg.setAttribute('stroke-linecap', 'round');
+    chevSvg.className = 'rub-folder-chev';
+    chevSvg.innerHTML = '<polyline points="9 18 15 12 9 6"/>';
 
-    var chev = document.createElement('svg');
-    chev.setAttribute('width', '14'); chev.setAttribute('height', '14');
-    chev.setAttribute('viewBox', '0 0 24 24'); chev.setAttribute('fill', 'none');
-    chev.setAttribute('stroke', 'currentColor'); chev.setAttribute('stroke-width', '2.5');
-    chev.setAttribute('stroke-linecap', 'round');
-    chev.className = 'rub-folder-chev';
-    chev.innerHTML = '<polyline points="9 18 15 12 9 6"/>';
-
-    hdr.appendChild(icon); hdr.appendChild(name);
-    hdr.appendChild(badge); hdr.appendChild(chev);
+    hdr.appendChild(icoWrap); hdr.appendChild(txt); hdr.appendChild(chevSvg);
     hdr.onclick = function() {
       var open = folder.classList.toggle('open');
       hdr.setAttribute('aria-expanded', String(open));
-      icon.textContent = open ? '\uD83D\uDCC2' : '\uD83D\uDCC1';
     };
 
-    // Body
+    /* Body accordion */
     var body  = document.createElement('div'); body.className  = 'rub-folder-body';
     var inner = document.createElement('div'); inner.className = 'rub-folder-inner';
 
@@ -10012,36 +10193,37 @@ function renderRubricas() {
       var dot = document.createElement('div'); dot.className = 'rub-dot';
 
       var info = document.createElement('div'); info.className = 'rub-info';
-      var nom  = document.createElement('div'); nom.className  = 'rub-nombre'; nom.textContent = r.nombre;
+      var nom  = document.createElement('div'); nom.className  = 'rub-nombre';
+      nom.textContent = r.nombre;
       var meta = document.createElement('div'); meta.className = 'rub-meta';
-      meta.textContent = r.criterios.length + ' criterios \u00b7 m\u00e1x '
-        + (r.criterios.length * 3) + ' pts' + (isAct ? ' \u00b7 \u2713 En uso' : '');
+      meta.textContent = r.criterios.length + ' criterios\u00a0\u00b7\u00a0m\u00e1x '
+        + (r.criterios.length * 3) + ' pts' + (isAct ? '\u00a0\u00b7\u00a0\u2713 En uso' : '');
       info.appendChild(nom); info.appendChild(meta);
 
       var acts = document.createElement('div'); acts.className = 'rub-actions';
 
-      // Botón Usar
+      /* Usar */
       if (!isAct) {
-        var bUsar = document.createElement('button');
-        bUsar.className = 'btn'; bUsar.style.cssText = 'font-size:11px;padding:5px 11px;';
-        bUsar.textContent = 'Usar';
-        bUsar.onclick = (function(i) { return function(e) { e.stopPropagation(); seleccionarRubrica(i); }; })(ri);
-        acts.appendChild(bUsar);
+        var bU = document.createElement('button');
+        bU.className = 'btn'; bU.style.cssText = 'font-size:11px;padding:5px 12px;';
+        bU.textContent = 'Usar';
+        bU.onclick = (function(i) { return function(e) { e.stopPropagation(); seleccionarRubrica(i); }; })(ri);
+        acts.appendChild(bU);
       }
 
-      // Botón Editar
-      var bEdit = document.createElement('button');
-      bEdit.className = 'btn'; bEdit.style.cssText = 'font-size:11px;padding:5px 11px;';
-      bEdit.textContent = 'Editar';
-      bEdit.onclick = (function(i) { return function(e) { e.stopPropagation(); editarRubrica(i); }; })(ri);
-      acts.appendChild(bEdit);
+      /* Editar */
+      var bE = document.createElement('button');
+      bE.className = 'btn'; bE.style.cssText = 'font-size:11px;padding:5px 12px;';
+      bE.textContent = 'Editar';
+      bE.onclick = (function(i) { return function(e) { e.stopPropagation(); editarRubrica(i); }; })(ri);
+      acts.appendChild(bE);
 
-      // Botón Mover semestre — siempre visible, muy claro
-      var bMover = document.createElement('button');
-      bMover.className = 'rub-btn-mover';
-      bMover.innerHTML = '\u2192&nbsp;' + otroSem + '\u00b0&nbsp;Sem';
-      bMover.title = 'Mover al ' + otroSem + '\u00b0 semestre';
-      bMover.onclick = (function(i, s) {
+      /* Mover semestre */
+      var bM = document.createElement('button');
+      bM.className = 'rub-move-btn';
+      bM.innerHTML = '\u2192\u00a0' + otroSem + '\u00b0\u00a0Sem';
+      bM.title = 'Mover al ' + otroSem + '\u00b0 semestre';
+      bM.onclick = (function(i, s) {
         return function(e) {
           e.stopPropagation();
           rubricas[i].semestre = s;
@@ -10050,16 +10232,16 @@ function renderRubricas() {
           renderRubricas();
         };
       })(ri, otroSem);
-      acts.appendChild(bMover);
+      acts.appendChild(bM);
 
-      // Botón Eliminar
+      /* Eliminar */
       if (rubricas.length > 1) {
-        var bDel = document.createElement('button');
-        bDel.className = 'btn btn-danger'; bDel.style.cssText = 'font-size:11px;padding:5px 9px;';
-        bDel.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-        bDel.setAttribute('aria-label', 'Eliminar r\u00fabrica');
-        bDel.onclick = (function(i) { return function(e) { e.stopPropagation(); eliminarRubrica(i); }; })(ri);
-        acts.appendChild(bDel);
+        var bD = document.createElement('button');
+        bD.className = 'btn btn-danger'; bD.style.cssText = 'font-size:11px;padding:5px 9px;';
+        bD.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+        bD.setAttribute('aria-label', 'Eliminar');
+        bD.onclick = (function(i) { return function(e) { e.stopPropagation(); eliminarRubrica(i); }; })(ri);
+        acts.appendChild(bD);
       }
 
       card.appendChild(dot); card.appendChild(info); card.appendChild(acts);
@@ -10071,8 +10253,7 @@ function renderRubricas() {
     frag.appendChild(folder);
   });
 
-  list.innerHTML = '';
-  list.appendChild(frag);
+  list.innerHTML = ''; list.appendChild(frag);
   actualizarRubricaSelect();
 }
 
