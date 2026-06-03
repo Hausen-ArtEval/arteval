@@ -3867,6 +3867,35 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
   .rub-folder-hdr:hover  { background: rgba(255,255,255,.04); }
   .rub-folder-hdr:active { background: rgba(255,255,255,.08); }
 }
+
+/* ── MB editable — textarea bajo cada criterio ──────────────────────────── */
+.crit-mb-wrap {
+  display: flex; align-items: flex-start; gap: 6px;
+  margin: -2px 0 8px 26px;
+}
+.crit-mb-label {
+  font-size: 10px; font-weight: 700; font-family: var(--font-mono);
+  color: var(--accent); background: var(--accent-bg);
+  border: 0.5px solid var(--accent-border); border-radius: 5px;
+  padding: 3px 6px; white-space: nowrap; flex-shrink: 0;
+  margin-top: 6px; letter-spacing: .2px;
+}
+.crit-mb-input {
+  flex: 1; font-size: 11px; font-family: var(--font-ui);
+  color: var(--text2); background: var(--bg3);
+  border: 0.5px solid var(--border); border-radius: 8px;
+  padding: 6px 10px; resize: vertical; min-height: 38px;
+  line-height: 1.45; outline: none;
+  transition: border-color .15s, box-shadow .15s, background .15s;
+  font-style: italic; -webkit-appearance: none;
+  width: 100%; box-sizing: border-box;
+}
+.crit-mb-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(255,149,0,0.10);
+  background: var(--bg2); font-style: normal; color: var(--text);
+}
+.crit-mb-input::placeholder { color: var(--text3); opacity: .7; font-style: italic; }
 </style>
 
 <script>
@@ -10025,14 +10054,13 @@ async function procesarRubricaWord(file) {
         inputsCrit.forEach(function(inp, i) {
           if (!descripcionesExtraidas[i]) return;
           inp.title = 'MB (3pts): ' + descripcionesExtraidas[i];
-          var hint = document.createElement('div');
-          hint.className = '_word-desc-hint';
-          hint.style.cssText = 'font-size:10px;color:var(--text3);margin:-2px 0 6px 24px;'
-            + 'line-height:1.4;overflow:hidden;text-overflow:ellipsis;'
-            + 'white-space:nowrap;font-style:italic;cursor:default;';
-          hint.title       = descripcionesExtraidas[i];
-          hint.textContent = '\u2605 MB: ' + descripcionesExtraidas[i];
-          if (inp.parentNode) inp.parentNode.after(hint);
+          // Actualizar el textarea MB editable con el descriptor importado
+          var mbTa = cont.querySelector('#cr-mb-' + i);
+          if (mbTa) {
+            mbTa.value = descripcionesExtraidas[i];
+            mbTa.style.height = 'auto';
+            mbTa.style.height = Math.max(38, mbTa.scrollHeight) + 'px';
+          }
         });
       }
 
@@ -10334,64 +10362,155 @@ function renderCritEditorList(crits) {
   if (!cont) return;
   cont.innerHTML = '';
 
-  // Separar nombres y descripciones MB (retrocompatible: criterio puede ser string u objeto)
+  // Retrocompat: criterio puede ser string u objeto {nombre, mb}
   var descMBActuales = [];
 
   crits.forEach((c, i) => {
-    // Normalizar: string → {nombre, mb:''}
     var nombre = typeof c === 'object' && c !== null ? (c.nombre || '') : (c || '');
     var mb     = typeof c === 'object' && c !== null ? (c.mb     || '') : '';
     descMBActuales[i] = mb;
 
-    const div = document.createElement('div');
-    div.className = 'crit-editor-row';
-    div.innerHTML = `
+    // ── Fila del nombre del criterio ──────────────────────────────────────
+    const rowDiv = document.createElement('div');
+    rowDiv.className = 'crit-editor-row';
+    rowDiv.innerHTML = `
       <span style="font-size:11px;color:var(--text3);min-width:20px;font-family:'DM Mono',monospace;">${i+1}</span>
       <input type="text" value="${_esc ? _esc(nombre) : nombre}" id="cr-${i}" placeholder="Nombre del criterio">
       <button class="btn-del-crit" onclick="eliminarCritEditor(${i})">×</button>`;
-    cont.appendChild(div);
+    cont.appendChild(rowDiv);
 
-    // Hint de descripción MB importada (si existe), editable opcionalmente
+    // ── Descripción MB editable — siempre visible ─────────────────────────
+    // El profesor puede escribir el descriptor "Muy Bien logrado" directamente
+    const mbWrap = document.createElement('div');
+    mbWrap.className = 'crit-mb-wrap';
+
+    const mbLabel = document.createElement('span');
+    mbLabel.className = 'crit-mb-label';
+    mbLabel.textContent = '★ MB';
+    mbLabel.title = 'Descriptor de nivel Muy Bien logrado (3 pts)';
+
+    const mbInput = document.createElement('textarea');
+    mbInput.className = 'crit-mb-input';
+    mbInput.id = 'cr-mb-' + i;
+    mbInput.rows = 2;
+    mbInput.placeholder = 'Descriptor Muy Bien logrado (opcional)…';
+    mbInput.value = mb;
+    // Auto-resize al escribir
+    mbInput.oninput = function() {
+      this.style.height = 'auto';
+      this.style.height = Math.max(38, this.scrollHeight) + 'px';
+      // Actualizar data-desc-mb en tiempo real para que guardarRubrica() lo lea
+      _actualizarDescMB(cont);
+    };
+    // Ajustar altura inicial si tiene contenido
     if (mb) {
-      var hint = document.createElement('div');
-      hint.className = '_word-desc-hint';
-      hint.style.cssText = 'font-size:10px;color:var(--text3);margin:-2px 0 6px 24px;'
-        + 'line-height:1.4;overflow:hidden;text-overflow:ellipsis;'
-        + 'white-space:nowrap;font-style:italic;cursor:default;';
-      hint.title = mb;
-      hint.textContent = '★ MB: ' + mb;
-      cont.appendChild(hint);
+      setTimeout(function() {
+        mbInput.style.height = 'auto';
+        mbInput.style.height = Math.max(38, mbInput.scrollHeight) + 'px';
+      }, 0);
     }
+
+    mbWrap.appendChild(mbLabel);
+    mbWrap.appendChild(mbInput);
+    cont.appendChild(mbWrap);
   });
 
-  // Persistir las descripciones MB en el contenedor para que guardarRubrica() las lea
+  // Guardar estado inicial
   cont.setAttribute('data-desc-mb', JSON.stringify(descMBActuales));
+}
+
+// Leer todos los textareas de MB y actualizar data-desc-mb
+function _actualizarDescMB(cont) {
+  var c = cont || document.getElementById('critEditList');
+  if (!c) return;
+  var rows = c.querySelectorAll('input[type="text"][id^="cr-"]');
+  var descMB = [];
+  rows.forEach(function(inp, i) {
+    var ta = c.querySelector('#cr-mb-' + i);
+    descMB.push(ta ? ta.value.trim() : '');
+  });
+  c.setAttribute('data-desc-mb', JSON.stringify(descMB));
 }
 
 function agregarCritEditor() {
   const cont = document.getElementById('critEditList');
   if (!cont) return;
-  const i = cont.children.length;
-  const div = document.createElement('div'); div.className = 'crit-editor-row';
-  div.innerHTML = `
+  // Contar solo los inputs de nombre (no los textarea MB)
+  const i = cont.querySelectorAll('input[type="text"][id^="cr-"]').length;
+
+  // Fila del nombre
+  const rowDiv = document.createElement('div');
+  rowDiv.className = 'crit-editor-row';
+  rowDiv.innerHTML = `
     <span style="font-size:11px;color:var(--text3);min-width:20px;font-family:'DM Mono',monospace;">${i+1}</span>
     <input type="text" id="cr-${i}" placeholder="Nombre del criterio">
     <button class="btn-del-crit" onclick="eliminarCritEditor(${i})">×</button>`;
-  cont.appendChild(div);
+  cont.appendChild(rowDiv);
+
+  // Textarea MB
+  const mbWrap = document.createElement('div');
+  mbWrap.className = 'crit-mb-wrap';
+  const mbLabel = document.createElement('span');
+  mbLabel.className = 'crit-mb-label';
+  mbLabel.textContent = '★ MB';
+  mbLabel.title = 'Descriptor de nivel Muy Bien logrado (3 pts)';
+  const mbInput = document.createElement('textarea');
+  mbInput.className = 'crit-mb-input';
+  mbInput.id = 'cr-mb-' + i;
+  mbInput.rows = 2;
+  mbInput.placeholder = 'Descriptor Muy Bien logrado (opcional)…';
+  mbInput.oninput = function() {
+    this.style.height = 'auto';
+    this.style.height = Math.max(38, this.scrollHeight) + 'px';
+    _actualizarDescMB(cont);
+  };
+  mbWrap.appendChild(mbLabel);
+  mbWrap.appendChild(mbInput);
+  cont.appendChild(mbWrap);
+
+  // Foco en el nuevo input de nombre
+  setTimeout(function() {
+    var inp = document.getElementById('cr-' + i);
+    if (inp) inp.focus();
+  }, 30);
 }
 
 function eliminarCritEditor(i) {
   const cont = document.getElementById('critEditList');
-  if (!cont || cont.children.length <= 2) { toast('⚠️ Mínimo 2 criterios requeridos', 'err'); return; }
-  cont.children[i]?.remove();
-  Array.from(cont.children).forEach((row, j) => {
-    const numEl = row.querySelector('span');
-    const inp = row.querySelector('input');
-    if (numEl) numEl.textContent = j+1;
-    if (inp) inp.id = `cr-${j}`;
-    const btn = row.querySelector('button');
-    if (btn) btn.setAttribute('onclick', `eliminarCritEditor(${j})`);
+  if (!cont) return;
+  const totalCrits = cont.querySelectorAll('input[type="text"][id^="cr-"]').length;
+  if (totalCrits <= 2) { toast('⚠️ Mínimo 2 criterios requeridos', 'err'); return; }
+
+  // Eliminar la fila del nombre (crit-editor-row con input #cr-i)
+  const nameRow = cont.querySelector('.crit-editor-row:has(#cr-' + i + ')');
+  if (!nameRow) {
+    // Fallback: buscar por posición en las filas de nombre
+    const rows = Array.from(cont.querySelectorAll('.crit-editor-row'));
+    if (rows[i]) rows[i].remove();
+  } else {
+    nameRow.remove();
+  }
+  // Eliminar el textarea MB correspondiente
+  const mbWrap = cont.querySelector('#cr-mb-' + i)?.closest('.crit-mb-wrap');
+  if (mbWrap) mbWrap.remove();
+
+  // Reindexar numeración en los elementos restantes
+  const nameInputs = Array.from(cont.querySelectorAll('input[type="text"][id^="cr-"]'));
+  const mbInputs   = Array.from(cont.querySelectorAll('textarea[id^="cr-mb-"]'));
+  nameInputs.forEach(function(inp, j) {
+    inp.id = 'cr-' + j;
+    const row = inp.closest('.crit-editor-row');
+    if (row) {
+      const numSpan = row.querySelector('span');
+      if (numSpan) numSpan.textContent = j + 1;
+      const btn = row.querySelector('button');
+      if (btn) btn.setAttribute('onclick', 'eliminarCritEditor(' + j + ')');
+    }
   });
+  mbInputs.forEach(function(ta, j) {
+    ta.id = 'cr-mb-' + j;
+  });
+  _actualizarDescMB(cont);
 }
 
 function guardarRubrica() {
@@ -10401,13 +10520,16 @@ function guardarRubrica() {
   if (!cont) return;
 
   // Leer nombres de criterios desde los inputs
-  const inputs = Array.from(cont.querySelectorAll('input[type="text"]'));
+  const inputs = Array.from(cont.querySelectorAll('input[type="text"][id^="cr-"]'));
   const critNombres = inputs.map(i => i.value.trim()).filter(Boolean);
   if (critNombres.length < 2) { toast('⚠️ Agrega al menos 2 criterios', 'err'); return; }
 
-  // Leer descripciones MB importadas desde Word (guardadas en data-desc-mb)
-  var descMB = [];
-  try { descMB = JSON.parse(cont.getAttribute('data-desc-mb') || '[]'); } catch(e) {}
+  // Leer descripciones MB desde los textareas editables (fuente de verdad actual)
+  // Esto garantiza que ediciones manuales del profesor se guarden correctamente
+  var descMB = critNombres.map(function(_, i) {
+    var ta = cont.querySelector('#cr-mb-' + i);
+    return ta ? ta.value.trim() : '';
+  });
 
   // Construir array de criterios: objeto {nombre, mb} si hay descripción, string si no
   const crits = critNombres.map(function(nom, i) {
