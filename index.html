@@ -4525,6 +4525,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
       </div>
 
       <!-- ONBOARDING — solo visible cuando no hay datos ni nómina cargada -->
+      <!-- ONBOARDING: se muestra solo la primera vez hasta completar los 4 pasos -->
       <div id="dashOnboarding" style="display:none;margin-bottom:20px;">
         <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rad-xl);padding:28px 28px 24px;box-shadow:var(--shadow-sm);">
           <div style="display:flex;align-items:center;gap:14px;margin-bottom:22px;">
@@ -4594,8 +4595,16 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
             <span style="font-size:13px;font-weight:700;color:var(--text);">Pendientes hoy</span>
             <span id="dashPendientesBadge" style="font-size:10px;font-weight:700;font-family:var(--font-mono);background:var(--accent);color:#fff;border-radius:20px;padding:1px 8px;"></span>
           </div>
-          <button onclick="document.getElementById('dashPendientesWrap').style.display='none'"
-            style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:18px;padding:0 4px;line-height:1;" title="Ocultar">×</button>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <button onclick="_copiarListaPendientes()"
+              style="background:none;border:0.5px solid var(--border);border-radius:8px;cursor:pointer;color:var(--text3);font-size:11px;padding:3px 9px;font-family:var(--font-ui);display:inline-flex;align-items:center;gap:4px;"
+              title="Copiar lista para WhatsApp o libro de clases">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copiar lista
+            </button>
+            <button onclick="document.getElementById('dashPendientesWrap').style.display='none'"
+              style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:18px;padding:0 4px;line-height:1;" title="Ocultar">×</button>
+          </div>
         </div>
         <div id="dashPendientesGrid" style="display:flex;flex-direction:column;gap:6px;"></div>
       </div>
@@ -6318,6 +6327,34 @@ function _debouncedFiltrarCorreo(val) {
   }, 200);
 }
 
+// ── Tooltip interactivo para barras de estadísticas por curso ────────────────
+function _mostrarTooltipStats(e, el) {
+  var txt = el.getAttribute('data-tooltip');
+  if (!txt) return;
+  var tip = document.getElementById('_statsTooltip');
+  if (!tip) {
+    tip = document.createElement('div');
+    tip.id = '_statsTooltip';
+    tip.style.cssText = 'position:fixed;z-index:9000;pointer-events:none;'
+      + 'background:rgba(28,28,30,0.92);color:#fff;'
+      + 'font-size:12px;font-family:var(--font-ui);font-weight:500;'
+      + 'padding:7px 12px;border-radius:10px;'
+      + 'box-shadow:0 4px 16px rgba(0,0,0,0.22);'
+      + 'backdrop-filter:blur(8px);max-width:260px;line-height:1.4;';
+    document.body.appendChild(tip);
+  }
+  tip.textContent = txt;
+  tip.style.display = 'block';
+  var r = e.currentTarget.getBoundingClientRect();
+  tip.style.left = Math.min(r.left, window.innerWidth - 280) + 'px';
+  tip.style.top  = (r.bottom + 8) + 'px';
+}
+function _ocultarTooltipStats() {
+  var tip = document.getElementById('_statsTooltip');
+  if (tip) tip.style.display = 'none';
+}
+
+
 function _filtrarHistorialCorreo(query) {
   try {
     var ct = document.getElementById('correoTabContainer');
@@ -7281,6 +7318,7 @@ async function guardar() {
   const nuevoReg = {
     _id: _uuidV4(), // UUID único por registro — integridad anti-duplicados
     _savedAt: new Date().toISOString(), // timestamp de edición — usado por SmartSync
+    _editHistory: [], // historial de cambios: [{at, prof, nota}]
     nombre, curso, fecha: new Date().toLocaleDateString('es-CL'), fechaISO: new Date().toISOString(),
     pts, maxPts, pct, nota, conteo, detalle,
     rubricaNombre: rubricaEfectiva?.nombre || getRubrica().nombre,
@@ -7303,8 +7341,17 @@ async function guardar() {
   if (_idxExistente !== -1) {
     // Hay un registro existente — reemplazarlo automáticamente (mismo alumno, misma evaluación)
     // Conservar el _id original para trazabilidad
-    var _idOriginal = registros[_idxExistente]._id;
+    var _idOriginal    = registros[_idxExistente]._id;
+    var _notaAnterior  = registros[_idxExistente].nota;
+    var _histAnterior  = registros[_idxExistente]._editHistory || [];
     nuevoReg._id = _idOriginal;
+    // Agregar entrada al historial de cambios — respaldo ante cuestionamientos de notas
+    nuevoReg._editHistory = _histAnterior.concat([{
+      at:   new Date().toISOString(),
+      prof: localStorage.getItem('av_nombre_prof') || localStorage.getItem('av_email_prof') || 'Docente',
+      notaAnterior: _notaAnterior,
+      notaNueva:    nuevoReg.nota
+    }]);
     registros.splice(_idxExistente, 1, nuevoReg);
     toast('✓ Evaluación de <strong>' + nombre + '</strong> actualizada (reemplaza registro anterior)', 'ok', 4000);
   } else {
@@ -8077,6 +8124,40 @@ document.addEventListener('keydown', function(e) {
     if (tabMap[e.key]) { e.preventDefault(); showTab(tabMap[e.key]); return; }
   }
 
+  // ── Atajos en panel Evaluar ─────────────────────────────────────────
+  if (tabActiva === 'evaluar' || document.getElementById('criteriosList')?.children.length) {
+    // Enter = guardar (solo si hay nombre escrito)
+    if (e.key === 'Enter' && !enInput) {
+      var inp = document.getElementById('inputNombre');
+      if (inp && inp.value.trim()) { e.preventDefault(); guardar(); return; }
+    }
+    // 1 2 3 4 = MB / L / M / N sobre el criterio activo (primero sin nivel)
+    if (['1','2','3','4'].includes(e.key) && !enInput) {
+      var nivMap = {'1':'MB','2':'L','3':'M','4':'N'};
+      var crits  = document.querySelectorAll('.criterio-item');
+      // Buscar el primer criterio sin nivel seleccionado
+      var target = -1;
+      for (var ci=0; ci<crits.length; ci++) {
+        if (!crits[ci].querySelector('.nivel-btn.sel-MB,.nivel-btn.sel-L,.nivel-btn.sel-M,.nivel-btn.sel-N')) {
+          target = ci; break;
+        }
+      }
+      if (target === -1) target = crits.length - 1; // si todos tienen nivel, el último
+      if (target >= 0) { e.preventDefault(); setNivel(target, nivMap[e.key]); return; }
+    }
+    // ArrowRight / ArrowDown = siguiente alumno en la serie
+    if ((e.key === 'ArrowRight' || e.key === 'ArrowDown') && !enInput) {
+      var btnNext = document.getElementById('btnSiguienteAlumno') ||
+                   document.querySelector('[data-nav="siguiente"]');
+      if (btnNext && !btnNext.disabled) { e.preventDefault(); btnNext.click(); return; }
+    }
+    // ArrowLeft / ArrowUp = alumno anterior
+    if ((e.key === 'ArrowLeft' || e.key === 'ArrowUp') && !enInput) {
+      var btnPrev = document.getElementById('btnAnteriorAlumno') ||
+                   document.querySelector('[data-nav="anterior"]');
+      if (btnPrev && !btnPrev.disabled) { e.preventDefault(); btnPrev.click(); return; }
+    }
+  }
   // G = ir a Guardar (evaluar)
   if (e.key === 'g' || e.key === 'G') {
     if (tabActiva === 'evaluar') { e.preventDefault(); guardar(); return; }
@@ -9353,7 +9434,11 @@ function renderEstadisticas() {
       </svg>` : '';
       return `
         <div class="curso-section">
-          <div class="curso-header" style="cursor:pointer;" onclick="toggleCursoDetalle('curso-det-${curso.replace(/[^a-z0-9]/gi,'_')}')">
+          <div class="curso-header" style="cursor:pointer;"
+               onclick="toggleCursoDetalle('curso-det-${curso.replace(/[^a-z0-9]/gi,'_')}')"
+               data-tooltip="${curso}: Prom ${prom.toFixed(1)} · Logrado ${Math.round(apr/alumnos.length*100)}% · ${alumnos.length} alumnos"
+               onmouseenter="_mostrarTooltipStats(event, this)"
+               onmouseleave="_ocultarTooltipStats()">>
             <div class="curso-nombre">📚 ${curso}</div>
             <div class="curso-stats">
               <div class="curso-stat">Alumnos: <span>${alumnos.length}</span></div>
@@ -11821,7 +11906,34 @@ const TODOS_LOS_CURSOS = [
   '6°A','6°B','6°C','6°D'
 ];
 
-// ── Widget "Pendientes del día" — alumnos sin nota en la instancia activa ─────
+// ── Copiar lista de alumnos pendientes al portapapeles ────────────────────────
+function _copiarListaPendientes() {
+  try {
+    var grid = document.getElementById('dashPendientesGrid');
+    if (!grid) return;
+    var rows = grid.querySelectorAll('[data-curso-pendiente]');
+    if (!rows.length) { mostrarToast('No hay pendientes para copiar', 2000); return; }
+
+    var lineas = ['📋 Alumnos pendientes — ArtEval\n'];
+    rows.forEach(function(row) {
+      var curso   = row.getAttribute('data-curso-pendiente') || '';
+      var alumnos = (row.getAttribute('data-alumnos-pendientes') || '').split('||').filter(Boolean);
+      if (!alumnos.length) return;
+      lineas.push('📚 ' + curso + ' (' + alumnos.length + ' pendientes):');
+      alumnos.forEach(function(a) { lineas.push('  • ' + a); });
+      lineas.push('');
+    });
+
+    var txt = lineas.join('\n');
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(txt)
+        .then(function(){ mostrarToast('✓ Lista copiada — pega en WhatsApp o libro de clases', 3000); })
+        .catch(function(){ _fallbackCopy(txt); });
+    } else { _fallbackCopy(txt); }
+  } catch(e) { mostrarToast('Error al copiar lista', 2000); }
+}
+
+
 function _renderDashPendientes() {
   try {
     var wrap   = document.getElementById('dashPendientesWrap');
@@ -11863,6 +11975,8 @@ function _renderDashPendientes() {
       var row = document.createElement('div');
       row.style.cssText = 'background:var(--bg2);border:0.5px solid var(--border);'
         +'border-radius:var(--rad);padding:10px 14px;display:flex;align-items:center;gap:10px;';
+      row.setAttribute('data-curso-pendiente', curso);
+      row.setAttribute('data-alumnos-pendientes', alumnos.join('||'));
       var cursoSpan = document.createElement('span');
       cursoSpan.style.cssText = 'font-size:12px;font-weight:700;font-family:var(--font-mono);'
         +'color:var(--accent);min-width:70px;flex-shrink:0;';
@@ -11938,30 +12052,69 @@ function renderDashboard() {
 
 function _actualizarPasosOnboarding() {
   var ob = document.getElementById('dashOnboarding');
-  if (!ob || ob.style.display === 'none') return;
-  var tieneCursos = Object.keys(listaCursos).some(function(k){ return (listaCursos[k]||[]).length > 0; });
+  if (!ob) return;
+
+  var tieneCursos  = Object.keys(listaCursos).some(function(k){ return (listaCursos[k]||[]).length > 0; });
   var tieneRubrica = rubricas && rubricas.length > 0;
-  var tieneEval   = registros.length > 0;
-  // Paso 1 — Nómina
+  var tieneEval    = registros.length > 0;
+  var tieneDrive   = !!_driveToken;
+
+  // Mostrar onboarding si aún no completó todo — ocultar si ya completó los 4 pasos
+  var todoCompleto = tieneCursos && tieneRubrica && tieneEval && tieneDrive;
+  if (todoCompleto) {
+    ob.style.display = 'none';
+    localStorage.setItem('ae_onboarding_done', '1');
+    return;
+  }
+  // Mostrar si no está marcado como completado
+  if (!localStorage.getItem('ae_onboarding_done')) {
+    ob.style.display = 'block';
+  }
+
+  // Paso 1 — Nómina de cursos
   var s1 = document.getElementById('obStep1');
   var n1 = s1 && s1.querySelector('.ob-num');
-  if (s1 && tieneCursos) {
-    s1.classList.remove('ob-step-active');
-    if (n1) { n1.classList.remove('ob-num-grey'); n1.innerHTML = '✓'; n1.style.background = 'var(--green)'; }
+  if (s1) {
+    if (tieneCursos) {
+      s1.classList.remove('ob-step-active');
+      s1.classList.add('ob-step-done');
+      if (n1) { n1.innerHTML = '✓'; n1.style.background = 'var(--green)'; n1.style.color = '#fff'; }
+    } else {
+      s1.classList.add('ob-step-active');
+    }
   }
   // Paso 2 — Rúbrica
   var s2 = document.getElementById('obStep2');
   var n2 = s2 && s2.querySelector('.ob-num');
-  if (s2 && tieneRubrica && tieneCursos) {
-    s2.classList.add('ob-step-active');
-    if (n2) { n2.classList.remove('ob-num-grey'); n2.style.background = 'var(--accent)'; }
+  if (s2) {
+    if (tieneRubrica) {
+      s2.classList.remove('ob-step-active'); s2.classList.add('ob-step-done');
+      if (n2) { n2.innerHTML = '✓'; n2.style.background = 'var(--green)'; n2.style.color = '#fff'; }
+    } else if (tieneCursos) {
+      s2.classList.add('ob-step-active');
+    }
   }
   // Paso 3 — Primera evaluación
   var s3 = document.getElementById('obStep3');
   var n3 = s3 && s3.querySelector('.ob-num');
-  if (s3 && tieneCursos) {
-    s3.classList.add('ob-step-active');
-    if (n3) { n3.classList.remove('ob-num-grey'); n3.style.background = 'var(--accent)'; }
+  if (s3) {
+    if (tieneEval) {
+      s3.classList.remove('ob-step-active'); s3.classList.add('ob-step-done');
+      if (n3) { n3.innerHTML = '✓'; n3.style.background = 'var(--green)'; n3.style.color = '#fff'; }
+    } else if (tieneRubrica) {
+      s3.classList.add('ob-step-active');
+    }
+  }
+  // Paso 4 — Sincronizar Drive (si existe obStep4)
+  var s4 = document.getElementById('obStep4');
+  var n4 = s4 && s4.querySelector('.ob-num');
+  if (s4) {
+    if (tieneDrive) {
+      s4.classList.remove('ob-step-active'); s4.classList.add('ob-step-done');
+      if (n4) { n4.innerHTML = '✓'; n4.style.background = 'var(--green)'; n4.style.color = '#fff'; }
+    } else if (tieneEval) {
+      s4.classList.add('ob-step-active');
+    }
   }
 }
 
@@ -16630,7 +16783,8 @@ function abrirPerfilAlumno(nombre, cursoFiltro, _todosSemestres) {
       + '<div style="display:flex;align-items:center;gap:10px;">'
       + '<div style="font-size:26px;font-weight:700;font-family:var(--font-mono);color:'+nc+';line-height:1">'+nota.toFixed(1)+'</div>'
       + '<div><div style="font-size:13px;font-weight:600;color:var(--text)">'+_esc(r.instancia||'Evaluación '+(i+1))+'</div>'
-      + '<div style="font-size:11px;color:var(--text3);margin-top:2px">'+_esc(r.rubricaNombre||'—')+' · '+_esc(r.fecha||'—')+'</div>'
+      + '<div style="font-size:11px;color:var(--text3);margin-top:2px">'+_esc(r.rubricaNombre||'—')+' · '+_esc(r.fecha||'—')
+      + (r._editHistory && r._editHistory.length ? ' <span style="color:var(--amber);font-size:10px;cursor:default;" title="' + r._editHistory.map(function(h){return (h.at||'').slice(0,10)+' '+_esc(h.prof||'')+': '+(h.notaAnterior||0).toFixed(1)+' \u2192 '+(h.notaNueva||0).toFixed(1);}).join(' | ')+'">\u270f\ufe0f editado '+r._editHistory.length+'\u00d7</span>' : '')
       + neHtml+'</div></div>'
       + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>'
       + '</div>'
