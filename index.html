@@ -3650,6 +3650,49 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
 }
 
 
+
+/* ══ RÚBRICAS: Grouped Cards iOS ══════════════════════════════════════════ */
+.rub-wrap{padding:0;}
+/* Segmented control de semestre */
+.rub-seg{display:flex;gap:3px;background:rgba(116,116,128,.12);border-radius:12px;padding:3px;margin-bottom:18px;}
+.rub-seg-btn{flex:1;padding:8px 4px;border-radius:9px;border:none;font-size:13px;font-weight:500;font-family:var(--font-ui);color:var(--text3);background:transparent;cursor:pointer;transition:background .15s,color .15s,box-shadow .15s;-webkit-tap-highlight-color:transparent;text-align:center;line-height:1.3;}
+.rub-seg-btn.active{background:var(--bg2);color:var(--accent);font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,.10),0 .5px 1.5px rgba(0,0,0,.07);}
+.rub-seg-btn:active:not(.active){opacity:.65;}
+/* Carpeta */
+.rub-folder{background:var(--bg2);border:0.5px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.05);}
+.rub-folder:hover{box-shadow:0 2px 8px rgba(0,0,0,.09);}
+.rub-folder-hdr{display:flex;align-items:center;gap:10px;padding:13px 16px;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;background:var(--bg2);transition:background .12s;}
+.rub-folder-hdr:hover{background:var(--bg3);}
+.rub-folder-hdr:active{background:var(--bg4);}
+.rub-folder-icon{font-size:20px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;background:var(--accent-bg);border:0.5px solid var(--accent-border);border-radius:9px;flex-shrink:0;}
+.rub-folder-name{flex:1;font-size:14px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:-.1px;}
+.rub-folder-badge{font-size:11px;font-weight:600;font-family:var(--font-mono);color:var(--text3);background:var(--bg4);border-radius:20px;padding:2px 9px;flex-shrink:0;transition:background .15s,color .15s;}
+.rub-folder.open .rub-folder-badge{background:var(--accent-bg);color:var(--accent);}
+.rub-folder-chev{color:var(--text3);flex-shrink:0;opacity:.5;transition:transform .22s cubic-bezier(.34,1.3,.64,1),color .15s,opacity .15s;}
+.rub-folder.open .rub-folder-chev{transform:rotate(90deg);color:var(--accent);opacity:1;}
+.rub-folder-body{max-height:0;overflow:hidden;transition:max-height .3s cubic-bezier(.4,0,.2,1);}
+.rub-folder.open .rub-folder-body{max-height:3000px;}
+.rub-folder-inner{border-top:0.5px solid var(--border);padding:8px;display:flex;flex-direction:column;gap:6px;background:var(--bg3);}
+/* Tarjeta de rúbrica */
+.rub-card{background:var(--bg2);border:0.5px solid var(--border);border-radius:11px;padding:12px 14px;display:flex;align-items:center;gap:10px;transition:border-color .12s,background .12s,box-shadow .12s;}
+.rub-card:hover{border-color:var(--accent-border);background:var(--bg3);}
+.rub-card.rub-active{border-color:var(--accent);background:var(--accent-bg);box-shadow:0 0 0 3px rgba(255,149,0,.10);}
+.rub-dot{width:9px;height:9px;border-radius:50%;background:var(--border2);flex-shrink:0;transition:background .12s,transform .15s;}
+.rub-card.rub-active .rub-dot{background:var(--accent);transform:scale(1.3);box-shadow:0 0 0 3px rgba(255,149,0,.18);}
+.rub-info{flex:1;min-width:0;}
+.rub-nombre{font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:-.1px;}
+.rub-card.rub-active .rub-nombre{color:var(--accent);}
+.rub-meta{font-size:11px;color:var(--text3);margin-top:2px;font-family:var(--font-mono);}
+.rub-actions{display:flex;gap:4px;align-items:center;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;}
+.rub-btn-mover{font-size:10px;padding:4px 8px;border-radius:6px;border:0.5px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;font-family:var(--font-ui);font-weight:600;white-space:nowrap;-webkit-tap-highlight-color:transparent;transition:background .12s,border-color .12s;}
+.rub-btn-mover:hover{background:var(--accent-bg);border-color:var(--accent-border);color:var(--accent);}
+/* Empty state */
+.rub-empty{text-align:center;padding:44px 20px;color:var(--text3);font-size:13px;font-family:var(--font-ui);line-height:1.6;}
+/* Dark */
+@media(prefers-color-scheme:dark){
+  .rub-seg{background:rgba(116,116,128,.22);}
+  .rub-folder{box-shadow:0 1px 3px rgba(0,0,0,.28);}
+}
 </style>
 
 <script>
@@ -9848,193 +9891,191 @@ async function procesarRubricaWord(file) {
 var _rubricasFiltroSem = null; // null = usa _semestreActivo
 
 function renderRubricas() {
-  const list = document.getElementById('rubricaList');
+  var list = document.getElementById('rubricaList');
   if (!list) return;
 
-  // ── Paso 1: normalizar ANTES de filtrar (retrocompat con rúbricas antiguas) ──
-  // Si una rúbrica no tiene semestre asignado, se considera de AMBOS semestres
-  // (o del activo). Hacemos la asignación aquí, no durante el filtro.
+  // Normalizar retrocompat
   var semActivo = parseInt(_semestreActivo || 1, 10);
   rubricas.forEach(function(r) {
     if (!r.curso || r.curso === '') r.curso = 'Sin clasificar';
-    if (!r.semestre)                r.semestre = semActivo;
-    // Garantizar que semestre sea número
+    if (!r.semestre) r.semestre = semActivo;
     r.semestre = parseInt(r.semestre, 10) || semActivo;
   });
 
-  // ── Paso 2: filtro de semestre ────────────────────────────────────────────
   var semFiltro = (_rubricasFiltroSem !== null && _rubricasFiltroSem !== undefined)
-                  ? parseInt(_rubricasFiltroSem, 10)
-                  : semActivo;
+    ? parseInt(_rubricasFiltroSem, 10) : semActivo;
 
-  var rubsFiltradas = rubricas
+  var otroSem = semFiltro === 1 ? 2 : 1;
+
+  // Filtrar y agrupar por curso
+  var filtradas = rubricas
     .map(function(r, i) { return { r: r, i: i }; })
-    .filter(function(obj) { return obj.r.semestre === semFiltro; });
+    .filter(function(o) { return o.r.semestre === semFiltro; });
 
-  // ── Paso 3: agrupar por curso ─────────────────────────────────────────────
-  var porCurso = {};
-  rubsFiltradas.forEach(function(obj) {
-    var curso = obj.r.curso || 'Sin clasificar';
-    if (!porCurso[curso]) porCurso[curso] = [];
-    porCurso[curso].push(obj);
+  var grupos = {};
+  filtradas.forEach(function(o) {
+    var c = o.r.curso || 'Sin clasificar';
+    if (!grupos[c]) grupos[c] = [];
+    grupos[c].push(o);
   });
-  var cursosSorted = Object.keys(porCurso).sort(function(a,b) {
+  var cursos = Object.keys(grupos).sort(function(a, b) {
     if (a === 'Sin clasificar') return 1;
     if (b === 'Sin clasificar') return -1;
     return a.localeCompare(b, 'es');
   });
 
-  // ── Paso 4: construir DOM ─────────────────────────────────────────────────
   var frag = document.createDocumentFragment();
 
-  // Pills de semestre
-  var pillsDiv = document.createElement('div');
-  pillsDiv.className = 'rubrica-sem-pills';
+  // ── Segmented control con conteo ─────────────────────────────────────────
+  var seg = document.createElement('div');
+  seg.className = 'rub-seg';
   [1, 2].forEach(function(s) {
-    var pill = document.createElement('button');
-    pill.className = 'rubrica-sem-pill' + (s === semFiltro ? ' active' : '');
-    pill.textContent = s + '° Semestre';
-    pill.onclick = function() { _rubricasFiltroSem = s; renderRubricas(); };
-    pillsDiv.appendChild(pill);
+    var cnt = rubricas.filter(function(r) { return parseInt(r.semestre || 1) === s; }).length;
+    var btn = document.createElement('button');
+    btn.className = 'rub-seg-btn' + (s === semFiltro ? ' active' : '');
+    btn.innerHTML = s + '\u00b0 Semestre'
+      + (cnt > 0 ? ' <span style="font-size:10px;font-family:var(--font-mono);opacity:.65;font-weight:500;">(' + cnt + ')</span>' : '');
+    btn.onclick = function() { _rubricasFiltroSem = s; renderRubricas(); };
+    seg.appendChild(btn);
   });
-  frag.appendChild(pillsDiv);
+  frag.appendChild(seg);
 
-  // Empty state
-  if (!rubsFiltradas.length) {
-    var empty = document.createElement('div');
-    empty.className = 'rubrica-folder-empty';
-    empty.innerHTML = '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" style="display:block;margin:0 auto 10px;opacity:.3;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>'
-      + 'No hay rúbricas en el ' + semFiltro + '° semestre.'
-      + '<br><span style="font-size:11px;opacity:.7;">Crea una nueva o cambia el filtro de semestre arriba.</span>';
-    frag.appendChild(empty);
+  // ── Empty state ───────────────────────────────────────────────────────────
+  if (!filtradas.length) {
+    var em = document.createElement('div');
+    em.className = 'rub-empty';
+    em.innerHTML = '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" style="display:block;margin:0 auto 14px;opacity:.2;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>'
+      + '<strong>Sin r\u00fabricas en el ' + semFiltro + '\u00b0 semestre</strong><br>'
+      + '<span style="font-size:12px;">Crea una nueva con &ldquo;+ Nueva r\u00fabrica&rdquo;<br>'
+      + 'o mueve una del ' + otroSem + '\u00b0 semestre usando el bot\u00f3n \u201c\u2192 Sem\u201d.</span>';
+    frag.appendChild(em);
     list.innerHTML = '';
     list.appendChild(frag);
     actualizarRubricaSelect();
     return;
   }
 
-  // Carpetas por curso — todas abiertas por defecto para máxima visibilidad
-  cursosSorted.forEach(function(curso) {
-    var rubsDelCurso = porCurso[curso];
-    // Carpeta abierta si: tiene la rúbrica activa O solo hay una carpeta
-    var tieneActiva = rubsDelCurso.some(function(obj) { return obj.i === rubricaActiva; });
-    var isOpen = tieneActiva || cursosSorted.length === 1;
+  // ── Carpetas por curso ────────────────────────────────────────────────────
+  cursos.forEach(function(curso) {
+    var items     = grupos[curso];
+    var tieneAct  = items.some(function(o) { return o.i === rubricaActiva; });
+    var isOpen    = tieneAct || cursos.length === 1 || items.length <= 3;
 
-    var carpeta = document.createElement('div');
-    carpeta.className = 'rubrica-carpeta' + (isOpen ? ' open' : '');
+    var folder = document.createElement('div');
+    folder.className = 'rub-folder' + (isOpen ? ' open' : '');
 
     // Header
-    var header = document.createElement('div');
-    header.className = 'rubrica-carpeta-header';
-    header.setAttribute('aria-expanded', String(isOpen));
-    header.onclick = function() {
-      var abierta = carpeta.classList.toggle('open');
-      header.setAttribute('aria-expanded', String(abierta));
-      icon.textContent = abierta ? '📂' : '📁';
-    };
+    var hdr = document.createElement('div');
+    hdr.className = 'rub-folder-hdr';
+    hdr.setAttribute('role', 'button');
+    hdr.setAttribute('aria-expanded', String(isOpen));
 
     var icon = document.createElement('span');
-    icon.className = 'rubrica-carpeta-icon';
-    icon.textContent = isOpen ? '📂' : '📁';
+    icon.className = 'rub-folder-icon';
+    icon.setAttribute('aria-hidden', 'true');
+    icon.textContent = isOpen ? '\uD83D\uDCC2' : '\uD83D\uDCC1';
 
-    var tituloSpan = document.createElement('span');
-    tituloSpan.className = 'rubrica-carpeta-titulo';
-    tituloSpan.textContent = curso;
+    var name = document.createElement('span');
+    name.className = 'rub-folder-name';
+    name.textContent = curso;
 
     var badge = document.createElement('span');
-    badge.className = 'rubrica-carpeta-badge';
-    badge.textContent = rubsDelCurso.length + (rubsDelCurso.length === 1 ? ' rúbrica' : ' rúbricas');
+    badge.className = 'rub-folder-badge';
+    badge.textContent = items.length + (items.length === 1 ? ' r\u00fabrica' : ' r\u00fabricas');
 
-    var chevron = document.createElement('svg');
-    chevron.setAttribute('width','14'); chevron.setAttribute('height','14');
-    chevron.setAttribute('viewBox','0 0 24 24'); chevron.setAttribute('fill','none');
-    chevron.setAttribute('stroke','currentColor'); chevron.setAttribute('stroke-width','2');
-    chevron.setAttribute('stroke-linecap','round');
-    chevron.className = 'rubrica-carpeta-chevron';
-    chevron.innerHTML = '<polyline points="9 18 15 12 9 6"/>';
+    var chev = document.createElement('svg');
+    chev.setAttribute('width', '14'); chev.setAttribute('height', '14');
+    chev.setAttribute('viewBox', '0 0 24 24'); chev.setAttribute('fill', 'none');
+    chev.setAttribute('stroke', 'currentColor'); chev.setAttribute('stroke-width', '2.5');
+    chev.setAttribute('stroke-linecap', 'round');
+    chev.className = 'rub-folder-chev';
+    chev.innerHTML = '<polyline points="9 18 15 12 9 6"/>';
 
-    header.appendChild(icon);
-    header.appendChild(tituloSpan);
-    header.appendChild(badge);
-    header.appendChild(chevron);
+    hdr.appendChild(icon); hdr.appendChild(name);
+    hdr.appendChild(badge); hdr.appendChild(chev);
+    hdr.onclick = function() {
+      var open = folder.classList.toggle('open');
+      hdr.setAttribute('aria-expanded', String(open));
+      icon.textContent = open ? '\uD83D\uDCC2' : '\uD83D\uDCC1';
+    };
 
-    // Cuerpo accordion
-    var body = document.createElement('div');
-    body.className = 'rubrica-carpeta-body';
-    var bodyInner = document.createElement('div');
-    bodyInner.className = 'rubrica-carpeta-body-inner';
+    // Body
+    var body  = document.createElement('div'); body.className  = 'rub-folder-body';
+    var inner = document.createElement('div'); inner.className = 'rub-folder-inner';
 
-    rubsDelCurso.forEach(function(obj) {
-      var r = obj.r, ri = obj.i;
-      var isActive = (ri === rubricaActiva);
+    items.forEach(function(o) {
+      var r = o.r, ri = o.i, isAct = (ri === rubricaActiva);
 
       var card = document.createElement('div');
-      card.className = 'rubrica-card-mini' + (isActive ? ' active-rub' : '');
+      card.className = 'rub-card' + (isAct ? ' rub-active' : '');
 
-      var dot = document.createElement('div');
-      dot.className = 'rubrica-card-mini-dot';
+      var dot = document.createElement('div'); dot.className = 'rub-dot';
 
-      var info = document.createElement('div');
-      info.className = 'rubrica-card-mini-info';
+      var info = document.createElement('div'); info.className = 'rub-info';
+      var nom  = document.createElement('div'); nom.className  = 'rub-nombre'; nom.textContent = r.nombre;
+      var meta = document.createElement('div'); meta.className = 'rub-meta';
+      meta.textContent = r.criterios.length + ' criterios \u00b7 m\u00e1x '
+        + (r.criterios.length * 3) + ' pts' + (isAct ? ' \u00b7 \u2713 En uso' : '');
+      info.appendChild(nom); info.appendChild(meta);
 
-      var nombreEl = document.createElement('div');
-      nombreEl.className = 'rubrica-card-mini-nombre';
-      nombreEl.textContent = r.nombre;
+      var acts = document.createElement('div'); acts.className = 'rub-actions';
 
-      var metaEl = document.createElement('div');
-      metaEl.className = 'rubrica-card-mini-meta';
-      metaEl.textContent = r.criterios.length + ' criterios · máx '
-        + (r.criterios.length * 3) + ' pts'
-        + (isActive ? ' · ✓ Activa' : '');
-
-      info.appendChild(nombreEl);
-      info.appendChild(metaEl);
-
-      var actions = document.createElement('div');
-      actions.className = 'rubrica-card-mini-actions';
-
-      if (!isActive) {
-        var btnUsar = document.createElement('button');
-        btnUsar.className = 'btn';
-        btnUsar.style.cssText = 'font-size:11px;padding:5px 10px;';
-        btnUsar.textContent = 'Usar';
-        btnUsar.onclick = (function(idx){ return function(e){ e.stopPropagation(); seleccionarRubrica(idx); }; })(ri);
-        actions.appendChild(btnUsar);
+      // Botón Usar
+      if (!isAct) {
+        var bUsar = document.createElement('button');
+        bUsar.className = 'btn'; bUsar.style.cssText = 'font-size:11px;padding:5px 11px;';
+        bUsar.textContent = 'Usar';
+        bUsar.onclick = (function(i) { return function(e) { e.stopPropagation(); seleccionarRubrica(i); }; })(ri);
+        acts.appendChild(bUsar);
       }
 
-      var btnEdit = document.createElement('button');
-      btnEdit.className = 'btn';
-      btnEdit.style.cssText = 'font-size:11px;padding:5px 10px;';
-      btnEdit.textContent = 'Editar';
-      btnEdit.onclick = (function(idx){ return function(e){ e.stopPropagation(); editarRubrica(idx); }; })(ri);
-      actions.appendChild(btnEdit);
+      // Botón Editar
+      var bEdit = document.createElement('button');
+      bEdit.className = 'btn'; bEdit.style.cssText = 'font-size:11px;padding:5px 11px;';
+      bEdit.textContent = 'Editar';
+      bEdit.onclick = (function(i) { return function(e) { e.stopPropagation(); editarRubrica(i); }; })(ri);
+      acts.appendChild(bEdit);
 
+      // Botón Mover semestre — siempre visible, muy claro
+      var bMover = document.createElement('button');
+      bMover.className = 'rub-btn-mover';
+      bMover.innerHTML = '\u2192&nbsp;' + otroSem + '\u00b0&nbsp;Sem';
+      bMover.title = 'Mover al ' + otroSem + '\u00b0 semestre';
+      bMover.onclick = (function(i, s) {
+        return function(e) {
+          e.stopPropagation();
+          rubricas[i].semestre = s;
+          saveRubricas();
+          mostrarToast('R\u00fabrica movida al ' + s + '\u00b0 semestre \u2713', 2500);
+          renderRubricas();
+        };
+      })(ri, otroSem);
+      acts.appendChild(bMover);
+
+      // Botón Eliminar
       if (rubricas.length > 1) {
-        var btnDel = document.createElement('button');
-        btnDel.className = 'btn btn-danger';
-        btnDel.style.cssText = 'font-size:11px;padding:5px 9px;';
-        btnDel.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-        btnDel.setAttribute('aria-label', 'Eliminar');
-        btnDel.onclick = (function(idx){ return function(e){ e.stopPropagation(); eliminarRubrica(idx); }; })(ri);
-        actions.appendChild(btnDel);
+        var bDel = document.createElement('button');
+        bDel.className = 'btn btn-danger'; bDel.style.cssText = 'font-size:11px;padding:5px 9px;';
+        bDel.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+        bDel.setAttribute('aria-label', 'Eliminar r\u00fabrica');
+        bDel.onclick = (function(i) { return function(e) { e.stopPropagation(); eliminarRubrica(i); }; })(ri);
+        acts.appendChild(bDel);
       }
 
-      card.appendChild(dot);
-      card.appendChild(info);
-      card.appendChild(actions);
-      bodyInner.appendChild(card);
+      card.appendChild(dot); card.appendChild(info); card.appendChild(acts);
+      inner.appendChild(card);
     });
 
-    body.appendChild(bodyInner);
-    carpeta.appendChild(header);
-    carpeta.appendChild(body);
-    frag.appendChild(carpeta);
+    body.appendChild(inner);
+    folder.appendChild(hdr); folder.appendChild(body);
+    frag.appendChild(folder);
   });
 
   list.innerHTML = '';
   list.appendChild(frag);
   actualizarRubricaSelect();
 }
+
 function seleccionarRubrica(i) {
   rubricaActiva = i;
   localStorage.setItem('av_rubrica_activa', i);
