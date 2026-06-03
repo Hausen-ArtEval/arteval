@@ -12209,6 +12209,102 @@ function _renderDashHoy() {
     </span>`;
 }
 
+// ── Modal de detalle de curso desde dashboard ─────────────────────────────────
+// Muestra estadísticas completas del curso al hacer clic en la tarjeta,
+// con opción de ir directamente a evaluar o ver el curso completo.
+function _mostrarDetalleCursoDash(curso) {
+  try {
+    var nomina  = listaCursos[curso] || [];
+    var regsAll = registros.filter(function(r){ return (r.curso||'') === curso; });
+    var regsSem = _registrosSemestre().filter(function(r){ return (r.curso||'') === curso; });
+
+    if (!regsSem.length && !regsAll.length) {
+      // Sin datos — ir directo al curso
+      irACurso(curso); return;
+    }
+
+    var total     = nomina.length || regsSem.length;
+    var evaluados = new Set(regsSem.map(function(r){ return (r.nombre||'').trim().toUpperCase(); })).size;
+    var pendientes= Math.max(0, total - evaluados);
+    var prom      = regsSem.length ? regsSem.reduce(function(s,r){ return s+(r.nota||1); },0)/regsSem.length : 0;
+    var aprobados = regsSem.filter(function(r){ return (r.nota||1)>=4; }).length;
+    var riesgo    = regsSem.filter(function(r){ return (r.nota||1)<4; });
+    var destacados= regsSem.filter(function(r){ return (r.nota||1)>=6; });
+    var promClr   = prom>=6?'var(--blue)':prom>=4?'var(--green)':'var(--red)';
+
+    // Agrupar por instancia
+    var porInst = {};
+    regsSem.forEach(function(r){
+      var k = r.instancia||'Evaluación 1';
+      if (!porInst[k]) porInst[k] = [];
+      porInst[k].push(r);
+    });
+
+    // HTML de instancias
+    var instHTML = Object.entries(porInst).map(function(entry){
+      var inst = entry[0], regsInst = entry[1];
+      var pI = regsInst.reduce(function(s,r){ return s+(r.nota||1); },0)/regsInst.length;
+      var pIClr = pI>=6?'var(--blue)':pI>=4?'var(--green)':'var(--red)';
+      return '<div style="display:flex;align-items:center;justify-content:space-between;'
+        +'padding:8px 0;border-bottom:0.5px solid var(--border);">'
+        +'<span style="font-size:12px;color:var(--text2);">'+_esc(inst)+'</span>'
+        +'<span style="font-size:14px;font-weight:700;color:'+pIClr+';font-family:var(--font-mono);">'+pI.toFixed(1)+'</span>'
+        +'</div>';
+    }).join('');
+
+    // Alumnos en riesgo
+    var riesgoHTML = riesgo.length
+      ? riesgo.slice(0,5).map(function(r){
+          return '<span style="display:inline-block;background:var(--red-bg);color:var(--red);'
+            +'border-radius:6px;padding:2px 8px;font-size:11px;margin:2px;cursor:pointer;"'
+            +' onclick="cerrarModal();setTimeout(function(){abrirPerfilAlumno(\''+r.nombre.replace(/'/g,"\\'")+'\'};60);">'
+            +_esc(r.nombre.split(' ').slice(0,2).join(' '))+'</span>';
+        }).join('')
+        +(riesgo.length>5?'<span style="font-size:11px;color:var(--text3);margin-left:4px;">+'+(riesgo.length-5)+' más</span>':'')
+      : '<span style="font-size:12px;color:var(--green);">✓ Ninguno en riesgo</span>';
+
+    var modalHTML =
+      // Header con nombre del curso y promedio grande
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;">'
+      +'<div>'
+      +'<div class="modal-title" style="margin-bottom:2px;">📚 '+_esc(curso)+'</div>'
+      +'<div style="font-size:12px;color:var(--text3);">'+(_semestreActivo===1?'1°':'2°')+' Semestre · '+regsSem.length+' evaluaciones</div>'
+      +'</div>'
+      +'<div style="font-size:36px;font-weight:800;color:'+promClr+';font-family:var(--font-mono);line-height:1;">'
+      +(prom?prom.toFixed(1):'—')+'</div>'
+      +'</div>'
+
+      // KPIs en grid 3 col
+      +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;">'
+      +_actaKpi('Evaluados',evaluados+'/'+total,Math.round(evaluados/Math.max(total,1)*100)+'%')
+      +_actaKpi('Logrado',aprobados+' alum.',Math.round(aprobados/Math.max(regsSem.length,1)*100)+'%','var(--green)')
+      +_actaKpi('Pendientes',pendientes+' alum.','sin nota este semestre',pendientes>0?'var(--amber)':'var(--text3)')
+      +'</div>'
+
+      // Instancias
+      +(instHTML ? '<div style="margin-bottom:14px;"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:6px;">Por instancia</div>'+instHTML+'</div>' : '')
+
+      // En riesgo
+      +'<div style="margin-bottom:16px;">'
+      +'<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:8px;">En riesgo (< 4.0)</div>'
+      +'<div>'+riesgoHTML+'</div>'
+      +'</div>'
+
+      // Acciones
+      +'<div style="display:flex;gap:8px;flex-wrap:wrap;">'
+      +'<button class="btn btn-primary" style="flex:1;" onclick="cerrarModal();setTimeout(function(){irACurso(\''+curso.replace(/'/g,"\\'")+'\');},80);">Ver curso completo</button>'
+      +'<button class="btn" style="flex:1;" onclick="cerrarModal();setTimeout(function(){selCurso(\''+curso.replace(/'/g,"\\'")+'\');var t=document.querySelector(\'[data-maintab=estudio]\');if(t&&typeof _activarTab===\'function\')_activarTab(t,\'estudio\',\'evaluar\');},80);">Evaluar ahora</button>'
+      +'<button class="btn" onclick="cerrarModal();" style="min-width:60px;">Cerrar</button>'
+      +'</div>';
+
+    abrirModal(modalHTML, 'modal-acta-utp');
+  } catch(e) {
+    console.error('[ArtEval] _mostrarDetalleCursoDash:', e.message);
+    irACurso(curso); // fallback
+  }
+}
+
+
 function _renderDashGrid(instFiltro) {
   const grid = document.getElementById('dashCursosGrid');
   if (!grid) return;
@@ -12234,7 +12330,7 @@ function _renderDashGrid(instFiltro) {
 
     const notaColor = promedio==='—' ? 'var(--text3)' : promedio>=6?'var(--blue)':promedio>=4?'var(--green)':'var(--red)';
 
-    return `<div class="dash-curso-card ${estado}" onclick="irACurso('${curso}')">
+    return `<div class="dash-curso-card ${estado}" onclick="_mostrarDetalleCursoDash('${curso.replace(/'/g,"\\'")}')">
       <div class="dash-estado-badge" style="background:${estadoBg};color:${estadoClr};">
         ${pct>=90?'🟢':pct>=40?'🟡':'🔴'} ${estadoLabel}
       </div>
@@ -17765,15 +17861,56 @@ function cerrarSugerencia() {
 }
 
 function seleccionarAutocompletado(nombre, curso) {
-  // Limpiar buscador global
-  const gsi = document.getElementById('globalSearchInput');
-  if (gsi) { gsi.value = ''; gsi.blur(); }
   ocultarAutocompletado();
 
-  // Abrir perfil completo del alumno — vista libro con todas sus evaluaciones
-  // El profesor ve historial de notas, promedio y detalle por criterio
-  if (typeof abrirPerfilAlumno === 'function') {
-    abrirPerfilAlumno(nombre, curso || null, false);
+  // ── Detectar desde qué input se seleccionó ────────────────────────────────
+  // Si el input activo es inputNombre (panel Evaluar) → rellenar el formulario
+  // Si es globalSearchInput (topbar) → abrir perfil del alumno
+  var active    = document.activeElement;
+  var desdeEval = active && (active.id === 'inputNombre');
+
+  // También verificar si el dropdown del panel evaluar estaba visible
+  var listEval = document.getElementById('evalAutocompleteList');
+  if (!desdeEval && listEval && listEval.style.display !== 'none') {
+    desdeEval = true;
+  }
+
+  if (desdeEval) {
+    // ── Modo Evaluar: rellenar nombre + curso y dejar listo para evaluar ──────
+    var inpNombre = document.getElementById('inputNombre');
+    var inpCurso  = document.getElementById('inputCurso');
+
+    if (inpNombre) {
+      inpNombre.value = nombre;
+      // Flash verde suave de confirmación
+      inpNombre.style.borderColor = 'var(--green)';
+      setTimeout(function(){ inpNombre.style.borderColor = ''; }, 1000);
+    }
+    if (inpCurso && curso) {
+      inpCurso.value = curso;
+      // Actualizar barra de progreso del curso
+      if (typeof actualizarBarraProgresoCurso === 'function') actualizarBarraProgresoCurso();
+      // Sugerir rúbrica apropiada
+      if (typeof _sugerirRubricaPorCurso === 'function') _sugerirRubricaPorCurso(curso);
+    }
+    // Focus al siguiente campo relevante o al primer criterio sin nivel
+    setTimeout(function() {
+      var primerCrit = document.querySelector('.nivel-btn:not(.sel-MB):not(.sel-L):not(.sel-M):not(.sel-N)');
+      if (primerCrit) {
+        primerCrit.focus();
+      } else {
+        inpNombre && inpNombre.select();
+      }
+    }, 60);
+
+  } else {
+    // ── Modo Búsqueda global: abrir perfil completo del alumno ────────────────
+    var gsi = document.getElementById('globalSearchInput');
+    if (gsi) { gsi.value = ''; gsi.blur(); }
+
+    if (typeof abrirPerfilAlumno === 'function') {
+      abrirPerfilAlumno(nombre, curso || null, false);
+    }
   }
 }
 
