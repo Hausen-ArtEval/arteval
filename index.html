@@ -501,7 +501,7 @@ input[type="text"]:focus, textarea:focus, select:focus {
 .niveles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
 
 .nivel-btn {
-  font-size: 11px; padding: 9px 4px; border-radius: 10px;
+  font-size: 12px; padding: 14px 4px; border-radius: 12px;
   border: 0.5px solid var(--border); cursor: pointer;
   background: var(--bg3); color: var(--text3);
   transition: border-color var(--t-fast), color var(--t-fast),
@@ -4043,6 +4043,22 @@ button:focus-visible, .tab:focus-visible, .sub-tab:focus-visible {
         </div>
       </div>
 
+      <!-- PENDIENTES DEL DÍA — widget de acción inmediata -->
+      <div id="dashPendientesWrap" style="margin-bottom:16px;display:none;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+            <span style="font-size:13px;font-weight:700;color:var(--text);">Pendientes hoy</span>
+            <span id="dashPendientesBadge" style="font-size:10px;font-weight:700;font-family:var(--font-mono);background:var(--accent);color:#fff;border-radius:20px;padding:1px 8px;"></span>
+          </div>
+          <button onclick="document.getElementById('dashPendientesWrap').style.display='none'"
+            style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:18px;padding:0 4px;line-height:1;" title="Ocultar">×</button>
+        </div>
+        <div id="dashPendientesGrid" style="display:flex;flex-direction:column;gap:6px;"></div>
+      </div>
+
       <div class="stats-grid" id="dashKpiGlobal" style="margin-bottom:16px;">
         <!-- Renderizado dinámicamente por renderDashboard() -->
       </div>
@@ -5666,7 +5682,25 @@ function renderCriterios() {
 function setNivel(i, k) {
   if (evaluacion[i]?.nivel === k) delete evaluacion[i];
   else evaluacion[i] = { nivel: k, nota: evaluacion[i]?.nota || '' };
+  // Micro-vibración al seleccionar nivel — feedback táctil inmediato
+  try { if (navigator.vibrate) navigator.vibrate(12); } catch(e) {}
   renderCriterios();
+
+  // Mostrar descriptor del nivel seleccionado como guía rápida (si existe)
+  // Solo para nivel MB — el más importante para el docente de artes
+  try {
+    if (k === 'MB') {
+      var crits = getCriterios();
+      if (crits && crits[i]) {
+        var c = crits[i];
+        var descMB = (typeof c === 'object' && c !== null) ? (c.mb || '') : '';
+        if (descMB && descMB.length > 5) {
+          // Toast suave — desaparece solo, no bloquea
+          toast('★ MB: ' + descMB.slice(0, 120) + (descMB.length > 120 ? '…' : ''), 'ok', 3500);
+        }
+      }
+    }
+  } catch(e) { /* silencioso */ }
 }
 
 function actualizarResumen() {
@@ -6736,6 +6770,9 @@ async function guardar() {
     registros.unshift(nuevoReg);
   }
   saveRegistros();
+  // Vibración háptica al guardar — confirma físicamente sin mirar la pantalla
+  // Compatible: iOS Safari 13+, Android Chrome. Silencioso si no está soportado.
+  try { if (navigator.vibrate) navigator.vibrate(40); } catch(e) {}
   // Cola offline: guardar cada nota al momento de ingresarse
   // Garantiza recuperación aunque Drive sobreescriba al reconectar
   try {
@@ -6797,18 +6834,30 @@ async function guardar() {
   cerrarSugerencia();
   // Persistir curso seleccionado entre evaluaciones del mismo curso
   var _cursoPostGuardar = document.getElementById('inputCurso')?.value;
+  // Persistir también instancia y rúbrica para no reconfigurar en cada alumno
+  var _instanciaPostGuardar = document.getElementById('instanciaSelect')?.value;
+  var _rubricaPostGuardar   = rubricaActiva;
+
   if (document.getElementById('inputNombre')) document.getElementById('inputNombre').value = '';
   // Reset PIE panel
   const pieCheck = document.getElementById('pieCheck');
   if (pieCheck) pieCheck.checked = false;
   const pieOptions = document.getElementById('pieOptions');
   if (pieOptions) pieOptions.classList.remove('open');
-  // Restaurar curso después del reset
+  // Restaurar curso, instancia y rúbrica después del reset — no reconfigurar entre alumnos
   setTimeout(() => {
     const sel = document.getElementById('inputCurso');
     if (sel && _cursoPostGuardar) sel.value = _cursoPostGuardar;
-    document.getElementById('inputNombre')?.focus();
-  }, 50);
+    // Restaurar instancia activa
+    const instSel = document.getElementById('instanciaSelect');
+    if (instSel && _instanciaPostGuardar) instSel.value = _instanciaPostGuardar;
+    // Restaurar rúbrica activa si no cambió
+    if (_rubricaPostGuardar !== null && _rubricaPostGuardar !== undefined
+        && rubricas[_rubricaPostGuardar]) {
+      rubricaActiva = _rubricaPostGuardar;
+      renderCriterios();
+    }
+  }, 60);
   renderCriterios();
   actualizarConteo();
   const pieSufijo = esPIE ? ' · PIE ♿' : '';
@@ -11231,6 +11280,85 @@ const TODOS_LOS_CURSOS = [
   '6°A','6°B','6°C','6°D'
 ];
 
+// ── Widget "Pendientes del día" — alumnos sin nota en la instancia activa ─────
+function _renderDashPendientes() {
+  try {
+    var wrap   = document.getElementById('dashPendientesWrap');
+    var grid   = document.getElementById('dashPendientesGrid');
+    var badge  = document.getElementById('dashPendientesBadge');
+    if (!wrap || !grid) return;
+
+    var regsS = _registrosSemestre();
+    var instActiva = (function() {
+      if (!regsS.length) return null;
+      var instCount = {};
+      regsS.forEach(function(r) { var k = r.instancia||'Ev. 1'; instCount[k] = (instCount[k]||0)+1; });
+      return Object.keys(instCount).sort(function(a,b){ return instCount[b]-instCount[a]; })[0];
+    })();
+    if (!instActiva) { wrap.style.display = 'none'; return; }
+
+    var pendientesPorCurso = {};
+    var cursos = Object.keys(listaCursos || {});
+    cursos.forEach(function(curso) {
+      var nomina = listaCursos[curso] || [];
+      if (!nomina.length) return;
+      var conNota = new Set(
+        regsS.filter(function(r){ return r.curso===curso && r.instancia===instActiva; })
+             .map(function(r){ return normalizarStrict(r.nombre||''); })
+      );
+      var sinNota = nomina.filter(function(n){ return !conNota.has(normalizarStrict(n)); });
+      if (sinNota.length) pendientesPorCurso[curso] = sinNota;
+    });
+
+    var totalPend = Object.values(pendientesPorCurso).reduce(function(s,a){ return s+a.length; },0);
+    if (!totalPend) { wrap.style.display = 'none'; return; }
+
+    wrap.style.display = 'block';
+    if (badge) { badge.textContent = totalPend; badge.title = 'Instancia: '+instActiva; }
+
+    var frag = document.createDocumentFragment();
+    Object.keys(pendientesPorCurso).sort().forEach(function(curso) {
+      var alumnos = pendientesPorCurso[curso];
+      var row = document.createElement('div');
+      row.style.cssText = 'background:var(--bg2);border:0.5px solid var(--border);'
+        +'border-radius:var(--rad);padding:10px 14px;display:flex;align-items:center;gap:10px;';
+      var cursoSpan = document.createElement('span');
+      cursoSpan.style.cssText = 'font-size:12px;font-weight:700;font-family:var(--font-mono);'
+        +'color:var(--accent);min-width:70px;flex-shrink:0;';
+      cursoSpan.textContent = curso;
+      var alumnosSpan = document.createElement('span');
+      alumnosSpan.style.cssText = 'font-size:12px;color:var(--text2);flex:1;overflow:hidden;'
+        +'text-overflow:ellipsis;white-space:nowrap;';
+      alumnosSpan.title = alumnos.join(', ');
+      alumnosSpan.textContent = alumnos.slice(0,4).join(', ')
+        +(alumnos.length>4?' +'+(alumnos.length-4)+' más':'');
+      var bdg = document.createElement('span');
+      bdg.style.cssText = 'font-size:10px;font-weight:700;font-family:var(--font-mono);'
+        +'background:var(--amber-bg);color:var(--amber);border-radius:20px;padding:2px 8px;flex-shrink:0;';
+      bdg.textContent = alumnos.length+' pend.';
+      var btnEval = document.createElement('button');
+      btnEval.className = 'btn';
+      btnEval.style.cssText = 'font-size:11px;padding:5px 10px;flex-shrink:0;';
+      btnEval.textContent = 'Evaluar';
+      btnEval.onclick = (function(c,a){ return function(){
+        selCurso(c);
+        var tabEl = document.querySelector('[data-maintab="estudio"]');
+        if (tabEl && typeof _activarTab==='function') _activarTab(tabEl,'estudio','evaluar');
+        setTimeout(function(){
+          var inp = document.getElementById('inputNombre');
+          if (inp){ inp.value=a[0]||''; inp.focus(); }
+        },150);
+      };})(curso,alumnos);
+      row.appendChild(cursoSpan); row.appendChild(alumnosSpan);
+      row.appendChild(bdg);      row.appendChild(btnEval);
+      frag.appendChild(row);
+    });
+    grid.innerHTML = '';
+    grid.appendChild(frag);
+  } catch(e){ console.warn('[ArtEval] _renderDashPendientes:',e.message); }
+}
+
+
 function renderDashboard() {
   // ── Poblar selector de instancia ──
   const selInst = document.getElementById('dashInstanciaFiltro');
@@ -11413,13 +11541,15 @@ function _renderDashGrid(instFiltro) {
     const notaColor = promedio==='—' ? 'var(--text3)' : promedio>=6?'var(--blue)':promedio>=4?'var(--green)':'var(--red)';
 
     return `<div class="dash-curso-card ${estado}" onclick="irACurso('${curso}')">
-      <div class="dash-estado-badge" style="background:${estadoBg};color:${estadoClr};">${estadoLabel}</div>
+      <div class="dash-estado-badge" style="background:${estadoBg};color:${estadoClr};">
+        ${pct>=90?'🟢':pct>=40?'🟡':'🔴'} ${estadoLabel}
+      </div>
       <div class="dash-curso-nombre">${curso}</div>
       <div class="dash-curso-meta">${evaluados}/${total} evaluados · ${pendientes} pendiente${pendientes!==1?'s':''}</div>
-      <div class="dash-progreso-bar"><div class="dash-progreso-fill" style="width:${pct}%;background:${fillColor};"></div></div>
+      <div class="dash-progreso-bar"><div class="dash-progreso-fill" style="width:${pct}%;background:${fillColor}"></div></div>
       <div style="display:flex;align-items:baseline;justify-content:space-between;">
         <div class="dash-nota-prom" style="color:${notaColor}">${promedio}</div>
-        <div style="font-size:10px;color:var(--text3);font-family:var(--font-mono);">${regs.length?aprobados+'/'+regs.length+' logrado':''}</div>
+        <div style="font-size:10px;color:var(--text3);font-family:var(--font-mono);">${regs.length?aprobados+' logr.':''}</div>
       </div>
     </div>`;
   }).join('');
@@ -12016,165 +12146,175 @@ function toggleProgresoDetail(id) {
 // ══ GENERADOR DE ACTA UTP ════════════════════════════════════════════════════
 // Analiza los registros del semestre activo y muestra un acta profesional
 // en un modal iOS con opciones de copiar al portapapeles y descargar como TXT.
-function generarActaUTP(cursoFiltro) {
+function generarActaUTP(cursoFiltro, modoVista) {
+  modoVista = modoVista || 'semestre';
   try {
-    // ── 1. Recopilar datos ──────────────────────────────────────────────────
-    var hoy       = new Date().toLocaleDateString('es-CL', {
-                      weekday:'long', year:'numeric', month:'long', day:'numeric' });
-    var semLabel  = _semestreActivo === 1 ? '1° Semestre' : '2° Semestre';
-    var regsBase  = _registrosSemestre();
-    var nombreProf = localStorage.getItem('av_nombre_prof')
-                  || localStorage.getItem('av_email_prof')
-                  || 'Docente';
-    var colegio   = localStorage.getItem('av_email_colegio') || '';
+    var hoy        = new Date().toLocaleDateString('es-CL', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
+    var semLabel   = _semestreActivo === 1 ? '1\u00b0 Semestre' : '2\u00b0 Semestre';
+    var nombreProf = localStorage.getItem('av_nombre_prof') || localStorage.getItem('av_email_prof') || 'Docente';
+    var colegio    = localStorage.getItem('av_email_colegio') || '';
 
-    // Si se pasó un curso específico, filtrar; si no, todos los cursos
+    var regsBase = modoVista === 'anio'
+      ? registros.filter(function(r){ return r.nota !== undefined && r.nota !== null; })
+      : _registrosSemestre();
+
     var regsTotal = cursoFiltro
       ? regsBase.filter(function(r){ return r.curso === cursoFiltro; })
       : regsBase;
 
-    if (!regsTotal.length) {
-      mostrarToast('No hay evaluaciones en el semestre activo para generar el acta.', 3000);
-      return;
+    if (!regsTotal.length) { mostrarToast('No hay evaluaciones para generar el acta.', 3000); return; }
+
+    // Helper: calcular bloque estadístico reutilizable
+    function _calcBloque(regs, curso) {
+      var notas      = regs.map(function(r){ return r.nota||1; });
+      var prom       = notas.reduce(function(s,n){ return s+n; },0) / notas.length;
+      var logrados   = regs.filter(function(r){ return (r.nota||1)>=4; });
+      var riesgo     = regs.filter(function(r){ return (r.nota||1)<4;  });
+      var destacados = regs.filter(function(r){ return (r.nota||1)>=6; });
+      var ne         = regs.filter(function(r){ return r.noEntregado; });
+      var pie        = regs.filter(function(r){ return r.pie; });
+      var pctLogro   = Math.round(logrados.length/regs.length*100);
+      var nomina     = listaCursos[curso]||[];
+      var totalNom   = nomina.length||regs.length;
+      var cobertura  = Math.min(100,Math.round(regs.length/totalNom*100));
+      var instSet={}, instancias=[];
+      regs.forEach(function(r){ var k=r.instancia||'Ev. 1'; if(!instSet[k]){instSet[k]=1;instancias.push(k);} });
+      return {regs,prom,logrados,riesgo,destacados,ne,pie,pctLogro,totalNom,cobertura,instancias};
     }
 
-    // ── 2. Agrupar por curso ────────────────────────────────────────────────
+    // Agrupar por curso
     var porCurso = {};
-    regsTotal.forEach(function(r) {
-      var c = r.curso || 'Sin curso';
-      if (!porCurso[c]) porCurso[c] = [];
+    regsTotal.forEach(function(r){
+      var c = r.curso||'Sin curso';
+      if(!porCurso[c]) porCurso[c]=[];
       porCurso[c].push(r);
     });
     var cursos = Object.keys(porCurso).sort(function(a,b){ return a.localeCompare(b,'es'); });
 
-    // ── 3. Calcular estadísticas por curso ──────────────────────────────────
-    var bloques = cursos.map(function(curso) {
-      var regs      = porCurso[curso];
-      var notas     = regs.map(function(r){ return r.nota || 1; });
-      var prom      = notas.reduce(function(s,n){ return s+n; }, 0) / notas.length;
-      var logrados  = regs.filter(function(r){ return (r.nota||1) >= 4.0; });
-      var riesgo    = regs.filter(function(r){ return (r.nota||1) <  4.0; });
-      var destacados= regs.filter(function(r){ return (r.nota||1) >= 6.0; });
-      var ne        = regs.filter(function(r){ return r.noEntregado; });
-      var pie       = regs.filter(function(r){ return r.pie; });
-      var pctLogro  = Math.round(logrados.length / regs.length * 100);
-      // Total alumnos de la nómina (si existe)
-      var nomina    = listaCursos[curso] || [];
-      var totalNom  = nomina.length || regs.length;
-      var cobertura = Math.min(100, Math.round(regs.length / totalNom * 100));
-      // Instancias evaluadas
-      var instancias = [...new Set(regs.map(function(r){ return r.instancia||'Evaluación 1'; }))].sort();
-
-      return {
-        curso, regs, prom, logrados, riesgo, destacados, ne, pie,
-        pctLogro, totalNom, cobertura, instancias
-      };
-    });
-
-    // ── 4. Construir texto plano del acta (para copiar/Word) ─────────────────
-    var lineSep = '─'.repeat(52);
+    // Texto plano
+    var lineSep  = '\u2500'.repeat(52);
     var txtLines = [
-      'ACTA DE EVALUACIÓN — ARTES VISUALES',
-      colegio ? colegio.toUpperCase() : '',
-      '',
-      'Docente   : ' + nombreProf,
-      'Semestre  : ' + semLabel,
-      'Fecha     : ' + hoy.charAt(0).toUpperCase() + hoy.slice(1),
-      lineSep,
+      'ACTA DE EVALUACI\u00d3N \u2014 ARTES VISUALES',
+      colegio?colegio.toUpperCase():'',
+      '', 'Docente   : '+nombreProf,
+      'Vista     : '+(modoVista==='anio'?'A\u00f1o completo (S1 vs S2)':semLabel),
+      'Fecha     : '+hoy.charAt(0).toUpperCase()+hoy.slice(1), lineSep,
     ];
 
-    bloques.forEach(function(b) {
-      txtLines.push('');
-      txtLines.push('CURSO: ' + b.curso.toUpperCase());
-      txtLines.push('  Alumnos evaluados : ' + b.regs.length + ' / ' + b.totalNom
-                    + ' (' + b.cobertura + '% cobertura)');
-      txtLines.push('  Instancias        : ' + b.instancias.join(', '));
-      txtLines.push('  Promedio general  : ' + b.prom.toFixed(1));
-      txtLines.push('  Logrado (≥ 4.0)   : ' + b.logrados.length + ' alumnos ('
-                    + b.pctLogro + '%)');
-      txtLines.push('  Destacado (≥ 6.0) : ' + b.destacados.length + ' alumnos');
-      txtLines.push('  En riesgo (< 4.0) : ' + b.riesgo.length + ' alumnos'
-                    + (b.riesgo.length ? ' → ' + b.riesgo.map(function(r){
-                        return r.nombre.split(' ')[0];}).join(', ') : ''));
-      if (b.ne.length)  txtLines.push('  No entregado      : ' + b.ne.length  + ' alumnos');
-      if (b.pie.length) txtLines.push('  Con PIE           : ' + b.pie.length + ' alumnos');
-      txtLines.push('  ' + lineSep.slice(0,48));
-    });
+    // HTML de bloques por curso
+    var blocksHTML = cursos.map(function(curso) {
+      if (modoVista === 'anio') {
+        var regsS1 = porCurso[curso].filter(function(r){ return _semestrePorInstancia(r.instancia||'')===1; });
+        var regsS2 = porCurso[curso].filter(function(r){ return _semestrePorInstancia(r.instancia||'')===2; });
+        var b1 = regsS1.length ? _calcBloque(regsS1,curso) : null;
+        var b2 = regsS2.length ? _calcBloque(regsS2,curso) : null;
 
-    txtLines.push('');
-    txtLines.push('Generado por ArtEval · arteval.app');
-    var textoActa = txtLines.filter(Boolean).join('\n');
+        // Texto
+        txtLines.push('','CURSO: '+curso.toUpperCase());
+        if(b1) txtLines.push('  1\u00b0 Semestre \u2014 Prom: '+b1.prom.toFixed(1)+' \u00b7 Logrado: '+b1.pctLogro+'% \u00b7 Cobertura: '+b1.cobertura+'%');
+        if(b2) txtLines.push('  2\u00b0 Semestre \u2014 Prom: '+b2.prom.toFixed(1)+' \u00b7 Logrado: '+b2.pctLogro+'% \u00b7 Cobertura: '+b2.cobertura+'%');
+        if(b1&&b2){ var dt=b2.prom-b1.prom; txtLines.push('  Evoluci\u00f3n S1\u2192S2: '+(dt>=0?'+':'')+dt.toFixed(1)); }
+        txtLines.push('  '+lineSep.slice(0,48));
 
-    // ── 5. Construir HTML del modal ─────────────────────────────────────────
-    var blocksHTML = bloques.map(function(b) {
-      var promClr = b.prom >= 6 ? 'var(--blue)'
-                  : b.prom >= 4 ? 'var(--green)'
-                  : 'var(--red)';
-      var riesgoNombres = b.riesgo.length
-        ? b.riesgo.slice(0,5).map(function(r){
-            return '<span style="display:inline-block;background:var(--red-bg);color:var(--red);'
-              + 'border-radius:6px;padding:1px 7px;font-size:11px;margin:2px;">'
-              + _esc(r.nombre.split(' ').slice(0,2).join(' ')) + '</span>';
-          }).join('') + (b.riesgo.length > 5
-            ? '<span style="font-size:11px;color:var(--text3);">+' + (b.riesgo.length-5) + ' más</span>'
-            : '')
-        : '<span style="color:var(--green);font-size:12px;">✓ Ninguno en riesgo</span>';
+        // HTML columna semestre
+        function _semCol(b,num){
+          if(!b) return '<div style="flex:1;background:var(--bg4);border-radius:10px;padding:12px;text-align:center;">'
+            +'<div style="font-size:10px;color:var(--text3);margin-bottom:4px;">'+num+'\u00b0 Sem</div>'
+            +'<div style="font-size:13px;color:var(--text3);">Sin datos</div></div>';
+          var pc=b.prom>=6?'var(--blue)':b.prom>=4?'var(--green)':'var(--red)';
+          return '<div style="flex:1;background:var(--bg3);border-radius:10px;padding:12px;">'
+            +'<div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">'+num+'\u00b0 Semestre</div>'
+            +'<div style="font-size:22px;font-weight:700;color:'+pc+';font-family:var(--font-mono);margin-bottom:4px;">'+b.prom.toFixed(1)+'</div>'
+            +'<div style="font-size:11px;color:var(--text3);">Logrado: '+b.pctLogro+'%</div>'
+            +'<div style="font-size:11px;color:var(--text3);">Cobertura: '+b.cobertura+'%</div>'
+            +(b.riesgo.length?'<div style="font-size:10px;color:var(--red);margin-top:4px;">\u26a0 '+b.riesgo.length+' en riesgo</div>':'')
+            +'</div>';
+        }
+        var deltaHTML='';
+        if(b1&&b2){
+          var delta=b2.prom-b1.prom;
+          deltaHTML='<div style="display:flex;align-items:center;justify-content:center;gap:4px;margin-top:8px;'
+            +'font-size:12px;font-weight:600;color:'+(delta>=0?'var(--green)':'var(--red)')+';">'
+            +(delta>=0?'\u25b2':'\u25bc')+' '+(delta>=0?'+':'')+delta.toFixed(1)+' S1\u2192S2</div>';
+        }
+        return '<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:10px;">'
+          +'<div style="font-size:14px;font-weight:700;margin-bottom:10px;font-family:var(--font-mono);">'+_esc(curso)+'</div>'
+          +'<div style="display:flex;gap:8px;">'+_semCol(b1,1)+_semCol(b2,2)+'</div>'
+          +deltaHTML+'</div>';
 
-      return '<div style="background:var(--bg3);border:0.5px solid var(--border);'
-        + 'border-radius:14px;padding:14px 16px;margin-bottom:10px;">'
-        // Encabezado del curso
-        + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">'
-        +   '<span style="font-size:14px;font-weight:700;font-family:var(--font-mono);">'
-        +     _esc(b.curso) + '</span>'
-        +   '<span style="font-size:22px;font-weight:700;color:' + promClr + ';font-family:var(--font-mono);">'
-        +     b.prom.toFixed(1) + '</span>'
-        + '</div>'
-        // KPIs en grid
-        + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;">'
-        + _actaKpi('Evaluados', b.regs.length + '/' + b.totalNom, b.cobertura + '%')
-        + _actaKpi('Logrado', b.logrados.length + ' alum.', b.pctLogro + '%', 'var(--green)')
-        + _actaKpi('Destacado', b.destacados.length + ' alum.', '≥ 6.0', 'var(--blue)')
-        + '</div>'
-        // Alumnos en riesgo
-        + '<div style="margin-top:4px;">'
-        +   '<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;'
-        +        'font-weight:600;margin-bottom:4px;">En riesgo (< 4.0)</div>'
-        +   '<div>' + riesgoNombres + '</div>'
-        + '</div>'
-        // Instancias y PIE
-        + '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">'
-        + (b.ne.length  ? '<span style="font-size:11px;background:var(--amber-bg);color:var(--amber);'
-            + 'border-radius:6px;padding:2px 8px;">NE: ' + b.ne.length + '</span>' : '')
-        + (b.pie.length ? '<span style="font-size:11px;background:var(--pie-bg);color:var(--pie);'
-            + 'border-radius:6px;padding:2px 8px;">PIE: ' + b.pie.length + '</span>' : '')
-        + '<span style="font-size:11px;color:var(--text3);">'
-        + b.instancias.join(' · ') + '</span>'
-        + '</div>'
-        + '</div>';
+      } else {
+        // Modo semestre único (comportamiento original)
+        var b = _calcBloque(porCurso[curso],curso);
+        txtLines.push('','CURSO: '+curso.toUpperCase());
+        txtLines.push('  Alumnos evaluados : '+b.regs.length+' / '+b.totalNom+' ('+b.cobertura+'% cobertura)');
+        txtLines.push('  Instancias        : '+b.instancias.join(', '));
+        txtLines.push('  Promedio general  : '+b.prom.toFixed(1));
+        txtLines.push('  Logrado (\u2265 4.0)   : '+b.logrados.length+' alumnos ('+b.pctLogro+'%)');
+        txtLines.push('  Destacado (\u2265 6.0) : '+b.destacados.length+' alumnos');
+        txtLines.push('  En riesgo (< 4.0) : '+b.riesgo.length+' alumnos'
+          +(b.riesgo.length?' \u2192 '+b.riesgo.map(function(r){return r.nombre.split(' ')[0];}).join(', '):''));
+        if(b.ne.length)  txtLines.push('  No entregado      : '+b.ne.length+' alumnos');
+        if(b.pie.length) txtLines.push('  Con PIE           : '+b.pie.length+' alumnos');
+        txtLines.push('  '+lineSep.slice(0,48));
+
+        var promClr = b.prom>=6?'var(--blue)':b.prom>=4?'var(--green)':'var(--red)';
+        var riesgoNombres = b.riesgo.length
+          ? b.riesgo.slice(0,5).map(function(r){
+              return '<span style="display:inline-block;background:var(--red-bg);color:var(--red);border-radius:6px;padding:1px 7px;font-size:11px;margin:2px;">'
+                +_esc(r.nombre.split(' ').slice(0,2).join(' '))+'</span>';
+            }).join('')+(b.riesgo.length>5?'<span style="font-size:11px;color:var(--text3);">+'+(b.riesgo.length-5)+' m\u00e1s</span>':'')
+          : '<span style="color:var(--green);font-size:12px;">\u2713 Ninguno en riesgo</span>';
+
+        return '<div style="background:var(--bg3);border:0.5px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:10px;">'
+          +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">'
+          +'<span style="font-size:14px;font-weight:700;font-family:var(--font-mono);">'+_esc(curso)+'</span>'
+          +'<span style="font-size:22px;font-weight:700;color:'+promClr+';font-family:var(--font-mono);">'+b.prom.toFixed(1)+'</span>'
+          +'</div>'
+          +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;">'
+          +_actaKpi('Evaluados',b.regs.length+'/'+b.totalNom,b.cobertura+'%')
+          +_actaKpi('Logrado',b.logrados.length+' alum.',b.pctLogro+'%','var(--green)')
+          +_actaKpi('Destacado',b.destacados.length+' alum.','\u2265 6.0','var(--blue)')
+          +'</div>'
+          +'<div style="margin-top:4px;">'
+          +'<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:4px;">En riesgo (< 4.0)</div>'
+          +'<div>'+riesgoNombres+'</div></div>'
+          +'<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">'
+          +(b.ne.length?'<span style="font-size:11px;background:var(--amber-bg);color:var(--amber);border-radius:6px;padding:2px 8px;">NE: '+b.ne.length+'</span>':'')
+          +(b.pie.length?'<span style="font-size:11px;background:var(--pie-bg);color:var(--pie);border-radius:6px;padding:2px 8px;">PIE: '+b.pie.length+'</span>':'')
+          +'<span style="font-size:11px;color:var(--text3);">'+b.instancias.join(' \u00b7 ')+'</span>'
+          +'</div></div>';
+      }
     }).join('');
 
+    txtLines.push('','Generado por ArtEval \u00b7 arteval.app');
+    var textoActa = txtLines.filter(Boolean).join('\n');
+
+    // Toggle segmented control: Semestre / Año completo
+    var cursoArg = cursoFiltro ? "'"+cursoFiltro+"'" : 'null';
+    var toggleHTML = '<div style="display:flex;gap:4px;background:var(--surface);border-radius:10px;padding:3px;margin-bottom:14px;">'
+      +[['semestre',semLabel],['anio','A\u00f1o completo']].map(function(pair){
+        var v=pair[0], lbl=pair[1], active=modoVista===v;
+        return '<button onclick="cerrarModal();setTimeout(function(){generarActaUTP('+cursoArg+',\''+v+'\');},80);" '
+          +'style="flex:1;padding:6px 0;border-radius:8px;border:none;font-size:12px;font-weight:'+(active?'600':'500')+';'
+          +'font-family:var(--font-ui);cursor:pointer;background:'+(active?'var(--bg2)':'transparent')+';'
+          +'color:'+(active?'var(--text)':'var(--text2)')+';'+(active?'box-shadow:0 1px 4px rgba(0,0,0,.10);':'')
+          +'-webkit-tap-highlight-color:transparent;">'+lbl+'</button>';
+      }).join('')+'</div>';
+
     var modalHTML = '<div class="modal-title" style="margin-bottom:4px;">Acta UTP</div>'
-      + '<div style="font-size:12px;color:var(--text3);margin-bottom:14px;">'
-      + semLabel + ' · ' + hoy.charAt(0).toUpperCase() + hoy.slice(1) + '</div>'
-      // Cuerpo scrollable
-      + '<div style="max-height:58vh;overflow-y:auto;margin:0 -4px;padding:0 4px;">'
-      + blocksHTML
-      + '</div>'
-      // Botones de acción
-      + '<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">'
-      +   '<button onclick="_copiarActaUTP()" class="btn btn-primary" style="flex:1;min-width:130px;">'
-      +     '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"'
-      +          ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round"'
-      +          ' style="margin-right:5px;">'
-      +       '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>'
-      +       '<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>'
-      +     '</svg>Copiar texto</button>'
-      +   '<button onclick="cerrarModal()" class="btn" style="flex:1;min-width:100px;">Cerrar</button>'
-      + '</div>';
+      +'<div style="font-size:12px;color:var(--text3);margin-bottom:10px;">'
+      +nombreProf+(colegio?' \u00b7 '+colegio:'')+' \u00b7 '+hoy.charAt(0).toUpperCase()+hoy.slice(1)+'</div>'
+      +toggleHTML
+      +'<div style="max-height:55vh;overflow-y:auto;margin:0 -4px;padding:0 4px;">'+blocksHTML+'</div>'
+      +'<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">'
+      +'<button onclick="_copiarActaUTP()" class="btn btn-primary" style="flex:1;min-width:130px;">'
+      +'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;">'
+      +'<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>'
+      +'</svg>Copiar texto</button>'
+      +'<button onclick="cerrarModal()" class="btn" style="flex:1;min-width:100px;">Cerrar</button>'
+      +'</div>';
 
-    // Guardar texto en variable global para copiar
     window._actaUTPTexto = textoActa;
-
     abrirModal(modalHTML, 'modal-acta-utp');
 
   } catch(e) {
@@ -13821,6 +13961,18 @@ input:focus, textarea:focus, select:focus {
   line-height: 1.5;
 }
 
+
+/* ── Badge silencioso de sincronización Drive ────────────────────────────── */
+#_driveNotifBadge {
+  display: none;
+  animation: _badgePop 0.25s var(--ease-spring);
+}
+@keyframes _badgePop {
+  0%   { transform: scale(0); opacity: 0; }
+  70%  { transform: scale(1.25); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
 </style></head><body>
   <h1>📋 Informe de Evaluaciones · Artes Visuales</h1>
   <div class="meta">
@@ -14044,6 +14196,8 @@ function _restoreScroll(secId) {
 
 function showEstudioSub(sub) {
   // Actualizar contexto al cambiar sección
+  // Al salir de evaluar: desactivar modo no molestar Drive
+  if (sub !== 'evaluar') _driveEvaluando = false;
   setTimeout(actualizarBarraContinuidad, 60);
   // Guardar scroll de la sección que estamos dejando
   var prevSec = 'estudio-sec-' + _estudioSubTab;
@@ -14058,6 +14212,7 @@ function showEstudioSub(sub) {
     if (evalBar) evalBar.style.display = 'none';
   }
   if (sub === 'evaluar') {
+    _driveEvaluando = true;   // modo no molestar Drive activo durante evaluación
     try {
       var _clist = document.getElementById('criteriosList');
       if (!_clist || !_clist.children.length) renderCriterios();
@@ -14730,7 +14885,7 @@ function _procesarPlanillaApoderadosRows(rows, fileName) {
   if (badge) badge.textContent = Object.keys(_apoderadoEmails).length + ' alumnos en planilla';
   _renderEmailCards();
 }
-function _generarTextoEmail(al, nombreProfesor, nombreColegio) {
+function _generarTextoEmail(al, nombreProfesor, nombreColegio, fraseIA) {
   var notas=al.notas||[],instancias=al.instancias||[],rubricas=al.rubricas||[];
   var prom=al.promedio?al.promedio.toFixed(1):'?';
   var fechaHoy=new Date().toLocaleDateString('es-CL',{day:'numeric',month:'long',year:'numeric'});
@@ -14750,6 +14905,7 @@ function _generarTextoEmail(al, nombreProfesor, nombreColegio) {
     +detalleNotas
     +'\nPromedio actual: '+prom+' (situaci\u00f3n cr\u00edtica \u2014 bajo 4,0)\n\n'
     +'Esta situaci\u00f3n requiere atenci\u00f3n para revertir su rendimiento antes del cierre del per\u00edodo.\n\n'
+    +(fraseIA?fraseIA+'\n\n':'')
     +'Para apoyar desde el hogar, le sugerimos:\n\n'
     +'   \u2022 Revise junto a su estudiante los trabajos y materiales evaluados en Artes Visuales.\n'
     +'   \u2022 Fomente en casa la pr\u00e1ctica del dibujo, pintura o cualquier actividad creativa.\n'
@@ -14759,7 +14915,55 @@ function _generarTextoEmail(al, nombreProfesor, nombreColegio) {
     +'Atentamente,\n'
     +'Profesor de Artes Visuales.';
 }
-// ── Informe de Notificaciones UTP ────────────────────────────────────────────
+// ── Generador de frase IA para correo a apoderado ────────────────────────────
+// Llama a la API de Anthropic para generar UNA frase contextual personalizada
+// basada en las notas, criterios y situación específica del alumno.
+// callback(frase) se llama con el texto generado, o con null si falla.
+// Totalmente no bloqueante — el correo funciona igual sin IA.
+async function _generarFraseIACorreo(al, callback) {
+  try {
+    // Construir contexto del alumno para el modelo
+    var detalleCtx = (al.notas||[]).map(function(n, i) {
+      var inst = (al.instancias||[])[i] || ('Evaluación ' + (i+1));
+      var rub  = (al.rubricas||[])[i]  || '';
+      var logro = n>=6?'Destacado':n>=5?'Logrado':n>=4?'Suficiente':'No logrado';
+      return inst + (rub?' ['+rub+']':'') + ': ' + n.toFixed(1) + ' (' + logro + ')';
+    }).join('; ');
+
+    var prompt = 'Eres un profesor de Artes Visuales chileno escribiendo un correo formal a un apoderado. '
+      + 'Basándote en los datos del estudiante, escribe UNA SOLA oración (máximo 2 líneas) que mencione '
+      + 'específicamente en qué área de Artes Visuales el/la estudiante necesita refuerzo. '
+      + 'Sé específico, empático y constructivo. No repitas el promedio ni las notas. '
+      + 'Solo la oración, sin saludos ni firmas.\n\n'
+      + 'Estudiante: ' + al.nombre + '\n'
+      + 'Curso: ' + al.curso + '\n'
+      + 'Promedio: ' + (al.promedio||0).toFixed(1) + '\n'
+      + 'Evaluaciones: ' + detalleCtx + '\n'
+      + (al.pie ? 'Nota: estudiante con necesidades educativas especiales (PIE).\n' : '');
+
+    var resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 150,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    var data  = await resp.json();
+    var frase = (data.content && data.content[0] && data.content[0].text || '').trim();
+    if (frase) callback(frase);
+    else       callback(null);
+
+  } catch(e) {
+    console.warn('[ArtEval] _generarFraseIACorreo:', e.message);
+    callback(null);
+  }
+}
+
+
 // Funciones para poblar filtros, renderizar tabla y exportar a Excel
 
 function _poblarFiltrosUTP() {
@@ -15248,6 +15452,44 @@ function _abrirCorreoTab(idx){
   });
 
   box.appendChild(lista);
+
+  // Botón ✨ Mejorar con IA — genera una frase contextual personalizada
+  var iaBtn = document.createElement('button');
+  iaBtn.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:7px;'
+    + 'width:calc(100% - 32px);margin:8px 16px 0;padding:11px;'
+    + 'border-radius:12px;border:0.5px solid var(--accent-border);'
+    + 'background:var(--accent-bg);cursor:pointer;'
+    + 'font-size:13px;font-weight:600;font-family:var(--font-ui);color:var(--accent);'
+    + 'transition:opacity 0.15s;-webkit-tap-highlight-color:transparent;';
+  iaBtn.innerHTML = '✨ Mejorar con IA';
+  iaBtn.title = 'Genera una frase personalizada según las evaluaciones del alumno';
+  iaBtn.onclick = function() {
+    iaBtn.innerHTML = '⏳ Generando…';
+    iaBtn.style.opacity = '0.6';
+    iaBtn.disabled = true;
+    _generarFraseIACorreo(al, function(frase) {
+      iaBtn.innerHTML = '✨ Mejorar con IA';
+      iaBtn.style.opacity = '1';
+      iaBtn.disabled = false;
+      if (!frase) {
+        toast('No se pudo generar la frase. Verifica tu conexión.', 3000);
+        return;
+      }
+      // Actualizar el texto del correo con la frase IA
+      texto = _generarTextoEmail(al, prof, cole, frase);
+      // Recargar badge de éxito
+      iaBtn.innerHTML = '✅ Frase añadida';
+      iaBtn.style.borderColor = 'var(--green)';
+      iaBtn.style.color = 'var(--green)';
+      toast('✨ Frase IA incluida en el correo', 2500);
+      setTimeout(function() {
+        iaBtn.innerHTML = '✨ Mejorar con IA';
+        iaBtn.style.borderColor = 'var(--accent-border)';
+        iaBtn.style.color = 'var(--accent)';
+      }, 3000);
+    });
+  };
+  box.appendChild(iaBtn);
 
   // Nota informativa
   var nota=document.createElement('div');
@@ -19165,6 +19407,7 @@ function actualizarTodaLaApp() {
 function _actualizarTodaLaAppImpl() {
   _renderSemestreControls();
   actualizarBarraContinuidad();
+  _renderDashPendientes();
   try {
     // Invalidar cachés antes de cualquier render
     _regsMapCache    = null;
@@ -19391,7 +19634,13 @@ var DRIVE_SCOPE    = 'https://www.googleapis.com/auth/drive.file';
 const DRIVE_FOLDER   = 'ArtEval_Backups';
 const DRIVE_FILENAME        = 'arteval_database.json';
 const DRIVE_FOTOS_FOLDER    = 'ArtEval_Fotos';    // carpeta exclusiva para imágenes
-var _driveFotosFolderId   = null;               // se cachea tras la primera búsqueda
+// ── Modo no molestar Drive — acumula syncs silenciosas durante evaluación ─────
+// El toast de éxito se reemplaza por un badge numérico en el botón de nube.
+// Solo los errores siguen mostrándose como toast (son información crítica).
+var _driveNotifQueue  = 0;          // contador de syncs exitosas acumuladas
+var _driveNotifTimer  = null;       // timer para limpiar el badge
+var _driveEvaluando   = false;      // true mientras el modal de evaluación está abierto
+
 var DRIVE_BACKUP_FILENAME = 'ArtEval_DailyBackup.json';
 var _autoBackupEnabled    = localStorage.getItem('av_auto_backup_enabled') !== 'false'; // true por defecto
 var _autoBackupRunning    = false; // evitar ejecuciones paralelas
@@ -19772,6 +20021,38 @@ async function _subirFotoDrive(b64, nombreAlumno) {
 }
 
 
+// ── _driveNotifSilenciosa: badge en botón de nube, sin interrumpir con toast ─
+function _driveNotifSilenciosa(nRegistros) {
+  _driveNotifQueue++;
+  var btn   = document.getElementById('cloudBtn');
+  if (btn) {
+    var badge = document.getElementById('_driveNotifBadge');
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.id = '_driveNotifBadge';
+      badge.style.cssText = 'position:absolute;top:-5px;right:-5px;background:var(--green);'
+        + 'color:#fff;font-size:9px;font-weight:700;font-family:var(--font-mono);'
+        + 'border-radius:20px;padding:1px 5px;pointer-events:none;line-height:1.4;'
+        + 'border:1.5px solid var(--bg2);';
+      btn.style.position = 'relative';
+      btn.appendChild(badge);
+    }
+    badge.textContent  = '\u2713' + _driveNotifQueue;
+    badge.style.display = 'block';
+    btn.title = 'Drive: ' + _driveNotifQueue + ' sync'
+      + (_driveNotifQueue !== 1 ? 's' : '')
+      + ' \u00b7 ' + nRegistros + ' registros \u00b7 Clic para abrir';
+  }
+  // Limpiar badge a los 8s de inactividad
+  clearTimeout(_driveNotifTimer);
+  _driveNotifTimer = setTimeout(function() {
+    var b = document.getElementById('_driveNotifBadge');
+    if (b) b.style.display = 'none';
+    _driveNotifQueue = 0;
+  }, 8000);
+}
+
+
 // Buscar archivo arteval_database.json en la carpeta
 async function _findDbFile(folderId) {
   try {
@@ -20146,7 +20427,12 @@ async function syncToDrive() {
     _updateCloudUI('synced');
     _checkDriveSyncInfo();
     if (typeof _updateDriveIntegrityBadge === 'function') _updateDriveIntegrityBadge();
-    toast('✅ Drive actualizado — ' + snapshot.registros.length + ' registros', 'ok', 3000);
+    // Modo no molestar: badge silencioso durante evaluación, toast solo fuera de ella
+    if (_driveEvaluando) {
+      _driveNotifSilenciosa(snapshot.registros.length);
+    } else {
+      toast('\u2705 Drive actualizado \u2014 ' + snapshot.registros.length + ' registros', 'ok', 3000);
+    }
   } catch(e) {
     _updateCloudUI('error');
     toast('❌ Error al guardar en Drive: ' + e.message, 'err', 6000);
