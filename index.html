@@ -8178,11 +8178,29 @@ document.addEventListener('keydown', function(e) {
     return;
   }
   // I = ir a Inicio dashboard
-  if (e.key === 'i' || e.key === 'I') { e.preventDefault(); showTab('inicio'); return; }
+  if (e.key === 'i' || e.key === 'I') {
+    e.preventDefault();
+    var tI = document.getElementById('tabBtnInicio') || document.querySelector('[data-maintab="inicio"]');
+    if (tI && typeof _activarTab === 'function') _activarTab(tI, 'estudio', 'inicio');
+    else showTab('inicio');
+    return;
+  }
   // E = ir a Evaluar
-  if (e.key === 'e' || e.key === 'E') { e.preventDefault(); showTab('evaluar'); return; }
+  if (e.key === 'e' || e.key === 'E') {
+    e.preventDefault();
+    var tE = document.getElementById('tabBtnEvaluar') || document.querySelector('[data-maintab="evaluar"]');
+    if (tE && typeof _activarTab === 'function') _activarTab(tE, 'estudio', 'evaluar');
+    else showTab('evaluar');
+    return;
+  }
   // R = ir a Registros
-  if (e.key === 'r' || e.key === 'R') { e.preventDefault(); showTab('registros'); return; }
+  if (e.key === 'r' || e.key === 'R') {
+    e.preventDefault();
+    var tR = document.querySelector('[data-maintab="registros"]');
+    if (tR && typeof _activarTab === 'function') _activarTab(tR, 'estudio', 'registros');
+    else showTab('registros');
+    return;
+  }
   // P = ir a Progreso
   if (e.key === 'p' || e.key === 'P') { e.preventDefault(); showTab('progreso'); return; }
 });
@@ -9084,7 +9102,7 @@ function confirmarEdicion(idx) {
     renderCursoMain();
     // Si estábamos en la pestaña Cursos, volver a ella (no redirigir a Registros)
     if (document.getElementById('tab-cursos')?.style.display !== 'none') {
-      showTab('cursos');
+    var _tabBtnE = document.getElementById('tabBtnEstudio')||document.querySelector('[data-maintab="estudio"]'); if(_tabBtnE&&typeof _activarTab==='function'){_activarTab(_tabBtnE,'estudio','cursos');}else{if(typeof showEstudioSub==='function')showEstudioSub('cursos');}
     }
   }
   setTimeout(actualizarTodaLaApp, 80);
@@ -12293,7 +12311,7 @@ function _mostrarDetalleCursoDash(curso) {
       // Acciones
       +'<div style="display:flex;gap:8px;flex-wrap:wrap;">'
       +'<button class="btn btn-primary" style="flex:1;" onclick="cerrarModal();setTimeout(function(){irACurso(\''+curso.replace(/'/g,"\\'")+'\');},80);">Ver curso completo</button>'
-      +'<button class="btn" style="flex:1;" onclick="cerrarModal();setTimeout(function(){selCurso(\''+curso.replace(/'/g,"\\'")+'\');var t=document.querySelector(\'[data-maintab=estudio]\');if(t&&typeof _activarTab===\'function\')_activarTab(t,\'estudio\',\'evaluar\');},80);">Evaluar ahora</button>'
+      +'<button class="btn" style="flex:1;" onclick="cerrarModal();setTimeout(function(){var t=document.getElementById(\'tabBtnEvaluar\')||document.querySelector(\'[data-maintab=evaluar]\');if(t&&typeof _activarTab===\'function\'){_activarTab(t,\'estudio\',\'evaluar\');}else{if(typeof showEstudioSub===\'function\')showEstudioSub(\'evaluar\');}var inp=document.getElementById(\'inputCurso\');if(inp)inp.value=\''+curso.replace(/'/g,"\\'")+'\';if(typeof actualizarBarraProgresoCurso===\'function\')actualizarBarraProgresoCurso();},120);">Evaluar ahora</button>'
       +'<button class="btn" onclick="cerrarModal();" style="min-width:60px;">Cerrar</button>'
       +'</div>';
 
@@ -12674,8 +12692,16 @@ function _renderDashChart(instFiltro) {
 }
 
 function irACurso(curso) {
-  showTab('cursos');
-  setTimeout(function(){ selCurso(curso); }, 100);
+  // Activar tab Estudio con sub-sección cursos (patrón correcto de navegación)
+  var tabEl = document.getElementById('tabBtnEstudio')
+           || document.querySelector('[data-maintab="estudio"]');
+  if (tabEl && typeof _activarTab === 'function') {
+    _activarTab(tabEl, 'estudio', 'cursos');
+  } else {
+    showTab('estudio');
+    if (typeof showEstudioSub === 'function') showEstudioSub('cursos');
+  }
+  setTimeout(function(){ selCurso(curso); }, 120);
 }
 
 // ── Vista de progreso: 'grafico' | 'lista' ──
@@ -14917,10 +14943,21 @@ function showTab(name) {
 
   // Callbacks de renderizado por tab
   // Renderizadores aislados — cada uno con su propio try/catch
+  // Sub-sección a activar cuando se usan aliases de estudio
+  var _subTabAlias = {
+    'inicio': 'inicio', 'evaluar': 'evaluar', 'cursos': 'cursos',
+    'registros': 'registros', 'duplicados': 'duplicados'
+  };
+  var requestedSub = _subTabAlias[name] || null;
+
   if (mappedName === 'estudio') {
     try { renderEstudio(); } catch(e) { console.warn('[ArtEval] renderEstudio:', e.message); }
-    // Asegurar que la sub-sección correcta se muestre al navegar a estudio
-    try { _renderEstudioSubNav(); } catch(e) {}
+    // Si se llegó via alias (evaluar, cursos, etc.), activar la sub-sección correcta
+    if (requestedSub && typeof showEstudioSub === 'function') {
+      try { showEstudioSub(requestedSub); } catch(e) {}
+    } else {
+      try { _renderEstudioSubNav(); } catch(e) {}
+    }
   } else if (mappedName === 'progreso') {
     // Registros ya no está en progreso; mostrar estadísticas por defecto
     try { if(_progresoSubTab==='registros') _progresoSubTab='estadisticas'; } catch(e) {}
@@ -18932,7 +18969,7 @@ function evaluarEstDesde(nombre, curso) {
     abrirRubricaTactil(nombre, curso, _e ? !!_e.pie : false);
     return;
   }
-  showTab('evaluar');
+    var _tE=document.getElementById('tabBtnEvaluar')||document.querySelector('[data-maintab="evaluar"]');if(_tE&&typeof _activarTab==='function'){_activarTab(_tE,'estudio','evaluar');}else{if(typeof showEstudioSub==='function')showEstudioSub('evaluar');}
   setTimeout(() => {
     const inp = document.getElementById('inputNombre');
     if (inp) inp.value = nombre;
@@ -20092,7 +20129,7 @@ function editarDesde(nombre, curso) {
   }
   const idx = registros.indexOf(regs[regs.length - 1]);
   if (idx > -1) {
-    showTab('registros');
+    var _tR=document.querySelector('[data-maintab="registros"]')||document.querySelector('[data-maintab="estudio"]');if(_tR&&typeof _activarTab==='function'){_activarTab(_tR,'estudio','registros');}else{if(typeof showEstudioSub==='function')showEstudioSub('registros');}
     setTimeout(function() { editarRegistro(idx); }, 120);
   }
 }
