@@ -4617,7 +4617,8 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
           </div>
           <div class="cam-actions">
             <button class="btn btn-primary ios-btn" id="btnCam" onclick="toggleCamara()">Iniciar cámara</button>
-            <button class="btn ios-btn" id="btnAnalizar" onclick="analizarAhora()" disabled>Analizar con IA</button>
+            <button class="btn ios-btn" id="btnAnalizar" onclick="analizarAhora()" disabled
+                    title="Analiza con IA la imagen de la cámara o la imagen digital subida">Analizar con IA</button>
             <button class="btn" id="btnAuto" onclick="toggleAuto()" style="display:none">Auto: OFF</button>
           </div>
           <input type="file" id="inputSubirImagen" accept="image/*" style="display:none;" onchange="subirImagenDigital(this)">
@@ -7139,6 +7140,23 @@ async function subirImagenDigital(inputEl) {
     _uploadedForNombre = (document.getElementById('inputNombre')?.value || '').trim().toUpperCase();
     if (pi) pi.src = 'data:image/jpeg;base64,' + b64;
     if (pw) pw.classList.add('visible');
+
+    // ── Habilitar "Analizar con IA" — imagen lista para evaluación ───────────
+    var btnAI = document.getElementById('btnAnalizar');
+    if (btnAI) {
+      btnAI.disabled = false;
+      btnAI.title = 'Analizar imagen digital con IA';
+    }
+    // Mostrar badge de imagen digital en el visor
+    var lb = document.getElementById('liveBadge');
+    var bw = document.getElementById('camBadgeWrap');
+    if (lb && bw) {
+      lb.textContent      = '● IMAGEN DIGITAL';
+      lb.className        = 'cam-badge';
+      lb.style.background = 'rgba(0,122,255,0.15)';
+      lb.style.color      = 'var(--blue, #007AFF)';
+      bw.style.display    = 'flex';
+    }
     _uploadedDriveId = null;
     if (_driveToken) {
       if (lt) lt.textContent = 'Subiendo a Drive\u2026';
@@ -7171,10 +7189,26 @@ async function subirImagenDigital(inputEl) {
 
 function quitarImagenSubida() {
   _uploadedImgB64 = null; _uploadedDriveId = null; _uploadedForNombre = '';
-  var pw=document.getElementById('uploadPreviewWrap'),pi=document.getElementById('uploadPreviewImg'),db=document.getElementById('uploadDriveBadge');
-  if (pw) pw.classList.remove('visible'); if (pi) pi.src=''; if (db) db.classList.remove('visible');
-  var canvas=document.getElementById('canvasEl'); if (canvas){canvas.width=1;canvas.height=1;}
+  var pw=document.getElementById('uploadPreviewWrap'),
+      pi=document.getElementById('uploadPreviewImg'),
+      db=document.getElementById('uploadDriveBadge');
+  if (pw) pw.classList.remove('visible');
+  if (pi) pi.src='';
+  if (db) db.classList.remove('visible');
+  var canvas=document.getElementById('canvasEl');
+  if (canvas){canvas.width=1;canvas.height=1;}
   _captureForNombre=''; _captureTimestamp=0;
+  // Deshabilitar IA y restaurar badge solo si la cámara tampoco está activa
+  var btnAI = document.getElementById('btnAnalizar');
+  if (btnAI && !stream) btnAI.disabled = true;
+  var lb = document.getElementById('liveBadge');
+  var bw = document.getElementById('camBadgeWrap');
+  if (lb && !stream) {
+    lb.textContent      = '';
+    lb.style.background = '';
+    lb.style.color      = '';
+    if (bw) bw.style.display = 'none';
+  }
   toast('Imagen quitada', 'info', 1800);
 }
 
@@ -7327,17 +7361,38 @@ function actualizarSlider() {
 }
 
 async function analizarAhora() {
-  if (analizando || !stream) return;
+  // ── Permite análisis desde cámara en vivo O desde imagen subida ──────────
+  const tieneStream  = !!stream;
+  const tieneUpload  = !!_uploadedImgB64;
+
+  if (analizando) return;
+  if (!tieneStream && !tieneUpload) {
+    toast('⚠️ Inicia la cámara o sube una imagen digital primero', 'err', 4000);
+    return;
+  }
   const key = getKey();
   if (!key) { toast('⚠️ Configura tu API Key en la pestaña Configurar', 'err', 4000); return; }
+
   analizando = true;
   const ba = document.getElementById('btnAnalizar'); if (ba) ba.disabled = true;
   const lb = document.getElementById('liveBadge');
   if (lb) { lb.textContent = '● ANALIZANDO'; lb.className = 'cam-badge analizando'; }
-  setStatus('Capturando imagen y enviando a Gemini...');
+
+  // ── Obtener imageData: priorizar imagen subida si hay cámara Y upload activos
+  // Lógica: si el profesor subió una imagen digital, esa es la que se evalúa.
+  // Si solo hay cámara, captura el frame actual como siempre.
+  let imageData;
+  if (tieneUpload) {
+    // Imagen digital subida — usar el base64 comprimido directamente
+    imageData = _uploadedImgB64;
+    setStatus('Analizando imagen digital con IA…');
+  } else {
+    // Cámara en vivo — capturar frame actual
+    imageData = capturarFrame();
+    setStatus('Capturando imagen y enviando a Gemini...');
+  }
   setDebug('');
 
-  const imageData = capturarFrame();
   const crits = getCriterios();
   const n = crits.length;
   const criteriosTxt = crits.map((c,i) => `${i}. ${c}`).join('\n');
@@ -7613,9 +7668,26 @@ function mostrarFallbackManual() {
 
 function finalizarAnalisis() {
   analizando = false;
-  const ba = document.getElementById('btnAnalizar'); if (ba && !cooldownInterval) ba.disabled = false;
+  const ba = document.getElementById('btnAnalizar');
+  // Rehabilitar el botón si hay imagen subida O si la cámara está activa
+  if (ba && !cooldownInterval) {
+    ba.disabled = !stream && !_uploadedImgB64;
+  }
   const lb = document.getElementById('liveBadge');
-  if (lb) { lb.textContent = '● EN VIVO'; lb.className = 'cam-badge live'; }
+  if (lb) {
+    if (_uploadedImgB64) {
+      // Modo imagen digital — mostrar badge de imagen, no "EN VIVO"
+      lb.textContent = '● IMAGEN DIGITAL';
+      lb.className   = 'cam-badge';
+      lb.style.background = 'rgba(0,122,255,0.15)';
+      lb.style.color      = 'var(--blue, #007AFF)';
+    } else {
+      lb.textContent = '● EN VIVO';
+      lb.className   = 'cam-badge live';
+      lb.style.background = '';
+      lb.style.color      = '';
+    }
+  }
 }
 
 function toggleAuto() {
