@@ -3896,6 +3896,23 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
   background: var(--bg2); font-style: normal; color: var(--text);
 }
 .crit-mb-input::placeholder { color: var(--text3); opacity: .7; font-style: italic; }
+
+/* Upload image button */
+.upload-img-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;width:100%;padding:10px 14px;border-radius:12px;border:0.5px dashed var(--border2);background:var(--bg3);color:var(--text2);font-size:13px;font-weight:500;font-family:var(--font-ui);cursor:pointer;margin-top:8px;box-sizing:border-box;transition:background .15s,border-color .15s,color .15s,transform .1s;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+.upload-img-btn:hover{background:var(--bg4);border-color:var(--accent-border);color:var(--accent);}
+.upload-img-btn:active{transform:scale(.97);opacity:.80;}
+.upload-preview-wrap{display:none;position:relative;margin-top:10px;border-radius:12px;overflow:hidden;border:0.5px solid var(--border);background:var(--bg3);}
+.upload-preview-wrap.visible{display:block;}
+.upload-preview-img{display:block;width:100%;max-height:180px;object-fit:cover;}
+.upload-preview-badge{position:absolute;top:8px;left:8px;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);color:#fff;font-size:10px;font-weight:700;font-family:var(--font-mono);padding:3px 8px;border-radius:20px;}
+.upload-drive-badge{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);color:#4ade80;font-size:10px;font-weight:700;font-family:var(--font-mono);padding:3px 8px;border-radius:20px;display:none;}
+.upload-drive-badge.visible{display:block;}
+.upload-remove-btn{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.60);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:11px;padding:4px 9px;font-family:var(--font-ui);}
+.upload-remove-btn:hover{background:rgba(200,50,50,.80);}
+.upload-loading{display:none;align-items:center;justify-content:center;gap:8px;padding:10px;font-size:12px;color:var(--text3);font-family:var(--font-ui);margin-top:8px;}
+.upload-loading.visible{display:flex;}
+.upload-spinner{width:16px;height:16px;border-radius:50%;border:2px solid var(--border2);border-top-color:var(--accent);animation:_spinUpload .7s linear infinite;}
+@keyframes _spinUpload{to{transform:rotate(360deg);}}
 </style>
 
 <script>
@@ -4603,6 +4620,18 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
             <button class="btn ios-btn" id="btnAnalizar" onclick="analizarAhora()" disabled>Analizar con IA</button>
             <button class="btn" id="btnAuto" onclick="toggleAuto()" style="display:none">Auto: OFF</button>
           </div>
+          <input type="file" id="inputSubirImagen" accept="image/*" style="display:none;" onchange="subirImagenDigital(this)">
+          <button class="upload-img-btn" onclick="document.getElementById('inputSubirImagen').click()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            Subir imagen digital
+          </button>
+          <div class="upload-loading" id="uploadLoading"><div class="upload-spinner"></div><span id="uploadLoadingText">Procesando…</span></div>
+          <div class="upload-preview-wrap" id="uploadPreviewWrap">
+            <img class="upload-preview-img" id="uploadPreviewImg" src="" alt="">
+            <span class="upload-preview-badge">Imagen digital</span>
+            <span class="upload-drive-badge" id="uploadDriveBadge">Drive</span>
+            <button class="upload-remove-btn" onclick="quitarImagenSubida()">Quitar</button>
+          </div>
           <div class="exigencia-wrap">
             <div class="exigencia-header">
               <span class="exigencia-label">Nivel de exigencia IA</span>
@@ -4650,7 +4679,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
             Pauta de evaluación — <span id="rubricaNombreHeader" style="color:var(--accent2);margin-left:4px;">sin seleccionar</span>
           </div>
-          <div class="criterios-scroll" id="criteriosList"></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:0 2px 8px;"><span style="font-size:11px;color:var(--text3);font-family:var(--font-mono);">Toca un nivel por criterio</span><span id="_criteriosCounter" style="font-size:11px;font-family:var(--font-mono);color:var(--text3);transition:color .2s;">0/0</span></div><div class="criterios-scroll" id="criteriosList"></div>
           <div class="resumen-grid">
             <div class="resumen-card"><div class="resumen-val" id="resumenPts">—</div><div class="resumen-lbl">Puntaje / <span id="totalPts">0</span></div></div>
             <div class="resumen-card"><div class="resumen-val" id="resumenPct">—</div><div class="resumen-lbl">Porcentaje</div></div>
@@ -4853,6 +4882,16 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
           </div>
         </div>
         <div id="dashPendientesGrid" style="display:flex;flex-direction:column;gap:6px;"></div>
+      </div>
+
+      <!-- Última evaluación — indicador de actividad reciente -->
+      <div id="dashUltimaEval" style="display:none;align-items:center;gap:8px;margin-bottom:10px;
+           padding:9px 14px;background:var(--bg2);border:0.5px solid var(--border);border-radius:11px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text3)"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+        </svg>
+        <span id="dashUltimaEvalTxt" style="font-size:12px;color:var(--text3);font-family:var(--font-mono);"></span>
       </div>
 
       <div class="stats-grid" id="dashKpiGlobal" style="margin-bottom:16px;">
@@ -6223,6 +6262,8 @@ function _checkPendingQueue() {
 }
 
 function saveRegistros() {
+  // Invalidar caché de normalizarStrict — datos cambiaron
+  if (typeof _invalidarNormCache === 'function') _invalidarNormCache();
   // Guardia de integridad: nunca guardar si registros no es Array
   if (!Array.isArray(registros)) {
     console.error('[ArtEval] saveRegistros abortado: registros no es Array', typeof registros);
@@ -6403,6 +6444,19 @@ function rubricasUsadas() {
 // ═══════════════════════════════════════════════════════
 //  RENDER CRITERIOS
 // ═══════════════════════════════════════════════════════
+// Live criterio progress counter: "4/8 criterios" shown during evaluation
+function _actualizarContadorCriterios() {
+  try {
+    var el = document.getElementById('_criteriosCounter');
+    if (!el) return;
+    var total    = getCriterios().length;
+    var done     = Object.values(evaluacion).filter(function(v){ return v && v.nivel; }).length;
+    el.textContent = done + '/' + total + ' criterios';
+    el.style.color      = done === total ? 'var(--green)' : 'var(--text3)';
+    el.style.fontWeight = done === total ? '700' : '500';
+  } catch(e) {}
+}
+
 function renderCriterios() {
   const list = document.getElementById('criteriosList');
   if (!list) return;
@@ -6481,6 +6535,7 @@ function setNivel(i, k) {
   // Micro-vibración al seleccionar nivel — feedback táctil inmediato
   try { if (navigator.vibrate) navigator.vibrate(12); } catch(e) {}
   renderCriterios();
+  _actualizarContadorCriterios(); // live progress
 
   // Mostrar descriptor del nivel seleccionado como guía rápida (si existe)
   // Solo para nivel MB — el más importante para el docente de artes
@@ -7041,6 +7096,88 @@ function _comprimirDataURL(dataURL, callback) {
   }
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+//  SUBIR IMAGEN DIGITAL
+//  Validates file type/size, compresses via Canvas, uploads to Drive
+// ═══════════════════════════════════════════════════════════════════════
+var _uploadedImgB64 = null, _uploadedDriveId = null, _uploadedForNombre = '';
+var _uploadedDriveWebView = null, _uploadedDriveWebContent = null;
+
+async function subirImagenDigital(inputEl) {
+  if (subirImagenDigital._uploading) return;
+  var file = inputEl && inputEl.files && inputEl.files[0];
+  if (!file) return;
+  inputEl.value = '';
+  // Type + size validation
+  if (!file.type.startsWith('image/')) {
+    toast('Solo se aceptan im\u00e1genes (JPG, PNG, HEIC, WebP)', 'err', 3500); return;
+  }
+  if (file.size > 15 * 1024 * 1024) {
+    toast('La imagen supera 15 MB. Usa una imagen m\u00e1s peque\u00f1a.', 'err', 3500); return;
+  }
+  subirImagenDigital._uploading = true;
+  var ld = document.getElementById('uploadLoading');
+  var lt = document.getElementById('uploadLoadingText');
+  var pw = document.getElementById('uploadPreviewWrap');
+  var pi = document.getElementById('uploadPreviewImg');
+  var db = document.getElementById('uploadDriveBadge');
+  if (ld) ld.classList.add('visible');
+  if (pw) pw.classList.remove('visible');
+  if (db) db.classList.remove('visible');
+  try {
+    if (lt) lt.textContent = 'Leyendo imagen\u2026';
+    var dataURL = await new Promise(function(res, rej) {
+      var r2 = new FileReader(); r2.onload = function(e){ res(e.target.result); }; r2.onerror = function(){ rej(new Error('No se pudo leer el archivo')); }; r2.readAsDataURL(file);
+    });
+    if (lt) lt.textContent = 'Comprimiendo\u2026';
+    var img = await new Promise(function(res, rej) {
+      var el = new Image(); el.onload = function(){ res(el); }; el.onerror = function(){ rej(new Error('Imagen corrupta o formato no soportado')); }; el.src = dataURL;
+    });
+    var b64 = _comprimirImagenBase64(img);
+    if (!b64) throw new Error('Error al comprimir la imagen');
+    _uploadedImgB64 = b64;
+    _uploadedForNombre = (document.getElementById('inputNombre')?.value || '').trim().toUpperCase();
+    if (pi) pi.src = 'data:image/jpeg;base64,' + b64;
+    if (pw) pw.classList.add('visible');
+    _uploadedDriveId = null;
+    if (_driveToken) {
+      if (lt) lt.textContent = 'Subiendo a Drive\u2026';
+      toast('Subiendo imagen a Drive\u2026', 'info', 3000);
+      try {
+        var dr = await _subirFotoDrive(b64, _uploadedForNombre || 'digital');
+        if (dr && dr.driveId) {
+          _uploadedDriveId = dr.driveId; _uploadedDriveWebView = dr.webViewLink || null; _uploadedDriveWebContent = dr.webContentLink || null;
+          if (db) db.classList.add('visible');
+          toast('Imagen guardada en Drive', 'ok', 2500);
+        } else { toast('Imagen lista (sin Drive)', 'info', 2500); }
+      } catch(e2) { console.warn('[ArtEval] upload Drive:', e2.message); }
+    } else { toast('Imagen lista para evaluar', 'ok', 2500); }
+    var canvas = document.getElementById('canvasEl');
+    if (canvas) {
+      canvas.width = img.naturalWidth || 640; canvas.height = img.naturalHeight || 480;
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      _captureForNombre = _uploadedForNombre; _captureTimestamp = Date.now();
+    }
+  } catch(e) {
+    console.error('[ArtEval] subirImagenDigital:', e.message);
+    toast(e.message, 'err', 4000);
+    _uploadedImgB64 = null; _uploadedDriveId = null;
+    if (pw) pw.classList.remove('visible');
+  } finally {
+    if (ld) ld.classList.remove('visible');
+    subirImagenDigital._uploading = false;
+  }
+}
+
+function quitarImagenSubida() {
+  _uploadedImgB64 = null; _uploadedDriveId = null; _uploadedForNombre = '';
+  var pw=document.getElementById('uploadPreviewWrap'),pi=document.getElementById('uploadPreviewImg'),db=document.getElementById('uploadDriveBadge');
+  if (pw) pw.classList.remove('visible'); if (pi) pi.src=''; if (db) db.classList.remove('visible');
+  var canvas=document.getElementById('canvasEl'); if (canvas){canvas.width=1;canvas.height=1;}
+  _captureForNombre=''; _captureTimestamp=0;
+  toast('Imagen quitada', 'info', 1800);
+}
+
 function capturarFrame() {
   const video  = document.getElementById('videoEl');
   const canvas = document.getElementById('canvasEl');
@@ -7500,6 +7637,8 @@ function toggleAuto() {
 //  GUARDAR REGISTRO
 // ═══════════════════════════════════════════════════════
 async function guardar() {
+  // Idempotency guard: prevents duplicate records on rapid double-tap
+  if (guardar._saving) return; guardar._saving = true;
   // Normalizar nombre: title-case estricto — primera letra mayúscula, RESTO MINÚSCULA por palabra
   // Previene "Rivas PeñAloza" → fuerza "Rivas Peñaloza"
   // Palabras de 1-2 letras (DE, LA, Y) se respetan tal como vienen
@@ -7706,6 +7845,7 @@ async function guardar() {
   // Activar/actualizar la serie para el curso actual y mostrar CTA de siguiente alumno
   _iniciarEvalSerie(nombre);          // reconstruye la lista del curso actual
   _avanzarAlSiguientePendiente();     // salta al próximo sin evaluación
+  setTimeout(function(){ guardar._saving = false; }, 300);
 }
 
 // ══════════════════════════════════════════════════════
@@ -8957,7 +9097,7 @@ function verDuplicados() {
       const clr = nota>=4?'var(--green)':'var(--red)';
       return `<div class="dup-item">
         <div class="reg-avatar" style="width:28px;height:28px;font-size:10px;background:var(--accent-bg);color:var(--accent)">${iniciales(r.nombre)}</div>
-        <div class="dup-item-nombre">${r.nombre}</div>
+        <div class="dup-item-nombre">${_esc(r.nombre||"")}</div>
         <div class="dup-item-meta">${r.fecha} · ${r.curso||'—'} · ${r.rubricaNombre||'—'}</div>
         <div style="font-size:12px;font-weight:700;color:${clr};font-family:'DM Mono',monospace;">${nota.toFixed(1)}</div>
         <button class="btn" style="font-size:11px;padding:4px 8px;" onclick="cerrarModal();editarRegistro(${idx})">✏️ Editar</button>
@@ -8986,26 +9126,31 @@ function verDuplicados() {
 }
 
 async function eliminarDesdeDup(idx) {
-  const reg = registros[idx];
-  if (!reg) return;
-  const ok = await confirmarAccion('Eliminar registro', `¿Eliminar este registro de <strong>${_esc(reg.nombre||'')}</strong>?`, '🗑️', 'Sí aceptar');
-  if (!ok) return;
-  // Marca de borrado: evita que Drive resucite registros eliminados
-  const regId = reg._id || String(idx);
-  localStorage.setItem('av_deleted_' + regId, new Date().toISOString());
-  const backup = JSON.parse(JSON.stringify(reg));
-  registros.splice(idx, 1);
-  saveRegistros();
-  actualizarConteo();
-  cerrarModal();
-  renderRegistros();
-  _pushUndo('eliminar', { idx, registro: backup });
-  _showUndoToast('✓ Registro de ' + (reg.nombre||'') + ' eliminado');
-  // Actualizar el panel de duplicados (ya estamos en esa sección)
-  setTimeout(function() {
-    renderPanelDuplicados('panelDuplicadosContainer');
-  }, 100);
-}
+  try {
+    const reg = registros[idx];
+    if (!reg) return;
+    const ok = await confirmarAccion('Eliminar registro', `¿Eliminar este registro de <strong>${_esc(reg.nombre||'')}</strong>?`, '🗑️', 'Sí aceptar');
+    if (!ok) return;
+    // Marca de borrado: evita que Drive resucite registros eliminados
+    const regId = reg._id || String(idx);
+    localStorage.setItem('av_deleted_' + regId, new Date().toISOString());
+    const backup = JSON.parse(JSON.stringify(reg));
+    registros.splice(idx, 1);
+    saveRegistros();
+    actualizarConteo();
+    cerrarModal();
+    renderRegistros();
+    _pushUndo('eliminar', { idx, registro: backup });
+    _showUndoToast('✓ Registro de ' + (reg.nombre||'') + ' eliminado');
+    // Actualizar el panel de duplicados (ya estamos en esa sección)
+    setTimeout(function() {
+      renderPanelDuplicados('panelDuplicadosContainer');
+    }, 100);
+
+  } catch(e) {
+    console.error("[ArtEval] eliminarDesdeDup:", e.message);
+    if (typeof toast === "function") toast("⚠️ Error inesperado: " + e.message, "err", 3000);
+  }}
 
 function editarRegistro(idx) {
   const r = registros[idx]; if (!r) return;
@@ -9361,7 +9506,7 @@ function duplicar(idx) {
   const r = registros[idx]; if (!r) return;
   abrirModal(`
     <div class="modal-title">Duplicar evaluación</div>
-    <div class="modal-hint">Se copian los mismos criterios de <strong>${r.nombre}</strong>. Solo cambia el nombre.</div>
+    <div class="modal-hint">Se copian los mismos criterios de <strong>${_esc(r.nombre||"")}</strong>. Solo cambia el nombre.</div>
     <div class="modal-field"><label>Nombre del/la estudiante</label><input id="dupNombre" value="${r.nombre}" placeholder="Nombre completo"></div>
     <div class="modal-field"><label>Curso</label><select id="dupCurso" class="curso-select">
             <option value="">— Sin curso —</option>
@@ -9475,13 +9620,19 @@ async function eliminar(idx) {
 }
 
 async function limpiarTodo() {
+  // try/catch: prevents freeze if confirmarAccion or saveRegistros throws
+  try {
   const ok = await confirmarAccion('Borrar todos los registros', '¿Eliminar <strong>todos</strong> los registros? Tendrás 5 segundos para deshacer.', '🗑️', 'Sí aceptar', 'btn-danger');
   if (!ok) return;
   const backup = JSON.parse(JSON.stringify(registros));
   registros = []; saveRegistros();
   actualizarConteo(); renderRegistros();
   _pushUndo('limpiarTodo', { registros: backup });
-  _showUndoToast('✓ ' + backup.length + ' registros eliminados');
+  _showUndoToast('\u2713 ' + backup.length + ' registros eliminados');
+  } catch(e) {
+    console.error('[ArtEval] limpiarTodo:', e.message);
+    toast('Error: ' + e.message, 'err', 4000);
+  }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -9592,7 +9743,11 @@ function _debouncedEstadisticas() {
 }
 
 
+// renderEstadisticas: rAF prevents blocking main thread during heavy 10-loop render
 function renderEstadisticas() {
+  requestAnimationFrame(_renderEstadisticasImpl);
+}
+function _renderEstadisticasImpl() {
   const cont = document.getElementById('statsContent');
   if (!cont) return;
   actualizarFiltros();
@@ -9943,7 +10098,7 @@ async function procesarRubricaWord(file) {
                    || textNorm.includes('criterio de evaluaci')
                    || textNorm.includes('criterio');
 
-        console.log('[ArtEval] Tabla ' + ti + ': ' + celdas1raFila + ' cols, A=' + cumpleA + ' B=' + cumpleB);
+        console.warn('[ArtEval] Tabla ' + ti + ': ' + celdas1raFila + ' cols, A=' + cumpleA + ' B=' + cumpleB);
 
         if (cumpleA || cumpleB) {
           tablaRubrica = tbl;
@@ -9998,7 +10153,7 @@ async function procesarRubricaWord(file) {
 
         // Saltar filas que parecen ser sub-encabezados
         if (esEncabezadoSecundario(fila)) {
-          console.log('[ArtEval] Fila ' + fi + ' omitida (sub-encabezado):', fila.textContent.slice(0,50));
+          console.warn('[ArtEval] Fila ' + fi + ' omitida (sub-encabezado):', fila.textContent.slice(0,50));
           continue;
         }
 
@@ -12296,6 +12451,42 @@ function _copiarListaPendientes() {
 }
 
 
+// ── Indicador de ultima evaluacion en el dashboard ────────────────────────
+function _renderUltimaEval() {
+  try {
+    var wrap = document.getElementById('dashUltimaEval');
+    var txt  = document.getElementById('dashUltimaEvalTxt');
+    if (!wrap || !txt) return;
+    var regs = _registrosSemestre();
+    if (!regs.length) { wrap.style.display = 'none'; return; }
+    // Registro mas reciente por _savedAt o fechaISO
+    var reciente = regs.reduce(function(best, r) {
+      var t  = r._savedAt || r.fechaISO || '';
+      var tb = best._savedAt || best.fechaISO || '';
+      return t > tb ? r : best;
+    });
+    var ts = reciente._savedAt || reciente.fechaISO;
+    if (!ts) { wrap.style.display = 'none'; return; }
+    var diff  = Date.now() - new Date(ts).getTime();
+    var mins  = Math.floor(diff / 60000);
+    var hours = Math.floor(diff / 3600000);
+    var days  = Math.floor(diff / 86400000);
+    var cuando;
+    if (mins < 1)        cuando = 'hace un momento';
+    else if (mins < 60)  cuando = 'hace ' + mins  + (mins  === 1 ? ' minuto' : ' minutos');
+    else if (hours < 24) cuando = 'hace ' + hours + (hours === 1 ? ' hora'   : ' horas');
+    else if (days < 7)   cuando = 'hace ' + days  + (days  === 1 ? ' día'    : ' días');
+    else                 cuando = new Date(ts).toLocaleDateString('es-CL', {day:'numeric', month:'short'});
+    var nombre = (reciente.nombre || '').split(' ').slice(0, 2).join(' ');
+    var curso  = reciente.curso || '';
+    txt.textContent = 'Última evaluación: ' + cuando
+      + (nombre ? ' · ' + nombre : '')
+      + (curso  ? ' · ' + curso  : '');
+    wrap.style.display = 'flex';
+  } catch(e) { console.warn('[ArtEval] _renderUltimaEval:', e.message); }
+}
+
+
 function _renderDashPendientes() {
   try {
     var wrap   = document.getElementById('dashPendientesWrap');
@@ -12671,7 +12862,9 @@ function _renderDashGrid(instFiltro) {
   const grid = document.getElementById('dashCursosGrid');
   if (!grid) return;
 
-  grid.innerHTML = TODOS_LOS_CURSOS.map(function(curso) {
+  // DocumentFragment: prevents N reflows when building course cards
+  const _dashFrag = document.createDocumentFragment();
+  TODOS_LOS_CURSOS.forEach(function(curso) {
     const nomina = listaCursos[curso] || [];
     const regsAll = registros.filter(r => (r.curso||'')===curso);
     const regs = instFiltro ? regsAll.filter(r=>(r.instancia||'Evaluación 1')===instFiltro) : regsAll;
@@ -12692,7 +12885,7 @@ function _renderDashGrid(instFiltro) {
 
     const notaColor = promedio==='—' ? 'var(--text3)' : promedio>=6?'var(--blue)':promedio>=4?'var(--green)':'var(--red)';
 
-    return `<div class="dash-curso-card ${estado}" onclick="_mostrarDetalleCursoDash('${curso.replace(/'/g,"\\'")}')">
+    const _dEl = document.createElement('div'); _dEl.innerHTML = `<div class="dash-curso-card ${estado}" onclick="_mostrarDetalleCursoDash('${curso.replace(/'/g,"\\'")}')">
       <div class="dash-estado-badge" style="background:${estadoBg};color:${estadoClr};">
         ${pct>=90?'🟢':pct>=40?'🟡':'🔴'} ${estadoLabel}
       </div>
@@ -12703,8 +12896,10 @@ function _renderDashGrid(instFiltro) {
         <div class="dash-nota-prom" style="color:${notaColor}">${promedio}</div>
         <div style="font-size:10px;color:var(--text3);font-family:var(--font-mono);">${regs.length?aprobados+' logr.':''}</div>
       </div>
-    </div>`;
-  }).join('');
+    </div>`.trim();
+    if (_dEl.firstElementChild) _dashFrag.appendChild(_dEl.firstElementChild);
+  });
+  grid.innerHTML = ''; grid.appendChild(_dashFrag);
 }
 
 function _renderDashAlertas(instFiltro) {
@@ -15161,7 +15356,13 @@ input:focus, textarea:focus, select:focus {
   win.document.close();
 }
 
+// renderReporte: debounced to avoid rerender on every keystroke (critical with 1300+ records)
+var _renderReporteTimer = null;
 function renderReporte() {
+  clearTimeout(_renderReporteTimer);
+  _renderReporteTimer = setTimeout(_renderReporteImpl, 130);
+}
+function _renderReporteImpl() {
   const cont = document.getElementById('reporteContent');
   if (!cont) return;
 
@@ -15197,12 +15398,14 @@ function renderReporte() {
     return;
   }
 
-  cont.innerHTML = data.map(r => {
+  // DocumentFragment: single DOM write avoids N reflows (one per record)
+  const _rrFrag = document.createDocumentFragment();
+  data.forEach(r => {
     const nota = r.nota||1;
     const bg = nota>=6?'#dbeafe':nota>=4?'#dcfce7':'#fee2e2';
     const clr = nota>=6?'#1e40af':nota>=4?'#166534':'#991b1b';
     const resLabel = nota>=6?'Excelente':nota>=5?'Muy bien logrado':nota>=4?'Logrado':'No logrado';
-    return `
+    const _rrHtml = `
     <div style="background:#fff;border:1px solid #e0d8cc;border-radius:12px;padding:20px 24px;margin-bottom:16px;page-break-inside:avoid;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;border-bottom:2px solid #FF9500;padding-bottom:10px;">
         <div>
@@ -15233,8 +15436,13 @@ function renderReporte() {
         <img src="data:image/png;base64,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" alt="ArtEval" style="height:26px;width:auto;display:block;">
       </span>
       </div>
-    </div>`;
-  }).join('');
+    </div>`.trim();
+    const _rrEl = document.createElement('div');
+    _rrEl.innerHTML = _rrHtml;
+    if (_rrEl.firstElementChild) _rrFrag.appendChild(_rrEl.firstElementChild);
+  });
+  cont.innerHTML = '';
+  cont.appendChild(_rrFrag);
 }
 
 function showTab(name) {
@@ -15249,6 +15457,22 @@ function showTab(name) {
   };
   // Si se pide una tab antigua, redirigir a la nueva
   var mappedName = _tabAlias[name] || name;
+
+  // Memory leak prevention: stop camera stream when leaving Estudio tab
+  // MediaDevices stream consumes CPU/GPU even when tab is hidden
+  if (typeof stream !== 'undefined' && stream && mappedName !== 'estudio') {
+    try {
+      stream.getTracks().forEach(function(t) { t.stop(); });
+      stream = null;
+      var _v=document.getElementById('videoEl'), _ph=document.getElementById('camPlaceholder'),
+          _ov=document.getElementById('camBadgeWrap'), _bc=document.getElementById('btnCam');
+      if (_v) _v.style.display='none';
+      if (_ph) _ph.style.display='flex';
+      if (_ov) _ov.style.display='none';
+      if (_bc) { _bc.textContent='Iniciar cámara'; _bc.className='btn btn-primary ios-btn'; }
+      if (typeof autoMode!=='undefined' && autoMode && typeof toggleAuto==='function') toggleAuto();
+    } catch(e) { console.warn('[ArtEval] stream cleanup:', e.message); }
+  }
 
   // Ocultar todas las tab sections con transición
   ['estudio','progreso','comunica','sistema'].forEach(t => {
@@ -15834,6 +16058,27 @@ function _guardiaCierre() {
 // Registrar los eventos de cierre
 window.addEventListener('beforeunload', _guardiaCierre);
 window.addEventListener('pagehide',     _guardiaCierre);  // iOS Safari
+// Online/offline: resinc automatica al recuperar conexion
+window.addEventListener('online', function() {
+  try {
+    var pending = localStorage.getItem('av_sync_pending');
+    if (pending === '1' && typeof syncToDrive === 'function' && _driveToken) {
+      setTimeout(function() {
+        toast('Conexion restaurada — sincronizando Drive…', 'info', 3000);
+        syncToDrive();
+      }, 1500);
+    } else if (pending === '1') {
+      toast('Conexion restaurada. Abre Drive para sincronizar.', 'info', 4000);
+    }
+  } catch(e) { console.warn('[ArtEval] online handler:', e.message); }
+});
+window.addEventListener('offline', function() {
+  try {
+    localStorage.setItem('av_sync_pending', '1');
+    toast('Sin conexion — evaluaciones se guardan localmente', 'info', 4000);
+  } catch(e) {}
+});
+
 // visibilitychange: cuando el profesor cambia de app en iPad
 document.addEventListener('visibilitychange', function() {
   if (document.visibilityState === 'hidden') {
@@ -18485,12 +18730,22 @@ function tokensSimilares(t1, t2) {
 // Lógica: si al menos 2 tokens significativos coinciden (en cualquier orden),
 // se considera el mismo estudiante.
 // ── Normalización estricta para comparación de nombres ──
+// ── normalizarStrict: memoized — called 12+ times per record in render loops ──
+// With 1300 records and 12 calls each, memoization saves ~15600 string ops per render.
+// Cache is invalidated when registros changes (via saveRegistros).
+var _normStrictCache = Object.create(null);
 function normalizarStrict(s) {
-  return (s || '').toLowerCase()
+  var key = s || '';
+  if (_normStrictCache[key] !== undefined) return _normStrictCache[key];
+  var result = key.toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .replace(/[.,\-_'"()]/g, ' ')
     .replace(/\s+/g, ' ').trim();
+  _normStrictCache[key] = result;
+  return result;
 }
+// Invalidate cache when data changes (called by saveRegistros)
+function _invalidarNormCache() { _normStrictCache = Object.create(null); }
 
 // ── Tokenizar nombre en array de palabras significativas ──
 function tokenizar(nombre) {
@@ -18796,6 +19051,10 @@ function _aplicarFiltroAula(lista) {
 }
 
 function renderCursoMain() {
+  requestAnimationFrame(_renderCursoMainImpl);
+}
+
+function _renderCursoMainImpl() {
   if (!cursoSeleccionado || !Array.isArray(registros)) return;
   const main = document.getElementById('cursoMain');
   if (!main) return;
@@ -19243,60 +19502,65 @@ function toggleEstPIE(nombreOIdx, curso) {
 
 // ── Eliminar estudiante de la lista ──
 async function eliminarEst(nombreOIdx, curso) {
-  let idx, nombre;
-  if (typeof nombreOIdx === 'string') {
-    nombre = nombreOIdx;
-    idx = (listaCursos[curso] || []).findIndex(e => e.nombre === nombre);
-  } else {
-    idx = nombreOIdx;
-    nombre = listaCursos[curso]?.[idx]?.nombre || '';
-  }
+  try {
+    let idx, nombre;
+    if (typeof nombreOIdx === 'string') {
+      nombre = nombreOIdx;
+      idx = (listaCursos[curso] || []).findIndex(e => e.nombre === nombre);
+    } else {
+      idx = nombreOIdx;
+      nombre = listaCursos[curso]?.[idx]?.nombre || '';
+    }
 
-  const estaEnNomina = idx > -1 && !!listaCursos[curso]?.[idx];
+    const estaEnNomina = idx > -1 && !!listaCursos[curso]?.[idx];
 
-  if (!estaEnNomina) {
-    // Estudiante "Sin nómina" — está solo en registros
-    // Ofrecer eliminar sus evaluaciones de este curso
-    const regsDelEst = registros.filter(r =>
-      (r.curso||'') === curso &&
-      (r.nombre||'').toLowerCase().trim() === nombre.toLowerCase().trim()
-    );
-    if (!regsDelEst.length) {
-      toast('⚠️ No se encontró al estudiante en ningún lado', 'err', 3000);
+    if (!estaEnNomina) {
+      // Estudiante "Sin nómina" — está solo en registros
+      // Ofrecer eliminar sus evaluaciones de este curso
+      const regsDelEst = registros.filter(r =>
+        (r.curso||'') === curso &&
+        (r.nombre||'').toLowerCase().trim() === nombre.toLowerCase().trim()
+      );
+      if (!regsDelEst.length) {
+        toast('⚠️ No se encontró al estudiante en ningún lado', 'err', 3000);
+        return;
+      }
+      const ok = await confirmarAccion(
+        'Eliminar evaluaciones',
+        `<strong>${nombre}</strong> no está en la nómina importada.<br>
+         ¿Deseas eliminar su${regsDelEst.length > 1 ? 's ' + regsDelEst.length : 'a'} evaluación${regsDelEst.length > 1 ? 'es' : ''} de ${curso}?<br>
+         <small style="color:var(--text3)">Esta acción no se puede deshacer.</small>`,
+        '🗑️'
+      );
+      if (!ok) return;
+      regsDelEst.forEach(r => {
+        const i = registros.indexOf(r);
+        if (i > -1) registros.splice(i, 1);
+      });
+      saveRegistros();
+      actualizarConteo();
+      renderCursoMain();
+      renderRegistros();
+      toast(`✓ ${regsDelEst.length} evaluación(es) de ${nombre} eliminadas`, 'ok');
       return;
     }
+
+    // Estudiante en nómina — solo quitar de la lista
     const ok = await confirmarAccion(
-      'Eliminar evaluaciones',
-      `<strong>${nombre}</strong> no está en la nómina importada.<br>
-       ¿Deseas eliminar su${regsDelEst.length > 1 ? 's ' + regsDelEst.length : 'a'} evaluación${regsDelEst.length > 1 ? 'es' : ''} de ${curso}?<br>
-       <small style="color:var(--text3)">Esta acción no se puede deshacer.</small>`,
-      '🗑️'
+      'Quitar de la lista',
+      `¿Quitar a <strong>${nombre}</strong> de ${curso}?<br>
+       <small style="color:var(--text3)">Sus evaluaciones no se eliminarán.</small>`
     );
     if (!ok) return;
-    regsDelEst.forEach(r => {
-      const i = registros.indexOf(r);
-      if (i > -1) registros.splice(i, 1);
-    });
-    saveRegistros();
-    actualizarConteo();
+    listaCursos[curso].splice(idx, 1);
+    saveListaCursos();
     renderCursoMain();
-    renderRegistros();
-    toast(`✓ ${regsDelEst.length} evaluación(es) de ${nombre} eliminadas`, 'ok');
-    return;
-  }
+    toast(`✓ ${nombre} removido de ${curso}`, 'ok');
 
-  // Estudiante en nómina — solo quitar de la lista
-  const ok = await confirmarAccion(
-    'Quitar de la lista',
-    `¿Quitar a <strong>${nombre}</strong> de ${curso}?<br>
-     <small style="color:var(--text3)">Sus evaluaciones no se eliminarán.</small>`
-  );
-  if (!ok) return;
-  listaCursos[curso].splice(idx, 1);
-  saveListaCursos();
-  renderCursoMain();
-  toast(`✓ ${nombre} removido de ${curso}`, 'ok');
-}
+  } catch(e) {
+    console.error("[ArtEval] eliminarEst:", e.message);
+    if (typeof toast === "function") toast("⚠️ Error inesperado: " + e.message, "err", 3000);
+  }}
 
 // ── Ver detalle desde cursos ──
 function verDetalleEstCurso(nombre, curso) {
@@ -19890,56 +20154,61 @@ function resolverConflictoLibro(idxMantener) {
 }
 
 async function limpiarDuplicadosCurso(curso) {
-  const lista = listaCursos[curso] || [];
-  if (!lista.length) { toast('Sin estudiantes en ' + curso, 'info'); return; }
+  try {
+    const lista = listaCursos[curso] || [];
+    if (!lista.length) { toast('Sin estudiantes en ' + curso, 'info'); return; }
 
-  // Detectar grupos de duplicados
-  const grupos = [];
-  const procesados = new Set();
-  lista.forEach(function(est, i) {
-    if (procesados.has(i)) return;
-    const similares = [i];
-    lista.forEach(function(otro, j) {
-      if (i === j || procesados.has(j)) return;
-      if (mismoEstudiante(est.nombre, otro.nombre)) similares.push(j);
+    // Detectar grupos de duplicados
+    const grupos = [];
+    const procesados = new Set();
+    lista.forEach(function(est, i) {
+      if (procesados.has(i)) return;
+      const similares = [i];
+      lista.forEach(function(otro, j) {
+        if (i === j || procesados.has(j)) return;
+        if (mismoEstudiante(est.nombre, otro.nombre)) similares.push(j);
+      });
+      if (similares.length > 1) {
+        similares.forEach(function(idx) { procesados.add(idx); });
+        grupos.push(similares.map(function(idx) { return { idx: idx, est: lista[idx] }; }));
+      }
     });
-    if (similares.length > 1) {
-      similares.forEach(function(idx) { procesados.add(idx); });
-      grupos.push(similares.map(function(idx) { return { idx: idx, est: lista[idx] }; }));
+
+    if (!grupos.length) {
+      toast('✅ Sin duplicados en ' + curso, 'ok');
+      return;
     }
-  });
 
-  if (!grupos.length) {
-    toast('✅ Sin duplicados en ' + curso, 'ok');
-    return;
-  }
-
-  // Mostrar modal con los duplicados encontrados
-  let detalle = grupos.map(function(grupo) {
-    const nombres = grupo.map(function(g) {
-      return '<li style="padding:3px 0;">' +
-        '<span style="font-weight:600;">' + g.est.nombre + '</span>' +
-        (g.est.pie ? ' <span class="pie-badge" style="font-size:9px;"><svg width="12" height="12" viewBox="0 0 100 100" fill="#FF9500" style="flex-shrink:0;vertical-align:middle;display:inline-block" aria-label="PIE"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="#FF9500" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/></svg> PIE</span>' : '') +
-        '</li>';
+    // Mostrar modal con los duplicados encontrados
+    let detalle = grupos.map(function(grupo) {
+      const nombres = grupo.map(function(g) {
+        return '<li style="padding:3px 0;">' +
+          '<span style="font-weight:600;">' + g.est.nombre + '</span>' +
+          (g.est.pie ? ' <span class="pie-badge" style="font-size:9px;"><svg width="12" height="12" viewBox="0 0 100 100" fill="#FF9500" style="flex-shrink:0;vertical-align:middle;display:inline-block" aria-label="PIE"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="#FF9500" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/></svg> PIE</span>' : '') +
+          '</li>';
+      }).join('');
+      return '<div style="margin-bottom:10px;"><div style="font-size:10px;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;margin-bottom:4px;">Grupo duplicado</div><ul style="margin:0;padding-left:16px;font-size:13px;">' + nombres + '</ul></div>';
     }).join('');
-    return '<div style="margin-bottom:10px;"><div style="font-size:10px;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;margin-bottom:4px;">Grupo duplicado</div><ul style="margin:0;padding-left:16px;font-size:13px;">' + nombres + '</ul></div>';
-  }).join('');
 
-  const ok = await confirmarAccion(
-    '🔍 ' + grupos.length + ' grupo(s) de duplicados en ' + curso,
-    detalle + '<div style="margin-top:12px;font-size:12px;color:var(--text2);">Se fusionarán automáticamente conservando el nombre más completo y el estado PIE.</div>',
-    '🔍'
-  );
-  if (!ok) return;
+    const ok = await confirmarAccion(
+      '🔍 ' + grupos.length + ' grupo(s) de duplicados en ' + curso,
+      detalle + '<div style="margin-top:12px;font-size:12px;color:var(--text2);">Se fusionarán automáticamente conservando el nombre más completo y el estado PIE.</div>',
+      '🔍'
+    );
+    if (!ok) return;
 
-  // Fusionar cada grupo
-  const nueva = deduplicarLista(lista);
-  const eliminados = lista.length - nueva.length;
-  listaCursos[curso] = nueva;
-  saveListaCursos();
-  renderCursoMain();
-  toast('✅ ' + eliminados + ' duplicado(s) eliminado(s) en ' + curso, 'ok');
-}
+    // Fusionar cada grupo
+    const nueva = deduplicarLista(lista);
+    const eliminados = lista.length - nueva.length;
+    listaCursos[curso] = nueva;
+    saveListaCursos();
+    renderCursoMain();
+    toast('✅ ' + eliminados + ' duplicado(s) eliminado(s) en ' + curso, 'ok');
+
+  } catch(e) {
+    console.error("[ArtEval] limpiarDuplicadosCurso:", e.message);
+    if (typeof toast === "function") toast("⚠️ Error inesperado: " + e.message, "err", 3000);
+  }}
 
 
 
@@ -20057,80 +20326,85 @@ function ejecutarMerge(curso, candidatos) {
 
 // Mostrar modal de confirmación del Merge
 async function mostrarConfirmacionMerge(curso, candidatos, onConfirm) {
-  if (!candidatos.length) { onConfirm([]); return; }
+  try {
+    if (!candidatos.length) { onConfirm([]); return; }
 
-  const filas = candidatos.map(function(c, i) {
-    const notasHTML = c.evaluaciones.length > 0
-      ? c.evaluaciones.map(function(r) {
-          return `<span class="merge-nota">${(r.nota||0).toFixed(1)}</span>`;
-        }).join(' ')
-      : '—';
-    const pctScore = Math.round(c.score * 100);
-    return `<tr>
-      <td><input type="checkbox" class="merge-check" data-idx="${i}" checked
-          style="accent-color:var(--accent);width:14px;height:14px;cursor:pointer;"></td>
-      <td>
-        <span class="merge-badge-old">${c.nombreSN}</span>
-        <span class="merge-arrow">→</span>
-        <span class="merge-badge-new">${c.nombreOficial}</span>
-        ${c.pieNueva ? '<span class="merge-pie-flag"><svg width="12" height="12" viewBox="0 0 100 100" fill="#FF9500" style="flex-shrink:0;vertical-align:middle;display:inline-block" aria-label="PIE"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="#FF9500" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/></svg></span>' : ''}
-      </td>
-      <td>${notasHTML}</td>
-      <td><span class="merge-score">${pctScore}%</span></td>
-    </tr>`;
-  }).join('');
+    const filas = candidatos.map(function(c, i) {
+      const notasHTML = c.evaluaciones.length > 0
+        ? c.evaluaciones.map(function(r) {
+            return `<span class="merge-nota">${(r.nota||0).toFixed(1)}</span>`;
+          }).join(' ')
+        : '—';
+      const pctScore = Math.round(c.score * 100);
+      return `<tr>
+        <td><input type="checkbox" class="merge-check" data-idx="${i}" checked
+            style="accent-color:var(--accent);width:14px;height:14px;cursor:pointer;"></td>
+        <td>
+          <span class="merge-badge-old">${c.nombreSN}</span>
+          <span class="merge-arrow">→</span>
+          <span class="merge-badge-new">${c.nombreOficial}</span>
+          ${c.pieNueva ? '<span class="merge-pie-flag"><svg width="12" height="12" viewBox="0 0 100 100" fill="#FF9500" style="flex-shrink:0;vertical-align:middle;display:inline-block" aria-label="PIE"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="#FF9500" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/></svg></span>' : ''}
+        </td>
+        <td>${notasHTML}</td>
+        <td><span class="merge-score">${pctScore}%</span></td>
+      </tr>`;
+    }).join('');
 
-  const total = candidatos.length;
+    const total = candidatos.length;
 
-  return new Promise(function(resolve) {
-    const overlay = document.createElement('div');
-    overlay.className = 'confirm-overlay';
-    overlay.id = 'mergeOverlay';
-    overlay.innerHTML = `
-      <div class="confirm-box" style="max-width:600px;width:95%;text-align:left;max-height:85vh;overflow-y:auto;">
-        <div class="confirm-icon">🔀</div>
-        <div class="confirm-title">Unificar estudiantes — ${curso}</div>
-        <div class="confirm-msg" style="text-align:left;">
-          Se detectaron <strong>${total}</strong> estudiante${total > 1 ? 's' : ''} evaluado${total > 1 ? 's' : ''}
-          previamente (SIN NÓMINA) que coinciden con la nueva lista oficial.<br>
-          <small style="color:var(--text3);">Desmarca los que NO deseas unificar.</small>
-        </div>
-        <table class="merge-table">
-          <thead>
-            <tr>
-              <th style="width:32px;"></th>
-              <th>Nombre detectado → Nombre oficial</th>
-              <th>Notas</th>
-              <th>Similitud</th>
-            </tr>
-          </thead>
-          <tbody>${filas}</tbody>
-        </table>
-        <div class="confirm-actions" style="margin-top:16px;">
-          <button class="btn" id="mergeCancelar">Cancelar</button>
-          <button class="btn btn-primary" id="mergeConfirmar">✓ Unificar seleccionados</button>
-        </div>
-      </div>`;
+    return new Promise(function(resolve) {
+      const overlay = document.createElement('div');
+      overlay.className = 'confirm-overlay';
+      overlay.id = 'mergeOverlay';
+      overlay.innerHTML = `
+        <div class="confirm-box" style="max-width:600px;width:95%;text-align:left;max-height:85vh;overflow-y:auto;">
+          <div class="confirm-icon">🔀</div>
+          <div class="confirm-title">Unificar estudiantes — ${curso}</div>
+          <div class="confirm-msg" style="text-align:left;">
+            Se detectaron <strong>${total}</strong> estudiante${total > 1 ? 's' : ''} evaluado${total > 1 ? 's' : ''}
+            previamente (SIN NÓMINA) que coinciden con la nueva lista oficial.<br>
+            <small style="color:var(--text3);">Desmarca los que NO deseas unificar.</small>
+          </div>
+          <table class="merge-table">
+            <thead>
+              <tr>
+                <th style="width:32px;"></th>
+                <th>Nombre detectado → Nombre oficial</th>
+                <th>Notas</th>
+                <th>Similitud</th>
+              </tr>
+            </thead>
+            <tbody>${filas}</tbody>
+          </table>
+          <div class="confirm-actions" style="margin-top:16px;">
+            <button class="btn" id="mergeCancelar">Cancelar</button>
+            <button class="btn btn-primary" id="mergeConfirmar">✓ Unificar seleccionados</button>
+          </div>
+        </div>`;
 
-    document.body.appendChild(overlay);
+      document.body.appendChild(overlay);
 
-    overlay.querySelector('#mergeConfirmar').onclick = function() {
-      const seleccionados = [];
-      overlay.querySelectorAll('.merge-check:checked').forEach(function(cb) {
-        seleccionados.push(candidatos[parseInt(cb.dataset.idx)]);
-      });
-      overlay.remove();
-      resolve(seleccionados);
-    };
-    overlay.querySelector('#mergeCancelar').onclick = function() {
-      overlay.remove();
-      resolve([]);
-    };
-    overlay.onclick = function(e) {
-      if (e.target === overlay) { overlay.remove(); resolve([]); }
-    };
-  });
-}
+      overlay.querySelector('#mergeConfirmar').onclick = function() {
+        const seleccionados = [];
+        overlay.querySelectorAll('.merge-check:checked').forEach(function(cb) {
+          seleccionados.push(candidatos[parseInt(cb.dataset.idx)]);
+        });
+        overlay.remove();
+        resolve(seleccionados);
+      };
+      overlay.querySelector('#mergeCancelar').onclick = function() {
+        overlay.remove();
+        resolve([]);
+      };
+      overlay.onclick = function(e) {
+        if (e.target === overlay) { overlay.remove(); resolve([]); }
+      };
+    });
+
+  } catch(e) {
+    console.error("[ArtEval] mostrarConfirmacionMerge:", e.message);
+    if (typeof toast === "function") toast("⚠️ Error inesperado: " + e.message, "err", 3000);
+  }}
 
 
 
@@ -20158,78 +20432,83 @@ function inferirRubricaPorCurso(curso) {
 }
 
 async function limpiarRegistrosDuplicados() {
-  var totalAntes = registros.length;
-  var corregidos = 0;
+  try {
+    var totalAntes = registros.length;
+    var corregidos = 0;
 
-  // Paso 1: Corregir rúbricas corruptas
-  registros.forEach(function(r) {
-    if (esRubricaCorrupta(r.rubricaNombre)) {
-      var correcta = inferirRubricaPorCurso(r.curso || '');
-      if (correcta) { r.rubricaNombre = correcta; corregidos++; }
+    // Paso 1: Corregir rúbricas corruptas
+    registros.forEach(function(r) {
+      if (esRubricaCorrupta(r.rubricaNombre)) {
+        var correcta = inferirRubricaPorCurso(r.curso || '');
+        if (correcta) { r.rubricaNombre = correcta; corregidos++; }
+      }
+      if (r.rubricaNombre === 'Arte Románico 5°B') { r.rubricaNombre = 'Arte Románico 5°'; corregidos++; }
+    });
+
+    // Paso 2: Detectar duplicados
+    var grupos = {};
+    registros.forEach(function(r, idx) {
+      var key = normalizarStrict(r.nombre||'') + '||' + (r.curso||'') + '||' + (r.rubricaNombre||'') + '||' + (r.instancia||'Evaluación 1');
+      if (!grupos[key]) grupos[key] = [];
+      grupos[key].push({ idx: idx, r: r });
+    });
+
+    var gruposDup = Object.values(grupos).filter(function(g){ return g.length > 1; });
+    var indicesToEliminar = new Set();
+    var detallesDups = [];
+
+    gruposDup.forEach(function(grupo) {
+      grupo.sort(function(a, b) {
+        if (a.r.noEntregado && !b.r.noEntregado) return 1;
+        if (!a.r.noEntregado && b.r.noEntregado) return -1;
+        return new Date(b.r.fechaISO||0) - new Date(a.r.fechaISO||0);
+      });
+      var conservar = grupo[0];
+      grupo.slice(1).forEach(function(item){ indicesToEliminar.add(item.idx); });
+      detallesDups.push({
+        nombre: conservar.r.nombre, curso: conservar.r.curso,
+        rubrica: conservar.r.rubricaNombre, instancia: conservar.r.instancia,
+        nota: conservar.r.nota, eliminadas: grupo.length - 1,
+      });
+    });
+
+    var totalDups = indicesToEliminar.size;
+    if (corregidos === 0 && totalDups === 0) {
+      toast('✅ Sin problemas encontrados en los registros', 'ok', 3000); return;
     }
-    if (r.rubricaNombre === 'Arte Románico 5°B') { r.rubricaNombre = 'Arte Románico 5°'; corregidos++; }
-  });
 
-  // Paso 2: Detectar duplicados
-  var grupos = {};
-  registros.forEach(function(r, idx) {
-    var key = normalizarStrict(r.nombre||'') + '||' + (r.curso||'') + '||' + (r.rubricaNombre||'') + '||' + (r.instancia||'Evaluación 1');
-    if (!grupos[key]) grupos[key] = [];
-    grupos[key].push({ idx: idx, r: r });
-  });
+    var resumenHtml = '';
+    if (corregidos > 0) {
+      resumenHtml += '<div style="padding:10px;background:rgba(52,201,122,0.1);border-radius:var(--rad);margin-bottom:12px;font-size:12px;">' +
+        '✅ <strong>' + corregidos + '</strong> rúbricas con nombre incorrecto serán corregidas.</div>';
+    }
+    if (detallesDups.length > 0) {
+      resumenHtml += '<div style="font-size:12px;font-weight:600;margin-bottom:8px;">Evaluaciones duplicadas (' + detallesDups.length + ' grupos):</div>' +
+        '<div style="max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;">';
+      detallesDups.forEach(function(d) {
+        resumenHtml += '<div style="font-size:11px;padding:6px 10px;background:var(--bg3);border-radius:var(--rad);font-family:var(--font-mono);">' +
+          '<strong>' + d.nombre + '</strong> · ' + d.curso + '<br>' +
+          d.rubrica + ' · ' + (d.instancia||'Ev.1') + ' · nota conservada: <strong>' + d.nota + '</strong><br>' +
+          '<span style="color:var(--red);">Eliminar ' + d.eliminadas + ' registro(s) duplicado(s)</span></div>';
+      });
+      resumenHtml += '</div>';
+    }
 
-  var gruposDup = Object.values(grupos).filter(function(g){ return g.length > 1; });
-  var indicesToEliminar = new Set();
-  var detallesDups = [];
+    var ok = await confirmarAccion('🔍 Limpieza de registros', resumenHtml, '🔍', 'Sí, aplicar limpieza', 'btn-primary');
+    if (!ok) return;
 
-  gruposDup.forEach(function(grupo) {
-    grupo.sort(function(a, b) {
-      if (a.r.noEntregado && !b.r.noEntregado) return 1;
-      if (!a.r.noEntregado && b.r.noEntregado) return -1;
-      return new Date(b.r.fechaISO||0) - new Date(a.r.fechaISO||0);
-    });
-    var conservar = grupo[0];
-    grupo.slice(1).forEach(function(item){ indicesToEliminar.add(item.idx); });
-    detallesDups.push({
-      nombre: conservar.r.nombre, curso: conservar.r.curso,
-      rubrica: conservar.r.rubricaNombre, instancia: conservar.r.instancia,
-      nota: conservar.r.nota, eliminadas: grupo.length - 1,
-    });
-  });
+    registros = registros.filter(function(r, idx){ return !indicesToEliminar.has(idx); });
+    saveRegistros();
+    actualizarConteo(); renderRegistros(); renderSidebarCounts();
+    if (cursoSeleccionado && typeof renderCursoMain === 'function') renderCursoMain();
+    if (typeof renderProgreso === 'function') renderProgreso();
+    if (typeof renderDashboard === 'function') renderDashboard();
+    toast('✅ ' + corregidos + ' corregidas · ' + totalDups + ' duplicados eliminados · Total: ' + totalAntes + ' → ' + registros.length, 'ok', 5000);
 
-  var totalDups = indicesToEliminar.size;
-  if (corregidos === 0 && totalDups === 0) {
-    toast('✅ Sin problemas encontrados en los registros', 'ok', 3000); return;
-  }
-
-  var resumenHtml = '';
-  if (corregidos > 0) {
-    resumenHtml += '<div style="padding:10px;background:rgba(52,201,122,0.1);border-radius:var(--rad);margin-bottom:12px;font-size:12px;">' +
-      '✅ <strong>' + corregidos + '</strong> rúbricas con nombre incorrecto serán corregidas.</div>';
-  }
-  if (detallesDups.length > 0) {
-    resumenHtml += '<div style="font-size:12px;font-weight:600;margin-bottom:8px;">Evaluaciones duplicadas (' + detallesDups.length + ' grupos):</div>' +
-      '<div style="max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;">';
-    detallesDups.forEach(function(d) {
-      resumenHtml += '<div style="font-size:11px;padding:6px 10px;background:var(--bg3);border-radius:var(--rad);font-family:var(--font-mono);">' +
-        '<strong>' + d.nombre + '</strong> · ' + d.curso + '<br>' +
-        d.rubrica + ' · ' + (d.instancia||'Ev.1') + ' · nota conservada: <strong>' + d.nota + '</strong><br>' +
-        '<span style="color:var(--red);">Eliminar ' + d.eliminadas + ' registro(s) duplicado(s)</span></div>';
-    });
-    resumenHtml += '</div>';
-  }
-
-  var ok = await confirmarAccion('🔍 Limpieza de registros', resumenHtml, '🔍', 'Sí, aplicar limpieza', 'btn-primary');
-  if (!ok) return;
-
-  registros = registros.filter(function(r, idx){ return !indicesToEliminar.has(idx); });
-  saveRegistros();
-  actualizarConteo(); renderRegistros(); renderSidebarCounts();
-  if (cursoSeleccionado && typeof renderCursoMain === 'function') renderCursoMain();
-  if (typeof renderProgreso === 'function') renderProgreso();
-  if (typeof renderDashboard === 'function') renderDashboard();
-  toast('✅ ' + corregidos + ' corregidas · ' + totalDups + ' duplicados eliminados · Total: ' + totalAntes + ' → ' + registros.length, 'ok', 5000);
-}
+  } catch(e) {
+    console.error("[ArtEval] limpiarRegistrosDuplicados:", e.message);
+    if (typeof toast === "function") toast("⚠️ Error inesperado: " + e.message, "err", 3000);
+  }}
 
 // ── Deduplicar y fusionar un curso: alinea registros con nómina oficial ──
 function deduplicarYFusionarCurso(curso) {
@@ -20621,6 +20900,7 @@ function _actualizarTodaLaAppImpl() {
   _renderSemestreControls();
   actualizarBarraContinuidad();
   _renderDashPendientes();
+  _renderUltimaEval();   // indicador de última evaluación en dashboard
   try {
     // Invalidar cachés antes de cualquier render
     _regsMapCache    = null;
@@ -21054,17 +21334,23 @@ function _requestTokenSilent() {
 
 // Token válido o solicitar renovación
 async function _getToken() {
-  if (_driveToken && Date.now() < _driveTokenExp) return _driveToken;
-  return new Promise(function(resolve) {
-    if (!_gisTokenClient) { resolve(null); return; }
-    var orig = _gisTokenClient._callback || _onAccessToken;
-    _gisTokenClient._callback = function(tr) {
-      _onAccessToken(tr);
-      _gisTokenClient._callback = orig;
-      resolve(_driveToken);
-    };
-    _gisTokenClient.requestAccessToken({ prompt: '' });
-  });
+  // try/catch: a GIS failure must never freeze the Drive flow silently
+  try {
+    if (_driveToken && Date.now() < _driveTokenExp) return _driveToken;
+    return new Promise(function(resolve) {
+      if (!_gisTokenClient) { resolve(null); return; }
+      var orig = _gisTokenClient._callback || _onAccessToken;
+      _gisTokenClient._callback = function(tr) {
+        try { _onAccessToken(tr); } catch(e) { console.warn('[ArtEval] _onAccessToken:', e.message); }
+        _gisTokenClient._callback = orig;
+        resolve(_driveToken);
+      };
+      _gisTokenClient.requestAccessToken({ prompt: '' });
+    });
+  } catch(e) {
+    console.warn('[ArtEval] _getToken:', e.message);
+    return null;
+  }
 }
 
 function googleSignOut() {
@@ -21566,6 +21852,8 @@ async function _smartSyncOnConnect() {
 }
 
 async function syncToDrive() {
+  if (syncToDrive._syncing) { console.info("[ArtEval] syncToDrive already running, skipped"); return; }
+  syncToDrive._syncing = true;
   _updateCloudUI('saving');
   try {
     // ── DEEP COPY — nunca mutar la memoria local ──
@@ -21649,7 +21937,8 @@ async function syncToDrive() {
   } catch(e) {
     _updateCloudUI('error');
     toast('❌ Error al guardar en Drive: ' + e.message, 'err', 6000);
-    throw e;
+  } finally {
+    syncToDrive._syncing = false;
   }
 }
 
