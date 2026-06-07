@@ -6109,7 +6109,9 @@ function _autoRetencionImagen() {
 
 function _checkStorageSize() {
   try {
-    // Si Drive está conectado, no molestar — Drive es el almacén principal
+    // ── Drive-first: si Drive está conectado, localStorage es solo caché ligero ──
+    // Sin imagenBase64, el tamaño real debería ser < 1 MB incluso con 1300+ registros.
+    // Solo advertir si el storage sube (datos legados o sin Drive).
     if (_driveToken && Date.now() < _driveTokenExp) {
       var warn0 = document.getElementById('storageWarning');
       if (warn0) warn0.style.display = 'none';
@@ -6303,21 +6305,31 @@ function saveRegistros() {
   _regsSemCache    = null;
   if (typeof _renderDashKpiGlobal !== 'undefined') _renderDashKpiGlobal._lastHash = '';
   try {
+    // ── Drive-first: localStorage NUNCA guarda imagenBase64 ──────────────────
+    // Las imágenes van SOLO a Drive (_subirFotoDrive → imagenDriveId).
+    // El localStorage solo guarda metadatos ligeros: notas, criterios, nombres.
+    // Esto previene el QuotaExceededError y mantiene el store < 500 KB siempre.
+    var _payload = registros.map(function(r) {
+      if (!r) return r;
+      var c = Object.assign({}, r);
+      delete c.imagenBase64; // jamás en localStorage — ocupa 50-150 KB por registro
+      return c;
+    });
     try {
-    localStorage.setItem('av_registros', JSON.stringify(registros));
-  } catch(e) {
-    if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
-      console.error('[ArtEval] localStorage lleno:', e);
-      // Fallback: guardar sin imágenes
-      try {
-        var _sinImg = registros.map(function(r){ var c=Object.assign({},r); delete c.imagenBase64; return c; });
-        localStorage.setItem('av_registros', JSON.stringify(_sinImg));
-        toast('⚠️ Almacenamiento lleno — guardado sin imágenes. Conecta Drive para respaldo completo.', 'err', 6000);
-      } catch(e2) {
-        toast('🚨 Sin espacio. Exporta backup desde Sistema → Datos.', 'err', 10000);
+      localStorage.setItem('av_registros', JSON.stringify(_payload));
+    } catch(e) {
+      if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
+        console.error('[ArtEval] localStorage lleno incluso sin imágenes:', e);
+        // Fallback extremo: guardar solo los últimos 200 registros
+        var _mini = _payload.slice(-200);
+        try {
+          localStorage.setItem('av_registros', JSON.stringify(_mini));
+          toast('⚠️ Almacenamiento casi lleno — guardando los últimos 200 registros localmente. Sincroniza Drive.', 'err', 6000);
+        } catch(e2) {
+          toast('🚨 Sin espacio local. Sincroniza Drive desde Sistema → Drive.', 'err', 10000);
+        }
       }
     }
-  }
     localStorage.setItem('av_local_count', String(registros.length));
     localStorage.setItem('av_last_edit_ts', new Date().toISOString());
     _invalidarCandidatos();
@@ -7853,13 +7865,17 @@ async function guardar() {
 
         if (_driveResult && _driveResult.driveId) {
           // ✅ Drive: guardar referencia Drive (sin base64 pesado)
-          nuevoReg.imagenDriveId      = _driveResult.driveId;
-          nuevoReg.imagenWebViewLink  = _driveResult.webViewLink  || null;
+          nuevoReg.imagenDriveId        = _driveResult.driveId;
+          nuevoReg.imagenWebViewLink    = _driveResult.webViewLink  || null;
           nuevoReg.imagenWebContentLink = _driveResult.webContentLink || null;
-          nuevoReg.imagenBase64       = null; // no duplicar en local
+          nuevoReg.imagenBase64         = null; // nunca en memoria ni en localStorage
         } else {
-          // ⚠️ Fallback local: sin conexión Drive o error de subida
+          // ⚠️ Sin Drive disponible — guardar base64 SOLO en memoria RAM
+          // NO persistir en localStorage (evita QuotaExceededError).
+          // Se subirá a Drive en la próxima sincronización automática.
           nuevoReg.imagenBase64 = 'data:image/jpeg;base64,' + b64Comprimido;
+          // Programar reintento de subida cuando Drive esté disponible
+          nuevoReg._pendingDriveUpload = true;
         }
       } else {
         nuevoReg.imagenBase64 = canvas.toDataURL('image/jpeg', 0.4); // fallback si helper falla
@@ -11543,7 +11559,16 @@ let alexiaDatos = (function(){ try { return JSON.parse(localStorage.getItem('av_
 
 function saveAlexiaDatos() {
   try {
-    localStorage.setItem('av_alexia_datos', JSON.stringify(alexiaDatos));
+    // ── Drive-first: bufferB64 y bufferNombre son datos binarios pesados (~MB por curso).
+    // Se mantienen en RAM para procesamiento pero NUNCA en localStorage.
+    // El snapshot completo (con buffers) se sube a Drive mediante syncToDrive.
+    var _sinBuf = {};
+    Object.keys(alexiaDatos || {}).forEach(function(k) {
+      _sinBuf[k] = Object.assign({}, alexiaDatos[k]);
+      delete _sinBuf[k].bufferB64;
+      delete _sinBuf[k].bufferNombre;
+    });
+    localStorage.setItem('av_alexia_datos', JSON.stringify(_sinBuf));
     _checkStorageSize();
   } catch(e) {
     if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
@@ -18802,6 +18827,27 @@ function tokensSimilares(t1, t2) {
 // Lógica: si al menos 2 tokens significativos coinciden (en cualquier orden),
 // se considera el mismo estudiante.
 // ── Normalización estricta para comparación de nombres ──
+// ── Drive-first startup cleanup ───────────────────────────────────────────────
+// Elimina imagenBase64 que pudo haber quedado en localStorage de versiones anteriores.
+// Esto libera espacio inmediatamente al abrir la app sin tocar los datos de Drive.
+(function _purgeLegacyBase64() {
+  try {
+    var raw = localStorage.getItem('av_registros');
+    if (!raw) return;
+    var arr = JSON.parse(raw);
+    if (!Array.isArray(arr)) return;
+    var dirty = false;
+    arr.forEach(function(r) {
+      if (r && r.imagenBase64) { delete r.imagenBase64; dirty = true; }
+      if (r && r._pendingDriveUpload) { delete r._pendingDriveUpload; dirty = true; }
+    });
+    if (dirty) {
+      localStorage.setItem('av_registros', JSON.stringify(arr));
+      console.info('[ArtEval] Base64 legado purgado de localStorage (' + arr.length + ' registros)');
+    }
+  } catch(e) { console.warn('[ArtEval] _purgeLegacyBase64:', e.message); }
+})();
+
 // ── normalizarStrict: memoized — called 12+ times per record in render loops ──
 // With 1300 records and 12 calls each, memoization saves ~15600 string ops per render.
 // Cache is invalidated when registros changes (via saveRegistros).
@@ -21932,7 +21978,15 @@ async function syncToDrive() {
     var snapshot = {
       _v:           2,
       _savedAt:     new Date().toISOString(),
-      registros:    JSON.parse(JSON.stringify(registros)),
+      // ── Drive-first: strip imagenBase64 del snapshot JSON ─────────────────
+      // Las fotos van a Drive como archivos JPEG independientes (imagenDriveId).
+      // Incluir base64 en el JSON inflaría el archivo de 1 MB a 100+ MB.
+      registros:    JSON.parse(JSON.stringify(registros)).map(function(r) {
+        if (!r) return r;
+        delete r.imagenBase64;
+        delete r._pendingDriveUpload;
+        return r;
+      }),
       rubricas:     JSON.parse(JSON.stringify(rubricas)),
       listaCursos:  JSON.parse(JSON.stringify(listaCursos)),
       rubricaActiva: rubricaActiva,
@@ -22000,6 +22054,41 @@ async function syncToDrive() {
     _updateCloudUI('synced');
     _checkDriveSyncInfo();
     if (typeof _updateDriveIntegrityBadge === 'function') _updateDriveIntegrityBadge();
+
+    // ── Drive-first cleanup: subir imágenes pendientes y limpiar base64 de RAM ──
+    // Cualquier registro con _pendingDriveUpload=true tiene imagenBase64 en RAM
+    // pero no en Drive. Los subimos ahora y liberamos la memoria.
+    (async function _subirImagenesPendientes() {
+      try {
+        var token = await _getToken();
+        if (!token) return;
+        var huboSubida = false;
+        for (var _ri = 0; _ri < registros.length; _ri++) {
+          var _r = registros[_ri];
+          if (!_r || !_r._pendingDriveUpload || !_r.imagenBase64) continue;
+          try {
+            var _b64 = _r.imagenBase64.replace(/^data:image\/\w+;base64,/, '');
+            var _dr  = await _subirFotoDrive(_b64, _r.nombre || 'alumno');
+            if (_dr && _dr.driveId) {
+              _r.imagenDriveId        = _dr.driveId;
+              _r.imagenWebViewLink    = _dr.webViewLink    || null;
+              _r.imagenWebContentLink = _dr.webContentLink || null;
+            }
+          } catch(e) { console.warn('[ArtEval] pendingUpload error:', e.message); }
+          // Liberar de RAM independientemente de si Drive subió o no
+          delete _r.imagenBase64;
+          delete _r._pendingDriveUpload;
+          huboSubida = true;
+        }
+        if (huboSubida) {
+          saveRegistros(); // persiste sin imagenBase64 (ya limpiado arriba)
+          syncToDrive();   // segunda sync para actualizar Drive con los driveIds correctos
+        }
+      } catch(e) { console.warn('[ArtEval] _subirImagenesPendientes:', e.message); }
+    })();
+
+    // Marcar sync completada — limpiar flag de pendiente
+    localStorage.setItem('av_sync_pending', '0');
     // Modo no molestar: badge silencioso durante evaluación, toast solo fuera de ella
     if (_driveEvaluando) {
       _driveNotifSilenciosa(snapshot.registros.length);
