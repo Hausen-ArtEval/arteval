@@ -4662,11 +4662,11 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
             </div>
             <input class="exigencia-slider" type="range" id="sliderExigencia" min="1" max="5" value="2" step="1" oninput="actualizarSlider()">
             <div class="exigencia-ticks">
-              <span class="exigencia-tick">Muy flexible</span>
-              <span class="exigencia-tick">Flexible</span>
+              <span class="exigencia-tick">3°-4°</span>
+              <span class="exigencia-tick">5°-6°</span>
               <span class="exigencia-tick">Estándar</span>
               <span class="exigencia-tick">Exigente</span>
-              <span class="exigencia-tick">Muy exigente</span>
+              <span class="exigencia-tick">Máx</span>
             </div>
           </div>
           <div class="status-bar" id="statusBar">Listo para evaluar</div>
@@ -7318,17 +7318,17 @@ function reproducirBeep() {
 // ═══════════════════════════════════════════════════════
 const NIVELES_EXIGENCIA = [
   {
-    label: 'Muy flexible (iniciación)',
-    temp: 0.4,
-    contexto: `Estos son trabajos de estudiantes de 5° o 6° básico (10-12 años) que están en etapa de INICIACIÓN en artes visuales. Muchos es la primera vez que usan estas técnicas. Tu evaluación debe ser MUY GENEROSA: valora el esfuerzo, la participación y el intento por sobre la perfección técnica. Si un niño intentó hacer algo reconocible, eso merece al menos "Medianamente logrado". Reserva "Por lograr" solo para casos donde claramente no hubo intento. Sé muy comprensivo con errores técnicos propios de la edad.`,
-    mbDesc: 'supera claramente las expectativas para su edad y nivel',
-    lDesc:  'cumple el criterio de forma adecuada para 5°-6° básico',
-    mDesc:  'intenta cumplir el criterio aunque con errores propios de la edad',
-    nDesc:  'no hay evidencia de intento o el criterio está completamente ausente'
+    label: 'Muy flexible (3°-4° básico)',
+    temp: 0.5,
+    contexto: `Estos son trabajos de estudiantes de 3° o 4° básico (8-10 años) que están en etapa INICIAL de artes visuales. Es probable que sea la primera o segunda vez que usan estas técnicas. Tu evaluación debe ser EXTREMADAMENTE GENEROSA: cualquier intento genuino merece "Medianamente logrado" o más. "Muy bien logrado" se otorga cuando el niño muestra esfuerzo visible y el resultado es reconocible, aunque no sea perfecto. Reserva "Por lograr" ÚNICAMENTE para ausencia total de intento o trabajo en blanco. Los errores de proporción, color, trazo y composición son NORMALES y esperados a esta edad — no los penalices. Compara con lo que razonablemente puede producir un niño de 8-10 años.`,
+    mbDesc: 'esfuerzo visible, resultado reconocible y apropiado para 8-10 años',
+    lDesc:  'intento claro del criterio, aunque con imperfecciones propias de la edad',
+    mDesc:  'intento parcial o mínimo, con dificultades esperables a esta edad',
+    nDesc:  'ausencia total de intento o trabajo completamente en blanco'
   },
   {
     label: 'Flexible (5°-6° básico)',
-    temp: 0.3,
+    temp: 0.4,
     contexto: `Estos son trabajos de estudiantes de 5° o 6° básico (10-12 años). Evalúa con criterio apropiado para su edad y nivel de desarrollo. Ten en cuenta que están aprendiendo técnicas nuevas. Valora el esfuerzo y la creatividad. Los errores técnicos menores no deben bajar la nota si el resultado general es coherente con lo pedido. Compara con lo que es razonable esperar de un niño de esta edad, no con un estándar adulto.`,
     mbDesc: 'destaca notablemente entre trabajos de su nivel y edad',
     lDesc:  'cumple bien el criterio considerando su nivel de 5°-6° básico',
@@ -7338,7 +7338,7 @@ const NIVELES_EXIGENCIA = [
   {
     label: 'Estándar',
     temp: 0.2,
-    contexto: `Evalúa el trabajo con criterio estándar para el nivel de 5°-6° básico. Aplica la rúbrica de forma objetiva: si el criterio se cumple, es "Logrado"; si se cumple parcialmente, "Medianamente logrado". Considera el nivel esperado del curso sin ser ni muy exigente ni muy permisivo.`,
+    contexto: `Evalúa el trabajo con criterio estándar para educación básica. Aplica la rúbrica de forma objetiva: si el criterio se cumple, es "Logrado"; si se cumple parcialmente, "Medianamente logrado". Considera el nivel esperado del curso sin ser ni muy exigente ni muy permisivo.`,
     mbDesc: 'supera las expectativas del nivel',
     lDesc:  'cumple correctamente el criterio',
     mDesc:  'cumple el criterio solo parcialmente',
@@ -7745,6 +7745,15 @@ function toggleAuto() {
 async function guardar() {
   // Idempotency guard: prevents duplicate records on rapid double-tap
   if (guardar._saving) return; guardar._saving = true;
+
+  // ── Bug fix: si la IA está procesando, no guardar hasta que termine ─────
+  // analizarAhora() escribe en `evaluacion` de forma asíncrona. Si guardar()
+  // corre antes de que termine, los criterios quedan incompletos o en cero.
+  if (analizando) {
+    guardar._saving = false; // liberar para que el usuario pueda reintentar
+    toast('⏳ La IA aún está analizando — espera a que termine y guarda de nuevo', 'info', 4000);
+    return;
+  }
   // Normalizar nombre: title-case estricto — primera letra mayúscula, RESTO MINÚSCULA por palabra
   // Previene "Rivas PeñAloza" → fuerza "Rivas Peñaloza"
   // Palabras de 1-2 letras (DE, LA, Y) se respetan tal como vienen
