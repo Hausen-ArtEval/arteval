@@ -2963,6 +2963,28 @@ button:focus-visible, .tab:focus-visible, .sub-tab:focus-visible {
   .reg-card, #undoToast, * { animation: none !important; transition: none !important; }
 }
 
+/* ── Alto contraste — para profesores con baja visión o pantallas brillantes ── */
+@media (prefers-contrast: high) {
+  :root {
+    --border:        #555;
+    --border2:       #444;
+    --text3:         #555;
+    --text2:         #222;
+    --bg3:           #f0f0f0;
+    --bg4:           #e0e0e0;
+  }
+  .btn             { border-width: 1.5px !important; font-weight: 700 !important; }
+  .nivel-btn       { border-width: 2px !important; }
+  .nivel-btn.sel   { outline: 3px solid var(--accent) !important; outline-offset: 1px; }
+  .tab             { border-bottom: 2px solid transparent; }
+  .tab.active      { border-bottom-color: var(--accent) !important; }
+  .rub-folder      { border-width: 1.5px !important; }
+  .rub-card        { border-width: 1.5px !important; }
+  .reg-card        { border-width: 1.5px !important; }
+  input, select, textarea { border-width: 1.5px !important; }
+}
+
+
 /* ── UI POLISH v196 — mejoras globales ─────────────────── */
 
 /* ── CTA siguiente alumno (banner flotante post-guardado) ── */
@@ -3949,13 +3971,13 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
     // Intentar data: URL (funciona en Firefox y algunos contextos)
     var dataUrl = 'data:application/javascript;base64,' + btoa(swSrc);
     navigator.serviceWorker.register(dataUrl, { scope: './' })
-      .then(function(r){ console.log('[ArtEval] SW listo:', r.scope); })
+      .then(function(r){ console.info('[ArtEval] SW listo:', r.scope); })
       .catch(function(){
         // data: URL también bloqueado (Chrome) — SW no disponible, continúa sin él
-        console.log('[ArtEval] SW omitido (entorno no compatible) — app funciona normalmente.');
+        console.info('[ArtEval] SW omitido (entorno no compatible) — app funciona normalmente.');
       });
   } catch(e) {
-    console.log('[ArtEval] SW omitido:', e.message);
+    console.info('[ArtEval] SW omitido:', e.message);
   }
 })();
 </script>
@@ -10190,7 +10212,7 @@ async function procesarRubricaWord(file) {
 
         if (cumpleA || cumpleB) {
           tablaRubrica = tbl;
-          console.log('[ArtEval] ✓ Tabla de rúbrica seleccionada: índice ' + ti);
+          console.info('[ArtEval] Tabla seleccionada: índice ' + ti);
           break;
         }
       }
@@ -10315,7 +10337,7 @@ async function procesarRubricaWord(file) {
       var form = document.getElementById('formRubrica');
       if (form) setTimeout(function() { form.scrollIntoView({ behavior: 'smooth' }); }, 200);
 
-      console.log('[ArtEval v200] Rúbrica importada:', {
+      console.info('[ArtEval] Rúbrica importada:', {
         archivo: file.name, criterios: criteriosExtraidos, descripcionesMB: descripcionesExtraidas
       });
 
@@ -15453,12 +15475,18 @@ input:focus, textarea:focus, select:focus {
   win.document.close();
 }
 
-// renderReporte: debounced to avoid rerender on every keystroke (critical with 1300+ records)
+// renderReporte: debounced — avoids rerender on every keystroke (1300+ records)
 var _renderReporteTimer = null;
+// Virtual scroll state
+var _rrVirtualData = []; // registros filtrados en el render actual
+var _rrLoaded      = 0;  // cuántas tarjetas están en el DOM
+var _rrObserver    = null; // IntersectionObserver para carga progresiva
+
 function renderReporte() {
   clearTimeout(_renderReporteTimer);
   _renderReporteTimer = setTimeout(_renderReporteImpl, 130);
 }
+
 function _renderReporteImpl() {
   const cont = document.getElementById('reporteContent');
   if (!cont) return;
@@ -15497,10 +15525,53 @@ function _renderReporteImpl() {
 
   // DocumentFragment: single DOM write avoids N reflows (one per record)
   const _rrFrag = document.createDocumentFragment();
-  data.forEach(r => {
-    const nota = r.nota||1;
-    const bg = nota>=6?'#dbeafe':nota>=4?'#dcfce7':'#fee2e2';
-    const clr = nota>=6?'#1e40af':nota>=4?'#166534':'#991b1b';
+
+  if (!data.length) {
+    if (_rrObserver) { _rrObserver.disconnect(); _rrObserver = null; }
+    cont.innerHTML = '<div class="empty-state"><svg style="width:40px;height:40px;opacity:.3;display:block;margin:0 auto 12px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><div>No hay evaluaciones que coincidan</div></div>';
+    return;
+  }
+
+  // ── Virtual scroll: solo renderiza las primeras 25 tarjetas ─────────────
+  // Con 1300 registros x ~10 nodos DOM cada una = ~13000 nodos en el DOM.
+  // Cargamos lotes de 25 y usamos IntersectionObserver para agregar más
+  // automáticamente cuando el usuario se acerca al final — sin botones.
+  if (_rrObserver) { _rrObserver.disconnect(); _rrObserver = null; }
+  _rrVirtualData = data;
+  _rrLoaded      = 0;
+  cont.innerHTML = '';
+
+  // Primer lote
+  _rrAppendBatch(cont, Math.min(25, data.length));
+
+  // Sentinel invisible al final del contenedor
+  var _rrSentinel = document.createElement('div');
+  _rrSentinel.id  = '_rrSentinel';
+  _rrSentinel.style.cssText = 'height:2px;visibility:hidden;';
+  cont.appendChild(_rrSentinel);
+
+  // Observer: carga 25 más al llegar a 200px del final
+  if (typeof IntersectionObserver !== 'undefined' && _rrLoaded < data.length) {
+    _rrObserver = new IntersectionObserver(function(entries) {
+      if (!entries[0].isIntersecting) return;
+      if (_rrLoaded >= _rrVirtualData.length) {
+        _rrObserver.disconnect(); _rrObserver = null; return;
+      }
+      _rrAppendBatch(cont, 25);
+    }, { rootMargin: '200px' });
+    _rrObserver.observe(_rrSentinel);
+  }
+}
+
+// Agrega el siguiente lote de tarjetas al contenedor existente
+function _rrAppendBatch(cont, batchSize) {
+  var frag = document.createDocumentFragment();
+  var end  = Math.min(_rrLoaded + batchSize, _rrVirtualData.length);
+  for (var _bi = _rrLoaded; _bi < end; _bi++) {
+    var r = _rrVirtualData[_bi];
+    const nota     = r.nota||1;
+    const bg       = nota>=6?'#dbeafe':nota>=4?'#dcfce7':'#fee2e2';
+    const clr      = nota>=6?'#1e40af':nota>=4?'#166534':'#991b1b';
     const resLabel = nota>=6?'Excelente':nota>=5?'Muy bien logrado':nota>=4?'Logrado':'No logrado';
     const _rrHtml = `
     <div style="background:#fff;border:1px solid #e0d8cc;border-radius:12px;padding:20px 24px;margin-bottom:16px;page-break-inside:avoid;">
@@ -15535,11 +15606,14 @@ function _renderReporteImpl() {
       </div>
     </div>`.trim();
     const _rrEl = document.createElement('div');
-    _rrEl.innerHTML = _rrHtml;
-    if (_rrEl.firstElementChild) _rrFrag.appendChild(_rrEl.firstElementChild);
-  });
-  cont.innerHTML = '';
-  cont.appendChild(_rrFrag);
+    _rrEl.innerHTML = _rrHtml.trim();
+    if (_rrEl.firstElementChild) frag.appendChild(_rrEl.firstElementChild);
+  }
+  // Insertar antes del sentinel para mantener el orden
+  var sentinel = document.getElementById('_rrSentinel');
+  if (sentinel) cont.insertBefore(frag, sentinel);
+  else cont.appendChild(frag);
+  _rrLoaded = end;
 }
 
 function showTab(name) {
@@ -18848,7 +18922,43 @@ function tokensSimilares(t1, t2) {
   } catch(e) { console.warn('[ArtEval] _purgeLegacyBase64:', e.message); }
 })();
 
-// ── normalizarStrict: memoized — called 12+ times per record in render loops ──
+// ── Manejadores globales de error ─────────────────────────────────────────────
+// Captura errores en callbacks de eventos nativos (onclick, onchange, etc.)
+// que no están cubiertos por try/catch individuales.
+// No muestra errores técnicos al usuario — solo un toast genérico discreto.
+(function _instalarGlobalErrorHandlers() {
+  // Errores síncronos no capturados (ej: ReferenceError en un onclick)
+  window.onerror = function(msg, src, line, col, err) {
+    // Ignorar errores de extensiones de navegador (chrome-extension://, moz-extension://)
+    if (src && (src.startsWith('chrome-extension') || src.startsWith('moz-extension'))) return false;
+    // Ignorar errores de scripts de terceros (Google APIs, etc.)
+    if (src && src.includes('googleapis.com')) return false;
+    console.error('[ArtEval] Error global:', msg, 'en', src + ':' + line);
+    // No mostrar toast para errores menores — solo los que rompen flujo principal
+    if (msg && (msg.includes('Cannot read') || msg.includes('is not a function') || msg.includes('is not defined'))) {
+      if (typeof toast === 'function') toast('Error inesperado — recarga si la app no responde', 'err', 5000);
+    }
+    return false; // no suprimir el error (sigue en consola)
+  };
+
+  // Promesas rechazadas sin catch (ej: fetch sin .catch(), Drive API timeout)
+  window.addEventListener('unhandledrejection', function(e) {
+    var reason = e.reason;
+    var msg    = reason instanceof Error ? reason.message : String(reason);
+    // Ignorar errores de red esperados (offline, Drive token expirado)
+    var ignorar = ['Failed to fetch', 'NetworkError', 'Sin token', 'Sin conexión',
+                   'Load failed', 'abort', 'cancelled', 'The user is not signed in'];
+    if (ignorar.some(function(s) { return msg.includes(s); })) return;
+    console.warn('[ArtEval] Promise rechazada sin catch:', msg);
+    // Solo notificar si es algo inesperado
+    if (msg && msg.length < 200 && typeof toast === 'function') {
+      toast('Error: ' + msg, 'err', 4000);
+    }
+    e.preventDefault(); // evitar que el navegador lo muestre en consola como error
+  });
+})();
+
+
 // With 1300 records and 12 calls each, memoization saves ~15600 string ops per render.
 // Cache is invalidated when registros changes (via saveRegistros).
 var _normStrictCache = Object.create(null);
@@ -21516,6 +21626,13 @@ function _updateCloudUI(state) {
 
 // ── Drive API helpers ──
 async function _driveRequest(method, url, body, extraHeaders) {
+  // ── Fail-fast offline check: evita 30-60s de timeout en móvil sin red ────
+  // navigator.onLine es un heurístico (puede ser true y aun así sin internet),
+  // pero captura el caso más común: WiFi desconectado o modo avión.
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    localStorage.setItem('av_sync_pending', '1');
+    throw new Error('Sin conexión a internet');
+  }
   var token = await _getToken();
   if (!token) throw new Error('Sin token de Drive');
   var headers = Object.assign({ 'Authorization': 'Bearer ' + token }, extraHeaders || {});
@@ -21875,6 +21992,93 @@ async function _smartSyncOnConnect() {
 
     if (localCount === 0 && driveCount === 0) return; // nada que hacer
 
+    // ── DISPOSITIVO NUEVO / SESIÓN VACÍA: restaurar automáticamente desde Drive ─
+    // Si el local está vacío pero Drive tiene datos, es casi seguro un nuevo dispositivo
+    // (o el profesor abrió el link en otro equipo). Se restaura automáticamente sin
+    // pedir confirmación — es la acción lógica y esperada en ese contexto.
+    if (localCount === 0 && driveCount > 0 && driveData && driveData.registros) {
+      console.info('[ArtEval] Dispositivo nuevo detectado — restaurando ' + driveCount + ' registros desde Drive');
+      toast('☁️ Detectado dispositivo nuevo — restaurando datos desde Drive…', 'info', 5000);
+      try {
+        // Aplicar datos de Drive directamente (mismo proceso que syncFromDrive)
+        registros     = JSON.parse(JSON.stringify(driveData.registros || []));
+        rubricas      = JSON.parse(JSON.stringify(driveData.rubricas  || rubricas));
+        listaCursos   = JSON.parse(JSON.stringify(driveData.listaCursos || {}));
+        rubricaActiva = driveData.rubricaActiva || 0;
+
+        // Restaurar configuración personal (correos, key Gemini)
+        if (driveData.config) {
+          var _dcfg = driveData.config;
+          if (_dcfg.emailProf)          localStorage.setItem('av_email_prof',          _dcfg.emailProf);
+          if (_dcfg.emailColegio)       localStorage.setItem('av_email_colegio',       _dcfg.emailColegio);
+          if (_dcfg.emailUTP)           localStorage.setItem('av_email_utp',           _dcfg.emailUTP);
+          if (_dcfg.emailInstitucional) localStorage.setItem('av_email_institucional', _dcfg.emailInstitucional);
+          if (_dcfg.gmailAcctIdx)       localStorage.setItem('av_gmail_acct_idx',      _dcfg.gmailAcctIdx);
+          if (_dcfg.geminiKey)          localStorage.setItem('av_gemini_key',          _dcfg.geminiKey);
+          if (_dcfg.linkedWorkEmail)    localStorage.setItem('ae_linked_work_email',   _dcfg.linkedWorkEmail);
+        }
+
+        // Restaurar correos de apoderados e historial
+        if (driveData.apoderadoEmails && Object.keys(driveData.apoderadoEmails).length) {
+          try { Object.assign(_apoderadoEmails, driveData.apoderadoEmails); } catch(e) {}
+          try { localStorage.setItem('av_apoderado_emails', JSON.stringify(_apoderadoEmails)); } catch(e) {}
+        }
+        if (driveData.historialCorreos && Object.keys(driveData.historialCorreos || {}).length) {
+          try { Object.assign(_historialCorreos, driveData.historialCorreos); } catch(e) {}
+          try { localStorage.setItem('av_historial_correos', JSON.stringify(_historialCorreos)); } catch(e) {}
+        }
+
+        // Restaurar plantillas Alexia si existen
+        if (driveData.alexiaDatos && Object.keys(driveData.alexiaDatos).length > 0) {
+          alexiaDatos = JSON.parse(JSON.stringify(driveData.alexiaDatos));
+          saveAlexiaDatos();
+        }
+
+        // Persistir y actualizar UI completa
+        saveRegistros();
+        saveListaCursos();
+        saveRubricas();
+        localStorage.setItem('av_rubrica_activa', rubricaActiva);
+
+        // ── Restaurar preferencias de sesión ─────────────────────────────────
+        if (driveData.semestreActivo) {
+          localStorage.setItem('av_semestre_activo', String(driveData.semestreActivo));
+          if (typeof _semestreActivo !== 'undefined') {
+            // eslint-disable-next-line no-global-assign
+            try { _semestreActivo = driveData.semestreActivo; } catch(e) {}
+          }
+        }
+        if (driveData.contextosCurso && Object.keys(driveData.contextosCurso).length) {
+          localStorage.setItem('av_contexto_curso', JSON.stringify(driveData.contextosCurso));
+        }
+        if (driveData.semConfigKey && typeof driveData.semConfigKey === 'object') {
+          Object.keys(driveData.semConfigKey).forEach(function(k) {
+            try { localStorage.setItem(k, driveData.semConfigKey[k]); } catch(e) {}
+          });
+        }
+        localStorage.setItem('av_last_drive_sync', new Date().toISOString());
+        localStorage.setItem('av_drive_last_count', String(registros.length));
+        localStorage.setItem('av_last_edit_ts', new Date().toISOString());
+
+        actualizarConteo();
+        renderRegistros();
+        renderCriterios();
+        actualizarRubricaSelect();
+        renderSidebarCounts();
+        renderCursosChips();
+        actualizarTodaLaApp();
+
+        _updateCloudUI('synced');
+        toast('✅ Datos restaurados desde Drive — ' + registros.length + ' registros · Todo listo', 'ok', 6000);
+        if (typeof navigator.vibrate === 'function') navigator.vibrate([20, 80, 20]);
+      } catch(restoreErr) {
+        console.error('[ArtEval] Error al restaurar en dispositivo nuevo:', restoreErr.message);
+        toast('⚠️ Error al restaurar desde Drive: ' + restoreErr.message, 'err', 6000);
+      }
+      if (typeof _updateDriveIntegrityBadge === 'function') _updateDriveIntegrityBadge();
+      return;
+    }
+
     // ── Detección de cambios mejorada v191 ──────────────────────────────────
     // Ya no basta con comparar conteos — las notas MODIFICADAS tienen el mismo count.
     // Usamos timestamps: si hay edición local sin sync, subimos siempre.
@@ -21990,6 +22194,21 @@ async function syncToDrive() {
       rubricas:     JSON.parse(JSON.stringify(rubricas)),
       listaCursos:  JSON.parse(JSON.stringify(listaCursos)),
       rubricaActiva: rubricaActiva,
+      semestreActivo: parseInt(localStorage.getItem('av_semestre_activo') || '1', 10),
+      contextosCurso: (function(){
+        try { return JSON.parse(localStorage.getItem('av_contexto_curso') || '{}'); }
+        catch(e) { return {}; }
+      })(),
+      semConfigKey: (function(){
+        // Instancias configuradas por semestre (SEM_CONFIG_KEY del configurador)
+        try {
+          var _allSemCfg = {};
+          Object.keys(localStorage).forEach(function(k){
+            if (k.startsWith('av_sem_cfg_')) _allSemCfg[k] = localStorage.getItem(k);
+          });
+          return _allSemCfg;
+        } catch(e) { return {}; }
+      })(),
       alexiaDatos:   JSON.parse(JSON.stringify(alexiaDatos || {})),
       apoderadoEmails:  JSON.parse(JSON.stringify(
         (typeof _apoderadoEmails!=='undefined')?(_apoderadoEmails||{}):
@@ -22046,11 +22265,14 @@ async function syncToDrive() {
     }
 
     var _syncTs = new Date().toISOString();
-    localStorage.setItem('av_last_drive_sync', _syncTs);
-    localStorage.setItem('av_last_edit_ts',    _syncTs);
+    // ── Timestamps críticos para detección multidevice ─────────────────────
+    // Estos valores permiten que _smartSyncOnConnect compare dispositivos
+    // y detecte si un nuevo dispositivo está detrás de Drive.
+    localStorage.setItem('av_last_drive_sync',  _syncTs);
+    localStorage.setItem('av_last_edit_ts',     _syncTs);
     localStorage.setItem('av_drive_last_count', String(snapshot.registros.length));
-    localStorage.setItem('av_drive_sync_ts', _syncTs);
-    localStorage.removeItem('av_sync_pending'); // FIX SYNC: cierre limpio confirmado
+    localStorage.setItem('av_drive_sync_ts',    _syncTs);
+    localStorage.setItem('av_sync_pending',     '0'); // limpiar flag online/offline
     _updateCloudUI('synced');
     _checkDriveSyncInfo();
     if (typeof _updateDriveIntegrityBadge === 'function') _updateDriveIntegrityBadge();
@@ -22325,20 +22547,6 @@ async function syncFromDrive() {
       });
       try { localStorage.setItem('av_historial_correos', JSON.stringify(_historialCorreos)); } catch(e) {}
     }
-    if (raw.config) {
-      var _cfg=raw.config;
-      if(_cfg.emailProf)          localStorage.setItem('av_email_prof',_cfg.emailProf);
-      if(_cfg.emailColegio)       localStorage.setItem('av_email_colegio',_cfg.emailColegio);
-      if(_cfg.emailUTP)           localStorage.setItem('av_email_utp',_cfg.emailUTP);
-      if(_cfg.emailInstitucional) localStorage.setItem('av_email_institucional',_cfg.emailInstitucional);
-      if(_cfg.geminiKey)          localStorage.setItem('av_gemini_key',_cfg.geminiKey);
-      if(_cfg.linkedWorkEmail)    localStorage.setItem('ae_linked_work_email',_cfg.linkedWorkEmail);
-    }
-    // Restaurar historial de correos enviados
-    if (raw.historialCorreos && Object.keys(raw.historialCorreos).length) {
-      Object.assign(_historialCorreos, raw.historialCorreos);
-      try { localStorage.setItem('av_historial_correos', JSON.stringify(_historialCorreos)); } catch(e) {}
-    }
     // Restaurar configuración del profesor desde Drive
     if (raw.config) {
       var cfg = raw.config;
@@ -22351,6 +22559,20 @@ async function syncFromDrive() {
     }
     listaCursos   = JSON.parse(JSON.stringify(raw.listaCursos  || {}));
     rubricaActiva = raw.rubricaActiva || 0;
+
+    // ── Restaurar preferencias de sesión desde Drive ──────────────────────────
+    if (raw.semestreActivo) {
+      localStorage.setItem('av_semestre_activo', String(raw.semestreActivo));
+      try { _semestreActivo = parseInt(raw.semestreActivo, 10); } catch(e) {}
+    }
+    if (raw.contextosCurso && Object.keys(raw.contextosCurso).length) {
+      localStorage.setItem('av_contexto_curso', JSON.stringify(raw.contextosCurso));
+    }
+    if (raw.semConfigKey && typeof raw.semConfigKey === 'object') {
+      Object.keys(raw.semConfigKey).forEach(function(k) {
+        try { localStorage.setItem(k, raw.semConfigKey[k]); } catch(e) {}
+      });
+    }
 
     // Restaurar plantillas Alexia si existen en el backup
     if (raw.alexiaDatos && Object.keys(raw.alexiaDatos).length > 0) {
@@ -22825,7 +23047,7 @@ document.addEventListener('DOMContentLoaded', function() {
     _cursosUnicosCache = null;
     _regsMapCache = null;
     // 5. Log de estado
-    console.log('[ArtEval v180] Arrancado · ' + registros.length + ' registros · ' + Object.keys(listaCursos).length + ' cursos');
+    console.info('[ArtEval] Arrancado · ' + registros.length + ' registros · ' + Object.keys(listaCursos).length + ' cursos');
   } catch(diagErr) {
     console.error('[ArtEval] Error en auto-diagnóstico:', diagErr);
   }
@@ -22842,8 +23064,46 @@ document.addEventListener('DOMContentLoaded', function() {
     if (_apiBn && _apiK) _apiBn.style.display = 'none';
   } catch(_apiErr) {}
 
-  // Auto-retención de imágenes antiguas (silencioso)
-  setTimeout(_autoRetencionImagen, 2000);
+  // ── Indicador de primer uso / dispositivo nuevo ───────────────────────────
+  // Si el localStorage está vacío (registros=0 y sin historial de sync Drive),
+  // mostrar un hint visible que guíe al profesor a conectar su cuenta Google.
+  // Desaparece automáticamente en cuanto se detecta Drive o datos locales.
+  (function _checkFreshDevice() {
+    try {
+      var hayRegistros = (registros && registros.length > 0);
+      var haySync      = !!localStorage.getItem('av_last_drive_sync');
+      var hayClientId  = !!(localStorage.getItem('av_goog_client_id') || window.GOOG_CLIENT_ID_DEFAULT);
+      if (!hayRegistros && !haySync && hayClientId) {
+        // Mostrar hint en el topbar / dashboard
+        setTimeout(function() {
+          var dashWrap = document.getElementById('dashPendientesWrap');
+          if (!dashWrap) return;
+          var hint = document.createElement('div');
+          hint.id = '_newDeviceHint';
+          hint.style.cssText = 'background:var(--accent-bg);border:0.5px solid var(--accent-border);'
+            + 'border-radius:14px;padding:16px 18px;margin-bottom:14px;'
+            + 'display:flex;align-items:flex-start;gap:12px;';
+          hint.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" '
+            + 'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;">'
+            + '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
+            + '<div><div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px;">'
+            + 'Conecta tu cuenta Google para sincronizar</div>'
+            + '<div style="font-size:12px;color:var(--text2);line-height:1.5;">'
+            + 'Toca el botón <strong>☁️</strong> en la barra superior → inicia sesión con Google. '
+            + 'Si ya usas ArtEval en otro dispositivo, tus notas, rúbricas y registros se descargan automáticamente.</div></div>';
+          dashWrap.insertBefore(hint, dashWrap.firstChild);
+          // Auto-ocultar cuando Drive se conecte
+          var _hideHint = setInterval(function() {
+            if (registros.length > 0 || localStorage.getItem('av_last_drive_sync')) {
+              var h = document.getElementById('_newDeviceHint');
+              if (h && h.parentNode) h.parentNode.removeChild(h);
+              clearInterval(_hideHint);
+            }
+          }, 2000);
+        }, 1200);
+      }
+    } catch(e) {}
+  })();
   // Renderizar controles de semestre
   setTimeout(_renderSemestreControls, 100);
   // Reconstruir instanciaSelect desde config guardada
