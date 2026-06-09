@@ -4336,7 +4336,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         <!-- Panel contexto curso -->
     <div id="contextoCursoPanel" style="display:none;position:fixed;top:70px;right:16px;z-index:200;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--rad-lg);padding:16px;min-width:280px;max-width:340px;box-shadow:var(--shadow-lg);">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-        <div style="font-size:13px;font-weight:600;color:var(--text);">📋 Contexto del curso</div>
+        <div style="font-size:13px;font-weight:600;color:var(--text);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;" ><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg> Contexto del curso</div>
         <button onclick="cerrarContextoCurso()" style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--text3);line-height:1;">×</button>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
@@ -4568,11 +4568,11 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
           <div id="alexiaPanelWrap" style="background:var(--bg2);border:1.5px solid var(--accent-border);border-radius:var(--rad-lg);margin-bottom:14px;overflow:hidden;">
             <!-- Header del panel -->
             <div style="background:var(--accent-bg);padding:10px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;cursor:pointer;" onclick="toggleAlexiaPanel()">
-              <span style="font-size:13px;font-weight:700;color:var(--accent);">📥 Planillas Alexia</span>
+              <span style="font-size:13px;font-weight:700;color:var(--accent);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;" ><path d="M8 17H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-3"/><polyline points="12 12 12 21"/><polyline points="9 18 12 21 15 18"/></svg> Planillas Alexia</span>
               <span style="font-size:11px;color:var(--text2);">Sube los XLS de Alexia por curso → evalúa en ArtEval → exporta con notas actualizadas</span>
               <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
                 <span id="alexiaPanelResumen" style="font-size:11px;color:var(--accent);font-family:var(--font-mono);font-weight:600;"></span>
-                <span id="alexiaPanelChevron" style="font-size:13px;color:var(--accent);">▼</span>
+                <span id="alexiaPanelChevron" style="display:inline-flex;align-items:center;"><svg id="alexiaPanelChevronSvg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" style="transition:transform .22s;flex-shrink:0;"><polyline points="6 9 12 15 18 9"/></svg></span>
               </div>
             </div>
             <!-- Contenido del panel -->
@@ -4614,7 +4614,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
           </div>
           <div class="curso-main" id="cursoMain">
           <div class="cursos-empty">
-            <div class="ce-icon">🏫</div>
+            <div class="ce-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;" style="opacity:.35;"><path d="M2 20h20"/><path d="M4 20V9l8-7 8 7v11"/><path d="M9 20v-5a3 3 0 0 1 6 0v5"/></svg></div>
             <div class="ce-title">Selecciona un curso</div>
             <div class="ce-sub">Elige un curso de la lista izquierda para ver<br>sus estudiantes, pendientes y estado PIE.</div>
           </div>
@@ -4675,11 +4675,11 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
       <div id="siguienteEvalPanel" style="display:none;margin-bottom:12px;background:var(--blue-bg,#eff6ff);border:1px solid #93c5fd;border-radius:var(--rad-lg);padding:12px 16px;">
         <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;">
           <div style="flex:1;min-width:200px;">
-            <div style="font-size:12px;font-weight:700;color:var(--blue,#2563eb);margin-bottom:4px;">📋 Historial de evaluaciones</div>
+            <div style="font-size:12px;font-weight:700;color:var(--blue,#2563eb);margin-bottom:4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--blue,#2563eb)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;" ><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg> Historial de evaluaciones</div>
             <div id="siguienteEvalHistorial" style="font-size:11px;color:var(--text2);line-height:1.8;font-family:var(--font-mono);"></div>
           </div>
           <div style="display:flex;flex-direction:column;gap:8px;min-width:220px;">
-            <div style="font-size:12px;font-weight:700;color:var(--blue,#2563eb);">🎯 Sugerencia para siguiente evaluación</div>
+            <div style="font-size:12px;font-weight:700;color:var(--blue,#2563eb);"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--blue,#2563eb)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;" ><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> Sugerencia para siguiente evaluación</div>
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
               <div>
                 <div style="font-size:9px;color:var(--text3);text-transform:uppercase;font-family:var(--font-mono);margin-bottom:2px;">Instancia</div>
@@ -4861,7 +4861,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
               <div style="font-size:10px;color:var(--text3);">Sobrescribe el slider de exigencia solo para este estudiante.</div>
             </div>
             <div class="pie-info-box">
-              💡 Al guardar, el registro quedará marcado como <strong>PIE</strong> y la IA recibirá instrucciones de adecuación curricular en el análisis.
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;" ><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Al guardar, el registro quedará marcado como <strong>PIE</strong> y la IA recibirá instrucciones de adecuación curricular en el análisis.
             </div>
           </div>
         </div>
@@ -5012,7 +5012,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             <div id="dashAlertaTitulo" style="font-size:13px;font-weight:700;color:var(--red);">Alumnos con promedio crítico (&lt; 4.0)</div>
           </div>
-          <div style="display:flex;gap:8px;align-items:center;"><div style="font-size:11px;color:var(--text3);cursor:pointer;" onclick="this.closest('#dashAlertaWrap').querySelector('.dash-alerta-body').style.display=this.closest('#dashAlertaWrap').querySelector('.dash-alerta-body').style.display==='none'?'block':'none'">mostrar/ocultar</div><button onclick="showTab('correo')" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;font-family:var(--font-ui);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>📧 Avisar apoderados</button></div>
+          <div style="display:flex;gap:8px;align-items:center;"><div style="font-size:11px;color:var(--text3);cursor:pointer;" onclick="this.closest('#dashAlertaWrap').querySelector('.dash-alerta-body').style.display=this.closest('#dashAlertaWrap').querySelector('.dash-alerta-body').style.display==='none'?'block':'none'">mostrar/ocultar</div><button onclick="showTab('correo')" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;font-family:var(--font-ui);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Avisar apoderados</button></div>
         </div>
         <div class="dash-alerta-body">
           <div class="dash-alerta-wrap-inner"><div id="dashAlertaCursos"></div></div>
@@ -5034,7 +5034,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         <!-- Estudiantes en riesgo -->
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--rad-lg);padding:16px;">
           <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:6px;">
-            🚨 Estudiantes en riesgo
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FF3B30" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;" ><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Estudiantes en riesgo
             <span style="font-size:10px;font-weight:400;color:var(--text3);">(2+ evaluaciones bajo 4.0)</span>
           </div>
           <div id="dashRiesgoList" class="riesgo-list"></div>
@@ -5043,7 +5043,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         <!-- Criterios más fallados -->
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--rad-lg);padding:16px;">
           <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:10px;">
-            🎯 Criterios con más dificultad
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;" ><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> Criterios con más dificultad
           </div>
           <div id="dashCriteriosFallados"></div>
         </div>
@@ -5051,7 +5051,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
 
       <!-- GRÁFICO COMPARATIVO CURSOS -->
       <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--rad-lg);padding:16px;margin-top:14px;">
-        <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:12px;">📊 Promedio comparativo por curso</div>
+        <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:12px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;" ><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Promedio comparativo por curso</div>
         <div class="chart-comparativo" id="dashChartComparativo"></div>
       </div>
     </div>
@@ -5095,24 +5095,24 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
             <div id="exportDropdown" style="display:none;position:absolute;right:0;top:calc(100% + 6px);background:var(--bg2);border:0.5px solid var(--border2);border-radius:14px;box-shadow:0 8px 28px rgba(0,0,0,0.12);min-width:220px;overflow:hidden;z-index:500;animation:fadeInUp 0.15s ease-out;">
               <div style="padding:6px;">
                 <button onclick="_exportItem('alexia')" style="width:100%;text-align:left;padding:10px 12px;border:none;background:none;border-radius:10px;font-size:13px;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:10px;font-family:var(--font-ui);" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">
-                  <span style="font-size:16px;">📥</span>
+                  <span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:var(--bg3);flex-shrink:0;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;" ><path d="M8 17H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-3"/><polyline points="12 12 12 21"/><polyline points="9 18 12 21 15 18"/></svg></span>
                   <div><div style="font-weight:600;">Alexia XLS</div><div style="font-size:11px;color:var(--text3);" id="exportAlexiaDesc">Planilla para Alexia</div></div>
                 </button>
                 <button onclick="_exportItem('csv')" style="width:100%;text-align:left;padding:10px 12px;border:none;background:none;border-radius:10px;font-size:13px;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:10px;font-family:var(--font-ui);" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">
-                  <span style="font-size:16px;">📊</span>
+                  <span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:var(--bg3);flex-shrink:0;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--blue,#2563eb)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;" ><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
                   <div><div style="font-weight:600;">Exportar CSV</div><div style="font-size:11px;color:var(--text3);">Compatible con Excel</div></div>
                 </button>
                 <button onclick="_exportItem('universal')" style="width:100%;text-align:left;padding:10px 12px;border:none;background:none;border-radius:10px;font-size:13px;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:10px;font-family:var(--font-ui);" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">
-                  <span style="font-size:16px;">📤</span>
+                  <span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:var(--bg3);flex-shrink:0;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;" ><path d="M8 7H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3"/><polyline points="12 2 12 12"/><polyline points="9 5 12 2 15 5"/></svg></span>
                   <div><div style="font-weight:600;">Exportar notas</div><div style="font-size:11px;color:var(--text3);">Schooltrack · Napsis · Excel</div></div>
                 </button>
                 <div style="height:0.5px;background:var(--border);margin:4px 12px;"></div>
                 <button onclick="_exportItem('limpiar')" id="btnLimpiarDups" style="width:100%;text-align:left;padding:10px 12px;border:none;background:none;border-radius:10px;font-size:13px;color:var(--amber);cursor:pointer;display:flex;align-items:center;gap:10px;font-family:var(--font-ui);" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">
-                  <span style="font-size:16px;">🔍</span>
+                  <span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:var(--bg3);flex-shrink:0;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;" ><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
                   <div><div style="font-weight:600;">Limpiar duplicados</div><div style="font-size:11px;color:var(--text3);">Corregir rúbricas y duplicados</div></div>
                 </button>
                 <button onclick="_exportItem('borrar')" id="btnLimpiarTodo" style="width:100%;text-align:left;padding:10px 12px;border:none;background:none;border-radius:10px;font-size:13px;color:var(--red);cursor:pointer;display:flex;align-items:center;gap:10px;font-family:var(--font-ui);" onmouseover="this.style.background='var(--red-bg)'" onmouseout="this.style.background='none'">
-                  <span style="font-size:16px;">🗑️</span>
+                  <span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:var(--bg3);flex-shrink:0;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--red,#ef4444)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;" ><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg></span>
                   <div><div style="font-weight:600;">Limpiar todo</div><div style="font-size:11px;color:var(--text3);">Eliminar todos los registros</div></div>
                 </button>
               </div>
@@ -5540,7 +5540,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
           ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
           ondragleave="this.style.borderColor='var(--border2)'"
           ondrop="event.preventDefault();this.style.borderColor='var(--border2)';alexiaCargarArchivos(event.dataTransfer.files)">
-          <div style="font-size:32px;margin-bottom:8px;">📄</div>
+          <div style="margin-bottom:8px;"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;" style="opacity:.3;"><path d="M8 17H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-3"/><polyline points="12 12 12 21"/><polyline points="9 18 12 21 15 18"/></svg></div>
           <div style="font-size:13px;font-weight:600;color:var(--text2);">Arrastra el .xls de Alexia aquí o haz clic para seleccionar</div>
           <div style="font-size:11px;color:var(--text3);margin-top:6px;">Puedes subir varios cursos a la vez</div>
         </div>
@@ -5638,7 +5638,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         <div id="importStatus" style="font-size:12px;color:var(--text3);margin-top:8px;font-family:'DM Mono',monospace;"></div>
       </div>
             <div class="config-card">
-        <h3>☁️ Google Drive Sync — Configuración</h3>
+        <h3 style="display:flex;align-items:center;gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;" ><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg> Google Drive Sync — Configuración</h3>
 
         <!-- Estado actual -->
         <div id="driveConfigStatus" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--rad);margin-bottom:16px;font-size:13px;font-weight:600;">
@@ -5866,7 +5866,7 @@ function actualizarEstadoConfigDrive() {
     statusEl.style.background = 'var(--accent-bg)';
     statusEl.style.border = '1px solid var(--accent-border)';
     statusEl.style.color = 'var(--accent)';
-    statusEl.innerHTML = '<span style="font-size:18px;">⚙️</span><div>No configurado — sigue los pasos para activar Drive Sync</div>';
+    statusEl.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><div>No configurado — sigue los pasos para activar Drive Sync</div>';
   }
 
   // Actualizar panel de Drive en la tab config
@@ -5955,6 +5955,7 @@ let _candidatosCache = null;
 let _acDebounceTimer = null;
 let _acIdx = -1;
 let evaluacion  = {};
+var _lastSaveTs = 0; // timestamp del último save — invalida caché _registrosSemestre
 let fotoRefData  = null; // base64 de imagen referencial
 let stream      = null;
 let _captureForNombre = ''; // tracks which student the current canvas belongs to
@@ -6179,7 +6180,7 @@ async function _limpiarTodasLasImagenes() {
     'Liberar todas las imágenes',
     'Se eliminarán las fotos de <strong>' + conImg + '</strong> evaluaciones.<br><br>'
     + 'Las notas, criterios y observaciones se mantienen intactas — solo se liberan las imágenes capturadas.',
-    '🗑️', 'Sí, liberar imágenes', 'btn-danger'
+    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--red,#ef4444)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>', 'Sí, liberar imágenes', 'btn-danger'
   );
   if (!_ok1) return;
   var bytes = 0;
@@ -6367,6 +6368,10 @@ function _checkPendingQueue() {
 function saveRegistros() {
   // Invalidar caché de normalizarStrict — datos cambiaron
   if (typeof _invalidarNormCache === 'function') _invalidarNormCache();
+  // Actualizar timestamp para invalidar _registrosSemestre caché en ediciones sin cambio de longitud
+  _lastSaveTs = Date.now();
+  // Invalidar caché de pendientes
+  if (typeof _renderDashPendientes._lastKey !== 'undefined') _renderDashPendientes._lastKey = '';
   // Guardia de integridad: nunca guardar si registros no es Array
   if (!Array.isArray(registros)) {
     console.error('[ArtEval] saveRegistros abortado: registros no es Array', typeof registros);
@@ -8244,7 +8249,10 @@ var _regsSemCacheKey = '';
 
 function _registrosSemestre(sem) {
   var s   = sem || _semestreActivo;
-  var key = s + '|' + registros.length;   // invalidar si cambió número de registros
+  // Cache key: semestre + longitud + timestamp del último guardado
+  // Usar solo .length podía devolver caché stale si se editaba un registro sin cambiar el total
+  var _ts = typeof _lastSaveTs !== 'undefined' ? _lastSaveTs : registros.length;
+  var key = s + '|' + registros.length + '|' + _ts;
   if (_regsSemCache && _regsSemCacheKey === key) return _regsSemCache;
   _regsSemCacheKey = key;
   _regsSemCache = registros.filter(function(r) {
@@ -8840,7 +8848,7 @@ function mostrarShortcuts() {
   ov.innerHTML = `
     <div class="shortcut-box">
       <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px;">
-        ⌨️ Atajos de teclado <span style="font-size:11px;font-weight:400;color:var(--text3);">(presiona ? para cerrar)</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M7 16h10"/></svg> Atajos de teclado <span style="font-size:11px;font-weight:400;color:var(--text3);">(presiona ? para cerrar)</span>
       </div>
       ${[
         ['G',         'Guardar evaluación actual'],
@@ -9055,10 +9063,10 @@ function renderRegistros() {
           </div>`}
         </div>
         <div class="reg-actions">
-          <button class="btn btn-icon" title="Ver detalle" onclick="verDetalle(${idx})">👁</button>
-          <button class="btn btn-icon" title="Presentar" onclick="modoPresentacion(${idx})">🖥️</button>
+          <button class="btn btn-icon" title="Ver detalle" onclick="verDetalle(${idx})"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+          <button class="btn btn-icon" title="Presentar" onclick="modoPresentacion(${idx})"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></button>
           <button class="btn btn-icon" title="Editar nota rápida" onclick="editarNotaRapida(${idx}, this)" style="font-size:11px;padding:4px 7px;font-family:var(--font-mono);">${nota.toFixed(1)}</button>
-          <button class="btn btn-icon" title="Editar" onclick="editarRegistro(${idx})">✏️</button>
+          <button class="btn btn-icon" title="Editar" onclick="editarRegistro(${idx})"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
           <button class="btn btn-icon btn-danger" title="Eliminar" onclick="eliminar(${idx})"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
         </div>
       </div>`;
@@ -9355,7 +9363,7 @@ function verDuplicados() {
   }).join('');
 
   abrirModal(`
-    <div class="modal-title">⚠️ Nombres duplicados (${dups.length})</div>
+    <div class="modal-title" style="display:flex;align-items:center;gap:7px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Nombres duplicados (${dups.length})</div>
     <div style="font-size:12px;color:var(--text3);margin-bottom:12px;">
       Estos estudiantes tienen más de un registro. Revisa si son evaluaciones de distintas unidades o errores de carga. Puedes editar el nombre o eliminar los que no correspondan.
     </div>
@@ -9398,7 +9406,7 @@ function editarRegistro(idx) {
   abrirModal(`
     <div class="modal-title">Editar evaluación</div>
     ${r.noEntregado ? `<div style="background:rgba(240,82,82,0.1);border:1px solid rgba(240,82,82,0.3);border-radius:var(--rad);padding:10px 14px;margin-bottom:12px;font-size:12px;color:var(--red);display:flex;align-items:center;gap:8px;">
-      <span style="font-size:18px;">⚠️</span>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
       <div><strong>Este registro está marcado como NE (No Entregado).</strong><br>
       Al guardar los cambios, el estado NE se quitará automáticamente y la nota nueva quedará registrada.</div>
     </div>` : ''}
@@ -10099,7 +10107,7 @@ function _renderEstadisticasImpl() {
                data-tooltip="${curso}: Prom ${prom.toFixed(1)} · Logrado ${Math.round(apr/alumnos.length*100)}% · ${alumnos.length} alumnos"
                onmouseenter="_mostrarTooltipStats(event, this)"
                onmouseleave="_ocultarTooltipStats()">>
-            <div class="curso-nombre">📚 ${curso}</div>
+            <div class="curso-nombre"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>${curso}</div>
             <div class="curso-stats">
               <div class="curso-stat">Alumnos: <span>${alumnos.length}</span></div>
               <div class="curso-stat">Promedio: <span style="color:${promClr};font-weight:700;">${prom.toFixed(1)}</span></div>
@@ -11008,7 +11016,7 @@ async function restaurarBackupJSON() {
         var _ok2 = await confirmarAccion(
           'Restaurar copia de seguridad',
           msg.replace(/\n/g, '<br>'),
-          '📂', 'Sí, restaurar', 'btn-primary'
+          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>', 'Sí, restaurar', 'btn-primary'
         );
         if (!_ok2) return;
 
@@ -12746,29 +12754,35 @@ function _renderDashPendientes() {
 
     var regsS = _registrosSemestre();
 
-    // Recopilar todas las instancias que existen en el semestre activo
+    // ── Caché de hash: si nada cambió, no reconstruir el DOM ────────────────
+    // Comparar hash rápido: nRegs + nCursos + timestamp del último cambio
+    var _cacheKey = regsS.length + '|' + Object.keys(listaCursos||{}).length + '|' + (_semestreActivo||1);
+    if (_renderDashPendientes._lastKey === _cacheKey) return;
+    _renderDashPendientes._lastKey = _cacheKey;
+
+    // ── PASO 1: construir índice O(n) — una sola pasada sobre registros ──────
+    // Antes: .some() dentro de triple forEach = O(cursos × alumnos × instancias × registros)
+    // Ahora: Set lookup = O(1) por alumno × instancia
+    var evaluadoSet = new Set(); // "curso|instancia|nombre_normalizado"
     var instanciaSet = {};
     regsS.forEach(function(r) {
-      instanciaSet[r.instancia || 'Evaluaci\u00f3n 1'] = true;
+      var inst = r.instancia || 'Evaluación 1';
+      var key  = (r.curso||'') + '|' + inst + '|' + normalizarStrict(r.nombre||'');
+      evaluadoSet.add(key);
+      instanciaSet[inst] = true;
     });
+
     var instancias = Object.keys(instanciaSet).sort();
-    if (!instancias.length) instancias = ['Evaluaci\u00f3n 1'];
+    if (!instancias.length) instancias = ['Evaluación 1'];
 
-    // Construir lista de pendientes: un item por alumno con todas sus instancias faltantes
+    // ── PASO 2: scan de nómina con lookup O(1) ───────────────────────────────
     var pendientes = [];
-    var cursos = Object.keys(listaCursos || {}).sort();
-
-    cursos.forEach(function(curso) {
+    Object.keys(listaCursos || {}).sort().forEach(function(curso) {
       var nomina = listaCursos[curso] || [];
-      if (!nomina.length) return;
       nomina.forEach(function(nombreNomina) {
         var normNom = normalizarStrict(nombreNomina || '');
         var faltantes = instancias.filter(function(inst) {
-          return !regsS.some(function(r) {
-            return r.curso === curso &&
-              (r.instancia || 'Evaluaci\u00f3n 1') === inst &&
-              normalizarStrict(r.nombre || '') === normNom;
-          });
+          return !evaluadoSet.has(curso + '|' + inst + '|' + normNom); // O(1)
         });
         if (faltantes.length > 0) {
           pendientes.push({ nombre: nombreNomina, curso: curso, faltantes: faltantes });
@@ -12776,9 +12790,11 @@ function _renderDashPendientes() {
       });
     });
 
-    if (!pendientes.length) { wrap.style.display = 'none'; return; }
+    if (!pendientes.length) {
+      wrap.style.display = 'none';
+      return;
+    }
 
-    // Ordenar: por curso luego por nombre
     pendientes.sort(function(a, b) {
       var cc = a.curso.localeCompare(b.curso, 'es');
       return cc !== 0 ? cc : a.nombre.localeCompare(b.nombre, 'es');
@@ -12790,31 +12806,23 @@ function _renderDashPendientes() {
       badge.title = pendientes.length + ' alumnos con evaluaciones pendientes';
     }
 
-    // DocumentFragment: evita lag con m\u00e1s de 100 pendientes
+    // ── PASO 3: render con DocumentFragment — un solo write al DOM ──────────
     var frag = document.createDocumentFragment();
 
-    // Header informativo
     var hdr = document.createElement('div');
-    hdr.style.cssText = 'font-size:11px;color:var(--text3);margin-bottom:8px;'
-      + 'font-family:var(--font-mono);';
-    hdr.textContent = pendientes.length + ' alumno' + (pendientes.length > 1 ? 's' : '')
-      + ' con notas pendientes \u2014 toca un nombre para evaluar directamente';
+    hdr.style.cssText = 'font-size:11px;color:var(--text3);margin-bottom:8px;font-family:var(--font-mono);';
+    hdr.textContent = pendientes.length + ' alumno' + (pendientes.length > 1 ? 's' : '') + ' con notas pendientes \u2014 toca un nombre para evaluar directamente';
     frag.appendChild(hdr);
 
-    // M\u00e1ximo 60 filas (DocumentFragment + cap para no saturar el DOM)
     var visible = pendientes.slice(0, 60);
     var hayMas  = pendientes.length > 60;
 
     visible.forEach(function(p) {
       var row = document.createElement('div');
-      row.style.cssText = 'background:var(--bg2);border:0.5px solid var(--border);'
-        + 'border-radius:var(--rad);padding:10px 14px;display:flex;align-items:center;'
-        + 'gap:10px;cursor:pointer;transition:background .12s,border-color .12s;'
-        + 'margin-bottom:6px;';
+      row.style.cssText = 'background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rad);padding:10px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:background .12s,border-color .12s;margin-bottom:6px;';
       row.setAttribute('role', 'button');
       row.title = 'Evaluar a ' + p.nombre + ': ' + p.faltantes.join(', ');
 
-      // Clic \u2192 ir directo al alumno en Evaluar
       row.onclick = (function(nombre, curso, instFaltante) {
         return function() {
           selCurso(curso);
@@ -12843,7 +12851,6 @@ function _renderDashPendientes() {
       row.onmouseenter = function() { this.style.background='var(--bg3)'; this.style.borderColor='var(--accent-border)'; };
       row.onmouseleave = function() { this.style.background='var(--bg2)'; this.style.borderColor='var(--border)'; };
 
-      // Nombre + curso
       var nomDiv = document.createElement('div');
       nomDiv.style.cssText = 'flex:1;min-width:0;';
       var nomLine = document.createElement('div');
@@ -12855,13 +12862,11 @@ function _renderDashPendientes() {
       nomDiv.appendChild(nomLine);
       nomDiv.appendChild(cursoLine);
 
-      // Chips de instancias faltantes
       var chipsDiv = document.createElement('div');
       chipsDiv.style.cssText = 'display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;flex-shrink:0;max-width:52%;';
       p.faltantes.slice(0, 3).forEach(function(inst) {
         var chip = document.createElement('span');
-        chip.style.cssText = 'font-size:10px;font-weight:700;font-family:var(--font-mono);'
-          + 'background:rgba(255,59,48,0.10);color:#FF3B30;border-radius:20px;padding:2px 8px;white-space:nowrap;';
+        chip.style.cssText = 'font-size:10px;font-weight:700;font-family:var(--font-mono);background:rgba(255,59,48,0.10);color:#FF3B30;border-radius:20px;padding:2px 8px;white-space:nowrap;';
         chip.textContent = inst.replace('Evaluaci\u00f3n ', 'Ev.').replace('Diagn\u00f3stico', 'Diag.');
         chipsDiv.appendChild(chip);
       });
@@ -12872,7 +12877,6 @@ function _renderDashPendientes() {
         chipsDiv.appendChild(masSpan);
       }
 
-      // Flecha
       var arrow = document.createElement('div');
       arrow.style.cssText = 'color:var(--text3);flex-shrink:0;opacity:.45;';
       arrow.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>';
@@ -12894,6 +12898,7 @@ function _renderDashPendientes() {
     grid.appendChild(frag);
   } catch(e) { console.warn('[ArtEval] _renderDashPendientes:', e.message); }
 }
+
 
 
 
@@ -13011,6 +13016,7 @@ function _renderDashKpiGlobal(instFiltro) {
   var _kpiHash = (_semestreActivo || 1) + '|' + (instFiltro || '') + '|' + registros.length;
   if (_renderDashKpiGlobal._lastHash === _kpiHash) return;
   _renderDashKpiGlobal._lastHash = _kpiHash;
+  _renderDashPendientes._lastKey = '';
 
   // Filtrar siempre por semestre activo
   const regsSem = _registrosSemestre();
@@ -17476,7 +17482,7 @@ function abrirModalCorreosApoderados() {
           '<button class="btn" onclick="_cerrarEmailModal()">Cerrar</button>' +
           '<button class="btn btn-primary" onclick="_enviarTodosEmail()" ' +
             'style="background:var(--accent);color:#fff;border-color:var(--accent);">' +
-            '📧 Abrir todos en correo</button>' +
+            '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;" ><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Abrir todos en correo</button>' +
         '</div>' +
       '</div>' +
     '</div>';
@@ -17613,7 +17619,7 @@ function _renderEmailCards() {
       '<div class="email-acciones">' +
         '<button class="btn btn-sm" onclick="_abrirEnCorreo(' + idx + ')" ' +
           'style="background:var(--accent);color:#fff;border-color:var(--accent);min-height:36px;">' +
-          '📧 Abrir en correo</button>' +
+          '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;" ><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Abrir en correo</button>' +
         '<button class="btn btn-sm" onclick="_copiarTextoEmail(' + idx + ')" ' +
           'style="min-height:36px;">Copiar texto</button>' +
         '<button class="btn btn-sm" onclick="_guardarEmailApoderado(' + idx + ',\'' +
@@ -19582,7 +19588,7 @@ function _renderCursoMainImpl() {
     main.innerHTML = '';
     const emp = document.createElement('div');
     emp.className = 'cursos-empty';
-    emp.innerHTML = '<div class="ce-icon">🏫</div><div class="ce-title">Selecciona un curso</div><div class="ce-sub">Elige un curso de la lista para ver sus estudiantes.</div>';
+    emp.innerHTML = '<div class="ce-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;" style="opacity:.35;"><path d="M2 20h20"/><path d="M4 20V9l8-7 8 7v11"/><path d="M9 20v-5a3 3 0 0 1 6 0v5"/></svg></div><div class="ce-title">Selecciona un curso</div><div class="ce-sub">Elige un curso de la lista para ver sus estudiantes.</div>';
     main.appendChild(emp);
     return;
   }
@@ -21347,7 +21353,7 @@ function mostrarReportePIENoEncontrados(lista) {
           '</div>' +
         '</div>' +
       '</div>' +
-      '<button class="pie-report-btn" onclick="abrirVincular(' + i + ')">🔗 Vincular</button>' +
+      '<button class="pie-report-btn" onclick="abrirVincular(' + i + ')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;" ><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> Vincular</button>' +
     '</div>';
   }).join('');
 
@@ -21413,24 +21419,28 @@ function aplicarVincularPIE(i, nombrePIE) {
 var _actualizarTodaTimer = null;
 function actualizarTodaLaApp() {
   clearTimeout(_actualizarTodaTimer);
-  _actualizarTodaTimer = setTimeout(_actualizarTodaLaAppImpl, 80);
+  // 150ms debounce: absorbe ráfagas de eventos (scroll, input, cambio de tab)
+  // sin que el usuario perciba retraso — el ojo humano no detecta < 100ms
+  _actualizarTodaTimer = setTimeout(_actualizarTodaLaAppImpl, 150);
 }
 function _actualizarTodaLaAppImpl() {
   _renderSemestreControls();
   actualizarBarraContinuidad();
   _renderDashPendientes();
-  _renderUltimaEval();   // indicador de última evaluación en dashboard
+  _renderUltimaEval();
   try {
-    // Invalidar cachés antes de cualquier render
-    _regsMapCache    = null;
+    // Invalidar cachés de render — no tocar los datos, solo forzar re-render
+    // deduplicarYFusionarTodos() se removió del ciclo caliente:
+    // era O(n log n) en cada pulsación de tecla. Solo se llama desde guardar() y syncFromDrive().
+    _regsMapCache      = null;
     _cursosUnicosCache = null;
-    _regsSemCache    = null;   // invalidar caché de semestre
-  if (typeof _renderDashKpiGlobal !== 'undefined') _renderDashKpiGlobal._lastHash = '';
-    deduplicarYFusionarTodos();
+    _regsSemCache      = null;
+    if (typeof _renderDashKpiGlobal !== 'undefined') _renderDashKpiGlobal._lastHash = '';
+    // Invalidar caché de _renderDashPendientes para forzar recalculo
+    if (typeof _renderDashPendientes._lastKey !== 'undefined') _renderDashPendientes._lastKey = '';
     actualizarConteo();
     renderSidebarCounts();
     actualizarRubricaSelect();
-    // Refrescar pestaña activa sin cambiar de tab
     const tabActiva = document.querySelector('.tab.active')?.dataset?.tab;
     if (tabActiva === 'registros')    { renderRegistros(); renderCursosChips(); }
     if (tabActiva === 'cursos')       { renderTabCursos(); }
@@ -21441,8 +21451,7 @@ function _actualizarTodaLaAppImpl() {
       renderProgreso();
     }
     if (tabActiva === 'inicio')       { renderDashboard(); }
-    if (tabActiva === 'progreso')     { renderProgreso(); }
-  } catch(e) { /* silencioso — nunca debe romper flujo principal */ }
+  } catch(e) { /* silencioso */ }
 }
 
 // ── 2. Buscador universal en pestaña Cursos ──────────
