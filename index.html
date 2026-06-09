@@ -278,8 +278,8 @@ body {
 }
 
 /* ── CONTENT ────────────────────────────────────────────── */
-/* ── .content: padding reducido — topbar+tabs+subnav ya ocupan ~150px ──── */
-.content { flex: 1; padding: 12px 20px 32px; max-width: 1100px; margin: 0 auto; width: 100%; }
+/* ── .content: padding compacto estilo Apple — 16px top es el mínimo agradable ─ */
+.content { flex: 1; padding: 16px 20px 32px; max-width: 1100px; margin: 0 auto; width: 100%; }
 
 /* ── BUTTONS ────────────────────────────────────────────── */
 .btn {
@@ -1212,7 +1212,7 @@ input[type="text"]:focus, textarea:focus, select:focus {
 @media (max-width: 640px) {
   .topbar { grid-template-columns: auto 1fr auto; gap: 8px; padding: 0 12px; }
   .logo-sub, .logo-wordmark { display: none; }
-  .content { padding: 12px; }
+  .content { padding: 16px 12px 24px; }
   .eval-grid { grid-template-columns: 1fr; }
   .stats-grid { grid-template-columns: repeat(2,1fr); }
 }
@@ -1221,7 +1221,7 @@ input[type="text"]:focus, textarea:focus, select:focus {
   .tab { flex-shrink: 0; padding: 0 10px; font-size: 11px; gap: 4px; height: 32px; border-radius: var(--rad); }
   .tab svg { display: inline-block; flex-shrink: 0; width: 13px; height: 13px; }
   .tabs { height: 48px; padding: 6px 12px; gap: 3px; }
-  .content { padding: 14px; }
+  .content { padding: 16px 14px 24px; }
   #drivePanelWrap { right: 8px; min-width: 300px; max-width: calc(100vw - 16px); }
 }
 
@@ -1977,7 +1977,7 @@ select:focus:not(:focus-visible) { outline: none; }
   .tab { flex-shrink: 0; min-height: 44px; padding: 10px 14px; font-size: 13px; }
 
   /* Contenido: padding reducido */
-  .content { padding: 14px 12px; }
+  .content { padding: 16px 12px; }
 
   /* Botón .btn-sm sigue siendo táctil */
   .btn-sm { min-height: 36px; padding: 6px 12px; font-size: 12px; }
@@ -2610,14 +2610,31 @@ button, .btn, .tab, .curso-chip, .reg-card, .config-card, input, select {
 }
 
 /* ── SUBNAV LAYER ── */
+/* ── subnavLayer: oculto por defecto, JS lo muestra solo cuando aplica ────── */
 #subnavLayer {
+  display: none !important; /* JS override: layer.style.display='block' wins over !important via inline style */
   position: sticky;
   top: 100px; /* topbar(52px) + tabs(48px) = 100px */
   z-index: 88;
   width: 100%;
   background: var(--bg2);
   border-bottom: 0.5px solid var(--border);
-  /* Sin padding extra — el subnav es solo una franja delgada */
+}
+
+/* ── ae-subnav: franja delgada horizontal, sin altura mínima innecesaria ──── */
+.ae-subnav {
+  display: none; /* visible solo cuando tiene clase .subnav-visible */
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 16px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.ae-subnav::-webkit-scrollbar { display: none; }
+.ae-subnav.subnav-visible {
+  display: flex;
 }
 
 /* ── PILL BUTTON — estado inactivo ─────────────────────────────
@@ -2751,7 +2768,7 @@ button, .btn, .tab, .curso-chip, .reg-card, .config-card, input, select {
 
 /* ── CONTENT ────────────────────────────────────────────────── */
 .content {
-  padding: 12px 20px 24px !important;
+  padding: 16px 20px 24px !important;
   max-width: 1100px !important;
   margin: 0 auto !important;
   width: 100% !important;
@@ -2767,7 +2784,7 @@ button, .btn, .tab, .curso-chip, .reg-card, .config-card, input, select {
 #estudio-sec-cursos,
 #estudio-sec-evaluar,
 #estudio-sec-registros {
-  padding: 8px 0 0 !important; /* reducido de 16px — ya hay espacio del subnav */
+  padding: 0 !important; /* el .content ya tiene padding-top:16px — sin doble espacio */
 }
 
 /* ── RESPONSIVE ─────────────────────────────────────────────── */
@@ -2775,7 +2792,7 @@ button, .btn, .tab, .curso-chip, .reg-card, .config-card, input, select {
   .tabs { padding: 6px 12px !important; height: 48px !important; }
   .tab { font-size: 12px !important; padding: 0 8px !important; }
   .tab svg { width: 14px !important; height: 14px !important; }
-  .content { padding: 12px 14px 20px !important; }
+  .content { padding: 16px 14px 20px !important; }
 }
 
 @media (max-width: 480px) {
@@ -2919,7 +2936,7 @@ button, .btn, .tab, .curso-chip, .reg-card, .config-card, input, select {
 #tab-progreso,
 #tab-comunica,
 #tab-sistema {
-  min-height: calc(100vh - 160px);
+  /* min-height removed: caused large blank space below content */
 }
 
 /* Minimum height for sub-sections too */
@@ -3191,7 +3208,7 @@ button:focus-visible, .tab:focus-visible, .sub-tab:focus-visible {
 
 /* Mobile improvements */
 @media (max-width: 600px) {
-  .content { padding: 12px 12px 24px; }
+  .content { padding: 16px 12px 24px; }
   .topbar { padding: 0 12px; gap: 8px; height: 50px; }
   .topbar-search { display: none; }
   .tabs { padding: 5px 8px; height: 44px; }
@@ -5162,6 +5179,31 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
       <div class="reg-list" id="registrosList"></div>
       <!-- Vista Libro de Clases (tabla por curso) -->
       <div id="libroClasesView" style="display:none;overflow-x:auto;"></div>
+
+      <!-- ── Panel de Reporte de Notas ─────────────────────────────────────── -->
+      <!-- Filtros + lista de evaluaciones con virtual scroll (_rrAppendBatch)  -->
+      <div id="reportePanel" style="margin-top:16px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+          <div class="search-wrap" style="flex:1;min-width:160px;max-width:280px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input class="search-input" type="text" id="buscarReporte" placeholder="Buscar en registros..." oninput="renderReporte()">
+          </div>
+          <select class="filter-select" id="filtroRubricaReporte" onchange="renderReporte()">
+            <option value="">Todas las rúbricas</option>
+          </select>
+          <select class="filter-select" id="filtroCursoReporte" onchange="renderReporte()">
+            <option value="">Todos los cursos</option>
+          </select>
+          <select class="filter-select" id="filtroInstanciaReporte" onchange="renderReporte()">
+            <option value="">Todas las instancias</option>
+          </select>
+          <button class="btn" onclick="window.print()" title="Imprimir registros">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            Imprimir
+          </button>
+        </div>
+        <div id="reporteContent"></div>
+      </div>
     </div>
     
   </div>
@@ -5200,7 +5242,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;
         background:var(--bg2);border:0.5px solid var(--border);
         border-radius:var(--rad-lg);padding:10px 16px;align-items:center;
-        position:sticky;top:156px;z-index:80;">
+        position:sticky;top:100px;z-index:80;">
         <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
           <label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;font-family:'DM Mono',monospace;white-space:nowrap;">Total del curso</label>
           <input type="number" id="totalAlumnosCurso" min="1" max="60" value="45"
@@ -5279,24 +5321,6 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
 
   <div id="tab-comunica" style="display:none;opacity:0;transition:opacity 0.2s ease;">
 
-    <!-- ── HEADER: Correos a apoderados ────────────────────────────────── -->
-    <div class="config-card" style="border-left:3px solid var(--accent);margin-bottom:14px;">
-        <div style="display:flex;align-items:center;gap:14px;">
-          <div style="width:44px;height:44px;background:var(--accent-bg);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
-          <div style="flex:1;"><h3 style="margin-bottom:2px;">Correos a apoderados</h3><div style="font-size:13px;color:var(--text3);">Alumnos con promedio crítico (bajo 4,0)</div></div>
-          <span id="correoTabEmailBadge" style="font-size:11px;color:var(--accent);font-weight:600;background:var(--accent-bg);padding:4px 10px;border-radius:20px;white-space:nowrap;"></span>
-        </div>
-      </div>
-
-    <!-- ── LISTA DE ALUMNOS CRÍTICOS (primer elemento visible) ───────────── -->
-    <div id="correoListaAnchor"></div>
-    <div class="config-card" style="margin-bottom:14px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;"><h3 style="margin-bottom:0;">Alumnos con promedio crítico</h3>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;" id="correoBtnsFiltro"></div>
-      </div>
-      <div id="correoTabContainer"><div style="text-align:center;padding:40px;color:var(--text3);"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto 10px;display:block;opacity:.3;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg><div style="font-size:13px;font-weight:600;">Sin alumnos críticos</div><div style="font-size:12px;margin-top:4px;">Cuando haya alumnos con promedio bajo 4,0 aparecerán aquí</div></div></div>
-    </div>
-
     <!-- ── CONFIGURACIÓN: Gmail institucional ──────────────────────────────── -->
       <div class="config-card" style="margin-bottom:14px;border:1.5px solid rgba(255,149,0,0.25);">
         <div id="gmailLoginSection">
@@ -5325,6 +5349,24 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
           </div>
         </div>
       </div>
+
+    <!-- ── HEADER: Correos a apoderados ────────────────────────────────── -->
+    <div class="config-card" style="border-left:3px solid var(--accent);margin-bottom:14px;">
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div style="width:44px;height:44px;background:var(--accent-bg);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+          <div style="flex:1;"><h3 style="margin-bottom:2px;">Correos a apoderados</h3><div style="font-size:13px;color:var(--text3);">Alumnos con promedio crítico (bajo 4,0)</div></div>
+          <span id="correoTabEmailBadge" style="font-size:11px;color:var(--accent);font-weight:600;background:var(--accent-bg);padding:4px 10px;border-radius:20px;white-space:nowrap;"></span>
+        </div>
+      </div>
+
+    <!-- ── LISTA DE ALUMNOS CRÍTICOS (primer elemento visible) ───────────── -->
+    <div id="correoListaAnchor"></div>
+    <div class="config-card" style="margin-bottom:14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;"><h3 style="margin-bottom:0;">Alumnos con promedio crítico</h3>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;" id="correoBtnsFiltro"></div>
+      </div>
+      <div id="correoTabContainer"><div style="text-align:center;padding:40px;color:var(--text3);"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto 10px;display:block;opacity:.3;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg><div style="font-size:13px;font-weight:600;">Sin alumnos críticos</div><div style="font-size:12px;margin-top:4px;">Cuando haya alumnos con promedio bajo 4,0 aparecerán aquí</div></div></div>
+    </div>
 
     <!-- ── DATOS DEL REMITENTE ───────────────────────────────────────────── -->
       <div class="config-card" style="margin-bottom:14px;">
@@ -5400,93 +5442,6 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
 
   <div id="tab-sistema" style="display:none;opacity:0;transition:opacity 0.2s ease;">
     <div id="sistema-sec-drive" style="display:block;">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
-        <div class="search-wrap">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input class="search-input" type="text" id="buscarReporte" placeholder="Buscar estudiante..." oninput="renderReporte()">
-        </div>
-        <select class="filter-select" id="filtroRubricaReporte" onchange="renderReporte()">
-          <option value="">Todas las rúbricas</option>
-        </select>
-        <select class="filter-select" id="filtroCursoReporte" onchange="renderReporte()">
-          <option value="">Todos los cursos</option>
-        </select>
-        <select class="filter-select" id="filtroInstanciaReporte" onchange="renderReporte()">
-          <option value="">Todas las instancias</option>
-        </select>
-        <button class="btn btn-primary" onclick="window.print()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Imprimir / PDF</button>
-        <button class="btn" onclick="generarInformeUTP()" title="Genera un informe resumido para UTP con promedios por curso"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> Informe UTP</button>
-      </div>
-      <div id="reporteContent"></div>
-    </div>
-    <div id="sistema-sec-rubricas" style="display:none;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
-        <div>
-          <div style="font-size:15px;font-weight:600;">Mis rúbricas</div>
-          <div style="font-size:12px;color:var(--text3);margin-top:2px;">Crea y gestiona múltiples rúbricas de evaluación</div>
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-          <!-- Importar rúbrica desde archivo Word (.docx) con Mammoth.js -->
-          <label id="btnCargarRubricaWord"
-            style="display:inline-flex;align-items:center;gap:7px;
-                   padding:8px 14px;border-radius:20px;
-                   border:0.5px solid var(--accent-border);background:var(--accent-bg);color:var(--accent);
-                   font-size:13px;font-weight:600;font-family:var(--font-ui);
-                   cursor:pointer;transition:opacity 0.15s;white-space:nowrap;
-                   -webkit-tap-highlight-color:transparent;"
-            title="Importar criterios desde una tabla de rúbrica en Word (.docx)"
-            onmouseover="this.style.opacity='0.80'" onmouseout="this.style.opacity='1'">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="17 8 12 3 7 8"/>
-              <line x1="12" y1="3" x2="12" y2="15"/>
-            </svg>
-            Desde Word
-            <input type="file" id="inputRubricaWord" accept=".docx"
-                   style="display:none;"
-                   onchange="procesarRubricaWord(this.files[0]); this.value='';">
-          </label>
-          <button class="btn btn-primary" onclick="mostrarFormRubrica()">+ Nueva rúbrica</button>
-        </div>
-      </div>
-      <div class="rubrica-list" id="rubricaList"></div>
-      <div id="formRubrica" style="display:none">
-        <div class="rubrica-form">
-          <h3 id="formRubricaTitulo">Nueva rúbrica</h3>
-          <input class="rubrica-nombre-input" id="rubricaNombreInput" placeholder="Nombre de la rúbrica (ej: Arte Románico 5°B)">
-          <!-- Curso y semestre — clasificación para las carpetas -->
-          <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
-            <div style="flex:1;min-width:130px;">
-              <label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;font-family:'DM Mono',monospace;display:block;margin-bottom:4px;">Curso</label>
-              <input class="rubrica-nombre-input" id="rubricaCursoInput"
-                     placeholder="Ej: 5° Básico"
-                     style="margin-bottom:0;font-size:13px;"
-                     list="cursosSugeridos">
-              <datalist id="cursosSugeridos"></datalist>
-            </div>
-            <div style="min-width:110px;">
-              <label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;font-family:'DM Mono',monospace;display:block;margin-bottom:4px;">Semestre</label>
-              <select id="rubricaSemestreInput"
-                      style="width:100%;padding:9px 12px;border-radius:var(--rad);border:0.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:13px;font-family:var(--font-ui);">
-                <option value="1">1° Semestre</option>
-                <option value="2">2° Semestre</option>
-              </select>
-            </div>
-          </div>
-          <div style="font-size:11px;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.4px;font-family:'DM Mono',monospace;">Criterios (cada uno vale MB=3 / L=2 / M=1 / N=0 pts)</div>
-          <div id="critEditList"></div>
-          <button class="btn-add-crit" onclick="agregarCritEditor()">+ Agregar criterio</button>
-          <div class="divider"></div>
-          <div style="display:flex;gap:8px;justify-content:flex-end;">
-            <button class="btn" onclick="cancelarFormRubrica()">Cancelar</button>
-            <button class="btn btn-primary" onclick="guardarRubrica()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Guardar rúbrica</button>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div id="sistema-sec-config" style="display:none;">
-      <!-- ══════ PANEL GOOGLE DRIVE (Apple Style) ══════ -->
       <div class="config-card" style="border-left:3px solid var(--accent);">
         <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
           <div style="width:44px;height:44px;background:var(--accent-bg);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
@@ -5633,6 +5588,76 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         </div>
         <p style="margin-top:10px;">La clave se guarda solo en tu navegador. No se envía a ningún servidor externo excepto Google.</p>
       </div>
+    </div>
+    <div id="sistema-sec-rubricas" style="display:none;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+        <div>
+          <div style="font-size:15px;font-weight:600;">Mis rúbricas</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px;">Crea y gestiona múltiples rúbricas de evaluación</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <!-- Importar rúbrica desde archivo Word (.docx) con Mammoth.js -->
+          <label id="btnCargarRubricaWord"
+            style="display:inline-flex;align-items:center;gap:7px;
+                   padding:8px 14px;border-radius:20px;
+                   border:0.5px solid var(--accent-border);background:var(--accent-bg);color:var(--accent);
+                   font-size:13px;font-weight:600;font-family:var(--font-ui);
+                   cursor:pointer;transition:opacity 0.15s;white-space:nowrap;
+                   -webkit-tap-highlight-color:transparent;"
+            title="Importar criterios desde una tabla de rúbrica en Word (.docx)"
+            onmouseover="this.style.opacity='0.80'" onmouseout="this.style.opacity='1'">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            Desde Word
+            <input type="file" id="inputRubricaWord" accept=".docx"
+                   style="display:none;"
+                   onchange="procesarRubricaWord(this.files[0]); this.value='';">
+          </label>
+          <button class="btn btn-primary" onclick="mostrarFormRubrica()">+ Nueva rúbrica</button>
+        </div>
+      </div>
+      <div class="rubrica-list" id="rubricaList"></div>
+      <div id="formRubrica" style="display:none">
+        <div class="rubrica-form">
+          <h3 id="formRubricaTitulo">Nueva rúbrica</h3>
+          <input class="rubrica-nombre-input" id="rubricaNombreInput" placeholder="Nombre de la rúbrica (ej: Arte Románico 5°B)">
+          <!-- Curso y semestre — clasificación para las carpetas -->
+          <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:130px;">
+              <label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;font-family:'DM Mono',monospace;display:block;margin-bottom:4px;">Curso</label>
+              <input class="rubrica-nombre-input" id="rubricaCursoInput"
+                     placeholder="Ej: 5° Básico"
+                     style="margin-bottom:0;font-size:13px;"
+                     list="cursosSugeridos">
+              <datalist id="cursosSugeridos"></datalist>
+            </div>
+            <div style="min-width:110px;">
+              <label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;font-family:'DM Mono',monospace;display:block;margin-bottom:4px;">Semestre</label>
+              <select id="rubricaSemestreInput"
+                      style="width:100%;padding:9px 12px;border-radius:var(--rad);border:0.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:13px;font-family:var(--font-ui);">
+                <option value="1">1° Semestre</option>
+                <option value="2">2° Semestre</option>
+              </select>
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.4px;font-family:'DM Mono',monospace;">Criterios (cada uno vale MB=3 / L=2 / M=1 / N=0 pts)</div>
+          <div id="critEditList"></div>
+          <button class="btn-add-crit" onclick="agregarCritEditor()">+ Agregar criterio</button>
+          <div class="divider"></div>
+          <div style="display:flex;gap:8px;justify-content:flex-end;">
+            <button class="btn" onclick="cancelarFormRubrica()">Cancelar</button>
+            <button class="btn btn-primary" onclick="guardarRubrica()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Guardar rúbrica</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="sistema-sec-config" style="display:none;">
+      <!-- Configuración Gemini + ajustes -->
+
       <div class="config-card">
         <h3>Escala de notas</h3>
         <p>Exigencia chilena estándar: <strong>60% del puntaje = nota 4.0</strong>. La escala va de 1.0 a 7.0 de forma lineal por tramos. El puntaje máximo depende del número de criterios de la rúbrica activa (3 pts × criterio).</p>
@@ -8778,6 +8803,10 @@ document.addEventListener('keydown', function(e) {
   }
 
   // ── Atajos en panel Evaluar ─────────────────────────────────────────
+// tabActiva: lee el data-tab del botón activo (dato de UI, nunca lanza error)
+var tabActiva = (document.querySelector('.tab.active') || {}).dataset
+              ? document.querySelector('.tab.active').dataset.tab || ''
+              : '';
   if (tabActiva === 'evaluar' || document.getElementById('criteriosList')?.children.length) {
     // Enter = guardar (solo si hay nombre escrito)
     if (e.key === 'Enter' && !enInput) {
