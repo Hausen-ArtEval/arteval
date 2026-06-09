@@ -4043,6 +4043,103 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
 .upload-loading.visible{display:flex;}
 .upload-spinner{width:16px;height:16px;border-radius:50%;border:2px solid var(--border2);border-top-color:var(--accent);animation:_spinUpload .7s linear infinite;}
 @keyframes _spinUpload{to{transform:rotate(360deg);}}
+
+/* ═══════════════════════════════════════════════════════════════
+   LAYOUT CANÓNICO — bloque final que sobreescribe todo lo anterior
+   Añadido para resolver el gap visual persistente.
+   Valores medidos del DOM real:
+     topbar:     height 52px, position sticky, top 0
+     tabs:       height 48px, position sticky, top 52px
+     subnavLayer: position sticky, top 100px (52+48)
+     .content:   padding-top 0 (los elementos tienen su propio pt)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* 1. Topbar: sticky top:0, altura fija 52px */
+.topbar {
+  position: sticky !important;
+  top: 0 !important;
+  height: 52px !important;
+  z-index: 200 !important;
+  display: grid !important;
+  grid-template-columns: auto 1fr auto !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 0 16px !important;
+  background: rgba(250,250,252,0.97) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border-bottom: 0.5px solid rgba(0,0,0,0.06) !important;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.04) !important;
+}
+
+/* 2. Tabs: sticky top:52px (justo debajo del topbar), altura 48px */
+.tabs {
+  position: sticky !important;
+  top: 52px !important;
+  height: 48px !important;
+  z-index: 199 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0 !important;
+  padding: 0 12px !important;
+  background: rgba(255,255,255,0.97) !important;
+  backdrop-filter: blur(24px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+  border-bottom: 0.5px solid rgba(0,0,0,0.07) !important;
+  overflow-x: auto !important;
+  scrollbar-width: none !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+.tabs::-webkit-scrollbar { display: none !important; }
+
+/* 3. subnavLayer: sticky top:100px (52+48), solo cuando JS lo muestra */
+#subnavLayer {
+  position: sticky !important;
+  top: 100px !important;
+  z-index: 198 !important;
+}
+
+/* 4. .content: sin padding-top — topbar+tabs son sticky y ocupan su espacio
+   en el flujo normal, el contenido empieza inmediatamente después */
+.content {
+  padding-top: 0 !important;
+}
+
+/* 5. Cada tab: sin padding extra — el primer elemento tiene su propio espaciado */
+#tab-estudio,
+#tab-progreso,
+#tab-comunica,
+#tab-sistema {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+/* 6. Secciones de estudio: 8px arriba para separación visual mínima */
+#estudio-sec-inicio,
+#estudio-sec-cursos,
+#estudio-sec-evaluar,
+#estudio-sec-registros {
+  padding-top: 8px !important;
+}
+
+/* 7. Dark mode topbar/tabs */
+@media (prefers-color-scheme: dark) {
+  .topbar {
+    background: rgba(28,28,30,0.97) !important;
+    border-bottom-color: rgba(255,255,255,0.07) !important;
+  }
+  .tabs {
+    background: rgba(28,28,30,0.95) !important;
+    border-bottom-color: rgba(255,255,255,0.06) !important;
+  }
+}
+
+/* 8. Responsive: topbar y tabs un poco más pequeños en móvil */
+@media (max-width: 600px) {
+  .topbar { height: 50px !important; padding: 0 12px !important; }
+  .tabs   { top: 50px !important; height: 44px !important; }
+  #subnavLayer { top: 94px !important; }
+}
 </style>
 
 <script>
@@ -5076,6 +5173,25 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
       </div>
     </div>
     <div id="estudio-sec-registros" style="display:none;">
+      <!-- ── Segmented Control Lista / Libro (iOS style) ─────────────────── -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:10px;flex-wrap:wrap;">
+        <div class="sub-tab-bar" id="vistaRegistrosCtrl" style="flex-shrink:0;">
+          <button id="btnVistaLista" class="sub-tab activo"
+            onclick="if(_vistaLibroActiva){toggleVistaLibro();}"
+            title="Vista de tarjetas">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            Lista
+          </button>
+          <button id="btnVistaLibro2" class="sub-tab"
+            onclick="if(!_vistaLibroActiva){toggleVistaLibro();}"
+            title="Vista Libro de Clases — tabla con todas las notas">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            Libro
+          </button>
+        </div>
+        <span style="font-size:11px;color:var(--text3);font-style:italic;" id="libroHint"></span>
+      </div>
+
       <div class="reg-toolbar">
         <!-- Fila 1: título + búsqueda + acciones -->
         <div class="reg-toolbar-top">
@@ -8579,19 +8695,28 @@ function getRegistrosFiltrados() {
 var _vistaLibroActiva = false;
 function toggleVistaLibro() {
   _vistaLibroActiva = !_vistaLibroActiva;
+
+  // ── Segmented control nuevo (btnVistaLista / btnVistaLibro2) ────────────
+  var btnLista = document.getElementById('btnVistaLista');
+  var btnLibro2 = document.getElementById('btnVistaLibro2');
+  var hint = document.getElementById('libroHint');
+  if (btnLista) btnLista.classList.toggle('activo', !_vistaLibroActiva);
+  if (btnLibro2) btnLibro2.classList.toggle('activo', _vistaLibroActiva);
+  if (hint) hint.textContent = _vistaLibroActiva ? 'Toca una nota para editarla' : '';
+
+  // ── Botón original (compatibilidad con código existente) ────────────────
   var btn      = document.getElementById('btnVistaLibro');
   var icoLista = document.getElementById('icoVistaBtnLista');
   var icoLibro = document.getElementById('icoVistaBtnLibro');
   var lbl      = document.getElementById('lblVistaBtnLibro');
   if (btn) {
-    // Mismo sistema .activo que los chips de curso — naranja sólido cuando activo
     btn.classList.toggle('activo', _vistaLibroActiva);
-    // Swap de iconos: Lista (modo libro activo = volver a lista) ↔ Libro
     if (icoLista) icoLista.style.display = _vistaLibroActiva ? 'none'  : '';
     if (icoLibro) icoLibro.style.display = _vistaLibroActiva ? ''      : 'none';
     if (lbl)      lbl.textContent         = _vistaLibroActiva ? 'Lista' : 'Libro';
     btn.title = _vistaLibroActiva ? 'Volver a vista lista' : 'Vista Libro de Clases';
   }
+
   renderRegistros();
 }
 
@@ -18766,15 +18891,101 @@ function compartirReporteAlumno(nombre, curso) {
   txt += profNombre + '\n';
   txt += 'Enviado desde ArtEval · Evaluador de Artes Visuales\n';
 
-  // Intentar Web Share API (móvil nativo)
+  // ── Generar nombre de archivo ──────────────────────────────────────────
+  var _fname = ('Reporte_' + nombre.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_\-]/g,''))
+                .substring(0,60) + '.txt';
+
+  // ── Mostrar modal de opciones (siempre visible, no depende de HTTPS) ────
+  // Esto garantiza feedback sin importar el contexto (file://, HTTP, HTTPS)
+  var modalHtml = '<div style="padding:4px 0 12px;">'
+    + '<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px;">'
+    + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>'
+    + 'Compartir reporte de ' + nombre
+    + '</div>'
+    + '<div style="display:flex;flex-direction:column;gap:8px;">'
+    // Botón 1: Descargar como .txt (funciona en TODOS los contextos)
+    + '<button id="_shareDownloadBtn" class="btn btn-primary" style="justify-content:flex-start;gap:10px;padding:12px 16px;">'
+    + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>'
+    + '<span><strong>Descargar como archivo</strong><br><small style="font-weight:400;opacity:.8;">Guarda el reporte como .txt en tu dispositivo</small></span>'
+    + '</button>'
+    // Botón 2: Copiar al portapapeles
+    + '<button id="_shareCopyBtn" class="btn" style="justify-content:flex-start;gap:10px;padding:12px 16px;">'
+    + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'
+    + '<span><strong>Copiar al portapapeles</strong><br><small style="font-weight:400;opacity:.7;">Pégalo en WhatsApp, correo o Teams</small></span>'
+    + '</button>';
+
+  // Botón 3: Web Share (solo si disponible)
   if (navigator.share) {
-    navigator.share({
-      title: 'Reporte — ' + nombre,
-      text: txt
-    }).catch(function(e){ if (e.name !== 'AbortError') _copiarReporte(txt); });
-  } else {
-    _copiarReporte(txt);
+    modalHtml += '<button id="_shareNativeBtn" class="btn" style="justify-content:flex-start;gap:10px;padding:12px 16px;">'
+      + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>'
+      + '<span><strong>Compartir con app del sistema</strong><br><small style="font-weight:400;opacity:.7;">WhatsApp, Mail, Telegram…</small></span>'
+      + '</button>';
   }
+
+  modalHtml += '</div></div>';
+  abrirModal(modalHtml, 'modal-box');
+
+  // Conectar botones después del render del modal
+  setTimeout(function() {
+    // Descargar TXT
+    var btnDown = document.getElementById('_shareDownloadBtn');
+    if (btnDown) btnDown.addEventListener('click', function() {
+      try {
+        var blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+        var url  = URL.createObjectURL(blob);
+        var a    = document.createElement('a');
+        a.href   = url;
+        a.download = _fname;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(function(){ URL.revokeObjectURL(url); document.body.removeChild(a); }, 600);
+        cerrarModal();
+        toast('↓ Reporte descargado: ' + _fname, 'ok', 3000);
+      } catch(err) {
+        // Fallback: abrir en nueva pestaña
+        var w = window.open('', '_blank');
+        if (w) {
+          w.document.write('<html><head><title>' + _fname + '</title></head><body>'
+            + '<pre style="font-family:Georgia,serif;max-width:700px;margin:40px auto;line-height:1.8;font-size:14px;white-space:pre-wrap;">'
+            + txt.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+            + '</pre></body></html>');
+          w.document.close();
+          cerrarModal();
+          toast('↗ Reporte abierto — usa Ctrl+P para guardar como PDF', 'ok', 5000);
+        } else {
+          toast('Activa ventanas emergentes para descargar', 'err', 3000);
+          console.error('[ArtEval] compartirReporteAlumno: Blob falló y popup bloqueado', err);
+        }
+      }
+    });
+
+    // Copiar al portapapeles
+    var btnCopy = document.getElementById('_shareCopyBtn');
+    if (btnCopy) btnCopy.addEventListener('click', function() {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(txt)
+          .then(function(){ cerrarModal(); toast('✓ Reporte copiado — pégalo donde necesites', 'ok', 3500); })
+          .catch(function(){ _copiarConTextarea(txt, '✓ Reporte copiado'); cerrarModal(); });
+      } else {
+        _copiarConTextarea(txt, '✓ Reporte copiado');
+        cerrarModal();
+      }
+    });
+
+    // Web Share nativo
+    var btnNative = document.getElementById('_shareNativeBtn');
+    if (btnNative) btnNative.addEventListener('click', function() {
+      navigator.share({ title: 'Reporte — ' + nombre, text: txt })
+        .then(function(){ cerrarModal(); })
+        .catch(function(e){
+          if (e.name !== 'AbortError') {
+            console.error('[ArtEval] navigator.share falló:', e.message);
+            _copiarConTextarea(txt, '✓ Copiado como alternativa');
+          }
+          cerrarModal();
+        });
+    });
+  }, 80);
 }
 
 function _copiarReporte(texto) {
