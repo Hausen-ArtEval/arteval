@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v196">
+<meta name="arteval-version" content="v197">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -8693,6 +8693,14 @@ function getRegistrosFiltrados() {
 }
 
 var _vistaLibroActiva = false;
+
+// ── Vista Libro en pestaña Cursos (segmented control Lista / Libro) ──────────
+var _vistaLibroCursoActiva = false;
+function toggleVistaLibroCurso() {
+  _vistaLibroCursoActiva = !_vistaLibroCursoActiva;
+  renderCursoMain();
+}
+
 function toggleVistaLibro() {
   _vistaLibroActiva = !_vistaLibroActiva;
 
@@ -19997,6 +20005,37 @@ function _renderCursoMainImpl() {
     };
     hdrBtns.appendChild(selInst);
   }
+  // ── Segmented control Lista / Libro (iOS-style) ────────────────────────────
+  var segCtrlCurso = document.createElement('div');
+  segCtrlCurso.style.cssText = 'display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:10px;border-top:0.5px solid var(--border);flex-wrap:wrap;';
+  var segBar = document.createElement('div');
+  segBar.className = 'sub-tab-bar';
+  segBar.setAttribute('role','group');
+  segBar.setAttribute('aria-label','Cambiar vista');
+
+  var btnSegLista = document.createElement('button');
+  btnSegLista.className = 'sub-tab' + (!_vistaLibroCursoActiva ? ' activo' : '');
+  btnSegLista.title = 'Vista de tarjetas';
+  btnSegLista.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg> Lista';
+  btnSegLista.onclick = function(){ if(_vistaLibroCursoActiva){ toggleVistaLibroCurso(); } };
+
+  var btnSegLibro = document.createElement('button');
+  btnSegLibro.className = 'sub-tab' + (_vistaLibroCursoActiva ? ' activo' : '');
+  btnSegLibro.title = 'Vista Libro de Clases — tabla panorámica con todas las notas';
+  btnSegLibro.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> Libro';
+  btnSegLibro.onclick = function(){ if(!_vistaLibroCursoActiva){ toggleVistaLibroCurso(); } };
+
+  segBar.appendChild(btnSegLista);
+  segBar.appendChild(btnSegLibro);
+
+  var libroHintCurso = document.createElement('span');
+  libroHintCurso.style.cssText = 'font-size:11px;color:var(--text3);font-style:italic;';
+  libroHintCurso.textContent = _vistaLibroCursoActiva ? 'Vista panorámica · Toca una nota para editarla' : '';
+
+  segCtrlCurso.appendChild(segBar);
+  segCtrlCurso.appendChild(libroHintCurso);
+  hdrBtns.appendChild(segCtrlCurso);
+
   hdr.appendChild(hdrBtns);
   _listFragment.appendChild(hdr);
 
@@ -20196,9 +20235,27 @@ function _renderCursoMainImpl() {
       listEl.appendChild(row);
     });
   }
-  _listFragment.appendChild(listEl);
-  // Un solo reflow: volcar todo el fragment al DOM
-  main.appendChild(_listFragment);
+  // ── Vista Libro de Clases en Cursos ─────────────────────────────────────────
+  if (_vistaLibroCursoActiva) {
+    // Construir registros filtrados para este curso
+    var _libroFiltradosCurso = registros.filter(function(r) {
+      return r && (r.curso || '') === curso;
+    });
+    if (instanciaCursoFiltro) {
+      _libroFiltradosCurso = _libroFiltradosCurso.filter(function(r) {
+        return (r.instancia || 'Evaluación 1') === instanciaCursoFiltro;
+      });
+    }
+    var libroContCurso = document.createElement('div');
+    libroContCurso.style.cssText = 'overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:4px;';
+    _listFragment.appendChild(libroContCurso);
+    main.appendChild(_listFragment);
+    renderLibroClases(_libroFiltradosCurso, libroContCurso);
+  } else {
+    _listFragment.appendChild(listEl);
+    // Un solo reflow: volcar todo el fragment al DOM
+    main.appendChild(_listFragment);
+  }
   renderSidebarCounts();
 }
 
