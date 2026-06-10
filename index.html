@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v197">
+<meta name="arteval-version" content="v199">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -5242,10 +5242,6 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
                   <span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:var(--bg3);flex-shrink:0;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;" ><path d="M8 7H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3"/><polyline points="12 2 12 12"/><polyline points="9 5 12 2 15 5"/></svg></span>
                   <div><div style="font-weight:600;">Exportar notas</div><div style="font-size:11px;color:var(--text3);">Schooltrack · Napsis · Excel</div></div>
                 </button>
-                <button onclick="_exportItem('backup')" style="width:100%;text-align:left;padding:10px 12px;border:none;background:none;border-radius:10px;font-size:13px;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:10px;font-family:var(--font-ui);" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">
-                  <span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:var(--bg3);flex-shrink:0;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></span>
-                  <div><div style="font-weight:600;">Copia de seguridad</div><div style="font-size:11px;color:var(--text3);">Respaldo completo local · sin internet</div></div>
-                </button>
                 <div style="height:0.5px;background:var(--border);margin:4px 12px;"></div>
                 <button onclick="_exportItem('limpiar')" id="btnLimpiarDups" style="width:100%;text-align:left;padding:10px 12px;border:none;background:none;border-radius:10px;font-size:13px;color:var(--amber);cursor:pointer;display:flex;align-items:center;gap:10px;font-family:var(--font-ui);" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">
                   <span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:var(--bg3);flex-shrink:0;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;" ><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
@@ -5423,8 +5419,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
       <div class="prog-toolbar">
         <div class="search-wrap">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input class="search-input" type="text" id="buscarProgreso" list="listaAlumnosProgreso" placeholder="Buscar estudiante..." autocomplete="off" oninput="renderProgresoDebounced()">
-          <datalist id="listaAlumnosProgreso"></datalist>
+          <input class="search-input" type="text" id="buscarProgreso" placeholder="Buscar estudiante..." oninput="renderProgreso()">
         </div>
         <select class="filter-select" id="filtroCursoProgreso" onchange="renderProgreso()">
           <option value="">Todos los cursos</option>
@@ -5433,8 +5428,8 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
           <option value="">Todas las instancias</option>
         </select>
         <div class="prog-vista-btn">
-          <button id="btnProgVistaGrafico" class="active" onclick="setVistaProgreso('grafico')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Gráfico</button>
-          <button id="btnProgVistaLista" onclick="setVistaProgreso('lista')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg> Lista</button>
+          <button id="btnVistaGrafico" class="active" onclick="setVistaProgreso('grafico')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Gráfico</button>
+          <button id="btnVistaLista" onclick="setVistaProgreso('lista')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg> Lista</button>
         </div>
       </div>
       <div id="progresoContent"></div>
@@ -5519,8 +5514,8 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><h3 style="margin:0;">Correos de apoderados</h3></div>
         <label style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:10px;border:1.5px dashed var(--accent-border);border-radius:10px;cursor:pointer;font-size:13px;color:var(--accent);background:var(--accent-bg);">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          Subir CSV o Excel de correos (nombre,email)
-          <input type="file" accept=".csv,.txt,.xls,.xlsx" onchange="importarPlanillaApoderados(this.files[0]);this.value='';" style="display:none;">
+          Subir CSV de correos (nombre,email)
+          <input type="file" accept=".csv,.txt" onchange="cargarCorreosApoderados(this)" style="display:none;">
         </label>
       </div>
 
@@ -5876,7 +5871,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
                 <div style="font-size:11px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;font-family:var(--font-mono);letter-spacing:0.4px;">Tu origen actual (agrégalo en Google Cloud):</div>
                 <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                   <code id="driveCurrentOrigin" style="font-size:13px;font-weight:700;color:var(--accent);background:var(--accent-bg);padding:4px 10px;border-radius:var(--rad);font-family:var(--font-mono);"></code>
-                  <button onclick="navigator.clipboard.writeText(document.getElementById('driveCurrentOrigin').textContent).then(function(){toast('✅ Copiado','ok',1500)}).catch(function(){toast('No se pudo copiar — selecciona y copia manualmente','err',3000)})" class="btn btn-sm" style="font-size:11px;">📋 Copiar</button>
+                  <button onclick="navigator.clipboard.writeText(document.getElementById('driveCurrentOrigin').textContent).then(function(){toast('✅ Copiado','ok',1500)})" class="btn btn-sm" style="font-size:11px;">📋 Copiar</button>
                 </div>
                 <div id="driveOriginHint" style="font-size:11px;color:var(--text3);margin-top:6px;line-height:1.6;"></div>
               </div>
@@ -6088,27 +6083,6 @@ let registros = (function(){
     }).map(function(r) {
       // Garantizar UUID en cada registro (compatibilidad con registros sin _id)
       if (!r._id) r._id = (typeof _uuidV4 === 'function') ? _uuidV4() : (Date.now().toString(36) + Math.random().toString(36).slice(2));
-      // ── Migración de `detalle` (matriz de criterios) ────────────────────────
-      // Bug histórico: rúbricas importadas desde Word guardaban cada criterio
-      // como OBJETO {nombre,...} dentro de detalle → el modal renderizaba
-      // "[object Object]" o filas vacías. Aquí se sanea una sola vez al cargar:
-      // 1) detalle como string JSON → parsear; 2) no-array → [];
-      // 3) entradas null → fuera; 4) criterio objeto → su .nombre;
-      // 5) nivel normalizado a MB/L/M/N (mayúsculas) o '—'.
-      try {
-        if (typeof r.detalle === 'string') { try { r.detalle = JSON.parse(r.detalle); } catch(_e) { r.detalle = []; } }
-        if (!Array.isArray(r.detalle)) r.detalle = [];
-        r.detalle = r.detalle.filter(function(d){ return d && typeof d === 'object'; }).map(function(d, di) {
-          var nom = d.criterio;
-          if (nom && typeof nom === 'object') nom = nom.nombre || nom.criterio || '';
-          if (typeof nom !== 'string') nom = String(nom || '');
-          if (!nom) nom = 'Criterio ' + (di + 1);
-          var niv = String(d.nivel || '').toUpperCase().trim();
-          if (['MB','L','M','N'].indexOf(niv) === -1) niv = '—';
-          var _mb = d.mb; if (_mb && typeof _mb === 'object') _mb = _mb.mb || ''; if (typeof _mb !== 'string') _mb = '';
-          return { criterio: nom, nivel: niv, nota: (typeof d.nota === 'string') ? d.nota : String(d.nota || ''), mb: _mb };
-        });
-      } catch(_eMig) { /* nunca bloquear la carga por un registro defectuoso */ }
       // Normalización de curso se hace en saveRegistros() donde normalizarCurso ya está definida
       return r;
     });
@@ -6231,26 +6205,6 @@ function getRubrica() { return rubricas[rubricaActiva] || rubricas[0]; }
 function _critNombre(c) {
   if (typeof c === 'object' && c !== null) return c.nombre || '';
   return c || '';
-}
-
-// _critDescMB: descriptor del nivel máximo ("Muy bien logrado") para un
-// criterio evaluado. Orden de búsqueda:
-//   1. d.mb persistido en el propio registro (evaluaciones nuevas)
-//   2. la rúbrica del registro (por rubricaNombre), criterio por nombre o índice
-// Devuelve '' si no hay descriptor (rúbricas manuales sin texto MB).
-function _critDescMB(reg, d, idx) {
-  try {
-    if (d && typeof d.mb === 'string' && d.mb) return d.mb;
-    if (!reg || !reg.rubricaNombre || typeof rubricas === 'undefined') return '';
-    var rb = (rubricas || []).find(function(r){ return r && r.nombre === reg.rubricaNombre; });
-    if (!rb || !Array.isArray(rb.criterios)) return '';
-    var nomBuscado = _critNombre(d && d.criterio).trim().toLowerCase();
-    var c = nomBuscado
-      ? rb.criterios.find(function(cr){ return _critNombre(cr).trim().toLowerCase() === nomBuscado; })
-      : null;
-    if (!c && typeof idx === 'number') c = rb.criterios[idx];
-    return (c && typeof c === 'object' && c.mb) ? c.mb : '';
-  } catch(e) { return ''; }
 }
 
 function getCriterios() { return getRubrica().criterios; }
@@ -7298,7 +7252,7 @@ async function toggleCamara() {
   const ov = document.getElementById('camBadgeWrap');
   if (stream) {
     stream.getTracks().forEach(t => t.stop()); stream = null;
-    if (video) { video.srcObject = null; video.style.display = 'none'; }
+    if (video) video.style.display = 'none';
     if (ph) ph.style.display = 'flex';
     if (ov) ov.style.display = 'none';
     if (btn) { btn.textContent = 'Iniciar cámara'; btn.className = 'btn btn-primary'; }
@@ -8135,9 +8089,7 @@ async function guardar() {
   const pct = Math.round(pts/maxPts*100);
   const nota = ptsANota(pts, maxPts);
   const conteo = {MB:0,L:0,M:0,N:0}; vals.forEach(v => conteo[v.nivel]++);
-  // detalle SIEMPRE con criterio como string (_critNombre desempaqueta objetos
-  // de rúbricas importadas desde Word) y nivel válido — es el desglose que ve el apoderado
-  const detalle = crits.map((c,i) => ({ criterio:_critNombre(c) || ('Criterio ' + (i+1)), nivel:evaluacion[i]?.nivel||'—', nota:evaluacion[i]?.nota||'', mb:(typeof c==='object'&&c&&c.mb)?c.mb:'' }));
+  const detalle = crits.map((c,i) => ({ criterio:c, nivel:evaluacion[i]?.nivel||'—', nota:evaluacion[i]?.nota||'' }));
 
 // Buscar GUID del alumno en la plantilla Alexia del curso
   const _alexiaKey = alexiaNormCurso(curso);
@@ -8662,8 +8614,8 @@ function guardarNoEntregado() {
 
   const crits   = getCriterios();
   const maxPts  = crits.length * 3 || 24;
-  const detalle = crits.map(function(c, i) {
-    return { criterio: _critNombre(c) || ('Criterio ' + (i+1)), nivel: 'N', nota: 'Trabajo no entregado — Sin logro del objetivo', mb: (typeof c==='object'&&c&&c.mb)?c.mb:'' };
+  const detalle = crits.map(function(c) {
+    return { criterio: c, nivel: 'N', nota: 'Trabajo no entregado — Sin logro del objetivo' };
   });
   // Si no hay criterios, igual guardamos con detalle vacío y nota 1.0
   if (!detalle.length) {
@@ -8741,14 +8693,6 @@ function getRegistrosFiltrados() {
 }
 
 var _vistaLibroActiva = false;
-
-// ── Vista Libro en pestaña Cursos (segmented control Lista / Libro) ──────────
-var _vistaLibroCursoActiva = false;
-function toggleVistaLibroCurso() {
-  _vistaLibroCursoActiva = !_vistaLibroCursoActiva;
-  renderCursoMain();
-}
-
 function toggleVistaLibro() {
   _vistaLibroActiva = !_vistaLibroActiva;
 
@@ -8833,10 +8777,8 @@ function _mostrarMenuNE(ri,nombre,inst,cur,evt){
   document.body.appendChild(m);
   setTimeout(function(){var i=document.getElementById('neNotaInput');if(i)i.select();},50);
   setTimeout(function(){
-    var fn=function(e){var m2=document.getElementById('menuNE');
-      if(!m2){document.removeEventListener('mousedown',fn);document.removeEventListener('touchstart',fn);return;}
-      if(!m2.contains(e.target)){
-      m2.remove();document.removeEventListener('mousedown',fn);document.removeEventListener('touchstart',fn);}};
+    var fn=function(e){var m2=document.getElementById('menuNE');if(m2&&!m2.contains(e.target)){
+      m2.remove();document.removeEventListener('mousedown',fn);document.removeEventListener('touchstart',fn);};};
     document.addEventListener('mousedown',fn);document.addEventListener('touchstart',fn);
   },100);}
 function _confirmarNotaNE(ri){
@@ -8926,7 +8868,6 @@ function editarNotaRapida(idx, btnEl) {
   // Cerrar al hacer clic fuera
   setTimeout(function() {
     const cerrar = function(e) {
-      if (!document.body.contains(pop)) { document.removeEventListener('mousedown', cerrar); return; }
       if (!pop.contains(e.target) && e.target !== btnEl) { pop.remove(); document.removeEventListener('mousedown', cerrar); }
     };
     document.addEventListener('mousedown', cerrar);
@@ -9761,13 +9702,11 @@ function editarRegistro(idx) {
   const cont = document.getElementById('editCriterios');
   if (!cont) return;
   r.detalle.forEach((d, i) => {
-    const _descMB = _critDescMB(r, d, i);
     const div = document.createElement('div'); div.className = 'modal-criterio';
     div.innerHTML = `
-      <div class="modal-criterio-name" style="display:flex;gap:6px;align-items:flex-start;flex-wrap:wrap;">
+      <div class="modal-criterio-name" style="display:flex;gap:6px;align-items:flex-start;">
         <span class="num">${i+1}</span>
-        <span class="crit-nombre-edit" id="editCritNombre_${i}" title="Clic para editar nombre del criterio">${_esc(_critNombre(d.criterio)||('Criterio '+(i+1)))}</span>
-        ${_descMB ? `<div class="criterio-desc-mb" style="flex-basis:100%;margin-left:26px;" title="${_esc(_descMB)}">★ Muy bien logrado: ${_esc(_descMB)}</div>` : ''}
+        <span class="crit-nombre-edit" id="editCritNombre_${i}" title="Clic para editar nombre del criterio">${d.criterio}</span>
       </div>
       <div class="niveles" style="grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:6px;">
         ${[['MB','Muy bien'],['L','Logrado'],['M','Med.'],['N','Por lograr']].map(([k,lbl]) =>
@@ -9824,8 +9763,7 @@ function cambiarRubricaEdicion(regIdx) {
   const prevDetalle = existing ? (existing.detalle || []) : [];
   const prevMap     = {};
   prevDetalle.forEach(function(d){
-    var _n = _critNombre(d && d.criterio);
-    if (_n) prevMap[_n.trim().toLowerCase()] = d;
+    if (d.criterio) prevMap[d.criterio.trim().toLowerCase()] = d;
   });
 
   cont.innerHTML = '';
@@ -9840,22 +9778,16 @@ function cambiarRubricaEdicion(regIdx) {
   }
 
   rb.criterios.forEach(function(criterio, i) {
-    // _critNombre soporta ambos formatos: rúbricas Word (objeto {nombre,...})
-    // y rúbricas manuales (string). Antes, criterio.nombre.trim() lanzaba
-    // TypeError con strings → el contenedor quedaba completamente en blanco.
-    const _cNom    = _critNombre(criterio) || ('Criterio ' + (i+1));
-    const _cMB     = (typeof criterio === 'object' && criterio && criterio.mb) ? criterio.mb : '';
-    const prevD    = prevMap[_cNom.trim().toLowerCase()];
+    const prevD    = prevMap[criterio.nombre.trim().toLowerCase()];
     const nivelPrev = prevD ? prevD.nivel : null;
     const obsPrev   = prevD ? (prevD.nota || '') : '';
 
     const div = document.createElement('div');
     div.className = 'modal-criterio';
     div.innerHTML =
-      '<div class="modal-criterio-name" style="display:flex;gap:6px;align-items:flex-start;flex-wrap:wrap;">'
+      '<div class="modal-criterio-name" style="display:flex;gap:6px;align-items:flex-start;">'
       + '<span class="num">' + (i+1) + '</span>'
-      + '<span class="crit-nombre-edit" id="editCritNombre_' + i + '" title="Clic para editar">' + _esc(_cNom) + '</span>'
-      + (_cMB ? '<div class="criterio-desc-mb" style="flex-basis:100%;margin-left:26px;" title="' + _esc(_cMB) + '">★ Muy bien logrado: ' + _esc(_cMB) + '</div>' : '')
+      + '<span class="crit-nombre-edit" id="editCritNombre_' + i + '" title="Clic para editar">' + _esc(criterio.nombre) + '</span>'
       + (nivelPrev ? '<span style="font-size:10px;font-family:var(--font-mono);background:var(--green-bg);color:var(--green);border-radius:4px;padding:1px 5px;margin-left:auto;flex-shrink:0;">↺ recuperado</span>' : '')
       + '</div>'
       + '<div class="niveles" style="grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:6px;">'
@@ -9882,7 +9814,7 @@ function cambiarRubricaEdicion(regIdx) {
           span.className = 'crit-nombre-edit';
           span.id = 'editCritNombre_' + i;
           span.style.cursor = 'pointer';
-          span.textContent = input.value.trim() || _critNombre(criterio) || ('Criterio ' + (i+1));
+          span.textContent = input.value.trim() || criterio.nombre;
           span.title = 'Clic para editar nombre';
           input.replaceWith(span);
         }
@@ -9928,9 +9860,9 @@ function confirmarEdicion(idx) {
       const sel = block.querySelector('.nivel-btn[class*="sel-"]');
       const niv = sel ? (sel.className.match(/sel-(\w+)/)?.[1]?.toUpperCase() || 'M') : 'M';
       const nameEl = block.querySelector('.crit-nombre-edit');
-      const criterioNombre = (nameEl ? nameEl.textContent.trim() : '') || _critNombre(rbNueva.criterios[i]) || ('Criterio ' + (i+1));
+      const criterioNombre = nameEl ? nameEl.textContent.trim() : (rbNueva.criterios[i]?.nombre || '');
       const obsEl = block.querySelector('.obs-input');
-      r.detalle.push({ criterio: criterioNombre, nivel: niv, nota: obsEl ? obsEl.value.trim() : '', mb: (function(cc){ return (typeof cc==='object'&&cc&&cc.mb)?cc.mb:''; })(rbNueva.criterios[i]) });
+      r.detalle.push({ criterio: criterioNombre, nivel: niv, nota: obsEl ? obsEl.value.trim() : '' });
     });
   } else {
     // Misma rúbrica: actualizar criterios existentes
@@ -11212,66 +11144,17 @@ async function eliminarRubrica(idx) {
 
 // ═══════════════════════════════════════════════════════
 //  EXPORT CSV
-// ── _descargarBlob: ÚNICO canal seguro de descarga de archivos ──────────────
-// Patrón requerido por Safari/iPad: el <a> DEBE estar en el DOM al hacer click,
-// y revokeObjectURL DEBE diferirse — revocar síncronamente cancela la descarga
-// en WebKit. Todas las exportaciones del programa deben pasar por aquí.
-function _descargarBlob(blob, filename) {
-  try {
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url; a.download = filename;
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(function(){
-      try { URL.revokeObjectURL(url); } catch(_e) {}
-      try { document.body.removeChild(a); } catch(_e) {}
-    }, 600);
-    return true;
-  } catch(e) {
-    console.warn('[ArtEval] _descargarBlob:', e.message);
-    toast('No se pudo iniciar la descarga: ' + e.message, 'err', 4000);
-    return false;
-  }
-}
-
 // ═══════════════════════════════════════════════════════
 // ═══════════════════════════════════════════════════════
 //  IMPORTAR / EXPORTAR DATOS
 // ═══════════════════════════════════════════════════════
 function exportarBackupJSON() {
-  // Respaldo COMPLETO en un solo JSON descargable — independiente de Drive.
-  // Incluye exactamente los campos que restaurarBackupJSON sabe mergear
-  // (registros, listaCursos, rubricas) más metadatos de configuración.
-  // Antes solo exportaba registros: si se perdía localStorage, las nóminas
-  // de cursos (con marcas PIE) y las rúbricas no eran recuperables.
-  let extras = {};
-  try {
-    extras = {
-      rubricaActiva: (typeof rubricaActiva !== 'undefined') ? rubricaActiva : 0,
-      contextosCursos: JSON.parse(localStorage.getItem('av_contextos_cursos') || 'null'),
-      emailColegio: localStorage.getItem('av_email_colegio') || '',
-      emailUTP: localStorage.getItem('av_email_utp') || '',
-      nombreProf: localStorage.getItem('av_nombre_prof') || ''
-    };
-  } catch(e) { extras = {}; }
-  const data = {
-    version: 3,
-    app: 'ArtEval',
-    fecha: new Date().toISOString(),
-    registros: registros,
-    listaCursos: (typeof listaCursos !== 'undefined') ? listaCursos : {},
-    rubricas: (typeof rubricas !== 'undefined') ? rubricas : [],
-    config: extras
-  };
+  const data = { version: 2, fecha: new Date().toISOString(), registros };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const ok = _descargarBlob(blob, `arteval_backup_${new Date().toLocaleDateString('es-CL').replace(/\//g,'-')}.json`);
-  if (ok) {
-    const nR = (registros||[]).length, nC = Object.keys(listaCursos||{}).length, nRb = (rubricas||[]).length;
-    toast(`💾 Respaldo descargado — ${nR} registros · ${nC} cursos · ${nRb} rúbricas`, 'ok', 4000);
-    try { localStorage.setItem('av_ultimo_backup_manual', new Date().toISOString()); } catch(e) {}
-  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `arteval_backup_${new Date().toLocaleDateString('es-CL').replace(/\//g,'-')}.json`;
+  a.click();
 }
 
 async function restaurarBackupJSON() {
@@ -11342,18 +11225,6 @@ async function restaurarBackupJSON() {
             if (!existe) rubricas.push(rb);
           });
           localStorage.setItem('av_rubricas', JSON.stringify(rubricas));
-        }
-
-        // Config del respaldo v3 — solo rellena valores locales VACÍOS (no destructivo)
-        if (data.config && typeof data.config === 'object') {
-          try {
-            if (data.config.contextosCursos && !localStorage.getItem('av_contextos_cursos'))
-              localStorage.setItem('av_contextos_cursos', JSON.stringify(data.config.contextosCursos));
-            ['emailColegio','emailUTP','nombreProf'].forEach(function(k, ki) {
-              var lsKey = ['av_email_colegio','av_email_utp','av_nombre_prof'][ki];
-              if (data.config[k] && !localStorage.getItem(lsKey)) localStorage.setItem(lsKey, data.config[k]);
-            });
-          } catch(eCfg) { /* config es opcional — nunca abortar la restauración */ }
         }
 
         saveRegistros();
@@ -11623,67 +11494,116 @@ function limpiarCursos() {
   renderRegistros();
 }
 
+// ── Set de cursos seleccionados para exportar CSV — se reinicia en cada apertura ──
+var cursosExport = new Set();
+
 function abrirExportMultiple() {
-  const cursos = cursosUnicos();
-  if (!cursos.length) { exportCSV(); return; }
-  // FIX v175: pre-seleccionar el curso activo en Registros si hay uno
-  var _cursoActivoReg = (document.getElementById('filtroCurso')?.value || '').trim();
-  abrirModal(`
-    <div class="modal-title">Exportar CSV</div>
-    <div class="modal-hint">Selecciona los cursos a incluir en la exportación. Puedes exportar un nivel completo de una sola vez.</div>
-    <div class="nivel-group">
-      <div class="nivel-group-title">Cursos disponibles</div>
-      <div class="curso-check-list" id="exportChips">
-        ${cursos.map(c => `
-          <label class="curso-chip${!_cursoActivoReg || c===_cursoActivoReg ? ' selected' : ''}" id="chip-exp-${c.replace(/[^a-z0-9]/gi,'_')}">
-            <input type="checkbox" ${!_cursoActivoReg || c===_cursoActivoReg ? 'checked' : ''} onchange="toggleChipExport('${c}',this.checked,'chip-exp-${c.replace(/[^a-z0-9]/gi,'_')}')">
-            ${c}
-          </label>`).join('')}
-        <label class="curso-chip" onclick="selAllChips(true)">Todos</label>
-        <label class="curso-chip" onclick="selAllChips(false)">Ninguno</label>
-      </div>
-    </div>
-    <div style="font-size:11px;color:var(--text3);margin-bottom:14px;font-family:'DM Mono',monospace;" id="exportCount">
-      ${registros.length} registros seleccionados
-    </div>
-    <div class="modal-footer">
-      <button class="btn" onclick="cerrarModal()">Cancelar</button>
-      <button class="btn btn-primary" onclick="confirmarExportCSV()">Descargar CSV</button>
-    </div>`);
+  var cursos = cursosUnicos();
+  if (!cursos.length) { toast('No hay evaluaciones para exportar', 'err', 3000); return; }
+
+  // Pre-selección inteligente: curso activo en Registros o Cursos, si existe
+  var _cursoActivoReg = (document.getElementById('filtroCurso') ? (document.getElementById('filtroCurso').value||'') : '').trim()
+                     || cursoSeleccionado || '';
+
+  // Reiniciar el Set en cada apertura del modal
+  cursosExport = new Set();
+  if (_cursoActivoReg && cursos.indexOf(_cursoActivoReg) !== -1) {
+    cursosExport.add(_cursoActivoReg);
+  } else {
+    // Sin contexto previo → marcar todos por defecto
+    cursos.forEach(function(c){ cursosExport.add(c); });
+  }
+
+  var chipsHTML = cursos.map(function(c) {
+    var id   = 'chip-exp-' + c.replace(/[^a-z0-9]/gi,'_');
+    var sel  = cursosExport.has(c);
+    var nReg = registros.filter(function(r){ return (r.curso||'') === c; }).length;
+    return '<label class="curso-chip' + (sel ? ' selected' : '') + '" id="' + id + '">'
+      + '<input type="checkbox"' + (sel ? ' checked' : '') + ' onchange="toggleChipExport(\'' + c + '\',this.checked,\'' + id + '\')">'
+      + c + '<span style="font-size:10px;opacity:.6;margin-left:4px;">(' + nReg + ')</span>'
+      + '</label>';
+  }).join('');
+
+  abrirModal(
+    '<div class="modal-title">Exportar CSV</div>'
+    + '<div class="modal-hint">Selecciona los cursos a incluir. El conteo entre paréntesis indica evaluaciones guardadas.</div>'
+    + '<div class="nivel-group">'
+    +   '<div class="nivel-group-title">Cursos disponibles</div>'
+    +   '<div class="curso-check-list" id="exportChips">' + chipsHTML
+    +     '<label class="curso-chip" onclick="selAllChips(true)" style="opacity:.7;">Todos</label>'
+    +     '<label class="curso-chip" onclick="selAllChips(false)" style="opacity:.7;">Ninguno</label>'
+    +   '</div>'
+    + '</div>'
+    + '<div style="font-size:11px;color:var(--text3);margin-bottom:14px;font-family:\'DM Mono\',monospace;" id="exportCount"></div>'
+    + '<div class="modal-footer">'
+    +   '<button class="btn" onclick="cerrarModal()">Cancelar</button>'
+    +   '<button class="btn btn-primary" onclick="confirmarExportCSV()">⬇ Descargar CSV</button>'
+    + '</div>'
+  );
   actualizarExportCount();
 }
 
-let cursosExport = new Set(cursosUnicos());
 function toggleChipExport(curso, checked, chipId) {
   if (checked) cursosExport.add(curso); else cursosExport.delete(curso);
-  const chip = document.getElementById(chipId);
+  var chip = document.getElementById(chipId);
   if (chip) chip.classList.toggle('selected', checked);
   actualizarExportCount();
 }
 function selAllChips(sel) {
-  cursosUnicos().forEach(c => {
-    if (sel) cursosExport.add(c); else cursosExport.delete(c);
+  cursosUnicos().forEach(function(c){ if (sel) cursosExport.add(c); else cursosExport.delete(c); });
+  document.querySelectorAll('#exportChips input[type=checkbox]').forEach(function(cb) {
+    cb.checked = sel;
+    var lbl = cb.closest('.curso-chip');
+    if (lbl) lbl.classList.toggle('selected', sel);
   });
-  document.querySelectorAll('#exportChips input[type=checkbox]').forEach(cb => { cb.checked = sel; cb.closest('.curso-chip')?.classList.toggle('selected', sel); });
   actualizarExportCount();
 }
 function actualizarExportCount() {
-  const n = registros.filter(r => cursosExport.has(r.curso||'')||cursosExport.size===0).length;
-  setEl('exportCount', `${n} registros seleccionados`);
+  var n = registros.filter(function(r){ return cursosExport.has(r.curso||''); }).length;
+  var el = document.getElementById('exportCount');
+  if (el) el.textContent = cursosExport.size
+    ? n + ' evaluación(es) de ' + cursosExport.size + ' curso(s) seleccionado(s)'
+    : '⚠ Selecciona al menos un curso';
 }
 function confirmarExportCSV() {
-  const data = registros.filter(r => !cursosExport.size || cursosExport.has(r.curso||''));
-  let csv = 'Nombre,Curso,Instancia,Fecha,Rúbrica,Muy bien,Logrado,Medianamente,Por lograr,Puntaje,Porcentaje,Nota,Resultado\n';
-  data.forEach(r => {
-    const nota = r.nota||1;
-    const res = nota>=4.0?'Logrado':'No logrado';
-    const inst = r.instancia || 'Evaluación 1';
-    csv += `"${r.nombre}","${r.curso||''}","${inst}","${r.fecha}","${r.rubricaNombre||''}",${r.conteo?.MB||0},${r.conteo?.L||0},${r.conteo?.M||0},${r.conteo?.N||0},${r.pts||0}/${r.maxPts||0},${r.pct||0}%,${nota.toFixed(1)},"${res}"\n`;
+  if (!cursosExport.size) { toast('Selecciona al menos un curso', 'err', 3000); return; }
+  var data = registros.filter(function(r){ return cursosExport.has(r.curso||''); });
+  if (!data.length) { toast('No hay evaluaciones para los cursos seleccionados', 'err', 3000); return; }
+  var csv = 'Nombre,Curso,Instancia,Fecha,Rúbrica,Muy bien,Logrado,Medianamente,Por lograr,Puntaje,Porcentaje,Nota,Resultado\n';
+  data.forEach(function(r) {
+    var nota = typeof r.nota === 'number' ? r.nota : (parseFloat(r.nota)||1);
+    var res  = nota >= 4.0 ? 'Logrado' : 'No logrado';
+    var inst = r.instancia || 'Evaluación 1';
+    var cMB  = (r.conteo && r.conteo.MB) ? r.conteo.MB : 0;
+    var cL   = (r.conteo && r.conteo.L)  ? r.conteo.L  : 0;
+    var cM   = (r.conteo && r.conteo.M)  ? r.conteo.M  : 0;
+    var cN   = (r.conteo && r.conteo.N)  ? r.conteo.N  : 0;
+    csv += '"' + (r.nombre||'').replace(/"/g,'""') + '",'
+      + '"' + (r.curso||'').replace(/"/g,'""') + '",'
+      + '"' + inst.replace(/"/g,'""') + '",'
+      + '"' + (r.fecha||'').replace(/"/g,'""') + '",'
+      + '"' + (r.rubricaNombre||'').replace(/"/g,'""') + '",'
+      + cMB + ',' + cL + ',' + cM + ',' + cN + ','
+      + (r.pts||0) + '/' + (r.maxPts||0) + ','
+      + (r.pct||0) + '%,'
+      + nota.toFixed(1) + ','
+      + '"' + res + '"\n';
   });
-  const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8;'});
-  const cursosSel = [...cursosExport].join('_') || 'todos';
-  _descargarBlob(blob, `arteval_${cursosSel}.csv`);
-  cerrarModal();
+  try {
+    var blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    a.href   = url;
+    a.download = 'arteval_' + Array.from(cursosExport).join('-').replace(/[^a-zA-Z0-9_\-]/g,'') + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function(){ URL.revokeObjectURL(url); document.body.removeChild(a); }, 800);
+    cerrarModal();
+    toast('✓ CSV descargado — ' + data.length + ' evaluaciones', 'ok', 3000);
+  } catch(e) {
+    toast('❌ Error al generar CSV: ' + e.message, 'err', 5000);
+    console.error('[ArtEval] confirmarExportCSV:', e);
+  }
 }
 
 
@@ -11839,7 +11759,10 @@ function exportarNapsis(curso) {
 
   var csv  = '\uFEFF' + lines.join('\r\n'); // BOM para Excel en Windows
   var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-  _descargarBlob(blob, 'SIGE_Napsis_' + key + '.csv');
+  var a    = document.createElement('a');
+  a.href   = URL.createObjectURL(blob);
+  a.download = 'SIGE_Napsis_' + key + '.csv';
+  a.click();
   toast('✅ Napsis/SIGE exportado — ' + alumnos.length + ' alumnos', 'ok', 3000);
 }
 
@@ -12595,27 +12518,31 @@ function toggleAlexiaPanel() {
 }
 
 // Exportar XLS de todos los cursos que tienen plantilla Alexia cargada
-// Exportar XLS de todos los cursos que tienen plantilla Alexia cargada
 function exportarTodosAlexia() {
   try {
     if (typeof alexiaDatos === 'undefined' || !alexiaDatos) {
-      toast('No hay plantillas Alexia cargadas aún. Ve a Configurar → Plantillas Alexia.', 'err', 4000);
+      toast('No hay plantillas Alexia cargadas aún.', 'err', 3000);
       return;
     }
-    var keys = Object.keys(alexiaDatos);
-    if (!keys.length) {
-      toast('No hay plantillas Alexia cargadas aún. Ve a Configurar → Plantillas Alexia.', 'err', 4000);
+    var cursos = Object.keys(alexiaDatos);
+    if (!cursos.length) {
+      toast('No hay plantillas Alexia cargadas aún.', 'err', 3000);
       return;
     }
-    // BUG FIX: la versión anterior llamaba a alexiaGenerarXLS() directamente,
-    // que es un GENERADOR PURO de datos (retorna {wsData, matchLog, ...}) y NO
-    // descarga nada — el toast decía "✓ exportado" sin producir ningún archivo.
-    // La descarga real vive en _exportAlexiaDiagnostico (diagnóstico + botón
-    // de descarga XLS). Delegamos ahí con los nombres originales de sección.
-    var cursos = keys.map(function(k) {
-      return (alexiaDatos[k] && alexiaDatos[k].seccion) ? alexiaDatos[k].seccion : k;
+    var exportados = 0;
+    cursos.forEach(function(key) {
+      try {
+        if (typeof alexiaGenerarXLS === 'function') {
+          alexiaGenerarXLS(key);
+          exportados++;
+        }
+      } catch(e) { console.warn('[ArtEval] exportar curso', key, e.message); }
     });
-    _exportAlexiaDiagnostico(cursos);
+    if (exportados > 0) {
+      toast('✓ ' + exportados + ' archivo(s) XLS exportado(s)', 'ok', 3000);
+    } else {
+      toast('No se pudo exportar. Verifica que las plantillas estén cargadas.', 'err', 3000);
+    }
   } catch(e) {
     console.warn('[ArtEval] exportarTodosAlexia:', e.message);
     toast('Error al exportar: ' + e.message, 'err', 4000);
@@ -12674,53 +12601,97 @@ function renderAlexiaPlantillasList() {
 }
 
 // ── Modal de selección antes de exportar ───────────────────────────────────────
+// ── Modal de selección de cursos antes de exportar XLS Alexia ──────────────────
 function abrirExportAlexia(cursoDirecto){
-  // FIX v175: leer primero el selector de curso activo en la pestaña Registros.
-  // Si el usuario está en Registros con un curso filtrado, ese es el curso a exportar.
-  var _filtroCursoActivo = (document.getElementById('filtroCurso')?.value || '').trim();
-  var cursoTarget = _filtroCursoActivo || cursoSeleccionado || cursoDirecto || null;
-  if(typeof XLSX==='undefined'){toast('Excel no cargada','err',4000);return;}
-  var cursosDisp=cursosUnicos();
-  if(!cursosDisp.length){toast('No hay evaluaciones','err',3000);return;}
-  if(cursoTarget&&alexiaDatos[alexiaNormCurso(cursoTarget)]){
-    _exportAlexiaDiagnostico([cursoTarget]);return;
-  }
-  if(cursoTarget){
-    var otrosOK=cursosDisp.filter(function(c){return !!alexiaDatos[alexiaNormCurso(c)];});
-    var html='<div class="modal-title">⚠️ Sin plantilla para '+cursoTarget+'</div>'
-      +'<div style="background:rgba(255,149,0,0.10);border:1px solid rgba(255,149,0,0.35);border-radius:12px;padding:14px;margin-bottom:12px;font-size:13px;color:var(--text2);">Sube el .xls desde Alexia.<br>Ve a <strong>Configurar → Plantillas Alexia</strong>.</div>';
-    if(otrosOK.length){
-      html+='<div style="font-size:12px;margin-bottom:8px;">Exportar otro curso:</div>'
-        +'<div style="display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto;" id="alexiaCursosCheck">';
-      otrosOK.forEach(function(c){
-        var n=registros.filter(function(r){return alexiaNormCurso(r.curso||'')==alexiaNormCurso(c);}).length;
-        html+='<label style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rad);cursor:pointer;">'
-          +'<input type="checkbox" data-curso="'+c+'">'
-          +'<span style="flex:1;font-size:13px;">'+c+'</span>'
-          +'<span style="font-size:11px;color:var(--green);">'+n+' notas</span></label>';
-      });
-      html+='</div><div class="modal-footer"><button class="btn" onclick="cerrarModal()">Cancelar</button><button class="btn btn-primary" onclick="confirmarExportAlexia()">Exportar</button></div>';
-    }else{
-      html+='<div class="modal-footer"><button class="btn btn-primary" onclick="cerrarModal()">Entendido</button></div>';
-    }
-    abrirModal(html);return;
-  }
-  var ci=cursosDisp.map(function(c){var k=alexiaNormCurso(c),p=alexiaDatos[k],n=registros.filter(function(r){return alexiaNormCurso(r.curso||'')==k;}).length;return{curso:c,key:k,p:p||null,n:n};});
-  var sp=ci.filter(function(x){return !x.p;});
-  var h3='<div class="modal-title">Exportar para Alexia</div>'
-    +'<div style="font-size:12px;color:var(--text2);margin-bottom:10px;">Selecciona cursos:</div>'
-    +'<div style="display:flex;flex-direction:column;gap:5px;max-height:340px;overflow-y:auto;margin-bottom:12px;" id="alexiaCursosCheck">';
-  ci.forEach(function(x){
-    var id='achk_'+x.key.replace(/[^a-z0-9]/gi,'_'),ok=!!x.p;
-    h3+='<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg3);border:1.5px solid '+(ok?'var(--border)':'rgba(255,149,0,0.3)')+';border-radius:var(--rad);cursor:pointer;opacity:'+(ok?'1':'0.55')+';">'
-      +'<input type="checkbox" '+(ok?'checked':'disabled')+' data-curso="'+x.curso+'">'
-      +'<span style="flex:1;font-size:13px;">'+x.curso+'</span>'
-      +'<span style="font-size:11px;color:'+(ok?'var(--green)':'var(--amber)')+';">'+x.n+(ok?' notas':' sin plantilla')+'</span></label>';
+  if (typeof XLSX === 'undefined') { toast('Librería Excel no cargada', 'err', 4000); return; }
+  var cursosDisp = cursosUnicos();
+  if (!cursosDisp.length) { toast('No hay evaluaciones', 'err', 3000); return; }
+
+  // Curso activo contextual (Registros / Cursos) — se usa como pre-selección, nunca para saltarse el modal
+  var _filtroCursoActivo = (document.getElementById('filtroCurso') ? (document.getElementById('filtroCurso').value||'') : '').trim()
+                         || cursoSeleccionado || cursoDirecto || '';
+
+  // Construir filas de la lista de cursos
+  var ci = cursosDisp.map(function(c) {
+    var k   = alexiaNormCurso(c);
+    var p   = alexiaDatos[k] || null;
+    var n   = registros.filter(function(r){ return alexiaNormCurso(r.curso||'') === k; }).length;
+    return { curso: c, key: k, plantilla: p, n: n };
   });
-  h3+='</div>';
-  if(sp.length)h3+='<div style="font-size:11px;color:var(--amber);margin-bottom:10px;">'+sp.map(function(c){return c.curso;}).join(', ')+' sin plantilla.</div>';
-  h3+='<div class="modal-footer"><button class="btn" onclick="cerrarModal()">Cancelar</button><button class="btn btn-primary" onclick="confirmarExportAlexia()">Exportar →</button></div>';
-  abrirModal(h3);
+
+  var conPlantilla    = ci.filter(function(x){ return !!x.plantilla; });
+  var sinPlantilla    = ci.filter(function(x){ return !x.plantilla;  });
+  var hayAlgunaPlant  = conPlantilla.length > 0;
+
+  if (!hayAlgunaPlant) {
+    abrirModal(
+      '<div class="modal-title">Exportar Alexia</div>'
+      + '<div style="background:rgba(255,149,0,0.10);border:1px solid rgba(255,149,0,0.35);border-radius:12px;padding:14px 16px;font-size:13px;color:var(--text2);line-height:1.5;">'
+      + '⚠️ No hay plantillas Alexia cargadas.<br>Ve a <strong>Configurar → Plantillas Alexia</strong> y sube los archivos .xls de cada curso.</div>'
+      + '<div class="modal-footer"><button class="btn btn-primary" onclick="cerrarModal()">Entendido</button></div>'
+    );
+    return;
+  }
+
+  // Construir HTML del selector
+  var filas = '';
+  conPlantilla.forEach(function(x) {
+    var id  = 'achk_' + x.key.replace(/[^a-z0-9]/gi,'_');
+    var pre = _filtroCursoActivo ? (alexiaNormCurso(_filtroCursoActivo) === x.key) : true; // pre-marcar curso activo (o todos si no hay contexto)
+    filas += '<label id="lbl_' + id + '" style="display:flex;align-items:center;gap:10px;padding:10px 13px;'
+      + 'background:var(--bg3);border:1.5px solid ' + (pre ? 'var(--accent)' : 'var(--border)') + ';'
+      + 'border-radius:var(--rad);cursor:pointer;transition:border .15s;" '
+      + 'onmouseenter="this.style.background=\'var(--bg2)\'" onmouseleave="this.style.background=\'var(--bg3)\'">'
+      + '<input type="checkbox" data-curso="' + x.curso + '" id="' + id + '"' + (pre ? ' checked' : '') + ' '
+      + 'onchange="document.getElementById(\'lbl_' + id + '\').style.borderColor=this.checked?\'var(--accent)\':\' var(--border)\'; _alexiaCountUpdate();">'
+      + '<span style="flex:1;font-size:13px;font-weight:500;">' + x.curso + '</span>'
+      + '<span style="font-size:11px;color:var(--green);font-family:\'DM Mono\',monospace;">' + x.n + ' eval.</span>'
+      + '</label>';
+  });
+
+  if (sinPlantilla.length) {
+    filas += '<div style="margin-top:8px;padding:8px 12px;background:rgba(255,149,0,0.07);border:1px solid rgba(255,149,0,0.25);border-radius:var(--rad);font-size:11px;color:var(--amber);">'
+      + '⚠ Sin plantilla (no exportables): ' + sinPlantilla.map(function(x){ return x.curso; }).join(', ')
+      + '</div>';
+  }
+
+  abrirModal(
+    '<div class="modal-title">Exportar XLS para Alexia</div>'
+    + '<div class="modal-hint" style="margin-bottom:10px;">Selecciona uno o más cursos. Solo aparecen los que tienen plantilla cargada.</div>'
+    + '<div style="display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto;margin-bottom:12px;" id="alexiaCursosCheck">'
+    + filas
+    + '</div>'
+    + '<div style="display:flex;gap:8px;margin-bottom:12px;">'
+    +   '<button class="btn" style="font-size:11px;" onclick="_alexiaSelAll(true)">Todos</button>'
+    +   '<button class="btn" style="font-size:11px;" onclick="_alexiaSelAll(false)">Ninguno</button>'
+    +   '<span id="_alexiaCountLbl" style="font-size:11px;color:var(--text3);align-self:center;margin-left:4px;"></span>'
+    + '</div>'
+    + '<div class="modal-footer">'
+    +   '<button class="btn" onclick="cerrarModal()">Cancelar</button>'
+    +   '<button class="btn btn-primary" onclick="confirmarExportAlexia()" style="background:var(--green);border-color:var(--green);">⬇ Exportar XLS</button>'
+    + '</div>'
+  );
+  setTimeout(_alexiaCountUpdate, 40);
+}
+
+// ── Helpers del selector Alexia ────────────────────────────────────────────────
+function _alexiaCountUpdate() {
+  var n = document.querySelectorAll('#alexiaCursosCheck input[type=checkbox]:checked').length;
+  var lbl = document.getElementById('_alexiaCountLbl');
+  if (lbl) lbl.textContent = n ? n + ' curso(s) seleccionado(s)' : '⚠ Selecciona al menos uno';
+}
+function _alexiaSelAll(sel) {
+  document.querySelectorAll('#alexiaCursosCheck input[type=checkbox]').forEach(function(cb) {
+    cb.checked = sel;
+    var lbl = document.getElementById('lbl_' + cb.id);
+    if (lbl) lbl.style.borderColor = sel ? 'var(--accent)' : 'var(--border)';
+  });
+  _alexiaCountUpdate();
+}
+
+// exportarTodosAlexia ahora abre el selector en lugar de descargar todo a ciegas
+function exportarTodosAlexia() {
+  abrirExportAlexia(null);
 }
 
 // ── Generar diagnóstico y exportar para los cursos seleccionados ──────────
@@ -12903,7 +12874,7 @@ function modoPresentacion(idx) {
       else                   { clr='#a0a0a0'; bg='rgba(160,160,160,0.1)'; }
       return `<div class="pres-crit">
         <div class="pres-crit-num">${i+1}</div>
-        <div class="pres-crit-nombre">${_critNombre(d.criterio)||'Criterio '+(i+1)}</div>
+        <div class="pres-crit-nombre">${d.criterio||'Criterio '+(i+1)}</div>
         <div class="pres-crit-nivel-wrap">
           <span class="pres-crit-nivel" style="background:${bg};color:${clr}">${lbl}</span>
           <span class="pres-crit-pts">${pts}</span>
@@ -12940,9 +12911,6 @@ function modoPresentacion(idx) {
 
   // Navegar entre registros con flechas del teclado
   const nav = e => {
-    // Auto-limpieza: si el overlay fue cerrado por otra vía (botones navPres/cerrar),
-    // este listener quedaría huérfano y duplicaría la navegación con flechas
-    if (!document.body.contains(overlay)) { document.removeEventListener('keydown', nav); return; }
     if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', nav); }
     if ((e.key === 'ArrowRight' || e.key === 'ArrowDown') && idx + 1 < registros.length) {
       overlay.remove(); document.removeEventListener('keydown', nav);
@@ -13883,52 +13851,41 @@ function irACurso(curso) {
 let _vistaProgreso = 'grafico';
 function setVistaProgreso(v) {
   _vistaProgreso = v;
-  // IDs únicos del segmented control de Progreso (el antiguo btnVistaLista
-  // colisionaba con el control Lista/Libro de Registros — ID duplicado)
-  document.getElementById('btnProgVistaGrafico')?.classList.toggle('active', v==='grafico');
-  document.getElementById('btnProgVistaLista')?.classList.toggle('active', v==='lista');
+  document.getElementById('btnVistaGrafico')?.classList.toggle('active', v==='grafico');
+  document.getElementById('btnVistaLista')?.classList.toggle('active', v==='lista');
   renderProgreso();
 }
 
-// ── Debounce del buscador de Progreso (1.300+ registros: evita re-render por tecla) ──
-var _progDebounceTimer = null;
-function renderProgresoDebounced() {
-  clearTimeout(_progDebounceTimer);
-  _progDebounceTimer = setTimeout(renderProgreso, 160);
-}
-
-// ── Mini gráfico SVG de notas — eje Y fijo 1.0–7.0, eje X cronológico ──
+// ── Mini gráfico SVG de notas ──
 function _miniChartSVG(notas, labels) {
   const W = 300, H = 90, PAD = 20, TOP = 14, BOT = 20;
   const n = notas.length;
-  if (n < 1) return '';
+  if (n < 2) return '';
   const minN = 1, maxN = 7;
-  const xStep = n > 1 ? (W - PAD*2) / (n - 1) : 0;
+  const xStep = (W - PAD*2) / (n - 1);
   const yScale = (H - TOP - BOT) / (maxN - minN);
-  const toX = i => n > 1 ? PAD + i * xStep : W / 2;
-  const toY = v => TOP + (maxN - Math.min(maxN, Math.max(minN, v))) * yScale;
+  const toX = i => PAD + i * xStep;
+  const toY = v => TOP + (maxN - v) * yScale;
 
-  // Líneas de referencia + extremos de la escala (1.0 y 7.0)
+  // Líneas de referencia
   const refLines = [4, 5, 6].map(v => {
     const y = toY(v);
     const col = v===4 ? '#86efac' : '#e5e7eb';
     return `<line x1="${PAD}" y1="${y}" x2="${W-PAD}" y2="${y}" stroke="${col}" stroke-width="1" stroke-dasharray="3,3"/>
             <text x="${PAD-4}" y="${y+3.5}" fill="#9ca3af" font-size="8" text-anchor="end">${v}</text>`;
-  }).join('')
-  + `<text x="${PAD-4}" y="${toY(7)+3.5}" fill="#9ca3af" font-size="8" text-anchor="end">7</text>`
-  + `<text x="${PAD-4}" y="${toY(1)+3.5}" fill="#9ca3af" font-size="8" text-anchor="end">1</text>`;
+  }).join('');
 
   // Área rellena bajo la curva
   const pts = notas.map((v,i) => `${toX(i)},${toY(v)}`).join(' ');
-  const areaPts = n > 1 ? `${toX(0)},${toY(minN)} ${pts} ${toX(n-1)},${toY(minN)}` : '';
+  const areaPts = `${toX(0)},${toY(minN)} ${pts} ${toX(n-1)},${toY(minN)}`;
 
   // Color de área según tendencia
-  const tend = n > 1 ? notas[n-1] - notas[0] : 0;
+  const tend = notas[n-1] - notas[0];
   const areaColor = tend > 0.3 ? '#bbf7d0' : tend < -0.3 ? '#fecaca' : '#e0e7ff';
   const lineColor = tend > 0.3 ? '#16a34a' : tend < -0.3 ? '#dc2626' : '#6366f1';
 
-  // Polilínea conectando las notas en orden cronológico (tendencia alza/baja)
-  const polyline = n > 1 ? `<polyline points="${pts}" fill="none" stroke="${lineColor}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>` : '';
+  // Polilínea y puntos
+  const polyline = `<polyline points="${pts}" fill="none" stroke="${lineColor}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>`;
   const dots = notas.map((v,i) => {
     const col = v>=6?'#2563eb':v>=4?'#16a34a':'#dc2626';
     const lbl = labels?.[i] || '';
@@ -13947,7 +13904,7 @@ function _miniChartSVG(notas, labels) {
   }).join('');
 
   return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
-    ${areaPts ? `<polygon points="${areaPts}" fill="${areaColor}" opacity="0.45"/>` : ''}
+    <polygon points="${areaPts}" fill="${areaColor}" opacity="0.45"/>
     ${refLines}${polyline}${dots}${xlabels}
   </svg>`;
 }
@@ -14043,15 +14000,6 @@ function renderProgreso() {
     .filter(function(a){ return a && a.evals && a.evals.length >= 1; })
     .sort(function(a,b){ return a.nombre.localeCompare(b.nombre,'es',{sensitivity:'base'}); });
 
-  // Poblar datalist del buscador — selección ultra rápida estilo iOS
-  try {
-    const dl = document.getElementById('listaAlumnosProgreso');
-    if (dl) {
-      const nombres = alumnos.slice(0, 400).map(function(a){ return '<option value="' + _esc(a.nombre) + '">'; }).join('');
-      if (dl._cache !== nombres) { dl.innerHTML = nombres; dl._cache = nombres; }
-    }
-  } catch(e) {}
-
   if (!alumnos || !alumnos.length) {
     cont.innerHTML = '<div class="empty-state"><svg style="width:40px;height:40px;opacity:0.2;margin-bottom:10px;" viewBox="0 0 48 48" fill="none"><rect width="48" height="48" rx="11" fill="#1c1410"/><path d="M24 7 L42 40 L6 40 Z" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round" fill="none"/><rect x="13" y="28" width="22" height="4" rx="0.5" fill="white"/><path d="M24 15 L38 37 L10 37 Z" fill="#1c1410"/><line x1="23.5" y1="17" x2="17" y2="32" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg><div>Sin datos de progreso.</div><div style="font-size:12px;margin-top:4px;">Guarda al menos una evaluación para ver el progreso</div></div>';
     return;
@@ -14079,10 +14027,7 @@ function renderProgreso() {
     // Cuerpo según vista
     let body = '';
     if (_vistaProgreso === 'grafico') {
-      // try/catch por tarjeta: un registro corrupto no debe romper toda la pestaña
-      let chart = '';
-      try { chart = _miniChartSVG(notas, labels); }
-      catch(err) { console.warn('[ArtEval] _miniChartSVG (' + (a.nombre||'?') + '):', err); chart = ''; }
+      const chart = _miniChartSVG(notas, labels);
       const resumen = `<div class="prog-resumen">
         <div class="prog-stat"><strong>${promedio}</strong><span>Promedio</span></div>
         <div class="prog-stat"><strong style="color:var(--green)">${maxN}</strong><span>Máxima</span></div>
@@ -14134,30 +14079,7 @@ function renderProgreso() {
     </div>`;
   });
 
-  // ── Render por lotes: con 1.300+ alumnos inyectar todo el HTML de una vez
-  // congela el hilo principal. Se pintan 60 tarjetas y el resto bajo demanda. ──
-  const LOTE = 60;
-  if (cards.length <= LOTE) {
-    cont.innerHTML = `<div class="progreso-grid">${cards.join('')}</div>`;
-  } else {
-    window._progCardsPend = cards.slice(LOTE);
-    cont.innerHTML = `<div class="progreso-grid" id="_progGrid">${cards.slice(0, LOTE).join('')}</div>`
-      + `<button id="_progMasBtn" class="btn" style="width:100%;margin-top:10px;justify-content:center;" onclick="_progAppendLote()">`
-      + `Mostrar ${Math.min(LOTE, cards.length - LOTE)} más (${cards.length - LOTE} restantes)</button>`;
-  }
-}
-
-// ── Carga progresiva de tarjetas de Progreso ──
-function _progAppendLote() {
-  const grid = document.getElementById('_progGrid');
-  const btn  = document.getElementById('_progMasBtn');
-  const pend = window._progCardsPend || [];
-  if (!grid || !pend.length) { if (btn) btn.remove(); return; }
-  const LOTE = 60;
-  grid.insertAdjacentHTML('beforeend', pend.slice(0, LOTE).join(''));
-  window._progCardsPend = pend.slice(LOTE);
-  if (!window._progCardsPend.length) { if (btn) btn.remove(); }
-  else if (btn) btn.textContent = 'Mostrar ' + Math.min(LOTE, window._progCardsPend.length) + ' más (' + window._progCardsPend.length + ' restantes)';
+  cont.innerHTML = `<div class="progreso-grid">${cards.join('')}</div>`;
 }
 
 function toggleProgresoDetail(id) {
@@ -16154,7 +16076,7 @@ function _rrAppendBatch(cont, batchSize) {
           const cc = d.nivel==='MB'?'#1e40af':d.nivel==='L'?'#166534':d.nivel==='M'?'#92400e':'#991b1b';
           const cb = d.nivel==='MB'?'#dbeafe':d.nivel==='L'?'#dcfce7':d.nivel==='M'?'#fef3c7':'#fee2e2';
           return `<div style="background:#faf7f2;border-radius:8px;padding:8px 10px;">
-            <div style="font-size:11px;color:#7a5c3a;margin-bottom:4px;">${_critNombre(d.criterio)}</div>
+            <div style="font-size:11px;color:#7a5c3a;margin-bottom:4px;">${d.criterio}</div>
             <div style="font-size:12px;font-weight:600;padding:2px 8px;border-radius:10px;display:inline-block;background:${cb};color:${cc}">${lbl}</div>
             ${d.nota?`<div style="font-size:10px;color:#b89a78;margin-top:3px;font-style:italic;">${d.nota}</div>`:''}
           </div>`;
@@ -18005,7 +17927,7 @@ function abrirRubricaTactil(nombreAlumno, cursoAlumno, esPIE) {
   var critsHTML = '';
   crits.forEach(function(c, i) {
     critsHTML += '<div class="rubrica-tactil-criterio">'
-      + '<div class="rubrica-tactil-crit-nombre"><span style="display:inline-block;min-width:22px;text-align:center;background:var(--accent-bg);color:var(--accent);border-radius:6px;font-size:10px;font-weight:700;padding:1px 5px;margin-right:6px;">' + (i+1) + '</span>' + _esc(_critNombre(c) || ('Criterio ' + (i+1))) + '</div>'
+      + '<div class="rubrica-tactil-crit-nombre"><span style="display:inline-block;min-width:22px;text-align:center;background:var(--accent-bg);color:var(--accent);border-radius:6px;font-size:10px;font-weight:700;padding:1px 5px;margin-right:6px;">' + (i+1) + '</span>' + c + '</div>'
       + '<div class="rubrica-tactil-niveles">';
     [['MB','Destacado','3'],['L','Logrado','2'],['M','En proceso','1'],['N','Por lograr','0']].forEach(function(n) {
       critsHTML += '<button class="rt-nivel-btn" data-crit="' + i + '" data-nivel="' + n[0] + '" onclick="_rtSet(' + i + ',\'' + n[0] + '\',this)">'
@@ -18069,7 +17991,7 @@ function _rtConfirm(nombre, curso, esPIE) {
   ov.querySelectorAll('.rt-nivel-btn.sel-MB,.rt-nivel-btn.sel-L,.rt-nivel-btn.sel-M,.rt-nivel-btn.sel-N').forEach(function(b){
     var ci = parseInt(b.getAttribute('data-crit'));
     var ni = b.getAttribute('data-nivel');
-    evalT[ci] = { nivel: ni, criterio: _critNombre(crits[ci])||('Criterio '+(ci+1)), pts: ni==='MB'?3:ni==='L'?2:ni==='M'?1:0 };
+    evalT[ci] = { nivel: ni, criterio: crits[ci]||('Criterio '+(ci+1)), pts: ni==='MB'?3:ni==='L'?2:ni==='M'?1:0 };
   });
   if (!Object.keys(evalT).length) { toast('\u26a0\ufe0f Evalúa al menos un criterio', 'err'); return; }
   var inpN = document.getElementById('inputNombre'); var inpC = document.getElementById('inputCurso');
@@ -18150,30 +18072,16 @@ function verDetalle(idx) {
     N:  { lbl:'Por lograr', pts:'0 pts', clr:'var(--red)', bg:'var(--red-bg)'  },
   };
 
-  // Desglose por criterio — robusto: tolera criterio-objeto (rúbricas Word),
-  // entradas nulas y niveles inválidos; un dato corrupto jamás deja el recuadro en blanco
-  let critHTML = '';
-  try {
-    critHTML = (Array.isArray(r.detalle) ? r.detalle : []).filter(d => d && typeof d === 'object').map((d,i) => {
-      const niv = String(d.nivel||'').toUpperCase().trim();
-      const cfg = NIVEL_CFG[niv] || { lbl:'—', pts:'—', clr:'var(--text3)', bg:'var(--bg3)' };
-      const nom = _esc(_critNombre(d.criterio) || ('Criterio '+(i+1)));
-      const obs = (typeof d.nota === 'string') ? d.nota : '';
-      // Meta del nivel máximo — visible para entender si alcanzó el objetivo mayor
-      const descMB = _critDescMB(r, d, i);
-      const mbHTML = descMB
-        ? `<div style="font-size:11px;line-height:1.45;color:${niv==='MB'?'var(--green)':'var(--text3)'};background:${niv==='MB'?'rgba(52,201,122,0.08)':'var(--bg3)'};border-left:2px solid ${niv==='MB'?'var(--green)':'var(--border)'};border-radius:0 6px 6px 0;padding:4px 8px;margin-top:4px;">${niv==='MB'?'✓':'★'} <strong>Muy bien logrado:</strong> ${_esc(descMB)}${niv==='MB'?'' : ' <span style="opacity:0.65">(no alcanzado en esta evaluación)</span>'}</div>`
-        : '';
-      return `<div class="detalle-crit">
-        <span class="detalle-crit-badge" style="background:${cfg.bg};color:${cfg.clr}">${cfg.lbl}<br>${cfg.pts}</span>
-        <div class="detalle-crit-body">
-          <div class="detalle-crit-nombre">${i+1}. ${nom}</div>
-          ${mbHTML}
-          ${obs ? `<div class="detalle-crit-obs">${_esc(obs)}</div>` : ''}
-        </div>
-      </div>`;
-    }).join('');
-  } catch(eCrit) { console.warn('[ArtEval] verDetalle critHTML:', eCrit); critHTML = ''; }
+  const critHTML = (r.detalle||[]).map((d,i) => {
+    const cfg = NIVEL_CFG[d.nivel] || { lbl:'—', pts:'—', clr:'var(--text3)', bg:'var(--bg3)' };
+    return `<div class="detalle-crit">
+      <span class="detalle-crit-badge" style="background:${cfg.bg};color:${cfg.clr}">${cfg.lbl}<br>${cfg.pts}</span>
+      <div class="detalle-crit-body">
+        <div class="detalle-crit-nombre">${i+1}. ${d.criterio||'Criterio '+(i+1)}</div>
+        ${d.nota ? `<div class="detalle-crit-obs">${d.nota}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
 
   const pieInfo = r.pie ? `<div style="margin-top:6px;"><span class="pie-badge"><svg width="12" height="12" viewBox="0 0 100 100" fill="#FF9500" style="flex-shrink:0;vertical-align:middle;display:inline-block" aria-label="PIE"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="#FF9500" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/></svg> PIE${r.pieNota?' · '+r.pieNota:''}</span></div>` : '';
 
@@ -18191,15 +18099,14 @@ function verDetalle(idx) {
         ${pieInfo}
       </div>
     </div>
-    <div class="detalle-criterios">${critHTML || '<p style="color:var(--text3);font-size:13px;text-align:center;padding:16px">Detalle no disponible para evaluaciones anteriores.<br><span style="font-size:11px;opacity:0.7">Las nuevas evaluaciones guardan el desglose completo por criterio.</span></p>'}</div>
+    <div class="detalle-criterios">${critHTML || '<p style="color:var(--text3);font-size:13px;text-align:center;padding:16px">Sin criterios registrados</p>'}</div>
     <div class="modal-footer" style="justify-content:space-between;flex-wrap:wrap;gap:8px;">
       <div style="display:flex;gap:8px;">
         <button class="btn" id="_vdPerfilBtn">👤 Perfil</button>
         <button class="btn" onclick="modoPresentacion(${idx});cerrarModal()">🖥️ Presentar</button>
       </div>
       <div style="display:flex;gap:8px;">
-        <button class="btn btn-primary" id="_vdRubricaBtn" style="gap:6px;" title="Descargar Rúbrica Evaluada — informe imprimible para el apoderado"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Rúbrica Evaluada</button>
-        <button class="btn" id="_vdShareBtn" style="gap:6px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Compartir</button>
+        <button class="btn btn-primary" id="_vdShareBtn" style="gap:6px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Compartir</button>
         <button class="btn" onclick="editarRegistro(${idx});cerrarModal()">✏️ Editar</button>
         <button class="btn" onclick="cerrarModal()">Cerrar</button>
       </div>
@@ -18213,8 +18120,6 @@ function verDetalle(idx) {
       if (bp) bp.addEventListener('click', function(){ cerrarModal(); setTimeout(function(){ abrirPerfilAlumno(_r.nombre, _r.curso||''); }, 150); });
       var bs = document.getElementById('_vdShareBtn');
       if (bs) bs.addEventListener('click', function(){ compartirReporteAlumno(_r.nombre, _r.curso||''); });
-      var br = document.getElementById('_vdRubricaBtn');
-      if (br) br.addEventListener('click', function(){ imprimirRubricaEvaluada(_idx); });
     }, 50);
   })(r, idx);
 }
@@ -18270,7 +18175,7 @@ function abrirPerfilAlumno(nombre, cursoFiltro, _todosSemestres) {
     var critHTML = (r.detalle||[]).map(function(d) {
       var cfg = NIVEL_CFG[d.nivel] || {lbl:'—',clr:'var(--text3)',bg:'var(--bg3)'};
       return '<div class="perfil-crit"><span class="perfil-crit-badge" style="background:'+cfg.bg+';color:'+cfg.clr+'">'+cfg.lbl+'</span>'
-        + '<span class="perfil-crit-nombre">'+_esc(_critNombre(d.criterio)||'—')+'</span>'
+        + '<span class="perfil-crit-nombre">'+_esc(d.criterio||'—')+'</span>'
         + (d.nota?'<span class="perfil-crit-obs">'+_esc(d.nota)+'</span>':'')+'</div>';
     }).join('');
     var neHtml = r.noEntregado ? '<span style="font-size:10px;color:var(--red);font-family:var(--font-mono);font-weight:600;margin-top:3px;display:block;">✕ No entregado</span>' : '';
@@ -20184,37 +20089,6 @@ function _renderCursoMainImpl() {
     };
     hdrBtns.appendChild(selInst);
   }
-  // ── Segmented control Lista / Libro (iOS-style) ────────────────────────────
-  var segCtrlCurso = document.createElement('div');
-  segCtrlCurso.style.cssText = 'display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:10px;border-top:0.5px solid var(--border);flex-wrap:wrap;';
-  var segBar = document.createElement('div');
-  segBar.className = 'sub-tab-bar';
-  segBar.setAttribute('role','group');
-  segBar.setAttribute('aria-label','Cambiar vista');
-
-  var btnSegLista = document.createElement('button');
-  btnSegLista.className = 'sub-tab' + (!_vistaLibroCursoActiva ? ' activo' : '');
-  btnSegLista.title = 'Vista de tarjetas';
-  btnSegLista.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg> Lista';
-  btnSegLista.onclick = function(){ if(_vistaLibroCursoActiva){ toggleVistaLibroCurso(); } };
-
-  var btnSegLibro = document.createElement('button');
-  btnSegLibro.className = 'sub-tab' + (_vistaLibroCursoActiva ? ' activo' : '');
-  btnSegLibro.title = 'Vista Libro de Clases — tabla panorámica con todas las notas';
-  btnSegLibro.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> Libro';
-  btnSegLibro.onclick = function(){ if(!_vistaLibroCursoActiva){ toggleVistaLibroCurso(); } };
-
-  segBar.appendChild(btnSegLista);
-  segBar.appendChild(btnSegLibro);
-
-  var libroHintCurso = document.createElement('span');
-  libroHintCurso.style.cssText = 'font-size:11px;color:var(--text3);font-style:italic;';
-  libroHintCurso.textContent = _vistaLibroCursoActiva ? 'Vista panorámica · Toca una nota para editarla' : '';
-
-  segCtrlCurso.appendChild(segBar);
-  segCtrlCurso.appendChild(libroHintCurso);
-  hdrBtns.appendChild(segCtrlCurso);
-
   hdr.appendChild(hdrBtns);
   _listFragment.appendChild(hdr);
 
@@ -20391,13 +20265,13 @@ function _renderCursoMainImpl() {
       (function(nb, cb){ btnPie.onclick = function(){ toggleEstPIE(nb, cb); }; })(e.nombre, curso);
       acts.appendChild(btnPie);
 
-      // Descargar Rúbrica Evaluada (solo si tiene evaluaciones) — informe para apoderados
+      // Asignar rúbrica (solo si tiene evaluaciones)
       if (entregado) {
         const btnRub = document.createElement('button');
         btnRub.className = 'est-btn';
-        btnRub.title = 'Descargar Rúbrica Evaluada — informe imprimible para el apoderado';
-        btnRub.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
-        (function(nb, cb){ btnRub.onclick = function(ev){ if(ev){ev.stopPropagation();} descargarRubricaEvaluada(nb, cb); }; })(e.nombre, curso);
+        btnRub.title = 'Cambiar rúbrica asignada';
+        btnRub.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6"/><path d="M9 16h4"/></svg>';
+        (function(nb, cb){ btnRub.onclick = function(){ abrirSelectorRubrica(nb, cb); }; })(e.nombre, curso);
         acts.appendChild(btnRub);
       }
 
@@ -20414,27 +20288,9 @@ function _renderCursoMainImpl() {
       listEl.appendChild(row);
     });
   }
-  // ── Vista Libro de Clases en Cursos ─────────────────────────────────────────
-  if (_vistaLibroCursoActiva) {
-    // Construir registros filtrados para este curso
-    var _libroFiltradosCurso = registros.filter(function(r) {
-      return r && (r.curso || '') === curso;
-    });
-    if (instanciaCursoFiltro) {
-      _libroFiltradosCurso = _libroFiltradosCurso.filter(function(r) {
-        return (r.instancia || 'Evaluación 1') === instanciaCursoFiltro;
-      });
-    }
-    var libroContCurso = document.createElement('div');
-    libroContCurso.style.cssText = 'overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:4px;';
-    _listFragment.appendChild(libroContCurso);
-    main.appendChild(_listFragment);
-    renderLibroClases(_libroFiltradosCurso, libroContCurso);
-  } else {
-    _listFragment.appendChild(listEl);
-    // Un solo reflow: volcar todo el fragment al DOM
-    main.appendChild(_listFragment);
-  }
+  _listFragment.appendChild(listEl);
+  // Un solo reflow: volcar todo el fragment al DOM
+  main.appendChild(_listFragment);
   renderSidebarCounts();
 }
 
@@ -20627,145 +20483,6 @@ function verDetalleEstCurso(nombre, curso) {
   if (idx > -1) verDetalle(idx);
 }
 
-// ══════════════════════════════════════════════════════════════════════════
-//  RÚBRICA EVALUADA — informe imprimible / PDF para apoderados
-//  Lee los datos YA guardados en registros (detalle por criterio, nota, pts)
-//  y abre una ventana de impresión limpia con formato institucional:
-//  bordes negros, orientación vertical, celda del nivel logrado marcada.
-// ══════════════════════════════════════════════════════════════════════════
-function descargarRubricaEvaluada(nombre, curso) {
-  try {
-    var regs = getRegsEstudiante(nombre, curso);
-    if (!regs || !regs.length) { toast('⚠️ ' + nombre + ' no tiene evaluaciones guardadas', 'err', 3000); return; }
-    // Más reciente primero; si hay varias instancias, el docente puede repetir desde Perfil
-    var idx = registros.indexOf(regs[regs.length - 1]);
-    imprimirRubricaEvaluada(idx);
-  } catch(e) { console.warn('[ArtEval] descargarRubricaEvaluada:', e); toast('❌ No se pudo generar el informe', 'err', 3000); }
-}
-
-function imprimirRubricaEvaluada(idx) {
-  var r = registros[idx];
-  if (!r) { toast('⚠️ Registro no encontrado', 'err', 2500); return; }
-
-  var nota    = (typeof r.nota === 'number') ? r.nota : (parseFloat(r.nota) || 1);
-  var detalle = Array.isArray(r.detalle) ? r.detalle : [];
-  var maxPts  = r.maxPts || (detalle.length * 3) || 24;
-  var pts     = (typeof r.pts === 'number') ? r.pts
-              : detalle.reduce(function(s,d){ var p = d.nivel==='MB'?3:d.nivel==='L'?2:d.nivel==='M'?1:0; return s+p; }, 0);
-  var pct     = r.pct || (maxPts ? Math.round(pts / maxPts * 100) : 0);
-  var logrado = nota >= 4;
-  var colegio = localStorage.getItem('av_email_colegio') || 'Colegio Eliodoro Matte Ossa';
-  var prof    = localStorage.getItem('av_nombre_prof') || localStorage.getItem('av_email_prof') || '';
-  var hoyGen  = new Date().toLocaleDateString('es-CL', {year:'numeric',month:'long',day:'numeric'});
-
-  // Niveles institucionales: 8 criterios × 3 pts; MB=3, L=2, M=1, N=0
-  var NIVELES = [
-    { k:'MB', lbl:'Muy bien logrado',       pts:3 },
-    { k:'L',  lbl:'Logrado',                pts:2 },
-    { k:'M',  lbl:'Medianamente logrado',   pts:1 },
-    { k:'N',  lbl:'Por lograr',             pts:0 }
-  ];
-
-  var filas = detalle.map(function(d, i) {
-    var celdas = NIVELES.map(function(nv) {
-      var hit = (d.nivel === nv.k);
-      // En la columna MB se imprime el descriptor de la rúbrica (la meta),
-      // para que el apoderado vea QUÉ debía lograr el estudiante en cada criterio
-      var descMB = (nv.k === 'MB') ? _critDescMB(r, d, i) : '';
-      var inner = (hit ? '<div style="font-size:13px;font-weight:700;">&#10003;</div>' : '')
-                + (descMB ? '<div style="font-size:8.5px;font-weight:400;line-height:1.3;text-align:left;margin-top:2px;">' + _esc(descMB) + '</div>' : '');
-      return '<td class="nv' + (hit ? ' hit' : '') + '">' + inner + '</td>';
-    }).join('');
-    var obs = d.nota ? '<div class="obs">Obs.: ' + _esc(d.nota) + '</div>' : '';
-    var ptsObt = d.nivel==='MB'?3:d.nivel==='L'?2:d.nivel==='M'?1:0;
-    return '<tr>'
-      + '<td class="crit"><strong>' + (i+1) + '.</strong> ' + _esc(_critNombre(d.criterio) || ('Criterio ' + (i+1))) + obs + '</td>'
-      + celdas
-      + '<td class="pts">' + ptsObt + '</td>'
-      + '</tr>';
-  }).join('');
-
-  if (!filas) {
-    filas = '<tr><td class="crit" colspan="6" style="text-align:center;padding:18px;">Sin desglose por criterio registrado para esta evaluación.</td></tr>';
-  }
-
-  var pieRow = r.pie
-    ? '<tr><th>Estudiante PIE</th><td>S&iacute;' + (r.pieNota ? ' &middot; ' + _esc(r.pieNota) : '') + '</td></tr>'
-    : '';
-  var neAviso = r.noEntregado
-    ? '<div class="ne">&#9888; Trabajo no entregado &mdash; calificaci&oacute;n m&iacute;nima registrada seg&uacute;n reglamento.</div>'
-    : '';
-
-  var win = window.open('', '_blank');
-  if (!win) { toast('⚠️ El navegador bloqueó la ventana. Permite pop-ups para imprimir.', 'err', 4000); return; }
-
-  win.document.write('<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">'
-    + '<title>R\u00fabrica Evaluada \u2014 ' + _esc(r.nombre) + '</title>'
-    + '<style>'
-    + '@page { size: A4 portrait; margin: 14mm; }'
-    + '* { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }'
-    + 'body { font-family: "Helvetica Neue", Arial, sans-serif; color: #000; margin: 0; font-size: 12px; }'
-    + 'h1 { font-size: 16px; margin: 0 0 2px; text-transform: uppercase; letter-spacing: 0.5px; }'
-    + '.sub { font-size: 11px; margin-bottom: 12px; }'
-    + 'table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }'
-    + 'th, td { border: 1px solid #000; padding: 5px 7px; vertical-align: top; }'
-    + '.meta th { width: 150px; text-align: left; background: #F2F2F2; font-size: 11px; }'
-    + '.meta td { font-size: 12px; }'
-    + '.rub thead th { background: #F2F2F2; font-size: 10px; text-align: center; }'
-    + '.rub .crit { font-size: 11px; line-height: 1.35; }'
-    + '.rub .nv { width: 64px; text-align: center; font-size: 14px; font-weight: 700; vertical-align: top; }'
-    + '.rub .nv:nth-child(2) { width: 150px; }'
-    + '.rub .nv.hit { background: #DDDDDD; }'
-    + '.rub .pts { width: 36px; text-align: center; font-weight: 700; }'
-    + '.obs { font-size: 10px; font-style: italic; margin-top: 3px; }'
-    + '.resumen { display: flex; gap: 0; border: 1.5px solid #000; margin-bottom: 12px; }'
-    + '.resumen div { flex: 1; padding: 8px 10px; border-right: 1px solid #000; text-align: center; }'
-    + '.resumen div:last-child { border-right: none; }'
-    + '.resumen .v { font-size: 20px; font-weight: 800; display: block; }'
-    + '.resumen .l { font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; }'
-    + '.ne { border: 1.5px solid #000; padding: 7px 10px; font-weight: 700; margin-bottom: 12px; font-size: 11px; }'
-    + '.leyenda { font-size: 9.5px; margin-bottom: 16px; }'
-    + '.firmas { display: flex; gap: 40px; margin-top: 44px; }'
-    + '.firmas div { flex: 1; border-top: 1px solid #000; padding-top: 4px; text-align: center; font-size: 10px; }'
-    + '.footer { font-size: 9px; margin-top: 18px; text-align: center; color: #444; }'
-    + '@media print { .no-print { display: none; } }'
-    + '</style></head><body>'
-    + '<h1>Informe de R\u00fabrica Evaluada &middot; Artes Visuales</h1>'
-    + '<div class="sub">' + _esc(colegio) + (prof ? ' &middot; Docente: ' + _esc(prof) : '') + '</div>'
-    + '<table class="meta"><tbody>'
-    + '<tr><th>Estudiante</th><td>' + _esc(r.nombre || '') + '</td></tr>'
-    + '<tr><th>Curso</th><td>' + _esc(r.curso || '\u2014') + '</td></tr>'
-    + '<tr><th>Instancia</th><td>' + _esc(r.instancia || 'Evaluaci\u00f3n 1') + '</td></tr>'
-    + '<tr><th>R\u00fabrica</th><td>' + _esc(r.rubricaNombre || '\u2014') + '</td></tr>'
-    + '<tr><th>Fecha evaluaci\u00f3n</th><td>' + _esc(r.fecha || '\u2014') + '</td></tr>'
-    + pieRow
-    + '</tbody></table>'
-    + neAviso
-    + '<div class="resumen">'
-    + '<div><span class="v">' + nota.toFixed(1) + '</span><span class="l">Nota final</span></div>'
-    + '<div><span class="v">' + pts + ' / ' + maxPts + '</span><span class="l">Puntaje</span></div>'
-    + '<div><span class="v">' + pct + '%</span><span class="l">Logro</span></div>'
-    + '<div><span class="v">' + (logrado ? 'LOGRADO' : 'POR LOGRAR') + '</span><span class="l">Resultado (&ge; 4.0)</span></div>'
-    + '</div>'
-    + '<table class="rub">'
-    + '<thead><tr>'
-    + '<th style="text-align:left;">Criterio de evaluaci\u00f3n</th>'
-    + '<th>Muy bien logrado<br>(3 pts)</th><th>Logrado<br>(2 pts)</th>'
-    + '<th>Medianamente logrado<br>(1 pt)</th><th>Por lograr<br>(0 pts)</th>'
-    + '<th>Pts</th>'
-    + '</tr></thead>'
-    + '<tbody>' + filas + '</tbody>'
-    + '</table>'
-    + '<div class="leyenda">La celda sombreada con &#10003; indica el nivel de logro alcanzado por el o la estudiante en cada criterio. La columna "Muy bien logrado" describe la meta m&aacute;xima de cada criterio. '
-    + 'Exigencia 60%: el 60% del puntaje total equivale a la nota 4.0. Escala de 1.0 a 7.0.</div>'
-    + '<div class="firmas"><div>Firma Profesor(a)</div><div>Firma Apoderado(a)</div></div>'
-    + '<div class="footer">Generado por ArtEval el ' + hoyGen + ' &middot; Documento informativo para el apoderado</div>'
-    + '<scr' + 'ipt>window.onload=function(){setTimeout(function(){window.print();},250);};<\/scr' + 'ipt>'
-    + '</body></html>');
-  win.document.close();
-  toast('📄 Informe de rúbrica generado — usa "Guardar como PDF" para compartirlo', 'ok', 3500);
-}
-
 // ── Evaluar desde cursos: prefill y saltar a tab evaluar ──
 function evaluarEstDesde(nombre, curso) {
   if (window.matchMedia('(pointer: coarse)').matches && typeof abrirRubricaTactil === 'function') {
@@ -20796,7 +20513,11 @@ function exportarPendientesCurso(curso) {
   ).join('\n');
   const csv = encabezado + '\n' + filas;
   const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-  _descargarBlob(blob, `Pendientes_${curso}_${new Date().toLocaleDateString('es-CL').replace(/\//g,'-')}.csv`);
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `Pendientes_${curso}_${new Date().toLocaleDateString('es-CL').replace(/\//g,'-')}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
   toast(`↓ ${pendientes.length} pendientes exportados`, 'ok');
 }
 
@@ -21009,7 +20730,7 @@ function importarListaArchivo(input) {
               Object.keys(byCurso).forEach(function(cu){ var r=ejecutarMerge(cu,byCurso[cu]); tm+=r.mergeados; tp+=r.pieActualizados; });
               renderCursoMain(); renderSidebarCounts(); renderRegistros();
               toast('🔀 '+tm+' unificados'+(tp?' · ♿ '+tp+' PIE':''), 'ok', 5000);
-            }).catch(function(eM){ console.warn('[ArtEval] merge cancelado/falló:', eM); });
+            });
           }
           return;
         } else if (seccionesLista.length === 1) {
@@ -22279,7 +22000,8 @@ document.addEventListener('DOMContentLoaded', () => {
           _deferredInstall.userChoice.then(function(r) {
             if (r.outcome === 'accepted') banner.style.display = 'none';
             _deferredInstall = null;
-          }).catch(function(){});        }
+          });
+        }
       });
     }
     banner.style.display = 'flex';
@@ -23622,7 +23344,6 @@ function _exportItem(tipo) {
   if (chev) chev.style.transform = '';
   if (tipo === 'alexia')    { try { abrirExportAlexia(); } catch(e) {} }
   else if (tipo === 'csv')  { try { abrirExportMultiple(); } catch(e) {} }
-  else if (tipo === 'backup') { try { exportarBackupJSON(); } catch(e) { toast('Error al generar respaldo: ' + e.message, 'err', 4000); } }
   else if (tipo === 'universal') { try { abrirExportUniversal(); } catch(e) {} }
   else if (tipo === 'limpiar') { try { limpiarRegistrosDuplicados(); } catch(e) {} }
   else if (tipo === 'borrar')  { try { limpiarTodo(); } catch(e) {} }
@@ -23897,11 +23618,6 @@ function _syncFilterPillStates() {
 function _activarTab(btnEl, tabName, subTab) {
   // Guard: tolerar btnEl null (barra de continuidad puede llamar antes de que el DOM pinte)
   if (!tabName) return;
-  // Liberar la cámara si quedó encendida y el usuario sale de Estudio
-  // (evita que el hardware siga capturando y reteniendo memoria de video)
-  try {
-    if (tabName !== 'estudio' && typeof stream !== 'undefined' && stream) toggleCamara();
-  } catch(_eCam) { /* nunca bloquear la navegación por la cámara */ }
   // 1. Quitar .active de TODOS los tabs de la barra principal
   document.querySelectorAll('.tabs-inner .tab').forEach(function(b) {
     b.classList.remove('active');
