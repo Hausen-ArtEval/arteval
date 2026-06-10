@@ -6084,6 +6084,26 @@ let registros = (function(){
     }).map(function(r) {
       // Garantizar UUID en cada registro (compatibilidad con registros sin _id)
       if (!r._id) r._id = (typeof _uuidV4 === 'function') ? _uuidV4() : (Date.now().toString(36) + Math.random().toString(36).slice(2));
+      // ── Migración de `detalle` (matriz de criterios) ────────────────────────
+      // Bug histórico: rúbricas importadas desde Word guardaban cada criterio
+      // como OBJETO {nombre,...} dentro de detalle → el modal renderizaba
+      // "[object Object]" o filas vacías. Aquí se sanea una sola vez al cargar:
+      // 1) detalle como string JSON → parsear; 2) no-array → [];
+      // 3) entradas null → fuera; 4) criterio objeto → su .nombre;
+      // 5) nivel normalizado a MB/L/M/N (mayúsculas) o '—'.
+      try {
+        if (typeof r.detalle === 'string') { try { r.detalle = JSON.parse(r.detalle); } catch(_e) { r.detalle = []; } }
+        if (!Array.isArray(r.detalle)) r.detalle = [];
+        r.detalle = r.detalle.filter(function(d){ return d && typeof d === 'object'; }).map(function(d, di) {
+          var nom = d.criterio;
+          if (nom && typeof nom === 'object') nom = nom.nombre || nom.criterio || '';
+          if (typeof nom !== 'string') nom = String(nom || '');
+          if (!nom) nom = 'Criterio ' + (di + 1);
+          var niv = String(d.nivel || '').toUpperCase().trim();
+          if (['MB','L','M','N'].indexOf(niv) === -1) niv = '—';
+          return { criterio: nom, nivel: niv, nota: (typeof d.nota === 'string') ? d.nota : String(d.nota || '') };
+        });
+      } catch(_eMig) { /* nunca bloquear la carga por un registro defectuoso */ }
       // Normalización de curso se hace en saveRegistros() donde normalizarCurso ya está definida
       return r;
     });
@@ -8090,7 +8110,9 @@ async function guardar() {
   const pct = Math.round(pts/maxPts*100);
   const nota = ptsANota(pts, maxPts);
   const conteo = {MB:0,L:0,M:0,N:0}; vals.forEach(v => conteo[v.nivel]++);
-  const detalle = crits.map((c,i) => ({ criterio:c, nivel:evaluacion[i]?.nivel||'—', nota:evaluacion[i]?.nota||'' }));
+  // detalle SIEMPRE con criterio como string (_critNombre desempaqueta objetos
+  // de rúbricas importadas desde Word) y nivel válido — es el desglose que ve el apoderado
+  const detalle = crits.map((c,i) => ({ criterio:_critNombre(c) || ('Criterio ' + (i+1)), nivel:evaluacion[i]?.nivel||'—', nota:evaluacion[i]?.nota||'' }));
 
 // Buscar GUID del alumno en la plantilla Alexia del curso
   const _alexiaKey = alexiaNormCurso(curso);
@@ -8615,8 +8637,8 @@ function guardarNoEntregado() {
 
   const crits   = getCriterios();
   const maxPts  = crits.length * 3 || 24;
-  const detalle = crits.map(function(c) {
-    return { criterio: c, nivel: 'N', nota: 'Trabajo no entregado — Sin logro del objetivo' };
+  const detalle = crits.map(function(c, i) {
+    return { criterio: _critNombre(c) || ('Criterio ' + (i+1)), nivel: 'N', nota: 'Trabajo no entregado — Sin logro del objetivo' };
   });
   // Si no hay criterios, igual guardamos con detalle vacío y nota 1.0
   if (!detalle.length) {
@@ -9715,7 +9737,7 @@ function editarRegistro(idx) {
     div.innerHTML = `
       <div class="modal-criterio-name" style="display:flex;gap:6px;align-items:flex-start;">
         <span class="num">${i+1}</span>
-        <span class="crit-nombre-edit" id="editCritNombre_${i}" title="Clic para editar nombre del criterio">${d.criterio}</span>
+        <span class="crit-nombre-edit" id="editCritNombre_${i}" title="Clic para editar nombre del criterio">${_esc(_critNombre(d.criterio)||('Criterio '+(i+1)))}</span>
       </div>
       <div class="niveles" style="grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:6px;">
         ${[['MB','Muy bien'],['L','Logrado'],['M','Med.'],['N','Por lograr']].map(([k,lbl]) =>
@@ -9772,7 +9794,8 @@ function cambiarRubricaEdicion(regIdx) {
   const prevDetalle = existing ? (existing.detalle || []) : [];
   const prevMap     = {};
   prevDetalle.forEach(function(d){
-    if (d.criterio) prevMap[d.criterio.trim().toLowerCase()] = d;
+    var _n = _critNombre(d && d.criterio);
+    if (_n) prevMap[_n.trim().toLowerCase()] = d;
   });
 
   cont.innerHTML = '';
@@ -9787,7 +9810,11 @@ function cambiarRubricaEdicion(regIdx) {
   }
 
   rb.criterios.forEach(function(criterio, i) {
-    const prevD    = prevMap[criterio.nombre.trim().toLowerCase()];
+    // _critNombre soporta ambos formatos: rúbricas Word (objeto {nombre,...})
+    // y rúbricas manuales (string). Antes, criterio.nombre.trim() lanzaba
+    // TypeError con strings → el contenedor quedaba completamente en blanco.
+    const _cNom    = _critNombre(criterio) || ('Criterio ' + (i+1));
+    const prevD    = prevMap[_cNom.trim().toLowerCase()];
     const nivelPrev = prevD ? prevD.nivel : null;
     const obsPrev   = prevD ? (prevD.nota || '') : '';
 
@@ -9796,7 +9823,7 @@ function cambiarRubricaEdicion(regIdx) {
     div.innerHTML =
       '<div class="modal-criterio-name" style="display:flex;gap:6px;align-items:flex-start;">'
       + '<span class="num">' + (i+1) + '</span>'
-      + '<span class="crit-nombre-edit" id="editCritNombre_' + i + '" title="Clic para editar">' + _esc(criterio.nombre) + '</span>'
+      + '<span class="crit-nombre-edit" id="editCritNombre_' + i + '" title="Clic para editar">' + _esc(_cNom) + '</span>'
       + (nivelPrev ? '<span style="font-size:10px;font-family:var(--font-mono);background:var(--green-bg);color:var(--green);border-radius:4px;padding:1px 5px;margin-left:auto;flex-shrink:0;">↺ recuperado</span>' : '')
       + '</div>'
       + '<div class="niveles" style="grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:6px;">'
@@ -9823,7 +9850,7 @@ function cambiarRubricaEdicion(regIdx) {
           span.className = 'crit-nombre-edit';
           span.id = 'editCritNombre_' + i;
           span.style.cursor = 'pointer';
-          span.textContent = input.value.trim() || criterio.nombre;
+          span.textContent = input.value.trim() || _critNombre(criterio) || ('Criterio ' + (i+1));
           span.title = 'Clic para editar nombre';
           input.replaceWith(span);
         }
@@ -9869,7 +9896,7 @@ function confirmarEdicion(idx) {
       const sel = block.querySelector('.nivel-btn[class*="sel-"]');
       const niv = sel ? (sel.className.match(/sel-(\w+)/)?.[1]?.toUpperCase() || 'M') : 'M';
       const nameEl = block.querySelector('.crit-nombre-edit');
-      const criterioNombre = nameEl ? nameEl.textContent.trim() : (rbNueva.criterios[i]?.nombre || '');
+      const criterioNombre = (nameEl ? nameEl.textContent.trim() : '') || _critNombre(rbNueva.criterios[i]) || ('Criterio ' + (i+1));
       const obsEl = block.querySelector('.obs-input');
       r.detalle.push({ criterio: criterioNombre, nivel: niv, nota: obsEl ? obsEl.value.trim() : '' });
     });
@@ -12791,7 +12818,7 @@ function modoPresentacion(idx) {
       else                   { clr='#a0a0a0'; bg='rgba(160,160,160,0.1)'; }
       return `<div class="pres-crit">
         <div class="pres-crit-num">${i+1}</div>
-        <div class="pres-crit-nombre">${d.criterio||'Criterio '+(i+1)}</div>
+        <div class="pres-crit-nombre">${_critNombre(d.criterio)||'Criterio '+(i+1)}</div>
         <div class="pres-crit-nivel-wrap">
           <span class="pres-crit-nivel" style="background:${bg};color:${clr}">${lbl}</span>
           <span class="pres-crit-pts">${pts}</span>
@@ -16039,7 +16066,7 @@ function _rrAppendBatch(cont, batchSize) {
           const cc = d.nivel==='MB'?'#1e40af':d.nivel==='L'?'#166534':d.nivel==='M'?'#92400e':'#991b1b';
           const cb = d.nivel==='MB'?'#dbeafe':d.nivel==='L'?'#dcfce7':d.nivel==='M'?'#fef3c7':'#fee2e2';
           return `<div style="background:#faf7f2;border-radius:8px;padding:8px 10px;">
-            <div style="font-size:11px;color:#7a5c3a;margin-bottom:4px;">${d.criterio}</div>
+            <div style="font-size:11px;color:#7a5c3a;margin-bottom:4px;">${_critNombre(d.criterio)}</div>
             <div style="font-size:12px;font-weight:600;padding:2px 8px;border-radius:10px;display:inline-block;background:${cb};color:${cc}">${lbl}</div>
             ${d.nota?`<div style="font-size:10px;color:#b89a78;margin-top:3px;font-style:italic;">${d.nota}</div>`:''}
           </div>`;
@@ -17890,7 +17917,7 @@ function abrirRubricaTactil(nombreAlumno, cursoAlumno, esPIE) {
   var critsHTML = '';
   crits.forEach(function(c, i) {
     critsHTML += '<div class="rubrica-tactil-criterio">'
-      + '<div class="rubrica-tactil-crit-nombre"><span style="display:inline-block;min-width:22px;text-align:center;background:var(--accent-bg);color:var(--accent);border-radius:6px;font-size:10px;font-weight:700;padding:1px 5px;margin-right:6px;">' + (i+1) + '</span>' + c + '</div>'
+      + '<div class="rubrica-tactil-crit-nombre"><span style="display:inline-block;min-width:22px;text-align:center;background:var(--accent-bg);color:var(--accent);border-radius:6px;font-size:10px;font-weight:700;padding:1px 5px;margin-right:6px;">' + (i+1) + '</span>' + _esc(_critNombre(c) || ('Criterio ' + (i+1))) + '</div>'
       + '<div class="rubrica-tactil-niveles">';
     [['MB','Destacado','3'],['L','Logrado','2'],['M','En proceso','1'],['N','Por lograr','0']].forEach(function(n) {
       critsHTML += '<button class="rt-nivel-btn" data-crit="' + i + '" data-nivel="' + n[0] + '" onclick="_rtSet(' + i + ',\'' + n[0] + '\',this)">'
@@ -17954,7 +17981,7 @@ function _rtConfirm(nombre, curso, esPIE) {
   ov.querySelectorAll('.rt-nivel-btn.sel-MB,.rt-nivel-btn.sel-L,.rt-nivel-btn.sel-M,.rt-nivel-btn.sel-N').forEach(function(b){
     var ci = parseInt(b.getAttribute('data-crit'));
     var ni = b.getAttribute('data-nivel');
-    evalT[ci] = { nivel: ni, criterio: crits[ci]||('Criterio '+(ci+1)), pts: ni==='MB'?3:ni==='L'?2:ni==='M'?1:0 };
+    evalT[ci] = { nivel: ni, criterio: _critNombre(crits[ci])||('Criterio '+(ci+1)), pts: ni==='MB'?3:ni==='L'?2:ni==='M'?1:0 };
   });
   if (!Object.keys(evalT).length) { toast('\u26a0\ufe0f Evalúa al menos un criterio', 'err'); return; }
   var inpN = document.getElementById('inputNombre'); var inpC = document.getElementById('inputCurso');
@@ -18035,16 +18062,24 @@ function verDetalle(idx) {
     N:  { lbl:'Por lograr', pts:'0 pts', clr:'var(--red)', bg:'var(--red-bg)'  },
   };
 
-  const critHTML = (r.detalle||[]).map((d,i) => {
-    const cfg = NIVEL_CFG[d.nivel] || { lbl:'—', pts:'—', clr:'var(--text3)', bg:'var(--bg3)' };
-    return `<div class="detalle-crit">
-      <span class="detalle-crit-badge" style="background:${cfg.bg};color:${cfg.clr}">${cfg.lbl}<br>${cfg.pts}</span>
-      <div class="detalle-crit-body">
-        <div class="detalle-crit-nombre">${i+1}. ${d.criterio||'Criterio '+(i+1)}</div>
-        ${d.nota ? `<div class="detalle-crit-obs">${d.nota}</div>` : ''}
-      </div>
-    </div>`;
-  }).join('');
+  // Desglose por criterio — robusto: tolera criterio-objeto (rúbricas Word),
+  // entradas nulas y niveles inválidos; un dato corrupto jamás deja el recuadro en blanco
+  let critHTML = '';
+  try {
+    critHTML = (Array.isArray(r.detalle) ? r.detalle : []).filter(d => d && typeof d === 'object').map((d,i) => {
+      const niv = String(d.nivel||'').toUpperCase().trim();
+      const cfg = NIVEL_CFG[niv] || { lbl:'—', pts:'—', clr:'var(--text3)', bg:'var(--bg3)' };
+      const nom = _esc(_critNombre(d.criterio) || ('Criterio '+(i+1)));
+      const obs = (typeof d.nota === 'string') ? d.nota : '';
+      return `<div class="detalle-crit">
+        <span class="detalle-crit-badge" style="background:${cfg.bg};color:${cfg.clr}">${cfg.lbl}<br>${cfg.pts}</span>
+        <div class="detalle-crit-body">
+          <div class="detalle-crit-nombre">${i+1}. ${nom}</div>
+          ${obs ? `<div class="detalle-crit-obs">${_esc(obs)}</div>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  } catch(eCrit) { console.warn('[ArtEval] verDetalle critHTML:', eCrit); critHTML = ''; }
 
   const pieInfo = r.pie ? `<div style="margin-top:6px;"><span class="pie-badge"><svg width="12" height="12" viewBox="0 0 100 100" fill="#FF9500" style="flex-shrink:0;vertical-align:middle;display:inline-block" aria-label="PIE"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="#FF9500" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/></svg> PIE${r.pieNota?' · '+r.pieNota:''}</span></div>` : '';
 
@@ -18062,7 +18097,7 @@ function verDetalle(idx) {
         ${pieInfo}
       </div>
     </div>
-    <div class="detalle-criterios">${critHTML || '<p style="color:var(--text3);font-size:13px;text-align:center;padding:16px">Sin criterios registrados</p>'}</div>
+    <div class="detalle-criterios">${critHTML || '<p style="color:var(--text3);font-size:13px;text-align:center;padding:16px">Detalle no disponible para evaluaciones anteriores.<br><span style="font-size:11px;opacity:0.7">Las nuevas evaluaciones guardan el desglose completo por criterio.</span></p>'}</div>
     <div class="modal-footer" style="justify-content:space-between;flex-wrap:wrap;gap:8px;">
       <div style="display:flex;gap:8px;">
         <button class="btn" id="_vdPerfilBtn">👤 Perfil</button>
@@ -18141,7 +18176,7 @@ function abrirPerfilAlumno(nombre, cursoFiltro, _todosSemestres) {
     var critHTML = (r.detalle||[]).map(function(d) {
       var cfg = NIVEL_CFG[d.nivel] || {lbl:'—',clr:'var(--text3)',bg:'var(--bg3)'};
       return '<div class="perfil-crit"><span class="perfil-crit-badge" style="background:'+cfg.bg+';color:'+cfg.clr+'">'+cfg.lbl+'</span>'
-        + '<span class="perfil-crit-nombre">'+_esc(d.criterio||'—')+'</span>'
+        + '<span class="perfil-crit-nombre">'+_esc(_critNombre(d.criterio)||'—')+'</span>'
         + (d.nota?'<span class="perfil-crit-obs">'+_esc(d.nota)+'</span>':'')+'</div>';
     }).join('');
     var neHtml = r.noEntregado ? '<span style="font-size:10px;color:var(--red);font-family:var(--font-mono);font-weight:600;margin-top:3px;display:block;">✕ No entregado</span>' : '';
@@ -20545,7 +20580,7 @@ function imprimirRubricaEvaluada(idx) {
     var obs = d.nota ? '<div class="obs">Obs.: ' + _esc(d.nota) + '</div>' : '';
     var ptsObt = d.nivel==='MB'?3:d.nivel==='L'?2:d.nivel==='M'?1:0;
     return '<tr>'
-      + '<td class="crit"><strong>' + (i+1) + '.</strong> ' + _esc(d.criterio || ('Criterio ' + (i+1))) + obs + '</td>'
+      + '<td class="crit"><strong>' + (i+1) + '.</strong> ' + _esc(_critNombre(d.criterio) || ('Criterio ' + (i+1))) + obs + '</td>'
       + celdas
       + '<td class="pts">' + ptsObt + '</td>'
       + '</tr>';
