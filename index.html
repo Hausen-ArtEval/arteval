@@ -5098,7 +5098,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
             <span style="font-size:13px;font-weight:700;color:var(--text);letter-spacing:-.1px;">Alumnos con Evaluaciones Pendientes</span>
             <span id="dashPendientesBadge" style="font-size:10px;font-weight:700;font-family:var(--font-mono);background:#FF3B30;color:#fff;border-radius:20px;padding:2px 8px;min-width:20px;text-align:center;"></span>
           </div>
-        </div></div>
+        </div>
         <div id="dashPendientesGrid" style="display:flex;flex-direction:column;gap:6px;"></div>
       </div>
 
@@ -13188,82 +13188,6 @@ function _renderDashKpiGlobal(instFiltro) {
   var _kpiHash = (_semestreActivo || 1) + '|' + (instFiltro || '') + '|' + registros.length;
   if (_renderDashKpiGlobal._lastHash === _kpiHash) return;
   _renderDashKpiGlobal._lastHash = _kpiHash;
-  _renderDashPendientes._lastKey = '';
-
-  // Filtrar siempre por semestre activo
-  const regsSem = _registrosSemestre();
-  const regs = instFiltro
-    ? regsSem.filter(r => (r.instancia||'Evaluación 1') === instFiltro)
-    : regsSem;
-
-  // Determinar si es realmente un estado vacío de primer uso
-  const sinRegistros = registros.length === 0;
-  const sinNomina    = Object.keys(listaCursos).every(k => !(listaCursos[k]||[]).length);
-  const esPrimerUso  = sinRegistros && sinNomina;
-
-  // Onboarding: mostrar solo en primer uso real
-  if (obEl) obEl.style.display = esPrimerUso ? 'block' : 'none';
-
-  if (!regs.length) {
-    const otroSem = _semestreActivo === 1 ? 2 : 1;
-    const hayEnOtroSem = _registrosSemestre(otroSem).length > 0;
-    const msg = sinNomina
-      ? ''
-      : hayEnOtroSem
-        ? '<div style="grid-column:1/-1;text-align:center;padding:28px 20px;">'
-          + '<div style="font-size:28px;margin-bottom:8px;">📋</div>'
-          + '<div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px;">Sin evaluaciones en ' + _semestreActivo + '° Semestre</div>'
-          + '<div style="font-size:12px;color:var(--text3);margin-bottom:12px;">Hay ' + _registrosSemestre(otroSem).length + ' evaluaciones en el ' + otroSem + '° Semestre.</div>'
-          + '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">'
-          + '<button class="btn btn-primary" onclick="_setSemestre(' + otroSem + ')" style="font-size:12px;gap:5px;">Ver ' + otroSem + '° Semestre</button>'
-          + '<button class="btn" onclick="_activarTab(document.querySelector(\'[data-maintab=sistema]\'),\'config\',null)" style="font-size:12px;">Configurar semestres</button>'
-          + '</div></div>'
-        : '<div style="grid-column:1/-1;text-align:center;padding:24px;color:var(--text3);font-size:13px;">Nómina cargada. Empieza evaluando en <strong>Evaluar</strong> para ver estadísticas del ' + _semestreActivo + '° Semestre.</div>';
-    kpiEl.innerHTML = msg;
-    return;
-  }
-  const totalEval   = regs.length;
-  const cursos      = [...new Set(regs.map(r=>r.curso).filter(Boolean))].length;
-  const prom        = (regs.reduce((s,r)=>s+(r.nota||1),0)/regs.length).toFixed(1);
-  const aprobados   = regs.filter(r=>(r.nota||1)>=4).length;
-  const reprobados  = totalEval - aprobados;
-  const pctAprob    = Math.round(aprobados/totalEval*100);
-  const pctBajo4    = Math.round(reprobados/totalEval*100);
-  const pie         = regs.filter(r=>r.pie).length;
-  const ne          = regs.filter(r=>r.nota===null||r.nota===undefined||r.ne).length;
-  const notaColor   = prom>=6?'var(--blue)':prom>=4?'var(--green)':'var(--red)';
-  const aprobColor  = pctAprob>=60?'var(--green)':pctAprob>=40?'var(--amber)':'var(--red)';
-  const bajo4Color  = pctBajo4>=30?'#FF3B30':pctBajo4>=15?'var(--amber)':'var(--green)';
-  const bajo4Bg     = pctBajo4>=30?'rgba(255,59,48,0.09)':pctBajo4>=15?'rgba(255,159,10,0.08)':'';
-
-  kpiEl.innerHTML = [
-    { val: totalEval,      lbl: 'Evaluaciones',    color: 'var(--accent)',       alert: false },
-    { val: cursos,         lbl: 'Cursos activos',  color: 'var(--blue,#2563eb)', alert: false },
-    { val: prom,           lbl: 'Promedio general',color: notaColor,             alert: false },
-    { val: pctAprob+'%',   lbl: 'Tasa de logro',   color: aprobColor,            alert: false },
-    { val: aprobados,      lbl: 'Logrado (≥4.0)',  color: 'var(--green)',        alert: false },
-    { val: pctBajo4+'%',   lbl: 'Bajo 4.0 ⚠',     color: bajo4Color,            alert: pctBajo4>0, alertBg: bajo4Bg },
-    { val: pie,            lbl: 'Alumnos PIE',     color: 'var(--accent)',       alert: false },
-    { val: ne,             lbl: 'Sin entregar',    color: 'var(--amber)',        alert: false },
-  ].map(function(k) {
-    var s = k.alert && k.alertBg ? 'background:'+k.alertBg+';border-color:'+k.color+';' : '';
-    return '<div class="stat-card" style="'+s+'">'
-      + '<div class="stat-val" style="color:'+k.color+';'+(k.alert?'font-size:21px;font-weight:800;':'')+'">' +k.val+'</div>'
-      + '<div class="stat-lbl" style="'+(k.alert?'color:'+k.color+';font-weight:700;':'')+'">'+k.lbl+'</div>'
-      + '</div>';
-  }).join('');
-}
-
-function _renderDashKpiGlobal(instFiltro) {
-  const kpiEl = document.getElementById('dashKpiGlobal');
-  const obEl  = document.getElementById('dashOnboarding');
-  if (!kpiEl) return;
-
-  // Cache ligero: si el semestre, el filtro y el número de registros no cambiaron,
-  // no re-renderizar — ahorra ~50ms por ciclo cuando el usuario navega entre tabs
-  var _kpiHash = (_semestreActivo || 1) + '|' + (instFiltro || '') + '|' + registros.length;
-  if (_renderDashKpiGlobal._lastHash === _kpiHash) return;
-  _renderDashKpiGlobal._lastHash = _kpiHash;
 
   // Filtrar siempre por semestre activo
   const regsSem = _registrosSemestre();
@@ -18096,6 +18020,16 @@ function verDetalle(idx) {
       </div>
     </div>
   `, 'modal-box-wide');
+
+  // Listeners post-render para botones con datos dinámicos (evita comillas rotas en onclick)
+  (function(_r, _idx) {
+    setTimeout(function() {
+      var bp = document.getElementById('_vdPerfilBtn');
+      if (bp) bp.addEventListener('click', function(){ cerrarModal(); setTimeout(function(){ abrirPerfilAlumno(_r.nombre, _r.curso||''); }, 150); });
+      var bs = document.getElementById('_vdShareBtn');
+      if (bs) bs.addEventListener('click', function(){ compartirReporteAlumno(_r.nombre, _r.curso||''); });
+    }, 50);
+  })(r, idx);
 }
 
 
@@ -19090,16 +19024,6 @@ function abrirAyuda() {
       <button class="btn btn-primary" onclick="cerrarModal()">Entendido</button>
     </div>
   `, 'modal-box-wide');
-
-  // Listeners post-render para botones con datos dinámicos (evita comillas rotas en onclick)
-  (function(_r, _idx) {
-    setTimeout(function() {
-      var bp = document.getElementById('_vdPerfilBtn');
-      if (bp) bp.addEventListener('click', function(){ cerrarModal(); setTimeout(function(){ abrirPerfilAlumno(_r.nombre, _r.curso||''); }, 150); });
-      var bs = document.getElementById('_vdShareBtn');
-      if (bs) bs.addEventListener('click', function(){ compartirReporteAlumno(_r.nombre, _r.curso||''); });
-    }, 50);
-  })(r, idx);
 }
 
 // ══════════════════════════════════════════════════════
