@@ -6101,7 +6101,8 @@ let registros = (function(){
           if (!nom) nom = 'Criterio ' + (di + 1);
           var niv = String(d.nivel || '').toUpperCase().trim();
           if (['MB','L','M','N'].indexOf(niv) === -1) niv = '—';
-          return { criterio: nom, nivel: niv, nota: (typeof d.nota === 'string') ? d.nota : String(d.nota || '') };
+          var _mb = d.mb; if (_mb && typeof _mb === 'object') _mb = _mb.mb || ''; if (typeof _mb !== 'string') _mb = '';
+          return { criterio: nom, nivel: niv, nota: (typeof d.nota === 'string') ? d.nota : String(d.nota || ''), mb: _mb };
         });
       } catch(_eMig) { /* nunca bloquear la carga por un registro defectuoso */ }
       // Normalización de curso se hace en saveRegistros() donde normalizarCurso ya está definida
@@ -6226,6 +6227,26 @@ function getRubrica() { return rubricas[rubricaActiva] || rubricas[0]; }
 function _critNombre(c) {
   if (typeof c === 'object' && c !== null) return c.nombre || '';
   return c || '';
+}
+
+// _critDescMB: descriptor del nivel máximo ("Muy bien logrado") para un
+// criterio evaluado. Orden de búsqueda:
+//   1. d.mb persistido en el propio registro (evaluaciones nuevas)
+//   2. la rúbrica del registro (por rubricaNombre), criterio por nombre o índice
+// Devuelve '' si no hay descriptor (rúbricas manuales sin texto MB).
+function _critDescMB(reg, d, idx) {
+  try {
+    if (d && typeof d.mb === 'string' && d.mb) return d.mb;
+    if (!reg || !reg.rubricaNombre || typeof rubricas === 'undefined') return '';
+    var rb = (rubricas || []).find(function(r){ return r && r.nombre === reg.rubricaNombre; });
+    if (!rb || !Array.isArray(rb.criterios)) return '';
+    var nomBuscado = _critNombre(d && d.criterio).trim().toLowerCase();
+    var c = nomBuscado
+      ? rb.criterios.find(function(cr){ return _critNombre(cr).trim().toLowerCase() === nomBuscado; })
+      : null;
+    if (!c && typeof idx === 'number') c = rb.criterios[idx];
+    return (c && typeof c === 'object' && c.mb) ? c.mb : '';
+  } catch(e) { return ''; }
 }
 
 function getCriterios() { return getRubrica().criterios; }
@@ -8112,7 +8133,7 @@ async function guardar() {
   const conteo = {MB:0,L:0,M:0,N:0}; vals.forEach(v => conteo[v.nivel]++);
   // detalle SIEMPRE con criterio como string (_critNombre desempaqueta objetos
   // de rúbricas importadas desde Word) y nivel válido — es el desglose que ve el apoderado
-  const detalle = crits.map((c,i) => ({ criterio:_critNombre(c) || ('Criterio ' + (i+1)), nivel:evaluacion[i]?.nivel||'—', nota:evaluacion[i]?.nota||'' }));
+  const detalle = crits.map((c,i) => ({ criterio:_critNombre(c) || ('Criterio ' + (i+1)), nivel:evaluacion[i]?.nivel||'—', nota:evaluacion[i]?.nota||'', mb:(typeof c==='object'&&c&&c.mb)?c.mb:'' }));
 
 // Buscar GUID del alumno en la plantilla Alexia del curso
   const _alexiaKey = alexiaNormCurso(curso);
@@ -8638,7 +8659,7 @@ function guardarNoEntregado() {
   const crits   = getCriterios();
   const maxPts  = crits.length * 3 || 24;
   const detalle = crits.map(function(c, i) {
-    return { criterio: _critNombre(c) || ('Criterio ' + (i+1)), nivel: 'N', nota: 'Trabajo no entregado — Sin logro del objetivo' };
+    return { criterio: _critNombre(c) || ('Criterio ' + (i+1)), nivel: 'N', nota: 'Trabajo no entregado — Sin logro del objetivo', mb: (typeof c==='object'&&c&&c.mb)?c.mb:'' };
   });
   // Si no hay criterios, igual guardamos con detalle vacío y nota 1.0
   if (!detalle.length) {
@@ -9733,11 +9754,13 @@ function editarRegistro(idx) {
   const cont = document.getElementById('editCriterios');
   if (!cont) return;
   r.detalle.forEach((d, i) => {
+    const _descMB = _critDescMB(r, d, i);
     const div = document.createElement('div'); div.className = 'modal-criterio';
     div.innerHTML = `
-      <div class="modal-criterio-name" style="display:flex;gap:6px;align-items:flex-start;">
+      <div class="modal-criterio-name" style="display:flex;gap:6px;align-items:flex-start;flex-wrap:wrap;">
         <span class="num">${i+1}</span>
         <span class="crit-nombre-edit" id="editCritNombre_${i}" title="Clic para editar nombre del criterio">${_esc(_critNombre(d.criterio)||('Criterio '+(i+1)))}</span>
+        ${_descMB ? `<div class="criterio-desc-mb" style="flex-basis:100%;margin-left:26px;" title="${_esc(_descMB)}">★ Muy bien logrado: ${_esc(_descMB)}</div>` : ''}
       </div>
       <div class="niveles" style="grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:6px;">
         ${[['MB','Muy bien'],['L','Logrado'],['M','Med.'],['N','Por lograr']].map(([k,lbl]) =>
@@ -9814,6 +9837,7 @@ function cambiarRubricaEdicion(regIdx) {
     // y rúbricas manuales (string). Antes, criterio.nombre.trim() lanzaba
     // TypeError con strings → el contenedor quedaba completamente en blanco.
     const _cNom    = _critNombre(criterio) || ('Criterio ' + (i+1));
+    const _cMB     = (typeof criterio === 'object' && criterio && criterio.mb) ? criterio.mb : '';
     const prevD    = prevMap[_cNom.trim().toLowerCase()];
     const nivelPrev = prevD ? prevD.nivel : null;
     const obsPrev   = prevD ? (prevD.nota || '') : '';
@@ -9821,9 +9845,10 @@ function cambiarRubricaEdicion(regIdx) {
     const div = document.createElement('div');
     div.className = 'modal-criterio';
     div.innerHTML =
-      '<div class="modal-criterio-name" style="display:flex;gap:6px;align-items:flex-start;">'
+      '<div class="modal-criterio-name" style="display:flex;gap:6px;align-items:flex-start;flex-wrap:wrap;">'
       + '<span class="num">' + (i+1) + '</span>'
       + '<span class="crit-nombre-edit" id="editCritNombre_' + i + '" title="Clic para editar">' + _esc(_cNom) + '</span>'
+      + (_cMB ? '<div class="criterio-desc-mb" style="flex-basis:100%;margin-left:26px;" title="' + _esc(_cMB) + '">★ Muy bien logrado: ' + _esc(_cMB) + '</div>' : '')
       + (nivelPrev ? '<span style="font-size:10px;font-family:var(--font-mono);background:var(--green-bg);color:var(--green);border-radius:4px;padding:1px 5px;margin-left:auto;flex-shrink:0;">↺ recuperado</span>' : '')
       + '</div>'
       + '<div class="niveles" style="grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:6px;">'
@@ -9898,7 +9923,7 @@ function confirmarEdicion(idx) {
       const nameEl = block.querySelector('.crit-nombre-edit');
       const criterioNombre = (nameEl ? nameEl.textContent.trim() : '') || _critNombre(rbNueva.criterios[i]) || ('Criterio ' + (i+1));
       const obsEl = block.querySelector('.obs-input');
-      r.detalle.push({ criterio: criterioNombre, nivel: niv, nota: obsEl ? obsEl.value.trim() : '' });
+      r.detalle.push({ criterio: criterioNombre, nivel: niv, nota: obsEl ? obsEl.value.trim() : '', mb: (function(cc){ return (typeof cc==='object'&&cc&&cc.mb)?cc.mb:''; })(rbNueva.criterios[i]) });
     });
   } else {
     // Misma rúbrica: actualizar criterios existentes
@@ -18071,10 +18096,16 @@ function verDetalle(idx) {
       const cfg = NIVEL_CFG[niv] || { lbl:'—', pts:'—', clr:'var(--text3)', bg:'var(--bg3)' };
       const nom = _esc(_critNombre(d.criterio) || ('Criterio '+(i+1)));
       const obs = (typeof d.nota === 'string') ? d.nota : '';
+      // Meta del nivel máximo — visible para entender si alcanzó el objetivo mayor
+      const descMB = _critDescMB(r, d, i);
+      const mbHTML = descMB
+        ? `<div style="font-size:11px;line-height:1.45;color:${niv==='MB'?'var(--green)':'var(--text3)'};background:${niv==='MB'?'rgba(52,201,122,0.08)':'var(--bg3)'};border-left:2px solid ${niv==='MB'?'var(--green)':'var(--border)'};border-radius:0 6px 6px 0;padding:4px 8px;margin-top:4px;">${niv==='MB'?'✓':'★'} <strong>Muy bien logrado:</strong> ${_esc(descMB)}${niv==='MB'?'' : ' <span style="opacity:0.65">(no alcanzado en esta evaluación)</span>'}</div>`
+        : '';
       return `<div class="detalle-crit">
         <span class="detalle-crit-badge" style="background:${cfg.bg};color:${cfg.clr}">${cfg.lbl}<br>${cfg.pts}</span>
         <div class="detalle-crit-body">
           <div class="detalle-crit-nombre">${i+1}. ${nom}</div>
+          ${mbHTML}
           ${obs ? `<div class="detalle-crit-obs">${_esc(obs)}</div>` : ''}
         </div>
       </div>`;
@@ -20575,7 +20606,12 @@ function imprimirRubricaEvaluada(idx) {
   var filas = detalle.map(function(d, i) {
     var celdas = NIVELES.map(function(nv) {
       var hit = (d.nivel === nv.k);
-      return '<td class="nv' + (hit ? ' hit' : '') + '">' + (hit ? '&#10003;' : '') + '</td>';
+      // En la columna MB se imprime el descriptor de la rúbrica (la meta),
+      // para que el apoderado vea QUÉ debía lograr el estudiante en cada criterio
+      var descMB = (nv.k === 'MB') ? _critDescMB(r, d, i) : '';
+      var inner = (hit ? '<div style="font-size:13px;font-weight:700;">&#10003;</div>' : '')
+                + (descMB ? '<div style="font-size:8.5px;font-weight:400;line-height:1.3;text-align:left;margin-top:2px;">' + _esc(descMB) + '</div>' : '');
+      return '<td class="nv' + (hit ? ' hit' : '') + '">' + inner + '</td>';
     }).join('');
     var obs = d.nota ? '<div class="obs">Obs.: ' + _esc(d.nota) + '</div>' : '';
     var ptsObt = d.nivel==='MB'?3:d.nivel==='L'?2:d.nivel==='M'?1:0;
@@ -20614,7 +20650,8 @@ function imprimirRubricaEvaluada(idx) {
     + '.meta td { font-size: 12px; }'
     + '.rub thead th { background: #F2F2F2; font-size: 10px; text-align: center; }'
     + '.rub .crit { font-size: 11px; line-height: 1.35; }'
-    + '.rub .nv { width: 64px; text-align: center; font-size: 14px; font-weight: 700; }'
+    + '.rub .nv { width: 64px; text-align: center; font-size: 14px; font-weight: 700; vertical-align: top; }'
+    + '.rub .nv:nth-child(2) { width: 150px; }'
     + '.rub .nv.hit { background: #DDDDDD; }'
     + '.rub .pts { width: 36px; text-align: center; font-weight: 700; }'
     + '.obs { font-size: 10px; font-style: italic; margin-top: 3px; }'
@@ -20656,7 +20693,7 @@ function imprimirRubricaEvaluada(idx) {
     + '</tr></thead>'
     + '<tbody>' + filas + '</tbody>'
     + '</table>'
-    + '<div class="leyenda">La celda sombreada con &#10003; indica el nivel de logro alcanzado por el o la estudiante en cada criterio. '
+    + '<div class="leyenda">La celda sombreada con &#10003; indica el nivel de logro alcanzado por el o la estudiante en cada criterio. La columna "Muy bien logrado" describe la meta m&aacute;xima de cada criterio. '
     + 'Exigencia 60%: el 60% del puntaje total equivale a la nota 4.0. Escala de 1.0 a 7.0.</div>'
     + '<div class="firmas"><div>Firma Profesor(a)</div><div>Firma Apoderado(a)</div></div>'
     + '<div class="footer">Generado por ArtEval el ' + hoyGen + ' &middot; Documento informativo para el apoderado</div>'
