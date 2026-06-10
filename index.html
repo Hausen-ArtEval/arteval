@@ -5419,7 +5419,8 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
       <div class="prog-toolbar">
         <div class="search-wrap">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input class="search-input" type="text" id="buscarProgreso" placeholder="Buscar estudiante..." oninput="renderProgreso()">
+          <input class="search-input" type="text" id="buscarProgreso" list="listaAlumnosProgreso" placeholder="Buscar estudiante..." autocomplete="off" oninput="renderProgresoDebounced()">
+          <datalist id="listaAlumnosProgreso"></datalist>
         </div>
         <select class="filter-select" id="filtroCursoProgreso" onchange="renderProgreso()">
           <option value="">Todos los cursos</option>
@@ -5428,8 +5429,8 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
           <option value="">Todas las instancias</option>
         </select>
         <div class="prog-vista-btn">
-          <button id="btnVistaGrafico" class="active" onclick="setVistaProgreso('grafico')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Gráfico</button>
-          <button id="btnVistaLista" onclick="setVistaProgreso('lista')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg> Lista</button>
+          <button id="btnProgVistaGrafico" class="active" onclick="setVistaProgreso('grafico')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Gráfico</button>
+          <button id="btnProgVistaLista" onclick="setVistaProgreso('lista')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg> Lista</button>
         </div>
       </div>
       <div id="progresoContent"></div>
@@ -13767,41 +13768,52 @@ function irACurso(curso) {
 let _vistaProgreso = 'grafico';
 function setVistaProgreso(v) {
   _vistaProgreso = v;
-  document.getElementById('btnVistaGrafico')?.classList.toggle('active', v==='grafico');
-  document.getElementById('btnVistaLista')?.classList.toggle('active', v==='lista');
+  // IDs únicos del segmented control de Progreso (el antiguo btnVistaLista
+  // colisionaba con el control Lista/Libro de Registros — ID duplicado)
+  document.getElementById('btnProgVistaGrafico')?.classList.toggle('active', v==='grafico');
+  document.getElementById('btnProgVistaLista')?.classList.toggle('active', v==='lista');
   renderProgreso();
 }
 
-// ── Mini gráfico SVG de notas ──
+// ── Debounce del buscador de Progreso (1.300+ registros: evita re-render por tecla) ──
+var _progDebounceTimer = null;
+function renderProgresoDebounced() {
+  clearTimeout(_progDebounceTimer);
+  _progDebounceTimer = setTimeout(renderProgreso, 160);
+}
+
+// ── Mini gráfico SVG de notas — eje Y fijo 1.0–7.0, eje X cronológico ──
 function _miniChartSVG(notas, labels) {
   const W = 300, H = 90, PAD = 20, TOP = 14, BOT = 20;
   const n = notas.length;
-  if (n < 2) return '';
+  if (n < 1) return '';
   const minN = 1, maxN = 7;
-  const xStep = (W - PAD*2) / (n - 1);
+  const xStep = n > 1 ? (W - PAD*2) / (n - 1) : 0;
   const yScale = (H - TOP - BOT) / (maxN - minN);
-  const toX = i => PAD + i * xStep;
-  const toY = v => TOP + (maxN - v) * yScale;
+  const toX = i => n > 1 ? PAD + i * xStep : W / 2;
+  const toY = v => TOP + (maxN - Math.min(maxN, Math.max(minN, v))) * yScale;
 
-  // Líneas de referencia
+  // Líneas de referencia + extremos de la escala (1.0 y 7.0)
   const refLines = [4, 5, 6].map(v => {
     const y = toY(v);
     const col = v===4 ? '#86efac' : '#e5e7eb';
     return `<line x1="${PAD}" y1="${y}" x2="${W-PAD}" y2="${y}" stroke="${col}" stroke-width="1" stroke-dasharray="3,3"/>
             <text x="${PAD-4}" y="${y+3.5}" fill="#9ca3af" font-size="8" text-anchor="end">${v}</text>`;
-  }).join('');
+  }).join('')
+  + `<text x="${PAD-4}" y="${toY(7)+3.5}" fill="#9ca3af" font-size="8" text-anchor="end">7</text>`
+  + `<text x="${PAD-4}" y="${toY(1)+3.5}" fill="#9ca3af" font-size="8" text-anchor="end">1</text>`;
 
   // Área rellena bajo la curva
   const pts = notas.map((v,i) => `${toX(i)},${toY(v)}`).join(' ');
-  const areaPts = `${toX(0)},${toY(minN)} ${pts} ${toX(n-1)},${toY(minN)}`;
+  const areaPts = n > 1 ? `${toX(0)},${toY(minN)} ${pts} ${toX(n-1)},${toY(minN)}` : '';
 
   // Color de área según tendencia
-  const tend = notas[n-1] - notas[0];
+  const tend = n > 1 ? notas[n-1] - notas[0] : 0;
   const areaColor = tend > 0.3 ? '#bbf7d0' : tend < -0.3 ? '#fecaca' : '#e0e7ff';
   const lineColor = tend > 0.3 ? '#16a34a' : tend < -0.3 ? '#dc2626' : '#6366f1';
 
-  // Polilínea y puntos
-  const polyline = `<polyline points="${pts}" fill="none" stroke="${lineColor}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  // Polilínea conectando las notas en orden cronológico (tendencia alza/baja)
+  const polyline = n > 1 ? `<polyline points="${pts}" fill="none" stroke="${lineColor}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>` : '';
   const dots = notas.map((v,i) => {
     const col = v>=6?'#2563eb':v>=4?'#16a34a':'#dc2626';
     const lbl = labels?.[i] || '';
@@ -13820,7 +13832,7 @@ function _miniChartSVG(notas, labels) {
   }).join('');
 
   return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
-    <polygon points="${areaPts}" fill="${areaColor}" opacity="0.45"/>
+    ${areaPts ? `<polygon points="${areaPts}" fill="${areaColor}" opacity="0.45"/>` : ''}
     ${refLines}${polyline}${dots}${xlabels}
   </svg>`;
 }
@@ -13916,6 +13928,15 @@ function renderProgreso() {
     .filter(function(a){ return a && a.evals && a.evals.length >= 1; })
     .sort(function(a,b){ return a.nombre.localeCompare(b.nombre,'es',{sensitivity:'base'}); });
 
+  // Poblar datalist del buscador — selección ultra rápida estilo iOS
+  try {
+    const dl = document.getElementById('listaAlumnosProgreso');
+    if (dl) {
+      const nombres = alumnos.slice(0, 400).map(function(a){ return '<option value="' + _esc(a.nombre) + '">'; }).join('');
+      if (dl._cache !== nombres) { dl.innerHTML = nombres; dl._cache = nombres; }
+    }
+  } catch(e) {}
+
   if (!alumnos || !alumnos.length) {
     cont.innerHTML = '<div class="empty-state"><svg style="width:40px;height:40px;opacity:0.2;margin-bottom:10px;" viewBox="0 0 48 48" fill="none"><rect width="48" height="48" rx="11" fill="#1c1410"/><path d="M24 7 L42 40 L6 40 Z" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round" fill="none"/><rect x="13" y="28" width="22" height="4" rx="0.5" fill="white"/><path d="M24 15 L38 37 L10 37 Z" fill="#1c1410"/><line x1="23.5" y1="17" x2="17" y2="32" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg><div>Sin datos de progreso.</div><div style="font-size:12px;margin-top:4px;">Guarda al menos una evaluación para ver el progreso</div></div>';
     return;
@@ -13943,7 +13964,10 @@ function renderProgreso() {
     // Cuerpo según vista
     let body = '';
     if (_vistaProgreso === 'grafico') {
-      const chart = _miniChartSVG(notas, labels);
+      // try/catch por tarjeta: un registro corrupto no debe romper toda la pestaña
+      let chart = '';
+      try { chart = _miniChartSVG(notas, labels); }
+      catch(err) { console.warn('[ArtEval] _miniChartSVG (' + (a.nombre||'?') + '):', err); chart = ''; }
       const resumen = `<div class="prog-resumen">
         <div class="prog-stat"><strong>${promedio}</strong><span>Promedio</span></div>
         <div class="prog-stat"><strong style="color:var(--green)">${maxN}</strong><span>Máxima</span></div>
@@ -13995,7 +14019,30 @@ function renderProgreso() {
     </div>`;
   });
 
-  cont.innerHTML = `<div class="progreso-grid">${cards.join('')}</div>`;
+  // ── Render por lotes: con 1.300+ alumnos inyectar todo el HTML de una vez
+  // congela el hilo principal. Se pintan 60 tarjetas y el resto bajo demanda. ──
+  const LOTE = 60;
+  if (cards.length <= LOTE) {
+    cont.innerHTML = `<div class="progreso-grid">${cards.join('')}</div>`;
+  } else {
+    window._progCardsPend = cards.slice(LOTE);
+    cont.innerHTML = `<div class="progreso-grid" id="_progGrid">${cards.slice(0, LOTE).join('')}</div>`
+      + `<button id="_progMasBtn" class="btn" style="width:100%;margin-top:10px;justify-content:center;" onclick="_progAppendLote()">`
+      + `Mostrar ${Math.min(LOTE, cards.length - LOTE)} más (${cards.length - LOTE} restantes)</button>`;
+  }
+}
+
+// ── Carga progresiva de tarjetas de Progreso ──
+function _progAppendLote() {
+  const grid = document.getElementById('_progGrid');
+  const btn  = document.getElementById('_progMasBtn');
+  const pend = window._progCardsPend || [];
+  if (!grid || !pend.length) { if (btn) btn.remove(); return; }
+  const LOTE = 60;
+  grid.insertAdjacentHTML('beforeend', pend.slice(0, LOTE).join(''));
+  window._progCardsPend = pend.slice(LOTE);
+  if (!window._progCardsPend.length) { if (btn) btn.remove(); }
+  else if (btn) btn.textContent = 'Mostrar ' + Math.min(LOTE, window._progCardsPend.length) + ' más (' + window._progCardsPend.length + ' restantes)';
 }
 
 function toggleProgresoDetail(id) {
@@ -18022,7 +18069,8 @@ function verDetalle(idx) {
         <button class="btn" onclick="modoPresentacion(${idx});cerrarModal()">🖥️ Presentar</button>
       </div>
       <div style="display:flex;gap:8px;">
-        <button class="btn btn-primary" id="_vdShareBtn" style="gap:6px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Compartir</button>
+        <button class="btn btn-primary" id="_vdRubricaBtn" style="gap:6px;" title="Descargar Rúbrica Evaluada — informe imprimible para el apoderado"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Rúbrica Evaluada</button>
+        <button class="btn" id="_vdShareBtn" style="gap:6px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Compartir</button>
         <button class="btn" onclick="editarRegistro(${idx});cerrarModal()">✏️ Editar</button>
         <button class="btn" onclick="cerrarModal()">Cerrar</button>
       </div>
@@ -18036,6 +18084,8 @@ function verDetalle(idx) {
       if (bp) bp.addEventListener('click', function(){ cerrarModal(); setTimeout(function(){ abrirPerfilAlumno(_r.nombre, _r.curso||''); }, 150); });
       var bs = document.getElementById('_vdShareBtn');
       if (bs) bs.addEventListener('click', function(){ compartirReporteAlumno(_r.nombre, _r.curso||''); });
+      var br = document.getElementById('_vdRubricaBtn');
+      if (br) br.addEventListener('click', function(){ imprimirRubricaEvaluada(_idx); });
     }, 50);
   })(r, idx);
 }
@@ -20212,13 +20262,13 @@ function _renderCursoMainImpl() {
       (function(nb, cb){ btnPie.onclick = function(){ toggleEstPIE(nb, cb); }; })(e.nombre, curso);
       acts.appendChild(btnPie);
 
-      // Asignar rúbrica (solo si tiene evaluaciones)
+      // Descargar Rúbrica Evaluada (solo si tiene evaluaciones) — informe para apoderados
       if (entregado) {
         const btnRub = document.createElement('button');
         btnRub.className = 'est-btn';
-        btnRub.title = 'Cambiar rúbrica asignada';
-        btnRub.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6"/><path d="M9 16h4"/></svg>';
-        (function(nb, cb){ btnRub.onclick = function(){ abrirSelectorRubrica(nb, cb); }; })(e.nombre, curso);
+        btnRub.title = 'Descargar Rúbrica Evaluada — informe imprimible para el apoderado';
+        btnRub.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
+        (function(nb, cb){ btnRub.onclick = function(ev){ if(ev){ev.stopPropagation();} descargarRubricaEvaluada(nb, cb); }; })(e.nombre, curso);
         acts.appendChild(btnRub);
       }
 
@@ -20446,6 +20496,139 @@ function verDetalleEstCurso(nombre, curso) {
   if (!regs.length) return;
   const idx = registros.indexOf(regs[regs.length-1]);
   if (idx > -1) verDetalle(idx);
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  RÚBRICA EVALUADA — informe imprimible / PDF para apoderados
+//  Lee los datos YA guardados en registros (detalle por criterio, nota, pts)
+//  y abre una ventana de impresión limpia con formato institucional:
+//  bordes negros, orientación vertical, celda del nivel logrado marcada.
+// ══════════════════════════════════════════════════════════════════════════
+function descargarRubricaEvaluada(nombre, curso) {
+  try {
+    var regs = getRegsEstudiante(nombre, curso);
+    if (!regs || !regs.length) { toast('⚠️ ' + nombre + ' no tiene evaluaciones guardadas', 'err', 3000); return; }
+    // Más reciente primero; si hay varias instancias, el docente puede repetir desde Perfil
+    var idx = registros.indexOf(regs[regs.length - 1]);
+    imprimirRubricaEvaluada(idx);
+  } catch(e) { console.warn('[ArtEval] descargarRubricaEvaluada:', e); toast('❌ No se pudo generar el informe', 'err', 3000); }
+}
+
+function imprimirRubricaEvaluada(idx) {
+  var r = registros[idx];
+  if (!r) { toast('⚠️ Registro no encontrado', 'err', 2500); return; }
+
+  var nota    = (typeof r.nota === 'number') ? r.nota : (parseFloat(r.nota) || 1);
+  var detalle = Array.isArray(r.detalle) ? r.detalle : [];
+  var maxPts  = r.maxPts || (detalle.length * 3) || 24;
+  var pts     = (typeof r.pts === 'number') ? r.pts
+              : detalle.reduce(function(s,d){ var p = d.nivel==='MB'?3:d.nivel==='L'?2:d.nivel==='M'?1:0; return s+p; }, 0);
+  var pct     = r.pct || (maxPts ? Math.round(pts / maxPts * 100) : 0);
+  var logrado = nota >= 4;
+  var colegio = localStorage.getItem('av_email_colegio') || 'Colegio Eliodoro Matte Ossa';
+  var prof    = localStorage.getItem('av_nombre_prof') || localStorage.getItem('av_email_prof') || '';
+  var hoyGen  = new Date().toLocaleDateString('es-CL', {year:'numeric',month:'long',day:'numeric'});
+
+  // Niveles institucionales: 8 criterios × 3 pts; MB=3, L=2, M=1, N=0
+  var NIVELES = [
+    { k:'MB', lbl:'Muy bien logrado',       pts:3 },
+    { k:'L',  lbl:'Logrado',                pts:2 },
+    { k:'M',  lbl:'Medianamente logrado',   pts:1 },
+    { k:'N',  lbl:'Por lograr',             pts:0 }
+  ];
+
+  var filas = detalle.map(function(d, i) {
+    var celdas = NIVELES.map(function(nv) {
+      var hit = (d.nivel === nv.k);
+      return '<td class="nv' + (hit ? ' hit' : '') + '">' + (hit ? '&#10003;' : '') + '</td>';
+    }).join('');
+    var obs = d.nota ? '<div class="obs">Obs.: ' + _esc(d.nota) + '</div>' : '';
+    var ptsObt = d.nivel==='MB'?3:d.nivel==='L'?2:d.nivel==='M'?1:0;
+    return '<tr>'
+      + '<td class="crit"><strong>' + (i+1) + '.</strong> ' + _esc(d.criterio || ('Criterio ' + (i+1))) + obs + '</td>'
+      + celdas
+      + '<td class="pts">' + ptsObt + '</td>'
+      + '</tr>';
+  }).join('');
+
+  if (!filas) {
+    filas = '<tr><td class="crit" colspan="6" style="text-align:center;padding:18px;">Sin desglose por criterio registrado para esta evaluación.</td></tr>';
+  }
+
+  var pieRow = r.pie
+    ? '<tr><th>Estudiante PIE</th><td>S&iacute;' + (r.pieNota ? ' &middot; ' + _esc(r.pieNota) : '') + '</td></tr>'
+    : '';
+  var neAviso = r.noEntregado
+    ? '<div class="ne">&#9888; Trabajo no entregado &mdash; calificaci&oacute;n m&iacute;nima registrada seg&uacute;n reglamento.</div>'
+    : '';
+
+  var win = window.open('', '_blank');
+  if (!win) { toast('⚠️ El navegador bloqueó la ventana. Permite pop-ups para imprimir.', 'err', 4000); return; }
+
+  win.document.write('<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">'
+    + '<title>R\u00fabrica Evaluada \u2014 ' + _esc(r.nombre) + '</title>'
+    + '<style>'
+    + '@page { size: A4 portrait; margin: 14mm; }'
+    + '* { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }'
+    + 'body { font-family: "Helvetica Neue", Arial, sans-serif; color: #000; margin: 0; font-size: 12px; }'
+    + 'h1 { font-size: 16px; margin: 0 0 2px; text-transform: uppercase; letter-spacing: 0.5px; }'
+    + '.sub { font-size: 11px; margin-bottom: 12px; }'
+    + 'table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }'
+    + 'th, td { border: 1px solid #000; padding: 5px 7px; vertical-align: top; }'
+    + '.meta th { width: 150px; text-align: left; background: #F2F2F2; font-size: 11px; }'
+    + '.meta td { font-size: 12px; }'
+    + '.rub thead th { background: #F2F2F2; font-size: 10px; text-align: center; }'
+    + '.rub .crit { font-size: 11px; line-height: 1.35; }'
+    + '.rub .nv { width: 64px; text-align: center; font-size: 14px; font-weight: 700; }'
+    + '.rub .nv.hit { background: #DDDDDD; }'
+    + '.rub .pts { width: 36px; text-align: center; font-weight: 700; }'
+    + '.obs { font-size: 10px; font-style: italic; margin-top: 3px; }'
+    + '.resumen { display: flex; gap: 0; border: 1.5px solid #000; margin-bottom: 12px; }'
+    + '.resumen div { flex: 1; padding: 8px 10px; border-right: 1px solid #000; text-align: center; }'
+    + '.resumen div:last-child { border-right: none; }'
+    + '.resumen .v { font-size: 20px; font-weight: 800; display: block; }'
+    + '.resumen .l { font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; }'
+    + '.ne { border: 1.5px solid #000; padding: 7px 10px; font-weight: 700; margin-bottom: 12px; font-size: 11px; }'
+    + '.leyenda { font-size: 9.5px; margin-bottom: 16px; }'
+    + '.firmas { display: flex; gap: 40px; margin-top: 44px; }'
+    + '.firmas div { flex: 1; border-top: 1px solid #000; padding-top: 4px; text-align: center; font-size: 10px; }'
+    + '.footer { font-size: 9px; margin-top: 18px; text-align: center; color: #444; }'
+    + '@media print { .no-print { display: none; } }'
+    + '</style></head><body>'
+    + '<h1>Informe de R\u00fabrica Evaluada &middot; Artes Visuales</h1>'
+    + '<div class="sub">' + _esc(colegio) + (prof ? ' &middot; Docente: ' + _esc(prof) : '') + '</div>'
+    + '<table class="meta"><tbody>'
+    + '<tr><th>Estudiante</th><td>' + _esc(r.nombre || '') + '</td></tr>'
+    + '<tr><th>Curso</th><td>' + _esc(r.curso || '\u2014') + '</td></tr>'
+    + '<tr><th>Instancia</th><td>' + _esc(r.instancia || 'Evaluaci\u00f3n 1') + '</td></tr>'
+    + '<tr><th>R\u00fabrica</th><td>' + _esc(r.rubricaNombre || '\u2014') + '</td></tr>'
+    + '<tr><th>Fecha evaluaci\u00f3n</th><td>' + _esc(r.fecha || '\u2014') + '</td></tr>'
+    + pieRow
+    + '</tbody></table>'
+    + neAviso
+    + '<div class="resumen">'
+    + '<div><span class="v">' + nota.toFixed(1) + '</span><span class="l">Nota final</span></div>'
+    + '<div><span class="v">' + pts + ' / ' + maxPts + '</span><span class="l">Puntaje</span></div>'
+    + '<div><span class="v">' + pct + '%</span><span class="l">Logro</span></div>'
+    + '<div><span class="v">' + (logrado ? 'LOGRADO' : 'POR LOGRAR') + '</span><span class="l">Resultado (&ge; 4.0)</span></div>'
+    + '</div>'
+    + '<table class="rub">'
+    + '<thead><tr>'
+    + '<th style="text-align:left;">Criterio de evaluaci\u00f3n</th>'
+    + '<th>Muy bien logrado<br>(3 pts)</th><th>Logrado<br>(2 pts)</th>'
+    + '<th>Medianamente logrado<br>(1 pt)</th><th>Por lograr<br>(0 pts)</th>'
+    + '<th>Pts</th>'
+    + '</tr></thead>'
+    + '<tbody>' + filas + '</tbody>'
+    + '</table>'
+    + '<div class="leyenda">La celda sombreada con &#10003; indica el nivel de logro alcanzado por el o la estudiante en cada criterio. '
+    + 'Exigencia 60%: el 60% del puntaje total equivale a la nota 4.0. Escala de 1.0 a 7.0.</div>'
+    + '<div class="firmas"><div>Firma Profesor(a)</div><div>Firma Apoderado(a)</div></div>'
+    + '<div class="footer">Generado por ArtEval el ' + hoyGen + ' &middot; Documento informativo para el apoderado</div>'
+    + '<scr' + 'ipt>window.onload=function(){setTimeout(function(){window.print();},250);};<\/scr' + 'ipt>'
+    + '</body></html>');
+  win.document.close();
+  toast('📄 Informe de rúbrica generado — usa "Guardar como PDF" para compartirlo', 'ok', 3500);
 }
 
 // ── Evaluar desde cursos: prefill y saltar a tab evaluar ──
