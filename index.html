@@ -4720,6 +4720,16 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
               </div>
             </div>
           </div>
+          <!-- ══ ENTREGA MASIVA DE INFORMES ══ -->
+          <div id="entregaMasivaWrap" style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--rad);padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <span style="font-size:12px;font-weight:700;color:var(--text2);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Entrega masiva</span>
+            <span style="font-size:11px;color:var(--text3);">Genera todos los informes del curso seleccionado para apoderados y estudiantes</span>
+            <div style="margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <button class="btn btn-primary" style="font-size:12px;padding:5px 14px;" onclick="descargarTodosInformes()" title="Una sola vista de impresión: un informe por página — Guardar como PDF produce un archivo único">📥 Descargar Todos los Informes (PDF/Imprimir)</button>
+              <button class="btn" style="font-size:12px;padding:5px 14px;background:#188038;color:#fff;border-color:#188038;" onclick="enviarAClassroom()" title="Empareja la nómina de ArtEval con el curso de Classroom y prepara el envío de las rúbricas evaluadas"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg> Enviar Rúbricas a Google Classroom</button>
+              <span id="classroomStatus" style="font-size:11px;font-family:var(--font-mono);font-weight:600;"></span>
+            </div>
+          </div>
           <!-- Importar lista PIE -->
           <div style="background:var(--pie-bg);border:1px solid var(--pie-border);border-radius:var(--rad);padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
             <span style="font-size:12px;color:var(--pie);font-weight:700;"><svg width="12" height="12" viewBox="0 0 100 100" fill="#FF9500" style="flex-shrink:0;vertical-align:middle;display:inline-block" aria-label="PIE"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="#FF9500" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/></svg> Importar lista PIE</span>
@@ -5450,13 +5460,13 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
             <div style="width:44px;height:44px;background:rgba(255,149,0,0.08);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="22" height="22" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg></div>
             <div style="flex:1;">
               <div style="font-size:15px;font-weight:700;color:var(--ae-black,#1C1C1E);">Cuenta Gmail institucional</div>
-              <div id="gmailStatusBadge" style="font-size:12px;color:#8E8E93;margin-top:3px;">Sin vincular</div>
+              <div id="gmailStatusBadge" style="font-size:12px;color:#FF3B30;margin-top:3px;">🔴 Correo Institucional Desconectado</div>
             </div>
           </div>
           <div id="gmailBtnLogin" style="display:block;">
             <button id="btnVincularGmail" onclick="_vincularCorreoInstitucional()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:12px;background:#fff;border:1px solid var(--border);border-radius:10px;cursor:pointer;font-size:14px;font-weight:600;color:#3C4043;">
               <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
-              Iniciar sesión con Google Workspace
+              🔗 Conectar Cuenta Google
             </button>
             <div style="margin-top:10px;font-size:11px;color:#8E8E93;text-align:center;line-height:1.5;">Usa tu cuenta institucional <strong>@colegio.cl</strong> para enviar correos directamente desde ArtEval</div>
           </div>
@@ -5464,9 +5474,12 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
             <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
               <div style="display:flex;align-items:center;gap:8px;">
                 <div style="width:32px;height:32px;background:rgba(52,199,89,0.12);border-radius:50%;display:flex;align-items:center;justify-content:center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34C759" stroke-width="2.2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
-                <div><div style="font-size:13px;font-weight:600;color:#1C1C1E;" id="gmailEmailLabel"></div><div style="font-size:11px;color:#8E8E93;">Vinculado correctamente</div></div>
+                <div><div style="font-size:13px;font-weight:600;color:#1C1C1E;" id="gmailEmailLabel"></div><div style="font-size:11px;color:#34C759;">🟢 Enviando desde esta cuenta</div></div>
               </div>
-              <button id="btnDesconectarGmail" onclick="_desconectarGmail()" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:rgba(255,59,48,0.08);border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:#FF3B30;">Desvincular</button>
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                <button id="btnCambiarGmail" onclick="_cambiarCuentaGmail()" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:rgba(142,142,147,0.10);border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:#3C4043;">🔄 Cambiar Cuenta de Google</button>
+                <button id="btnDesconectarGmail" onclick="_desconectarGmail()" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:rgba(255,59,48,0.08);border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:#FF3B30;">Desconectar</button>
+              </div>
             </div>
           </div>
         </div>
@@ -17516,6 +17529,8 @@ function _renderCriticosList(criticos) {
 }
 
 function _renderCorreoTab(){ try { /* try-open */
+  // Sincronizar la barra de estado institucional al entrar a la pestaña
+  if(typeof _actualizarEstadoGmailUI==='function') _actualizarEstadoGmailUI(typeof _gmailLinkedEmail!=='undefined'&&!!_gmailLinkedEmail);
   var ct=document.getElementById('correoTabContainer'),badge=document.getElementById('correoTabEmailBadge');
   if(!ct)return;
   ['correoNombreProf','correoNombreColegio','correoEmailUTP','correoInstitucional','correoGmailIdx'].forEach(function(id){
@@ -17639,6 +17654,27 @@ function _abrirCorreoTab(idx){
 
   var SVG_MAIL='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>';
   var SVG_COPY='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8E8E93" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+  var SVG_SEND='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34C759" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>';
+
+  // Opción 0 (PRIORITARIA): envío directo vía API de Gmail con la cuenta
+  // institucional vinculada — el correo SALE estrictamente desde esa cuenta,
+  // sin abrir el navegador. Renueva el token en silencio si expiró.
+  if(typeof _gmailLinkedEmail!=='undefined' && _gmailLinkedEmail){
+    if(email && email.includes('@')){
+      mkBtn(SVG_SEND, 'Enviar ahora desde '+_gmailLinkedEmail, 'V\u00eda API de Gmail \u2014 directo, sin abrir el navegador', '#34C759', function(){
+        _obtenerTokenGmail(function(tok){
+          toast('Enviando\u2026','info',1500);
+          _enviarViaGmailAPI(tok, email, asunto, texto, utp, al.nombre);
+        }, function(){
+          toast('\u26a0 Sesi\u00f3n expirada \u2014 reconecta tu cuenta en la parte superior de la pesta\u00f1a Correo','err',5000);
+        });
+      });
+    } else {
+      mkBtn(SVG_SEND, 'Enviar desde '+_gmailLinkedEmail, '\u26a0 Primero escribe el correo del apoderado en la tarjeta del alumno', '#8E8E93', function(){
+        toast('\u26a0 Ingresa el correo del apoderado antes de enviar por API','err',4000);
+      });
+    }
+  }
 
   // Opción 1: cuenta institucional (si está configurada)
   if(inst && inst.includes('@')){
@@ -20699,10 +20735,52 @@ function descargarRubricaEvaluada(nombre, curso) {
   } catch(e) { console.warn('[ArtEval] descargarRubricaEvaluada:', e); toast('❌ No se pudo generar el informe', 'err', 3000); }
 }
 
-function imprimirRubricaEvaluada(idx) {
-  var r = registros[idx];
-  if (!r) { toast('⚠️ Registro no encontrado', 'err', 2500); return; }
+// ═══════════════════════════════════════════════════════════════════════════
+//  INFORME DE RÚBRICA — helpers compartidos (individual y masivo)
+//  _informeRubricaCSS(masivo): hoja de estilos del informe imprimible.
+//     masivo=true agrega el salto de página por estudiante (.pagina-informe).
+//  _informeRubricaBody(r): HTML interno del informe de UN registro.
+//  Ambos son la única fuente de verdad del formato — el informe individual
+//  (imprimirRubricaEvaluada) y el masivo (descargarTodosInformes) los reusan.
+// ═══════════════════════════════════════════════════════════════════════════
+function _informeRubricaCSS(masivo) {
+  var css = '@page { size: A4 portrait; margin: 14mm; }'
+    + '* { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }'
+    + 'body { font-family: "Helvetica Neue", Arial, sans-serif; color: #000; margin: 0; font-size: 12px; }'
+    + 'h1 { font-size: 16px; margin: 0 0 2px; text-transform: uppercase; letter-spacing: 0.5px; }'
+    + '.sub { font-size: 11px; margin-bottom: 12px; }'
+    + 'table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }'
+    + 'th, td { border: 1px solid #000; padding: 5px 7px; vertical-align: top; }'
+    + '.meta th { width: 150px; text-align: left; background: #F2F2F2; font-size: 11px; }'
+    + '.meta td { font-size: 12px; }'
+    + '.rub thead th { background: #F2F2F2; font-size: 10px; text-align: center; }'
+    + '.rub .crit { font-size: 11px; line-height: 1.35; }'
+    + '.rub .nv { width: 64px; text-align: center; font-size: 14px; font-weight: 700; vertical-align: top; }'
+    + '.rub .nv:nth-child(2) { width: 150px; }'
+    + '.rub .nv.hit { background: #DDDDDD; }'
+    + '.rub .pts { width: 36px; text-align: center; font-weight: 700; }'
+    + '.obs { font-size: 10px; font-style: italic; margin-top: 3px; }'
+    + '.resumen { display: flex; gap: 0; border: 1.5px solid #000; margin-bottom: 12px; }'
+    + '.resumen div { flex: 1; padding: 8px 10px; border-right: 1px solid #000; text-align: center; }'
+    + '.resumen div:last-child { border-right: none; }'
+    + '.resumen .v { font-size: 20px; font-weight: 800; display: block; }'
+    + '.resumen .l { font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; }'
+    + '.ne { border: 1.5px solid #000; padding: 7px 10px; font-weight: 700; margin-bottom: 12px; font-size: 11px; }'
+    + '.leyenda { font-size: 9.5px; margin-bottom: 16px; }'
+    + '.firmas { display: flex; gap: 40px; margin-top: 44px; }'
+    + '.firmas div { flex: 1; border-top: 1px solid #000; padding-top: 4px; text-align: center; font-size: 10px; }'
+    + '.footer { font-size: 9px; margin-top: 18px; text-align: center; color: #444; }'
+    + '@media print { .no-print { display: none; } }';
+  if (masivo) {
+    // Cada informe ocupa su propia página: el profesor obtiene UN PDF con
+    // todos los informes listos para cortar / imprimir / separar.
+    css += '.pagina-informe { page-break-after: always; break-after: page; }'
+        +  '.pagina-informe:last-child { page-break-after: auto; break-after: auto; }';
+  }
+  return css;
+}
 
+function _informeRubricaBody(r) {
   var nota    = (typeof r.nota === 'number') ? r.nota : (parseFloat(r.nota) || 1);
   var detalle = Array.isArray(r.detalle) ? r.detalle : [];
   var maxPts  = r.maxPts || (detalle.length * 3) || 24;
@@ -20752,41 +20830,7 @@ function imprimirRubricaEvaluada(idx) {
     ? '<div class="ne">&#9888; Trabajo no entregado &mdash; calificaci&oacute;n m&iacute;nima registrada seg&uacute;n reglamento.</div>'
     : '';
 
-  var win = window.open('', '_blank');
-  if (!win) { toast('⚠️ El navegador bloqueó la ventana. Permite pop-ups para imprimir.', 'err', 4000); return; }
-
-  win.document.write('<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">'
-    + '<title>R\u00fabrica Evaluada \u2014 ' + _esc(r.nombre) + '</title>'
-    + '<style>'
-    + '@page { size: A4 portrait; margin: 14mm; }'
-    + '* { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }'
-    + 'body { font-family: "Helvetica Neue", Arial, sans-serif; color: #000; margin: 0; font-size: 12px; }'
-    + 'h1 { font-size: 16px; margin: 0 0 2px; text-transform: uppercase; letter-spacing: 0.5px; }'
-    + '.sub { font-size: 11px; margin-bottom: 12px; }'
-    + 'table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }'
-    + 'th, td { border: 1px solid #000; padding: 5px 7px; vertical-align: top; }'
-    + '.meta th { width: 150px; text-align: left; background: #F2F2F2; font-size: 11px; }'
-    + '.meta td { font-size: 12px; }'
-    + '.rub thead th { background: #F2F2F2; font-size: 10px; text-align: center; }'
-    + '.rub .crit { font-size: 11px; line-height: 1.35; }'
-    + '.rub .nv { width: 64px; text-align: center; font-size: 14px; font-weight: 700; vertical-align: top; }'
-    + '.rub .nv:nth-child(2) { width: 150px; }'
-    + '.rub .nv.hit { background: #DDDDDD; }'
-    + '.rub .pts { width: 36px; text-align: center; font-weight: 700; }'
-    + '.obs { font-size: 10px; font-style: italic; margin-top: 3px; }'
-    + '.resumen { display: flex; gap: 0; border: 1.5px solid #000; margin-bottom: 12px; }'
-    + '.resumen div { flex: 1; padding: 8px 10px; border-right: 1px solid #000; text-align: center; }'
-    + '.resumen div:last-child { border-right: none; }'
-    + '.resumen .v { font-size: 20px; font-weight: 800; display: block; }'
-    + '.resumen .l { font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; }'
-    + '.ne { border: 1.5px solid #000; padding: 7px 10px; font-weight: 700; margin-bottom: 12px; font-size: 11px; }'
-    + '.leyenda { font-size: 9.5px; margin-bottom: 16px; }'
-    + '.firmas { display: flex; gap: 40px; margin-top: 44px; }'
-    + '.firmas div { flex: 1; border-top: 1px solid #000; padding-top: 4px; text-align: center; font-size: 10px; }'
-    + '.footer { font-size: 9px; margin-top: 18px; text-align: center; color: #444; }'
-    + '@media print { .no-print { display: none; } }'
-    + '</style></head><body>'
-    + '<h1>Informe de R\u00fabrica Evaluada &middot; Artes Visuales</h1>'
+  return '<h1>Informe de R\u00fabrica Evaluada &middot; Artes Visuales</h1>'
     + '<div class="sub">' + _esc(colegio) + (prof ? ' &middot; Docente: ' + _esc(prof) : '') + '</div>'
     + '<table class="meta"><tbody>'
     + '<tr><th>Estudiante</th><td>' + _esc(r.nombre || '') + '</td></tr>'
@@ -20815,11 +20859,112 @@ function imprimirRubricaEvaluada(idx) {
     + '<div class="leyenda">La celda sombreada con &#10003; indica el nivel de logro alcanzado por el o la estudiante en cada criterio. La columna "Muy bien logrado" describe la meta m&aacute;xima de cada criterio. '
     + 'Exigencia 60%: el 60% del puntaje total equivale a la nota 4.0. Escala de 1.0 a 7.0.</div>'
     + '<div class="firmas"><div>Firma Profesor(a)</div><div>Firma Apoderado(a)</div></div>'
-    + '<div class="footer">Generado por ArtEval el ' + hoyGen + ' &middot; Documento informativo para el apoderado</div>'
+    + '<div class="footer">Generado por ArtEval el ' + hoyGen + ' &middot; Documento informativo para el apoderado</div>';
+}
+
+function imprimirRubricaEvaluada(idx) {
+  var r = registros[idx];
+  if (!r) { toast('⚠️ Registro no encontrado', 'err', 2500); return; }
+
+  var win = window.open('', '_blank');
+  if (!win) { toast('⚠️ El navegador bloqueó la ventana. Permite pop-ups para imprimir.', 'err', 4000); return; }
+
+  win.document.write('<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">'
+    + '<title>R\u00fabrica Evaluada \u2014 ' + _esc(r.nombre) + '</title>'
+    + '<style>' + _informeRubricaCSS(false) + '</style></head><body>'
+    + _informeRubricaBody(r)
     + '<scr' + 'ipt>window.onload=function(){setTimeout(function(){window.print();},250);};<\/scr' + 'ipt>'
     + '</body></html>');
   win.document.close();
   toast('📄 Informe de rúbrica generado — usa "Guardar como PDF" para compartirlo', 'ok', 3500);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  ENTREGA MASIVA — Descargar todos los informes del curso en UNA impresión
+//  Una sola ventana de impresión consolidada: cada estudiante en su propia
+//  página (page-break-after) → "Guardar como PDF" produce UN archivo único.
+// ═══════════════════════════════════════════════════════════════════════════
+function _registrosConNota(curso) {
+  return registros.filter(function(r) {
+    if ((r.curso || '') !== curso) return false;
+    if (r._deletedAt) return false;
+    var n = (typeof r.nota === 'number') ? r.nota : parseFloat(r.nota);
+    return !isNaN(n) && n > 0; // solo estudiantes con nota registrada
+  });
+}
+
+function descargarTodosInformes() {
+  if (!cursoSeleccionado) {
+    toast('⚠️ Selecciona primero un curso en la lista de Cursos', 'err', 3500);
+    return;
+  }
+  var curso = cursoSeleccionado;
+  var regsC = _registrosConNota(curso);
+  if (!regsC.length) {
+    toast('⚠️ ' + curso + ' no tiene evaluaciones con nota registrada', 'err', 3500);
+    return;
+  }
+
+  // Instancias disponibles en el curso (la "rúbrica activa" se elige aquí)
+  var insts = [];
+  regsC.forEach(function(r) {
+    var i = r.instancia || 'Evaluación 1';
+    if (insts.indexOf(i) === -1) insts.push(i);
+  });
+  insts.sort();
+  var opciones = insts.map(function(inst) {
+    var c = regsC.filter(function(r){ return (r.instancia || 'Evaluación 1') === inst; }).length;
+    return '<option value="' + _esc(inst) + '">' + _esc(inst) + ' — ' + c + ' informe' + (c !== 1 ? 's' : '') + '</option>';
+  }).join('') + '<option value="__TODAS__">Todas las instancias — ' + regsC.length + ' informes</option>';
+
+  var cursoSafe = curso.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  abrirModal(
+    '<div style="padding:4px 2px;">'
+    + '<div style="font-size:15px;font-weight:700;margin-bottom:6px;">📥 Descargar todos los informes — ' + _esc(curso) + '</div>'
+    + '<div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:12px;">'
+    + 'Se generará <strong>una sola vista de impresión</strong> con un informe por página. '
+    + 'En el diálogo de impresión elige <strong>"Guardar como PDF"</strong> para obtener un único archivo con todos los informes del curso.'
+    + '</div>'
+    + '<label style="font-size:11px;font-weight:600;color:var(--text2);display:block;margin-bottom:4px;">Instancia a imprimir</label>'
+    + '<select id="instInformesSelect" class="filter-select" style="width:100%;margin-bottom:16px;">' + opciones + '</select>'
+    + '<div style="display:flex;gap:8px;justify-content:flex-end;">'
+    + '<button class="btn" onclick="cerrarModal()">Cancelar</button>'
+    + '<button class="btn btn-primary" onclick="(function(){var v=document.getElementById(\'instInformesSelect\').value;cerrarModal();_generarInformesMasivos(\'' + cursoSafe + '\', v);})()">Sí aceptar</button>'
+    + '</div></div>'
+  );
+}
+
+function _generarInformesMasivos(curso, instanciaFiltro) {
+  var regs = _registrosConNota(curso).filter(function(r) {
+    if (!instanciaFiltro || instanciaFiltro === '__TODAS__') return true;
+    return (r.instancia || 'Evaluación 1') === instanciaFiltro;
+  });
+  if (!regs.length) {
+    toast('⚠️ No hay informes para imprimir con ese filtro', 'err', 3000);
+    return;
+  }
+  // Orden alfabético por estudiante (y por instancia si hay varias del mismo)
+  regs.sort(function(a, b) {
+    var cmp = (a.nombre || '').localeCompare(b.nombre || '', 'es');
+    return cmp !== 0 ? cmp : (a.instancia || '').localeCompare(b.instancia || '', 'es');
+  });
+
+  var win = window.open('', '_blank');
+  if (!win) { toast('⚠️ El navegador bloqueó la ventana. Permite pop-ups para imprimir.', 'err', 4000); return; }
+
+  var paginas = regs.map(function(r) {
+    return '<div class="pagina-informe">' + _informeRubricaBody(r) + '</div>';
+  }).join('');
+
+  var tituloInst = (instanciaFiltro && instanciaFiltro !== '__TODAS__') ? (' \u2014 ' + instanciaFiltro) : '';
+  win.document.write('<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">'
+    + '<title>Informes ' + _esc(curso) + tituloInst + ' \u2014 ArtEval</title>'
+    + '<style>' + _informeRubricaCSS(true) + '</style></head><body>'
+    + paginas
+    + '<scr' + 'ipt>window.onload=function(){setTimeout(function(){window.print();},350);};<\/scr' + 'ipt>'
+    + '</body></html>');
+  win.document.close();
+  toast('📥 ' + regs.length + ' informe' + (regs.length !== 1 ? 's' : '') + ' de ' + curso + ' generados — usa "Guardar como PDF" para un archivo único', 'ok', 4500);
 }
 
 // ── Evaluar desde cursos: prefill y saltar a tab evaluar ──
@@ -22400,33 +22545,83 @@ var _driveTokenTimer = null; // timer de renovación silenciosa
 
 // ── Inicializar GIS al cargar la página ──
 
+// Scope estricto del módulo de correo: SOLO envío + email visible (sin lectura de casilla)
+var GMAIL_SCOPES='https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/userinfo.email';
+
+// ── Persistencia de sesión Gmail institucional ──────────────────────────────
+// El token de acceso (~1h de vida) se guarda en localStorage para no tener que
+// iniciar sesión cada vez que se entra a la pestaña Correo. Al expirar,
+// _obtenerTokenGmail() lo renueva en silencio (prompt:'') con la cuenta ya
+// vinculada. Claves propias (av_gmail_token*) — NO toca datos de alumnos.
+function _persistirTokenGmail(){
+  try{
+    if(_gmailToken){localStorage.setItem('av_gmail_token',_gmailToken);localStorage.setItem('av_gmail_token_exp',String(_gmailTokenExp));}
+    else{localStorage.removeItem('av_gmail_token');localStorage.removeItem('av_gmail_token_exp');}
+  }catch(e){}
+}
+function _restaurarSesionGmail(){
+  try{
+    var t=localStorage.getItem('av_gmail_token'),x=parseInt(localStorage.getItem('av_gmail_token_exp')||'0',10);
+    if(t&&x&&Date.now()<x){_gmailToken=t;_gmailTokenExp=x;}
+  }catch(e){}
+  // La barra muestra "conectado" si hay cuenta vinculada; el token se renueva al enviar
+  setTimeout(function(){_actualizarEstadoGmailUI(!!_gmailLinkedEmail);},0);
+}
+
 function _manejarTokenGmail(tokenResponse){
-  if(!tokenResponse||tokenResponse.error){_actualizarEstadoGmailUI(false);return;}
+  if(!tokenResponse||tokenResponse.error){_actualizarEstadoGmailUI(!!_gmailLinkedEmail);return;}
   _gmailToken=tokenResponse.access_token;
   _gmailTokenExp=Date.now()+(tokenResponse.expires_in-60)*1000;
+  _persistirTokenGmail();
   fetch('https://www.googleapis.com/oauth2/v3/userinfo',{headers:{Authorization:'Bearer '+_gmailToken}})
   .then(function(r){return r.json();})
   .then(function(info){_gmailLinkedEmail=info.email||'';localStorage.setItem('ae_linked_work_email',_gmailLinkedEmail);_actualizarEstadoGmailUI(true);toast('\u2705 Vinculado: '+_gmailLinkedEmail,'ok',4000);})
   .catch(function(){_actualizarEstadoGmailUI(true);});
 }
+// Conectar: SIEMPRE abre el selector de cuentas de Google (prompt:'select_account')
+// → permite elegir el correo institucional aunque haya otras sesiones abiertas.
 function _vincularCorreoInstitucional(){
   if(!window.google||!window.google.accounts||!GOOG_CLIENT_ID){toast('\u26a0 Google no disponible o Client ID no configurado','err',4000);return;}
   var ie=localStorage.getItem('av_email_institucional')||'';
-  var cfg={client_id:GOOG_CLIENT_ID,scope:'https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/userinfo.email',callback:_manejarTokenGmail,error_callback:function(e){toast('\u26a0 Error: '+e.type,'err',4000);},prompt:'select_account'};
+  var cfg={client_id:GOOG_CLIENT_ID,scope:GMAIL_SCOPES,callback:_manejarTokenGmail,error_callback:function(e){toast('\u26a0 Error: '+e.type,'err',4000);},prompt:'select_account'};
   if(ie)cfg.login_hint=ie;
   _gmailTokenClient=google.accounts.oauth2.initTokenClient(cfg);
+  _gmailTokenClient.requestAccessToken();
+}
+// Cambiar cuenta: selector libre SIN login_hint (no pre-selecciona ninguna cuenta)
+function _cambiarCuentaGmail(){
+  if(!window.google||!window.google.accounts||!GOOG_CLIENT_ID){toast('\u26a0 Google no disponible o Client ID no configurado','err',4000);return;}
+  _gmailTokenClient=google.accounts.oauth2.initTokenClient({client_id:GOOG_CLIENT_ID,scope:GMAIL_SCOPES,callback:_manejarTokenGmail,error_callback:function(e){toast('\u26a0 Error: '+e.type,'err',4000);},prompt:'select_account'});
   _gmailTokenClient.requestAccessToken();
 }
 function _desconectarGmail(){
   if(_gmailToken&&window.google&&window.google.accounts)google.accounts.oauth2.revoke(_gmailToken,function(){});
   _gmailToken=null;_gmailTokenExp=0;_gmailLinkedEmail='';
-  localStorage.removeItem('ae_linked_work_email');_actualizarEstadoGmailUI(false);
-  toast('Cuenta desvinculada','info',2500);
+  localStorage.removeItem('ae_linked_work_email');
+  localStorage.removeItem('av_gmail_token');localStorage.removeItem('av_gmail_token_exp');
+  _actualizarEstadoGmailUI(false);
+  toast('Cuenta desconectada','info',2500);
 }
-function _getGmailToken(){
+function _getGmailToken(){ // compatibilidad con código existente
   if(_gmailToken&&Date.now()<_gmailTokenExp)return _gmailToken;
   if(_gmailTokenClient)_gmailTokenClient.requestAccessToken({prompt:''});
   return null;
+}
+// Obtiene un token VÁLIDO y llama onOk(token). Si expiró, renueva en silencio
+// (prompt:'' + login_hint de la cuenta vinculada) sin abrir selector.
+function _obtenerTokenGmail(onOk,onFail){
+  if(_gmailToken&&Date.now()<_gmailTokenExp){onOk(_gmailToken);return;}
+  if(!window.google||!window.google.accounts||!GOOG_CLIENT_ID||!_gmailLinkedEmail){if(onFail)onFail();return;}
+  var cfg={client_id:GOOG_CLIENT_ID,scope:GMAIL_SCOPES,prompt:'',login_hint:_gmailLinkedEmail,
+    callback:function(tr){
+      if(!tr||tr.error){if(onFail)onFail();return;}
+      _gmailToken=tr.access_token;_gmailTokenExp=Date.now()+(tr.expires_in-60)*1000;
+      _persistirTokenGmail();_actualizarEstadoGmailUI(true);
+      onOk(_gmailToken);
+    },
+    error_callback:function(){if(onFail)onFail();}};
+  _gmailTokenClient=google.accounts.oauth2.initTokenClient(cfg);
+  _gmailTokenClient.requestAccessToken();
 }
 function _actualizarEstadoGmailUI(conectado){
   var badge=document.getElementById('gmailStatusBadge');
@@ -22435,14 +22630,16 @@ function _actualizarEstadoGmailUI(conectado){
   var emailLbl=document.getElementById('gmailEmailLabel');
   if(!badge)return;
   if(conectado&&_gmailLinkedEmail){
-    badge.textContent='Conectado: '+_gmailLinkedEmail;badge.style.color='#34C759';
+    badge.textContent='\ud83d\udfe2 Enviando desde: '+_gmailLinkedEmail;badge.style.color='#34C759';
     if(secL)secL.style.display='none';if(secC)secC.style.display='block';
     if(emailLbl)emailLbl.textContent=_gmailLinkedEmail;
   }else{
-    badge.textContent='Sin sesión — los correos se abren en el navegador';badge.style.color='#8E8E93';
+    badge.textContent='\ud83d\udd34 Correo Institucional Desconectado';badge.style.color='#FF3B30';
     if(secL)secL.style.display='block';if(secC)secC.style.display='none';
   }
 }
+// Restaurar sesión persistida al cargar (después de definir todo el módulo)
+_restaurarSesionGmail();
 function _enviarViaGmailAPI(tok,toEmail,asunto,cuerpo,ccEmail,nombreAlumno){
   var CRLF='\r\n';
   var from=_gmailLinkedEmail?'From: '+_gmailLinkedEmail+CRLF:'';
@@ -24405,6 +24602,288 @@ async function ejecutarDiagnostico() {
     + '</div>';
 
   abrirModal(modalHTML, 'modal-acta-utp'); // reutiliza el estilo del modal de acta (540px)
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  GOOGLE CLASSROOM — Entrega masiva de rúbricas evaluadas
+//  Estructura preparada y completa. Reusa el patrón OAuth2 (GIS) de Gmail/Drive
+//  ya existente en la app. El envío final está construido en
+//  _subirRubricaClassroom() y queda COMENTADO para su activación (buscar
+//  "ACTIVACIÓN PENDIENTE" más abajo).
+//
+//  ⚠ NOTA TÉCNICA IMPORTANTE: la API pública de Classroom NO expone un
+//  endpoint para crear "comentarios privados" (eso solo existe en la UI web).
+//  La vía soportada y aquí implementada es la Opción A: crear una tarea
+//  individual (assigneeMode INDIVIDUAL_STUDENTS) cuya descripción es la
+//  rúbrica evaluada en texto formateado. Alternativa B (comentada): adjuntar
+//  un archivo de Drive a la entrega existente vía modifyAttachments.
+// ═══════════════════════════════════════════════════════════════════════════
+var _classroomTokenClient = null;
+var _classroomToken       = null;
+var _classroomTokenExp    = 0;
+var _classroomCursoCR     = null;   // curso de Classroom elegido {id, name}
+var CLASSROOM_SCOPES =
+    'https://www.googleapis.com/auth/classroom.courses.readonly '
+  + 'https://www.googleapis.com/auth/classroom.rosters.readonly '
+  + 'https://www.googleapis.com/auth/classroom.coursework.students';
+
+// ── Conexión (mismo patrón que _vincularCorreoInstitucional) ────────────────
+function _conectarClassroom(onReady) {
+  if (!window.google || !window.google.accounts || !GOOG_CLIENT_ID) {
+    toast('\u26a0 Google no disponible o Client ID no configurado (pestaña Sistema)', 'err', 4500);
+    return;
+  }
+  // Token vigente → continuar directo
+  if (_classroomToken && Date.now() < _classroomTokenExp) { onReady(); return; }
+  var cfg = {
+    client_id: GOOG_CLIENT_ID,
+    scope: CLASSROOM_SCOPES,
+    callback: function(tokenResponse) {
+      if (!tokenResponse || tokenResponse.error) {
+        _actualizarEstadoClassroomUI(false);
+        toast('\u26a0 No se pudo autorizar Classroom', 'err', 4000);
+        return;
+      }
+      _classroomToken    = tokenResponse.access_token;
+      _classroomTokenExp = Date.now() + (tokenResponse.expires_in - 60) * 1000;
+      _actualizarEstadoClassroomUI(true);
+      onReady();
+    },
+    error_callback: function(e) { toast('\u26a0 Error Classroom: ' + e.type, 'err', 4000); },
+    prompt: ''
+  };
+  var ie = localStorage.getItem('av_email_institucional') || '';
+  if (ie) cfg.login_hint = ie;
+  _classroomTokenClient = google.accounts.oauth2.initTokenClient(cfg);
+  _classroomTokenClient.requestAccessToken();
+}
+
+function _actualizarEstadoClassroomUI(conectado) {
+  var st = document.getElementById('classroomStatus');
+  if (!st) return;
+  st.textContent = conectado ? '\u25cf Classroom conectado' : '';
+  st.style.color = conectado ? '#188038' : 'var(--text3)';
+}
+
+// ── Wrapper fetch con Bearer ────────────────────────────────────────────────
+async function _classroomApi(path, opts) {
+  opts = opts || {};
+  opts.headers = Object.assign({ 'Authorization': 'Bearer ' + _classroomToken }, opts.headers || {});
+  if (opts.body && typeof opts.body !== 'string') {
+    opts.body = JSON.stringify(opts.body);
+    opts.headers['Content-Type'] = 'application/json';
+  }
+  var resp = await fetch('https://classroom.googleapis.com/v1/' + path, opts);
+  if (!resp.ok) {
+    var detalle = '';
+    try { detalle = (await resp.json()).error.message || ''; } catch (e) {}
+    throw new Error('Classroom ' + resp.status + (detalle ? ': ' + detalle : ''));
+  }
+  return resp.json();
+}
+
+// ── Listados (con paginación) ───────────────────────────────────────────────
+async function _listarCursosClassroom() {
+  var cursos = [], pageToken = '';
+  do {
+    var data = await _classroomApi('courses?courseStates=ACTIVE&pageSize=50'
+      + (pageToken ? '&pageToken=' + encodeURIComponent(pageToken) : ''));
+    cursos = cursos.concat(data.courses || []);
+    pageToken = data.nextPageToken || '';
+  } while (pageToken);
+  return cursos;
+}
+
+async function _listarAlumnosClassroom(courseId) {
+  var alumnos = [], pageToken = '';
+  do {
+    var data = await _classroomApi('courses/' + encodeURIComponent(courseId)
+      + '/students?pageSize=100'
+      + (pageToken ? '&pageToken=' + encodeURIComponent(pageToken) : ''));
+    alumnos = alumnos.concat(data.students || []);
+    pageToken = data.nextPageToken || '';
+  } while (pageToken);
+  return alumnos;
+}
+
+// ── Match de nombres ArtEval ↔ Classroom ────────────────────────────────────
+// Reusa mismoEstudiante() (intersección de tokens normalizados), la misma
+// lógica que ya empareja ArtEval ↔ Alexia. Classroom entrega
+// profile.name.fullName ("Nombre Apellido"), mismo orden que ArtEval.
+function _matchAlumnosClassroom(cursoArtEval, alumnosCR, instanciaFiltro) {
+  var regs = _registrosConNota(cursoArtEval).filter(function(r) {
+    if (!instanciaFiltro || instanciaFiltro === '__TODAS__') return true;
+    return (r.instancia || 'Evaluación 1') === instanciaFiltro;
+  });
+  var matches = [], sinMatchArtEval = [], usados = {};
+  regs.forEach(function(r) {
+    var hit = alumnosCR.find(function(a) {
+      if (usados[a.userId + '|' + (r.instancia || '')]) return false;
+      var full = (a.profile && a.profile.name && a.profile.name.fullName) || '';
+      return full && mismoEstudiante(r.nombre || '', full);
+    });
+    if (hit) {
+      usados[hit.userId + '|' + (r.instancia || '')] = true;
+      matches.push({ registro: r, crStudent: hit });
+    } else {
+      sinMatchArtEval.push(r);
+    }
+  });
+  return { matches: matches, sinMatch: sinMatchArtEval };
+}
+
+// ── Rúbrica evaluada en texto formateado (para descripción / comentario) ────
+function _rubricaTextoPlano(r) {
+  var nota = (typeof r.nota === 'number') ? r.nota : (parseFloat(r.nota) || 1);
+  var detalle = Array.isArray(r.detalle) ? r.detalle : [];
+  var maxPts = r.maxPts || (detalle.length * 3) || 24;
+  var pts = (typeof r.pts === 'number') ? r.pts
+          : detalle.reduce(function(s,d){ return s + (d.nivel==='MB'?3:d.nivel==='L'?2:d.nivel==='M'?1:0); }, 0);
+  var NIV = { MB:'Muy bien logrado (3 pts)', L:'Logrado (2 pts)', M:'Medianamente logrado (1 pt)', N:'Por lograr (0 pts)' };
+  var lineas = [
+    'INFORME DE RÚBRICA EVALUADA · ARTES VISUALES',
+    'Estudiante: ' + (r.nombre || ''),
+    'Curso: ' + (r.curso || '—') + ' · Instancia: ' + (r.instancia || 'Evaluación 1'),
+    'Rúbrica: ' + (r.rubricaNombre || '—'),
+    '',
+    'NOTA FINAL: ' + nota.toFixed(1) + ' · Puntaje: ' + pts + '/' + maxPts + ' · ' + (nota >= 4 ? 'LOGRADO' : 'POR LOGRAR'),
+    ''
+  ];
+  detalle.forEach(function(d, i) {
+    lineas.push((i+1) + '. ' + (_critNombre(d.criterio) || ('Criterio ' + (i+1)))
+      + ' → ' + (NIV[d.nivel] || 'Sin nivel')
+      + (d.nota ? ' · Obs.: ' + d.nota : ''));
+  });
+  if (r.noEntregado) lineas.push('', '⚠ Trabajo no entregado — calificación mínima según reglamento.');
+  lineas.push('', 'Generado por ArtEval — Documento informativo para el apoderado.');
+  return lineas.join('\n');
+}
+
+// ── Envío (CONSTRUIDO, pendiente de activación) ─────────────────────────────
+// Opción A (recomendada): crea una tarea individual visible SOLO para ese
+// estudiante, con la rúbrica evaluada como descripción.
+async function _subirRubricaClassroom(courseId, crStudentId, registro) {
+  var body = {
+    title: 'Rúbrica evaluada — ' + (registro.rubricaNombre || registro.instancia || 'Artes Visuales'),
+    description: _rubricaTextoPlano(registro),
+    workType: 'ASSIGNMENT',
+    state: 'PUBLISHED',
+    maxPoints: registro.maxPts || 24,
+    assigneeMode: 'INDIVIDUAL_STUDENTS',
+    individualStudentsOptions: { studentIds: [crStudentId] }
+  };
+  return _classroomApi('courses/' + encodeURIComponent(courseId) + '/courseWork', { method: 'POST', body: body });
+  // ── Opción B (alternativa): adjuntar PDF de Drive a una entrega existente ──
+  // Requiere un courseWorkId ya creado y el fileId del informe subido a Drive:
+  // return _classroomApi('courses/' + courseId + '/courseWork/' + courseWorkId
+  //   + '/studentSubmissions/' + submissionId + ':modifyAttachments',
+  //   { method: 'POST', body: { addAttachments: [{ driveFile: { id: driveFileId } }] } });
+}
+
+// ── Orquestador: botón "Enviar Rúbricas a Google Classroom" ─────────────────
+function enviarAClassroom() {
+  if (!cursoSeleccionado) {
+    toast('\u26a0\ufe0f Selecciona primero un curso en la lista de Cursos', 'err', 3500);
+    return;
+  }
+  if (!_registrosConNota(cursoSeleccionado).length) {
+    toast('\u26a0\ufe0f ' + cursoSeleccionado + ' no tiene evaluaciones con nota registrada', 'err', 3500);
+    return;
+  }
+  _conectarClassroom(async function() {
+    try {
+      toast('Buscando tus cursos de Classroom\u2026', 'info', 2000);
+      var cursos = await _listarCursosClassroom();
+      if (!cursos.length) { toast('\u26a0 No se encontraron cursos activos en Classroom', 'err', 4000); return; }
+      var items = cursos.map(function(c) {
+        var sec = c.section ? ' \u00b7 ' + _esc(c.section) : '';
+        return '<div class="reg-card" style="cursor:pointer;padding:10px 14px;margin-bottom:6px;" '
+          + 'onclick="_classroomElegirCurso(\'' + c.id + '\',\'' + _esc(c.name).replace(/\\/g,'\\\\').replace(/'/g, "\\'") + '\')">'
+          + '<strong>' + _esc(c.name) + '</strong>' + sec
+          + '</div>';
+      }).join('');
+      abrirModal(
+        '<div style="padding:4px 2px;">'
+        + '<div style="font-size:15px;font-weight:700;margin-bottom:6px;">\ud83d\udfe2 Vincular ' + _esc(cursoSeleccionado) + ' con Classroom</div>'
+        + '<div style="font-size:12px;color:var(--text2);margin-bottom:12px;">Elige el curso de Google Classroom que corresponde a <strong>' + _esc(cursoSeleccionado) + '</strong>:</div>'
+        + '<div style="max-height:300px;overflow-y:auto;">' + items + '</div>'
+        + '<div style="display:flex;justify-content:flex-end;margin-top:10px;">'
+        + '<button class="btn" onclick="cerrarModal()">Cancelar</button>'
+        + '</div></div>'
+      );
+    } catch (e) {
+      toast('\u26a0 ' + e.message, 'err', 5000);
+    }
+  });
+}
+
+async function _classroomElegirCurso(courseId, courseName) {
+  cerrarModal();
+  _classroomCursoCR = { id: courseId, name: courseName };
+  try {
+    toast('Cargando estudiantes de "' + courseName + '"\u2026', 'info', 2000);
+    var alumnosCR = await _listarAlumnosClassroom(courseId);
+    var res = _matchAlumnosClassroom(cursoSeleccionado, alumnosCR, '__TODAS__');
+    var okRows = res.matches.map(function(m) {
+      var full = m.crStudent.profile.name.fullName;
+      return '<tr><td style="padding:4px 8px;border-bottom:1px solid var(--border);">\u2713 ' + _esc(m.registro.nombre)
+        + '</td><td style="padding:4px 8px;border-bottom:1px solid var(--border);color:var(--text2);">' + _esc(full)
+        + '</td><td style="padding:4px 8px;border-bottom:1px solid var(--border);font-family:var(--font-mono);">' + ((m.registro.nota||1).toFixed ? (m.registro.nota||1).toFixed(1) : m.registro.nota) + '</td></tr>';
+    }).join('');
+    var failRows = res.sinMatch.map(function(r) {
+      return '<tr><td colspan="3" style="padding:4px 8px;border-bottom:1px solid var(--border);color:var(--red);">\u26a0 ' + _esc(r.nombre) + ' \u2014 sin coincidencia en Classroom</td></tr>';
+    }).join('');
+    abrirModal(
+      '<div style="padding:4px 2px;">'
+      + '<div style="font-size:15px;font-weight:700;margin-bottom:6px;">\ud83d\udfe2 Emparejamiento ' + _esc(cursoSeleccionado) + ' \u2194 ' + _esc(courseName) + '</div>'
+      + '<div style="font-size:12px;color:var(--text2);margin-bottom:10px;">'
+      + '<strong>' + res.matches.length + '</strong> coincidencia' + (res.matches.length !== 1 ? 's' : '')
+      + (res.sinMatch.length ? ' \u00b7 <span style="color:var(--red);font-weight:600;">' + res.sinMatch.length + ' sin match</span>' : '')
+      + '</div>'
+      + '<div style="max-height:280px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--rad);">'
+      + '<table style="width:100%;border-collapse:collapse;font-size:11px;">'
+      + '<thead><tr style="background:var(--bg3);"><th style="padding:5px 8px;text-align:left;">ArtEval</th><th style="padding:5px 8px;text-align:left;">Classroom</th><th style="padding:5px 8px;text-align:left;">Nota</th></tr></thead>'
+      + '<tbody>' + okRows + failRows + '</tbody></table></div>'
+      + '<div style="font-size:11px;color:var(--text3);margin-top:10px;line-height:1.6;">'
+      + '\u2139\ufe0f El env\u00edo masivo est\u00e1 en <strong>modo preparaci\u00f3n</strong>: el emparejamiento ya funciona y la funci\u00f3n de subida est\u00e1 construida, pero la publicaci\u00f3n en Classroom permanece desactivada hasta su activaci\u00f3n definitiva.'
+      + '</div>'
+      + '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">'
+      + '<button class="btn" onclick="cerrarModal()">Cancelar</button>'
+      + '<button class="btn btn-primary" style="background:#188038;border-color:#188038;" onclick="_ejecutarEnvioClassroom()">S\u00ed aceptar</button>'
+      + '</div></div>',
+      ''
+    );
+    window._classroomMatchesPendientes = res.matches;
+  } catch (e) {
+    toast('\u26a0 ' + e.message, 'err', 5000);
+  }
+}
+
+async function _ejecutarEnvioClassroom() {
+  cerrarModal();
+  var matches = window._classroomMatchesPendientes || [];
+  if (!matches.length || !_classroomCursoCR) { toast('\u26a0 No hay emparejamientos para enviar', 'err', 3000); return; }
+  var enviados = 0, errores = 0;
+  for (var i = 0; i < matches.length; i++) {
+    var m = matches[i];
+    try {
+      // ════════════════════════════════════════════════════════════════════
+      // ACTIVACIÓN PENDIENTE — Descomentar la siguiente línea para publicar
+      // realmente la rúbrica de cada estudiante en Google Classroom:
+      //
+      // await _subirRubricaClassroom(_classroomCursoCR.id, m.crStudent.userId, m.registro);
+      //
+      // ════════════════════════════════════════════════════════════════════
+      enviados++;
+    } catch (e) {
+      errores++;
+      console.warn('[ArtEval·Classroom] Error con ' + m.registro.nombre + ':', e.message);
+    }
+  }
+  toast('\ud83d\udfe2 Modo preparaci\u00f3n: ' + enviados + ' r\u00fabrica' + (enviados !== 1 ? 's' : '')
+    + ' lista' + (enviados !== 1 ? 's' : '') + ' para publicar en "' + _classroomCursoCR.name + '"'
+    + (errores ? ' \u00b7 ' + errores + ' con error' : ''), 'ok', 5000);
 }
 
 </script>
