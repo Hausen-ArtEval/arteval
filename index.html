@@ -24606,18 +24606,23 @@ async function ejecutarDiagnostico() {
 
 
 // ═══════════════════════════════════════════════════════════════════════════
-//  GOOGLE CLASSROOM — Entrega masiva de rúbricas evaluadas
-//  Estructura preparada y completa. Reusa el patrón OAuth2 (GIS) de Gmail/Drive
-//  ya existente en la app. El envío final está construido en
-//  _subirRubricaClassroom() y queda COMENTADO para su activación (buscar
-//  "ACTIVACIÓN PENDIENTE" más abajo).
+//  GOOGLE CLASSROOM — Entrega masiva de rúbricas evaluadas  [ENVÍO ACTIVO]
+//  Reusa el patrón OAuth2 (GIS) de Gmail/Drive ya existente en la app.
 //
-//  ⚠ NOTA TÉCNICA IMPORTANTE: la API pública de Classroom NO expone un
-//  endpoint para crear "comentarios privados" (eso solo existe en la UI web).
-//  La vía soportada y aquí implementada es la Opción A: crear una tarea
-//  individual (assigneeMode INDIVIDUAL_STUDENTS) cuya descripción es la
-//  rúbrica evaluada en texto formateado. Alternativa B (comentada): adjuntar
-//  un archivo de Drive a la entrega existente vía modifyAttachments.
+//  MÉTODO DE ENTREGA: ANUNCIO INDIVIDUAL (courses.announcements con
+//  assigneeMode INDIVIDUAL_STUDENTS). El estudiante lo ve en su Stream,
+//  solo él puede verlo, y NO genera botón "Entregar" ni tarea pendiente
+//  — es la vía correcta para informar una rúbrica ya evaluada.
+//
+//  ⚠ NOTA TÉCNICA: la API pública de Classroom NO expone "comentarios
+//  privados" (solo existen en la UI web). Alternativas construidas abajo
+//  (comentadas): tarea individual (courseWork) o adjunto Drive
+//  (modifyAttachments).
+//
+//  VERIFICACIÓN: cada publicación se confirma con el id + alternateLink que
+//  devuelve la API; el resumen final lista enviados (con enlace directo) y
+//  fallidos (con el motivo). Cada registro queda estampado con
+//  _classroomEnviadoAt para control de reenvíos.
 // ═══════════════════════════════════════════════════════════════════════════
 var _classroomTokenClient = null;
 var _classroomToken       = null;
@@ -24626,6 +24631,7 @@ var _classroomCursoCR     = null;   // curso de Classroom elegido {id, name}
 var CLASSROOM_SCOPES =
     'https://www.googleapis.com/auth/classroom.courses.readonly '
   + 'https://www.googleapis.com/auth/classroom.rosters.readonly '
+  + 'https://www.googleapis.com/auth/classroom.announcements '
   + 'https://www.googleapis.com/auth/classroom.coursework.students';
 
 // ── Conexión (mismo patrón que _vincularCorreoInstitucional) ────────────────
@@ -24760,22 +24766,23 @@ function _rubricaTextoPlano(r) {
   return lineas.join('\n');
 }
 
-// ── Envío (CONSTRUIDO, pendiente de activación) ─────────────────────────────
-// Opción A (recomendada): crea una tarea individual visible SOLO para ese
-// estudiante, con la rúbrica evaluada como descripción.
+// ── Envío [ACTIVO]: anuncio individual con verificación ─────────────────────
 async function _subirRubricaClassroom(courseId, crStudentId, registro) {
+  // Anuncio visible SOLO para ese estudiante, en su Stream de Classroom.
   var body = {
-    title: 'Rúbrica evaluada — ' + (registro.rubricaNombre || registro.instancia || 'Artes Visuales'),
-    description: _rubricaTextoPlano(registro),
-    workType: 'ASSIGNMENT',
+    text: _rubricaTextoPlano(registro),
     state: 'PUBLISHED',
-    maxPoints: registro.maxPts || 24,
     assigneeMode: 'INDIVIDUAL_STUDENTS',
     individualStudentsOptions: { studentIds: [crStudentId] }
   };
-  return _classroomApi('courses/' + encodeURIComponent(courseId) + '/courseWork', { method: 'POST', body: body });
-  // ── Opción B (alternativa): adjuntar PDF de Drive a una entrega existente ──
-  // Requiere un courseWorkId ya creado y el fileId del informe subido a Drive:
+  return _classroomApi('courses/' + encodeURIComponent(courseId) + '/announcements', { method: 'POST', body: body });
+  // ── Alternativa B: tarea individual (aparece en Trabajo de clase con "Entregar") ──
+  // return _classroomApi('courses/' + encodeURIComponent(courseId) + '/courseWork', { method:'POST', body:{
+  //   title: 'Rúbrica evaluada — ' + (registro.rubricaNombre || registro.instancia || 'Artes Visuales'),
+  //   description: _rubricaTextoPlano(registro), workType: 'ASSIGNMENT', state: 'PUBLISHED',
+  //   maxPoints: registro.maxPts || 24, assigneeMode: 'INDIVIDUAL_STUDENTS',
+  //   individualStudentsOptions: { studentIds: [crStudentId] } } });
+  // ── Alternativa C: adjuntar PDF de Drive a una entrega existente ──
   // return _classroomApi('courses/' + courseId + '/courseWork/' + courseWorkId
   //   + '/studentSubmissions/' + submissionId + ':modifyAttachments',
   //   { method: 'POST', body: { addAttachments: [{ driveFile: { id: driveFileId } }] } });
@@ -24823,67 +24830,132 @@ async function _classroomElegirCurso(courseId, courseName) {
   _classroomCursoCR = { id: courseId, name: courseName };
   try {
     toast('Cargando estudiantes de "' + courseName + '"\u2026', 'info', 2000);
-    var alumnosCR = await _listarAlumnosClassroom(courseId);
-    var res = _matchAlumnosClassroom(cursoSeleccionado, alumnosCR, '__TODAS__');
-    var okRows = res.matches.map(function(m) {
-      var full = m.crStudent.profile.name.fullName;
-      return '<tr><td style="padding:4px 8px;border-bottom:1px solid var(--border);">\u2713 ' + _esc(m.registro.nombre)
-        + '</td><td style="padding:4px 8px;border-bottom:1px solid var(--border);color:var(--text2);">' + _esc(full)
-        + '</td><td style="padding:4px 8px;border-bottom:1px solid var(--border);font-family:var(--font-mono);">' + ((m.registro.nota||1).toFixed ? (m.registro.nota||1).toFixed(1) : m.registro.nota) + '</td></tr>';
-    }).join('');
-    var failRows = res.sinMatch.map(function(r) {
-      return '<tr><td colspan="3" style="padding:4px 8px;border-bottom:1px solid var(--border);color:var(--red);">\u26a0 ' + _esc(r.nombre) + ' \u2014 sin coincidencia en Classroom</td></tr>';
-    }).join('');
-    abrirModal(
-      '<div style="padding:4px 2px;">'
-      + '<div style="font-size:15px;font-weight:700;margin-bottom:6px;">\ud83d\udfe2 Emparejamiento ' + _esc(cursoSeleccionado) + ' \u2194 ' + _esc(courseName) + '</div>'
-      + '<div style="font-size:12px;color:var(--text2);margin-bottom:10px;">'
-      + '<strong>' + res.matches.length + '</strong> coincidencia' + (res.matches.length !== 1 ? 's' : '')
-      + (res.sinMatch.length ? ' \u00b7 <span style="color:var(--red);font-weight:600;">' + res.sinMatch.length + ' sin match</span>' : '')
-      + '</div>'
-      + '<div style="max-height:280px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--rad);">'
-      + '<table style="width:100%;border-collapse:collapse;font-size:11px;">'
-      + '<thead><tr style="background:var(--bg3);"><th style="padding:5px 8px;text-align:left;">ArtEval</th><th style="padding:5px 8px;text-align:left;">Classroom</th><th style="padding:5px 8px;text-align:left;">Nota</th></tr></thead>'
-      + '<tbody>' + okRows + failRows + '</tbody></table></div>'
-      + '<div style="font-size:11px;color:var(--text3);margin-top:10px;line-height:1.6;">'
-      + '\u2139\ufe0f El env\u00edo masivo est\u00e1 en <strong>modo preparaci\u00f3n</strong>: el emparejamiento ya funciona y la funci\u00f3n de subida est\u00e1 construida, pero la publicaci\u00f3n en Classroom permanece desactivada hasta su activaci\u00f3n definitiva.'
-      + '</div>'
-      + '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">'
-      + '<button class="btn" onclick="cerrarModal()">Cancelar</button>'
-      + '<button class="btn btn-primary" style="background:#188038;border-color:#188038;" onclick="_ejecutarEnvioClassroom()">S\u00ed aceptar</button>'
-      + '</div></div>',
-      ''
-    );
-    window._classroomMatchesPendientes = res.matches;
+    window._classroomAlumnosCR = await _listarAlumnosClassroom(courseId);
+    _classroomRenderMatchModal('__TODAS__');
   } catch (e) {
     toast('\u26a0 ' + e.message, 'err', 5000);
   }
 }
 
+// Renderiza (y re-renderiza al cambiar instancia) el modal de emparejamiento.
+function _classroomRenderMatchModal(instanciaFiltro) {
+  var alumnosCR = window._classroomAlumnosCR || [];
+  var res = _matchAlumnosClassroom(cursoSeleccionado, alumnosCR, instanciaFiltro);
+  window._classroomMatchesPendientes = res.matches;
+  window._classroomInstanciaSel = instanciaFiltro;
+
+  // Selector de instancia (mismas opciones que la descarga masiva)
+  var regsC = _registrosConNota(cursoSeleccionado);
+  var insts = [];
+  regsC.forEach(function(r) { var i = r.instancia || 'Evaluación 1'; if (insts.indexOf(i) === -1) insts.push(i); });
+  insts.sort();
+  var opciones = insts.map(function(inst) {
+    var sel = (inst === instanciaFiltro) ? ' selected' : '';
+    return '<option value="' + _esc(inst) + '"' + sel + '>' + _esc(inst) + '</option>';
+  }).join('') + '<option value="__TODAS__"' + (instanciaFiltro === '__TODAS__' ? ' selected' : '') + '>Todas las instancias</option>';
+
+  var yaEnviados = res.matches.filter(function(m){ return m.registro._classroomEnviadoAt; }).length;
+
+  var okRows = res.matches.map(function(m) {
+    var full = m.crStudent.profile.name.fullName;
+    var sello = m.registro._classroomEnviadoAt
+      ? '<span style="font-size:9px;color:#188038;font-weight:700;margin-left:6px;">\u2713 enviado ' + new Date(m.registro._classroomEnviadoAt).toLocaleDateString('es-CL') + '</span>'
+      : '';
+    return '<tr><td style="padding:4px 8px;border-bottom:1px solid var(--border);">\u2713 ' + _esc(m.registro.nombre) + sello
+      + '</td><td style="padding:4px 8px;border-bottom:1px solid var(--border);color:var(--text2);">' + _esc(full)
+      + '</td><td style="padding:4px 8px;border-bottom:1px solid var(--border);font-family:var(--font-mono);">' + ((m.registro.nota||1).toFixed ? (m.registro.nota||1).toFixed(1) : m.registro.nota) + '</td></tr>';
+  }).join('');
+  var failRows = res.sinMatch.map(function(r) {
+    return '<tr><td colspan="3" style="padding:4px 8px;border-bottom:1px solid var(--border);color:var(--red);">\u26a0 ' + _esc(r.nombre) + ' \u2014 sin coincidencia en Classroom</td></tr>';
+  }).join('');
+
+  abrirModal(
+    '<div style="padding:4px 2px;">'
+    + '<div style="font-size:15px;font-weight:700;margin-bottom:6px;">\ud83d\udfe2 Emparejamiento ' + _esc(cursoSeleccionado) + ' \u2194 ' + _esc(_classroomCursoCR.name) + '</div>'
+    + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;">'
+    + '<label style="font-size:11px;font-weight:600;color:var(--text2);">Instancia</label>'
+    + '<select class="filter-select" style="font-size:12px;" onchange="_classroomRenderMatchModal(this.value)">' + opciones + '</select>'
+    + '<span style="font-size:12px;color:var(--text2);"><strong>' + res.matches.length + '</strong> coincidencia' + (res.matches.length !== 1 ? 's' : '')
+    + (res.sinMatch.length ? ' \u00b7 <span style="color:var(--red);font-weight:600;">' + res.sinMatch.length + ' sin match</span>' : '')
+    + '</span></div>'
+    + '<div style="max-height:260px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--rad);">'
+    + '<table style="width:100%;border-collapse:collapse;font-size:11px;">'
+    + '<thead><tr style="background:var(--bg3);"><th style="padding:5px 8px;text-align:left;">ArtEval</th><th style="padding:5px 8px;text-align:left;">Classroom</th><th style="padding:5px 8px;text-align:left;">Nota</th></tr></thead>'
+    + '<tbody>' + okRows + failRows + '</tbody></table></div>'
+    + (yaEnviados ? '<label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);margin-top:10px;cursor:pointer;">'
+        + '<input type="checkbox" id="classroomReenviarChk"> Incluir los ' + yaEnviados + ' ya enviados (reenviar)</label>' : '')
+    + '<div style="font-size:11px;color:var(--text3);margin-top:8px;line-height:1.6;">'
+    + 'Cada estudiante recibir\u00e1 su r\u00fabrica como <strong>anuncio individual</strong> en el Stream de Classroom \u2014 solo \u00e9l puede verlo y no genera tarea pendiente.'
+    + '</div>'
+    + '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">'
+    + '<button class="btn" onclick="cerrarModal()">Cancelar</button>'
+    + '<button class="btn btn-primary" style="background:#188038;border-color:#188038;" onclick="_ejecutarEnvioClassroom()">S\u00ed aceptar</button>'
+    + '</div></div>'
+  );
+}
+
 async function _ejecutarEnvioClassroom() {
-  cerrarModal();
   var matches = window._classroomMatchesPendientes || [];
+  var reenviar = !!(document.getElementById('classroomReenviarChk') && document.getElementById('classroomReenviarChk').checked);
+  cerrarModal();
   if (!matches.length || !_classroomCursoCR) { toast('\u26a0 No hay emparejamientos para enviar', 'err', 3000); return; }
-  var enviados = 0, errores = 0;
-  for (var i = 0; i < matches.length; i++) {
-    var m = matches[i];
-    try {
-      // ════════════════════════════════════════════════════════════════════
-      // ACTIVACIÓN PENDIENTE — Descomentar la siguiente línea para publicar
-      // realmente la rúbrica de cada estudiante en Google Classroom:
-      //
-      // await _subirRubricaClassroom(_classroomCursoCR.id, m.crStudent.userId, m.registro);
-      //
-      // ════════════════════════════════════════════════════════════════════
-      enviados++;
-    } catch (e) {
-      errores++;
-      console.warn('[ArtEval·Classroom] Error con ' + m.registro.nombre + ':', e.message);
-    }
+
+  // Control de reenvíos: por defecto se omiten los ya enviados
+  var pendientes = matches.filter(function(m){ return reenviar || !m.registro._classroomEnviadoAt; });
+  var omitidos = matches.length - pendientes.length;
+  if (!pendientes.length) {
+    toast('\u2139\ufe0f Todos los emparejados ya fueron enviados \u2014 marca "reenviar" si quieres publicarlos de nuevo', 'info', 5000);
+    return;
   }
-  toast('\ud83d\udfe2 Modo preparaci\u00f3n: ' + enviados + ' r\u00fabrica' + (enviados !== 1 ? 's' : '')
-    + ' lista' + (enviados !== 1 ? 's' : '') + ' para publicar en "' + _classroomCursoCR.name + '"'
-    + (errores ? ' \u00b7 ' + errores + ' con error' : ''), 'ok', 5000);
+
+  // Modal de progreso
+  abrirModal('<div style="padding:8px 2px;text-align:center;">'
+    + '<div style="font-size:15px;font-weight:700;margin-bottom:8px;">\ud83d\udfe2 Publicando en Classroom\u2026</div>'
+    + '<div id="classroomProgresoTxt" style="font-size:13px;color:var(--text2);font-family:var(--font-mono);">0 / ' + pendientes.length + '</div>'
+    + '</div>');
+
+  var ok = [], fallidos = [];
+  for (var i = 0; i < pendientes.length; i++) {
+    var m = pendientes[i];
+    var prog = document.getElementById('classroomProgresoTxt');
+    if (prog) prog.textContent = (i + 1) + ' / ' + pendientes.length + ' \u2014 ' + m.registro.nombre;
+    try {
+      var resp = await _subirRubricaClassroom(_classroomCursoCR.id, m.crStudent.userId, m.registro);
+      // Verificación: la API devuelve el anuncio creado con id + alternateLink
+      if (!resp || !resp.id) throw new Error('Respuesta sin id de publicaci\u00f3n');
+      m.registro._classroomEnviadoAt = new Date().toISOString();
+      ok.push({ nombre: m.registro.nombre, link: resp.alternateLink || '' });
+    } catch (e) {
+      fallidos.push({ nombre: m.registro.nombre, error: e.message });
+      console.warn('[ArtEval\u00b7Classroom] Error con ' + m.registro.nombre + ':', e.message);
+    }
+    await new Promise(function(rs){ setTimeout(rs, 200); }); // respiro anti rate-limit
+  }
+  if (ok.length && typeof saveRegistros === 'function') saveRegistros(); // persistir sellos _classroomEnviadoAt
+
+  // Resumen final verificable
+  var okHtml = ok.map(function(o) {
+    return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:0.5px solid var(--border);font-size:12px;">'
+      + '<span style="color:#188038;font-weight:700;">\u2713</span><span style="flex:1;">' + _esc(o.nombre) + '</span>'
+      + (o.link ? '<a href="' + o.link + '" target="_blank" rel="noopener" style="font-size:11px;color:var(--accent);font-weight:600;text-decoration:none;">Ver en Classroom \u2197</a>' : '')
+      + '</div>';
+  }).join('');
+  var failHtml = fallidos.map(function(f) {
+    return '<div style="padding:4px 0;border-bottom:0.5px solid var(--border);font-size:12px;color:var(--red);">\u2717 ' + _esc(f.nombre) + ' \u2014 ' + _esc(f.error) + '</div>';
+  }).join('');
+  abrirModal(
+    '<div style="padding:4px 2px;">'
+    + '<div style="font-size:15px;font-weight:700;margin-bottom:6px;">' + (fallidos.length ? '\u26a0\ufe0f' : '\u2705') + ' Resultado del env\u00edo \u2014 ' + _esc(_classroomCursoCR.name) + '</div>'
+    + '<div style="font-size:12px;color:var(--text2);margin-bottom:10px;"><strong style="color:#188038;">' + ok.length + ' publicada' + (ok.length !== 1 ? 's' : '') + '</strong>'
+    + (fallidos.length ? ' \u00b7 <strong style="color:var(--red);">' + fallidos.length + ' fallida' + (fallidos.length !== 1 ? 's' : '') + '</strong>' : '')
+    + (omitidos ? ' \u00b7 ' + omitidos + ' omitida' + (omitidos !== 1 ? 's' : '') + ' (ya enviadas)' : '') + '</div>'
+    + '<div style="max-height:260px;overflow-y:auto;">' + okHtml + failHtml + '</div>'
+    + '<div style="font-size:11px;color:var(--text3);margin-top:10px;">Verifica con "Ver en Classroom" \u2014 abre el anuncio individual publicado. Los enviados quedan sellados y no se duplican en futuros env\u00edos.</div>'
+    + '<div style="display:flex;justify-content:flex-end;margin-top:12px;">'
+    + '<button class="btn btn-primary" onclick="cerrarModal()">Cerrar</button>'
+    + '</div></div>'
+  );
+  toast((fallidos.length ? '\u26a0\ufe0f ' : '\ud83d\udfe2 ') + ok.length + ' r\u00fabrica' + (ok.length !== 1 ? 's' : '') + ' publicada' + (ok.length !== 1 ? 's' : '') + ' en Classroom' + (fallidos.length ? ' \u00b7 ' + fallidos.length + ' con error' : ''), fallidos.length ? 'err' : 'ok', 5000);
 }
 
 </script>
