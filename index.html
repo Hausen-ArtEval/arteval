@@ -1235,7 +1235,8 @@ input[type="text"]:focus, textarea:focus, select:focus {
   .topbar, .tabs, .cam-actions, .exigencia-wrap, .reg-toolbar, .btn, button, #cursosChipsWrap { display: none !important; }
   body { background: white !important; color: black !important; font-size: 12px; }
   .content { padding: 0 !important; }
-  .card, .reg-card, }
+  .card, .reg-card { box-shadow: none !important; border: 1px solid #ccc; background: white !important; break-inside: avoid; }
+}
 
 @media print { .no-print { display: none !important; } }
 
@@ -9981,7 +9982,7 @@ function confirmarEdicion(idx) {
   if (cursoSeleccionado) {
     renderCursoMain();
     // Si estábamos en la pestaña Cursos, volver a ella (no redirigir a Registros)
-    if (document.getElementById('tab-cursos')?.style.display !== 'none') {
+    if (typeof _estudioSubTab !== 'undefined' && _estudioSubTab === 'cursos') {
     var _tabBtnE = document.getElementById('tabBtnEstudio')||document.querySelector('[data-maintab="estudio"]'); if(_tabBtnE&&typeof _activarTab==='function'){_activarTab(_tabBtnE,'estudio','cursos');}else{if(typeof showEstudioSub==='function')showEstudioSub('cursos');}
     }
   }
@@ -13742,7 +13743,8 @@ function _renderDashRiesgo() {
   cont.innerHTML = enRiesgo.map(function(e) {
     const prom = (e.notas.reduce((s,v)=>s+v,0)/e.notas.length).toFixed(1);
     const notaLabels = e.notas.map(n=>n.toFixed(1)).join(' · ');
-    return `<div class="riesgo-item" onclick="showTab('progreso');setTimeout(()=>{const b=document.getElementById('buscarProgreso');if(b){b.value='${e.nombre.split(' ')[0]}';renderProgreso();}},200)">
+    const _nomBusca = e.nombre.split(' ')[0].replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `<div class="riesgo-item" onclick="showTab('progreso');setTimeout(()=>{const b=document.getElementById('buscarProgreso');if(b){b.value='${_nomBusca}';renderProgreso();}},200)">
       <div class="reg-avatar" style="background:var(--red-bg);color:var(--red);width:28px;height:28px;font-size:10px;flex-shrink:0;">${iniciales(e.nombre)}</div>
       <div class="riesgo-nombre">${e.nombre} <span style="font-size:10px;font-weight:400;color:var(--text3);">${e.curso}</span></div>
       <div class="riesgo-notas">${notaLabels} → prom. ${prom}</div>
