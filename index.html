@@ -24639,6 +24639,7 @@ var CLASSROOM_SCOPES =
     'https://www.googleapis.com/auth/classroom.courses.readonly '
   + 'https://www.googleapis.com/auth/classroom.rosters '
   + 'https://www.googleapis.com/auth/classroom.announcements '
+  + 'https://www.googleapis.com/auth/classroom.profile.emails '
   + 'https://www.googleapis.com/auth/classroom.coursework.students';
 
 // ── Conexión (mismo patrón que _vincularCorreoInstitucional) ────────────────
@@ -25129,6 +25130,14 @@ function _classroomRenderMatchModal(instanciaFiltro) {
     + '<span style="font-size:12px;color:var(--text2);"><strong>' + res.matches.length + '</strong> en Classroom'
     + (res.sinMatch.length ? ' \u00b7 <span style="color:#8a6d00;font-weight:600;">' + res.sinMatch.length + ' por correo</span>' : '')
     + '</span></div>'
+    + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;">'
+    + '<label style="font-size:11px;font-weight:600;color:var(--text2);">M\u00e9todo de entrega</label>'
+    + '<div style="display:inline-flex;background:var(--bg3);border-radius:9px;padding:2px;">'
+    + '<button id="metEnvCorreo" onclick="_classroomSetMetodo(\'correo\')" style="border:none;border-radius:7px;padding:5px 13px;font-size:11px;font-weight:600;cursor:pointer;">\u2709\ufe0f Correo del estudiante</button>'
+    + '<button id="metEnvAnuncio" onclick="_classroomSetMetodo(\'anuncio\')" style="border:none;border-radius:7px;padding:5px 13px;font-size:11px;font-weight:600;cursor:pointer;">\ud83d\udce3 Anuncio en Classroom</button>'
+    + '</div>'
+    + '<span id="metEnvDesc" style="font-size:10px;color:var(--text3);"></span>'
+    + '</div>'
     + '<div style="max-height:260px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--rad);">'
     + '<table style="width:100%;border-collapse:collapse;font-size:11px;">'
     + '<thead><tr style="background:var(--bg3);">'
@@ -25141,12 +25150,96 @@ function _classroomRenderMatchModal(instanciaFiltro) {
     + 'Los no inscritos seleccionados la reciben por <strong>correo institucional</strong> directo (requiere correo registrado). '
     + 'Si Classroom rechaza a un estudiante durante el env\u00edo, el sistema reintenta autom\u00e1ticamente por correo.'
     + '</div>'
-    + '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">'
+    + '<div style="display:flex;gap:8px;align-items:center;margin-top:12px;">'
+    + '<button onclick="_limpiarAnunciosArtEval()" title="Elimina del tabl\u00f3n los anuncios de r\u00fabricas publicados por ArtEval" style="border:none;background:transparent;color:var(--text3);font-size:11px;font-weight:600;cursor:pointer;padding:6px 4px;">\ud83e\uddf9 Borrar anuncios publicados</button>'
+    + '<div style="margin-left:auto;display:flex;gap:8px;">'
     + '<button class="btn" onclick="cerrarModal()">Cancelar</button>'
     + '<button class="btn btn-primary" id="crBtnEnviar" style="background:#188038;border-color:#188038;" onclick="_ejecutarEnvioClassroom()">S\u00ed aceptar</button>'
+    + '</div>'
     + '</div></div>'
   );
   _classroomActualizarSeleccion();
+  _classroomSetMetodo(window._classroomMetodoEnvio || 'correo');
+}
+
+// ═══ Método de entrega para los emparejados: correo (default) o anuncio ═══
+// 'correo': la rúbrica llega a la casilla institucional del estudiante (la
+// dirección viene del roster de Classroom — profile.emailAddress — o del mapa
+// local). 'anuncio': publicación individual en el Stream (cada niño ve solo
+// la suya; el tablón del PROFESOR muestra todas).
+function _classroomSetMetodo(metodo) {
+  window._classroomMetodoEnvio = metodo;
+  var bC = document.getElementById('metEnvCorreo');
+  var bA = document.getElementById('metEnvAnuncio');
+  var d  = document.getElementById('metEnvDesc');
+  if (!bC || !bA) return;
+  var on  = 'background:#fff;color:var(--text1);box-shadow:0 1px 3px rgba(0,0,0,0.12);';
+  var off = 'background:transparent;color:var(--text3);box-shadow:none;';
+  var base = 'border:none;border-radius:7px;padding:5px 13px;font-size:11px;font-weight:600;cursor:pointer;';
+  bC.style.cssText = base + (metodo === 'correo' ? on : off);
+  bA.style.cssText = base + (metodo === 'anuncio' ? on : off);
+  if (d) d.textContent = metodo === 'correo'
+    ? 'Llega a la casilla Gmail institucional de cada estudiante \u2014 no satura el tabl\u00f3n'
+    : 'Cada estudiante ve SOLO su anuncio; tu tabl\u00f3n de profesor los muestra todos';
+}
+
+// ═══ Limpieza: borrar del tablón los anuncios publicados por ArtEval ═══
+// Lista los anuncios del curso, filtra los generados por la app (empiezan con
+// 'INFORME DE RÚBRICA EVALUADA') y los elimina con confirmación. Al terminar,
+// resetea los sellos _classroomEnviadoAt del curso para permitir reenvío.
+async function _limpiarAnunciosArtEval() {
+  if (!_classroomCursoCR) return;
+  abrirModal('<div style="padding:14px 2px;text-align:center;"><div style="font-size:14px;font-weight:700;">\ud83e\uddf9 Buscando anuncios de ArtEval\u2026</div></div>');
+  try {
+    var anuncios = [], pageToken = '';
+    do {
+      var data = await _classroomApi('courses/' + encodeURIComponent(_classroomCursoCR.id) + '/announcements?pageSize=100'
+        + (pageToken ? '&pageToken=' + encodeURIComponent(pageToken) : ''));
+      anuncios = anuncios.concat(data.announcements || []);
+      pageToken = data.nextPageToken || '';
+    } while (pageToken);
+    var deArtEval = anuncios.filter(function(a){ return (a.text || '').indexOf('INFORME DE R\u00daBRICA EVALUADA') === 0; });
+    if (!deArtEval.length) {
+      abrirModal('<div style="padding:4px 2px;"><div style="font-size:14px;font-weight:700;margin-bottom:8px;">\ud83e\uddf9 Tabl\u00f3n limpio</div><div style="font-size:12px;color:var(--text2);margin-bottom:12px;">No hay anuncios de ArtEval en "' + _esc(_classroomCursoCR.name) + '".</div><div style="display:flex;justify-content:flex-end;"><button class="btn btn-primary" onclick="cerrarModal()">Cerrar</button></div></div>');
+      return;
+    }
+    window._anunciosABorrar = deArtEval;
+    abrirModal(
+      '<div style="padding:4px 2px;">'
+      + '<div style="font-size:15px;font-weight:700;margin-bottom:8px;">\ud83e\uddf9 Borrar anuncios de ArtEval</div>'
+      + '<div style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:12px;">Se encontraron <strong>' + deArtEval.length + '</strong> anuncios de r\u00fabricas publicados por ArtEval en <strong>' + _esc(_classroomCursoCR.name) + '</strong>. Se eliminar\u00e1n del tabl\u00f3n (los estudiantes dejar\u00e1n de verlos) y los registros quedar\u00e1n disponibles para reenviar por correo.</div>'
+      + '<div style="display:flex;gap:8px;justify-content:flex-end;">'
+      + '<button class="btn" onclick="cerrarModal()">Cancelar</button>'
+      + '<button class="btn btn-primary" style="background:var(--red);border-color:var(--red);" onclick="_ejecutarLimpiezaAnuncios()">S\u00ed aceptar</button>'
+      + '</div></div>'
+    );
+  } catch (e) {
+    _classroomMostrarError('No se pudieron listar los anuncios', e);
+  }
+}
+
+async function _ejecutarLimpiezaAnuncios() {
+  var lista = window._anunciosABorrar || [];
+  cerrarModal();
+  if (!lista.length || !_classroomCursoCR) return;
+  abrirModal('<div style="padding:8px 2px;text-align:center;"><div style="font-size:15px;font-weight:700;margin-bottom:8px;">\ud83e\uddf9 Eliminando\u2026</div><div id="limpiezaProg" style="font-size:13px;color:var(--text2);font-family:var(--font-mono);">0 / ' + lista.length + '</div></div>');
+  var ok = 0, fail = 0;
+  for (var i = 0; i < lista.length; i++) {
+    var p = document.getElementById('limpiezaProg');
+    if (p) p.textContent = (i + 1) + ' / ' + lista.length;
+    try {
+      await _classroomApi('courses/' + encodeURIComponent(_classroomCursoCR.id) + '/announcements/' + encodeURIComponent(lista[i].id), { method: 'DELETE' });
+      ok++;
+    } catch (e) { fail++; console.warn('[ArtEval\u00b7Classroom] No se pudo borrar anuncio', lista[i].id, e.message); }
+    await new Promise(function(rs){ setTimeout(rs, 150); });
+  }
+  // Resetear sellos de envío por anuncio del curso (semestre activo)
+  var reseteados = 0;
+  _registrosConNota(cursoSeleccionado).forEach(function(r){ if (r._classroomEnviadoAt) { delete r._classroomEnviadoAt; reseteados++; } });
+  if (reseteados && typeof saveRegistros === 'function') saveRegistros();
+  window._anunciosABorrar = null;
+  toast('\ud83e\uddf9 ' + ok + ' anuncio' + (ok !== 1 ? 's' : '') + ' eliminado' + (ok !== 1 ? 's' : '') + (fail ? ' \u00b7 ' + fail + ' con error' : '') + ' \u00b7 sellos reseteados', fail ? 'err' : 'ok', 5000);
+  _classroomRenderMatchModal(window._classroomInstanciaSel || '__TODAS__');
 }
 
 // Casilla maestra: marca/desmarca todos los estudiantes
@@ -25189,8 +25282,10 @@ async function _ejecutarEnvioClassroom() {
     return;
   }
 
+  // Método de entrega elegido para los emparejados
+  var metodo = window._classroomMetodoEnvio || 'correo';
   // Token de Gmail institucional (para la cola de correo y el respaldo ante errores)
-  var necesitaGmail = colaMail.length > 0;
+  var necesitaGmail = colaMail.length > 0 || (metodo === 'correo' && colaCR.length > 0);
   var tokGmail = null;
   if (typeof _gmailLinkedEmail !== 'undefined' && _gmailLinkedEmail) {
     tokGmail = await _tokenGmailPromise();
@@ -25198,7 +25293,7 @@ async function _ejecutarEnvioClassroom() {
   if (necesitaGmail && !tokGmail) {
     abrirModal('<div style="padding:4px 2px;">'
       + '<div style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--red);">\u26a0\ufe0f Correo institucional no disponible</div>'
-      + '<div style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:12px;">Seleccionaste ' + colaMail.length + ' estudiante' + (colaMail.length !== 1 ? 's' : '') + ' no inscrito' + (colaMail.length !== 1 ? 's' : '') + ' en Classroom, cuyo env\u00edo va por correo. Para eso necesitas vincular tu cuenta institucional: pesta\u00f1a <strong>Correo</strong> \u2192 \ud83d\udd17 Conectar Cuenta Google.</div>'
+      + '<div style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:12px;">El env\u00edo por correo requiere tu cuenta institucional vinculada: pesta\u00f1a <strong>Correo</strong> \u2192 \ud83d\udd17 Conectar Cuenta Google. Luego vuelve a intentar (o elige el m\u00e9todo "Anuncio en Classroom").</div>'
       + '<div style="display:flex;justify-content:flex-end;"><button class="btn btn-primary" onclick="cerrarModal()">Cerrar</button></div></div>');
     return;
   }
@@ -25222,6 +25317,28 @@ async function _ejecutarEnvioClassroom() {
   for (var i = 0; i < colaCR.length; i++) {
     var m = colaCR[i];
     _prog(m.registro.nombre);
+    // ── MÉTODO CORREO: directo a la casilla institucional del estudiante ──
+    // La dirección sale del roster de Classroom (profile.emailAddress, scope
+    // classroom.profile.emails) con respaldo en el mapa local.
+    if (metodo === 'correo') {
+      var emailCR = (m.crStudent.profile && m.crStudent.profile.emailAddress) || _emailEstudianteGet(m.registro.nombre, m.registro.curso);
+      if (!emailCR) {
+        resultados.push({ nombre: m.registro.nombre, estado: 'error', detalle: 'Classroom no entreg\u00f3 el correo (reautoriza para conceder el permiso de correos) y no hay correo registrado localmente' });
+      } else {
+        try {
+          await _enviarRubricaPorCorreo(tokGmail, emailCR, m.registro);
+          m.registro._rubricaCorreoAt = new Date().toISOString();
+          huboCambios = true;
+          if (m.crStudent.profile && m.crStudent.profile.emailAddress) _emailEstudianteSet(m.registro.nombre, m.registro.curso, emailCR);
+          resultados.push({ nombre: m.registro.nombre, estado: 'correo_inst', detalle: emailCR });
+        } catch (eC) {
+          resultados.push({ nombre: m.registro.nombre, estado: 'error', detalle: 'Correo: ' + eC.message });
+        }
+      }
+      await new Promise(function(rs){ setTimeout(rs, 200); });
+      continue;
+    }
+    // ── MÉTODO ANUNCIO: publicación individual en el Stream ──
     try {
       var resp = await _subirRubricaClassroom(_classroomCursoCR.id, m.crStudent.userId, m.registro);
       if (!resp || !resp.id) throw new Error('Respuesta sin id de publicaci\u00f3n');
@@ -25276,7 +25393,7 @@ async function _ejecutarEnvioClassroom() {
 
   // ── Resumen verificable ──
   var nCR = resultados.filter(function(x){ return x.estado === 'classroom'; }).length;
-  var nMail = resultados.filter(function(x){ return x.estado === 'correo' || x.estado === 'correo_fallback'; }).length;
+  var nMail = resultados.filter(function(x){ return x.estado === 'correo' || x.estado === 'correo_fallback' || x.estado === 'correo_inst'; }).length;
   var nErr = resultados.filter(function(x){ return x.estado === 'error'; }).length;
   var filas = resultados.map(function(x) {
     if (x.estado === 'classroom') {
@@ -25285,8 +25402,8 @@ async function _ejecutarEnvioClassroom() {
         + (x.link ? '<a href="' + x.link + '" target="_blank" rel="noopener" style="font-size:11px;color:var(--accent);font-weight:600;text-decoration:none;">Ver \u2197</a>' : '')
         + '</div>';
     }
-    if (x.estado === 'correo' || x.estado === 'correo_fallback') {
-      var motivo = x.estado === 'correo' ? 'No registrado en Classroom' : 'Respaldo autom\u00e1tico por error en Classroom';
+    if (x.estado === 'correo' || x.estado === 'correo_fallback' || x.estado === 'correo_inst') {
+      var motivo = x.estado === 'correo' ? 'No registrado en Classroom' : (x.estado === 'correo_inst' ? 'Casilla institucional del estudiante' : 'Respaldo autom\u00e1tico por error en Classroom');
       return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:0.5px solid var(--border);font-size:12px;">'
         + '<span style="color:#0A84FF;font-weight:700;">\u2713</span><span style="flex:1;">' + _esc(x.nombre)
         + ' <span style="font-size:10px;color:#0A84FF;">\ud83d\udfe2 Enviado por Correo (' + motivo + ')</span>'
