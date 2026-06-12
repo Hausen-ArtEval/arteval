@@ -21956,6 +21956,12 @@ function _similitudNombre(a, b) {
 
 // Auditoría de duplicados: retorna grupos de registros similares
 function auditarDuplicados() {
+  // MEMOIZACIÓN: el escaneo de similitud es O(n²) y se invocaba en CADA render
+  // (búsqueda, filtros, guardado) → lag perceptible con +1700 registros.
+  // Solo se recalcula cuando los datos cambian (_lastSaveTs, mismo patrón
+  // de invalidación que normalizarStrict). Mientras no cambien, devuelve caché.
+  var _fp = registros.length + '|' + (typeof _lastSaveTs !== 'undefined' ? _lastSaveTs : 0);
+  if (auditarDuplicados._fp === _fp && auditarDuplicados._res) return auditarDuplicados._res;
   // LLAVE COMPUESTA v195: nombre + curso + rúbrica + instancia
   // Los CUATRO campos deben coincidir simultáneamente para ser duplicado real.
   // Alumno con Ev.1 y Ev.2 bajo la misma rúbrica → instancias distintas → NO duplicado.
@@ -21993,6 +21999,8 @@ function auditarDuplicados() {
       grupos.push(grupo);
     }
   });
+  auditarDuplicados._fp = _fp;
+  auditarDuplicados._res = grupos;
   return grupos;
 }
 
@@ -24936,19 +24944,23 @@ function _classroomRenderMatchModal(instanciaFiltro) {
     return '<option value="' + _esc(inst) + '"' + sel + '>' + _esc(inst) + '</option>';
   }).join('') + '<option value="__TODAS__"' + (instanciaFiltro === '__TODAS__' ? ' selected' : '') + '>Todas las instancias</option>';
 
-  var yaEnviados = res.matches.filter(function(m){ return m.registro._classroomEnviadoAt; }).length;
-
-  var okRows = res.matches.map(function(m) {
+  // ── Selección individual por estudiante ──
+  // Por defecto: marcados los que NO han recibido su rúbrica; los ya enviados
+  // quedan desmarcados (márcalos solo si quieres reenviar a alguien puntual).
+  var okRows = res.matches.map(function(m, i) {
     var full = m.crStudent.profile.name.fullName;
-    var sello = m.registro._classroomEnviadoAt
-      ? '<span style="font-size:9px;color:#188038;font-weight:700;margin-left:6px;">\u2713 enviado ' + new Date(m.registro._classroomEnviadoAt).toLocaleDateString('es-CL') + '</span>'
+    var enviado = !!m.registro._classroomEnviadoAt;
+    var sello = enviado
+      ? '<span style="font-size:9px;color:#188038;font-weight:700;margin-left:6px;white-space:nowrap;">\u2713 enviado ' + new Date(m.registro._classroomEnviadoAt).toLocaleDateString('es-CL') + '</span>'
       : '';
-    return '<tr><td style="padding:4px 8px;border-bottom:1px solid var(--border);">\u2713 ' + _esc(m.registro.nombre) + sello
+    return '<tr style="cursor:pointer;" onclick="var c=this.querySelector(\'.crSelChk\');if(event.target!==c){c.checked=!c.checked;}_classroomActualizarSeleccion();">'
+      + '<td style="padding:4px 8px;border-bottom:1px solid var(--border);width:26px;text-align:center;"><input type="checkbox" class="crSelChk" data-i="' + i + '"' + (enviado ? '' : ' checked') + ' onclick="event.stopPropagation();_classroomActualizarSeleccion();"></td>'
+      + '<td style="padding:4px 8px;border-bottom:1px solid var(--border);">' + _esc(m.registro.nombre) + sello
       + '</td><td style="padding:4px 8px;border-bottom:1px solid var(--border);color:var(--text2);">' + _esc(full)
       + '</td><td style="padding:4px 8px;border-bottom:1px solid var(--border);font-family:var(--font-mono);">' + ((m.registro.nota||1).toFixed ? (m.registro.nota||1).toFixed(1) : m.registro.nota) + '</td></tr>';
   }).join('');
   var failRows = res.sinMatch.map(function(r) {
-    return '<tr><td colspan="3" style="padding:4px 8px;border-bottom:1px solid var(--border);color:var(--red);">\u26a0 ' + _esc(r.nombre) + ' \u2014 sin coincidencia en Classroom</td></tr>';
+    return '<tr><td style="padding:4px 8px;border-bottom:1px solid var(--border);"></td><td colspan="3" style="padding:4px 8px;border-bottom:1px solid var(--border);color:var(--red);">\u26a0 ' + _esc(r.nombre) + ' \u2014 sin coincidencia en Classroom (no recibir\u00e1 anuncio)</td></tr>';
   }).join('');
 
   abrirModal(
@@ -24962,31 +24974,53 @@ function _classroomRenderMatchModal(instanciaFiltro) {
     + '</span></div>'
     + '<div style="max-height:260px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--rad);">'
     + '<table style="width:100%;border-collapse:collapse;font-size:11px;">'
-    + '<thead><tr style="background:var(--bg3);"><th style="padding:5px 8px;text-align:left;">ArtEval</th><th style="padding:5px 8px;text-align:left;">Classroom</th><th style="padding:5px 8px;text-align:left;">Nota</th></tr></thead>'
+    + '<thead><tr style="background:var(--bg3);">'
+    + '<th style="padding:5px 8px;width:26px;text-align:center;"><input type="checkbox" id="crSelAll" title="Seleccionar todos / ninguno" onclick="_classroomSeleccionarTodos(this.checked)"></th>'
+    + '<th style="padding:5px 8px;text-align:left;">ArtEval</th><th style="padding:5px 8px;text-align:left;">Classroom</th><th style="padding:5px 8px;text-align:left;">Nota</th></tr></thead>'
     + '<tbody>' + okRows + failRows + '</tbody></table></div>'
-    + (yaEnviados ? '<label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);margin-top:10px;cursor:pointer;">'
-        + '<input type="checkbox" id="classroomReenviarChk"> Incluir los ' + yaEnviados + ' ya enviados (reenviar)</label>' : '')
-    + '<div style="font-size:11px;color:var(--text3);margin-top:8px;line-height:1.6;">'
-    + 'Cada estudiante recibir\u00e1 su r\u00fabrica como <strong>anuncio individual</strong> en el Stream de Classroom \u2014 solo \u00e9l puede verlo y no genera tarea pendiente.'
+    + '<div id="crSelCount" style="font-size:12px;font-weight:600;color:var(--text2);margin-top:10px;"></div>'
+    + '<div style="font-size:11px;color:var(--text3);margin-top:6px;line-height:1.6;">'
+    + 'Marca a qui\u00e9nes enviar \u2014 puedes hacerlo de forma individual o con la casilla superior para todos. '
+    + 'Cada seleccionado recibir\u00e1 su r\u00fabrica como <strong>anuncio individual</strong> en su Stream de Classroom. '
+    + 'Los ya enviados parten desmarcados: m\u00e1rcalos solo si quieres reenviar.'
     + '</div>'
     + '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">'
     + '<button class="btn" onclick="cerrarModal()">Cancelar</button>'
-    + '<button class="btn btn-primary" style="background:#188038;border-color:#188038;" onclick="_ejecutarEnvioClassroom()">S\u00ed aceptar</button>'
+    + '<button class="btn btn-primary" id="crBtnEnviar" style="background:#188038;border-color:#188038;" onclick="_ejecutarEnvioClassroom()">S\u00ed aceptar</button>'
     + '</div></div>'
   );
+  _classroomActualizarSeleccion();
+}
+
+// Casilla maestra: marca/desmarca todos los estudiantes emparejados
+function _classroomSeleccionarTodos(estado) {
+  document.querySelectorAll('.crSelChk').forEach(function(c){ c.checked = estado; });
+  _classroomActualizarSeleccion();
+}
+
+// Actualiza contador, casilla maestra y estado del botón de envío
+function _classroomActualizarSeleccion() {
+  var chks = Array.prototype.slice.call(document.querySelectorAll('.crSelChk'));
+  var sel = chks.filter(function(c){ return c.checked; }).length;
+  var cont = document.getElementById('crSelCount');
+  if (cont) cont.textContent = sel + ' de ' + chks.length + ' estudiante' + (chks.length !== 1 ? 's' : '') + ' seleccionado' + (sel !== 1 ? 's' : '') + ' para enviar';
+  var all = document.getElementById('crSelAll');
+  if (all) { all.checked = (sel === chks.length && chks.length > 0); all.indeterminate = (sel > 0 && sel < chks.length); }
+  var btn = document.getElementById('crBtnEnviar');
+  if (btn) { btn.disabled = (sel === 0); btn.style.opacity = sel === 0 ? '0.45' : '1'; btn.style.cursor = sel === 0 ? 'not-allowed' : 'pointer'; }
 }
 
 async function _ejecutarEnvioClassroom() {
   var matches = window._classroomMatchesPendientes || [];
-  var reenviar = !!(document.getElementById('classroomReenviarChk') && document.getElementById('classroomReenviarChk').checked);
+  // Selección individual: enviar EXACTAMENTE a los estudiantes marcados
+  var seleccion = [];
+  document.querySelectorAll('.crSelChk').forEach(function(c){ if (c.checked) seleccion.push(parseInt(c.dataset.i, 10)); });
   cerrarModal();
   if (!matches.length || !_classroomCursoCR) { toast('\u26a0 No hay emparejamientos para enviar', 'err', 3000); return; }
-
-  // Control de reenvíos: por defecto se omiten los ya enviados
-  var pendientes = matches.filter(function(m){ return reenviar || !m.registro._classroomEnviadoAt; });
+  var pendientes = seleccion.map(function(i){ return matches[i]; }).filter(Boolean);
   var omitidos = matches.length - pendientes.length;
   if (!pendientes.length) {
-    toast('\u2139\ufe0f Todos los emparejados ya fueron enviados \u2014 marca "reenviar" si quieres publicarlos de nuevo', 'info', 5000);
+    toast('\u2139\ufe0f No hay estudiantes seleccionados \u2014 marca al menos uno en la lista', 'info', 4000);
     return;
   }
 
@@ -25030,7 +25064,7 @@ async function _ejecutarEnvioClassroom() {
     + '<div style="font-size:15px;font-weight:700;margin-bottom:6px;">' + (fallidos.length ? '\u26a0\ufe0f' : '\u2705') + ' Resultado del env\u00edo \u2014 ' + _esc(_classroomCursoCR.name) + '</div>'
     + '<div style="font-size:12px;color:var(--text2);margin-bottom:10px;"><strong style="color:#188038;">' + ok.length + ' publicada' + (ok.length !== 1 ? 's' : '') + '</strong>'
     + (fallidos.length ? ' \u00b7 <strong style="color:var(--red);">' + fallidos.length + ' fallida' + (fallidos.length !== 1 ? 's' : '') + '</strong>' : '')
-    + (omitidos ? ' \u00b7 ' + omitidos + ' omitida' + (omitidos !== 1 ? 's' : '') + ' (ya enviadas)' : '') + '</div>'
+    + (omitidos ? ' \u00b7 ' + omitidos + ' omitida' + (omitidos !== 1 ? 's' : '') + ' (no seleccionadas)' : '') + '</div>'
     + '<div style="max-height:260px;overflow-y:auto;">' + okHtml + failHtml + '</div>'
     + '<div style="font-size:11px;color:var(--text3);margin-top:10px;">Verifica con "Ver en Classroom" \u2014 abre el anuncio individual publicado. Los enviados quedan sellados y no se duplican en futuros env\u00edos.</div>'
     + '<div style="display:flex;justify-content:flex-end;margin-top:12px;">'
