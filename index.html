@@ -25001,27 +25001,252 @@ function _invitarAClassroom(j) {
   });
 }
 
+// ═══ PDF de la rúbrica con formato institucional (jsPDF, carga diferida) ═══
+// Las librerías se cargan desde cdnjs SOLO la primera vez que se envía un
+// correo con adjunto — cero impacto en la carga inicial de la app.
+function _cargarJsPDF() {
+  if (window.jspdf && window.jspdf.jsPDF) {
+    var d = new window.jspdf.jsPDF();
+    if (typeof d.autoTable === 'function') return Promise.resolve();
+  }
+  function inyectar(src) {
+    return new Promise(function(res, rej) {
+      var s = document.createElement('script');
+      s.src = src;
+      s.onload = res;
+      s.onerror = function(){ rej(new Error('No se pudo cargar ' + src)); };
+      document.head.appendChild(s);
+      // Timeout de seguridad: si el CDN no responde, no bloquear el envío
+      setTimeout(function(){ rej(new Error('Tiempo de espera agotado cargando ' + src)); }, 10000);
+    });
+  }
+  if (!window._jsPDFCargando) {
+    window._jsPDFCargando = inyectar('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js')
+      .then(function(){ return inyectar('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js'); })
+      .catch(function(e){ window._jsPDFCargando = null; throw e; });
+  }
+  return window._jsPDFCargando;
+}
+
+// Genera el PDF del informe (mismo formato institucional que el imprimible:
+// encabezado, datos, banda resumen, matriz 8 criterios con ✓, leyenda, firmas).
+// Devuelve el contenido en base64 (sin prefijo data:).
+function _generarPDFRubrica(r) {
+  var jsPDF = window.jspdf.jsPDF;
+  var doc = new jsPDF({ unit: 'pt', format: 'a4' });
+  var W = doc.internal.pageSize.getWidth();
+  var M = 40, y = 46;
+
+  var nota    = (typeof r.nota === 'number') ? r.nota : (parseFloat(r.nota) || 1);
+  var detalle = Array.isArray(r.detalle) ? r.detalle : [];
+  var maxPts  = r.maxPts || (detalle.length * 3) || 24;
+  var pts     = (typeof r.pts === 'number') ? r.pts
+              : detalle.reduce(function(s,d){ return s + (d.nivel==='MB'?3:d.nivel==='L'?2:d.nivel==='M'?1:0); }, 0);
+  var pct     = r.pct || (maxPts ? Math.round(pts / maxPts * 100) : 0);
+  var colegio = localStorage.getItem('av_email_colegio') || 'Colegio Eliodoro Matte Ossa';
+  var prof    = localStorage.getItem('av_nombre_prof') || localStorage.getItem('av_email_prof') || '';
+
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
+  doc.text('INFORME DE RÚBRICA EVALUADA · ARTES VISUALES', M, y); y += 14;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+  doc.text(colegio + (prof ? ' · Docente: ' + prof : ''), M, y); y += 10;
+
+  // Datos del estudiante
+  var metaBody = [
+    ['Estudiante', r.nombre || ''],
+    ['Curso', r.curso || '—'],
+    ['Instancia', r.instancia || 'Evaluación 1'],
+    ['Rúbrica', r.rubricaNombre || '—'],
+    ['Fecha evaluación', r.fecha || '—']
+  ];
+  if (r.pie) metaBody.push(['Estudiante PIE', 'Sí' + (r.pieNota ? ' · ' + r.pieNota : '')]);
+  doc.autoTable({
+    startY: y, margin: { left: M, right: M },
+    body: metaBody, theme: 'grid',
+    styles: { font: 'helvetica', fontSize: 8.5, cellPadding: 4, lineColor: [0,0,0], lineWidth: 0.5, textColor: [0,0,0] },
+    columnStyles: { 0: { cellWidth: 120, fontStyle: 'bold', fillColor: [242,242,242] } }
+  });
+  y = doc.lastAutoTable.finalY + 8;
+
+  if (r.noEntregado) {
+    doc.autoTable({
+      startY: y, margin: { left: M, right: M },
+      body: [['⚠ Trabajo no entregado — calificación mínima registrada según reglamento.']],
+      theme: 'grid',
+      styles: { font: 'helvetica', fontStyle: 'bold', fontSize: 8.5, cellPadding: 5, lineColor: [0,0,0], lineWidth: 1, textColor: [0,0,0] }
+    });
+    y = doc.lastAutoTable.finalY + 8;
+  }
+
+  // Banda resumen
+  doc.autoTable({
+    startY: y, margin: { left: M, right: M },
+    head: [['NOTA FINAL', 'PUNTAJE', 'LOGRO', 'RESULTADO (≥ 4.0)']],
+    body: [[nota.toFixed(1), pts + ' / ' + maxPts, pct + '%', (nota >= 4 ? 'LOGRADO' : 'POR LOGRAR')]],
+    theme: 'grid',
+    headStyles: { font: 'helvetica', fontSize: 7, halign: 'center', fillColor: [242,242,242], textColor: [0,0,0], lineColor: [0,0,0], lineWidth: 0.5 },
+    styles: { font: 'helvetica', fontStyle: 'bold', fontSize: 13, halign: 'center', cellPadding: 6, lineColor: [0,0,0], lineWidth: 0.5, textColor: [0,0,0] }
+  });
+  y = doc.lastAutoTable.finalY + 10;
+
+  // Matriz de criterios — la columna del nivel logrado va sombreada y con ✓ dibujado
+  var NIVCOL = { MB: 1, L: 2, M: 3, N: 4 };
+  var filas = detalle.map(function(d, i) {
+    var crit = (i+1) + '. ' + (_critNombre(d.criterio) || ('Criterio ' + (i+1)))
+             + (d.nota ? '\nObs.: ' + d.nota : '');
+    var descMB = _critDescMB(r, d, i) || '';
+    var ptsObt = d.nivel==='MB'?3:d.nivel==='L'?2:d.nivel==='M'?1:0;
+    return [crit, descMB, '', '', '', String(ptsObt)];
+  });
+  if (!filas.length) filas = [['Sin desglose por criterio registrado para esta evaluación.', '', '', '', '', '']];
+
+  doc.autoTable({
+    startY: y, margin: { left: M, right: M },
+    head: [['Criterio de evaluación', 'Muy bien logrado\n(3 pts)', 'Logrado\n(2 pts)', 'Medianamente logrado\n(1 pt)', 'Por lograr\n(0 pts)', 'Pts']],
+    body: filas,
+    theme: 'grid',
+    headStyles: { font: 'helvetica', fontSize: 7, halign: 'center', fillColor: [242,242,242], textColor: [0,0,0], lineColor: [0,0,0], lineWidth: 0.5 },
+    styles: { font: 'helvetica', fontSize: 7.5, cellPadding: 4, lineColor: [0,0,0], lineWidth: 0.5, textColor: [0,0,0], valign: 'top' },
+    columnStyles: { 0: { cellWidth: 150 }, 1: { cellWidth: 115, fontSize: 6.8 }, 2: { cellWidth: 58, halign: 'center' }, 3: { cellWidth: 60, halign: 'center' }, 4: { cellWidth: 58, halign: 'center' }, 5: { cellWidth: 24, halign: 'center', fontStyle: 'bold' } },
+    didParseCell: function(data) {
+      if (data.section !== 'body') return;
+      var d = detalle[data.row.index];
+      if (!d) return;
+      var col = NIVCOL[d.nivel];
+      if (col && data.column.index === col) data.cell.styles.fillColor = [221, 221, 221];
+    },
+    didDrawCell: function(data) {
+      if (data.section !== 'body') return;
+      var d = detalle[data.row.index];
+      if (!d) return;
+      var col = NIVCOL[d.nivel];
+      if (col && data.column.index === col) {
+        // ✓ dibujado en vectores (los tipos estándar de PDF no traen U+2713)
+        var cx = data.cell.x + data.cell.width / 2;
+        var cy = data.cell.y + 10;
+        doc.setDrawColor(0, 0, 0); doc.setLineWidth(1.4);
+        doc.line(cx - 4, cy, cx - 1.2, cy + 3.2);
+        doc.line(cx - 1.2, cy + 3.2, cx + 4.6, cy - 4);
+      }
+    }
+  });
+  y = doc.lastAutoTable.finalY + 10;
+
+  // Leyenda
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(7);
+  var leyenda = 'La celda sombreada con el visto indica el nivel de logro alcanzado por el o la estudiante en cada criterio. '
+    + 'La columna "Muy bien logrado" describe la meta máxima de cada criterio. '
+    + 'Exigencia 60%: el 60% del puntaje total equivale a la nota 4.0. Escala de 1.0 a 7.0.';
+  var leyLines = doc.splitTextToSize(leyenda, W - 2 * M);
+  if (y + leyLines.length * 8 + 90 > doc.internal.pageSize.getHeight() - 40) { doc.addPage(); y = 50; }
+  doc.text(leyLines, M, y); y += leyLines.length * 8 + 44;
+
+  // Firmas
+  var mitad = (W - 2 * M - 40) / 2;
+  doc.setLineWidth(0.7); doc.setDrawColor(0, 0, 0);
+  doc.line(M, y, M + mitad, y);
+  doc.line(M + mitad + 40, y, W - M, y);
+  doc.setFontSize(8);
+  doc.text('Firma Profesor(a)', M + mitad / 2, y + 11, { align: 'center' });
+  doc.text('Firma Apoderado(a)', M + mitad + 40 + mitad / 2, y + 11, { align: 'center' });
+
+  // Pie
+  doc.setFontSize(7); doc.setTextColor(90, 90, 90);
+  var hoyGen = new Date().toLocaleDateString('es-CL', { year: 'numeric', month: 'long', day: 'numeric' });
+  doc.text('Generado por ArtEval el ' + hoyGen + ' · Documento informativo para el apoderado', W / 2, doc.internal.pageSize.getHeight() - 28, { align: 'center' });
+
+  var dataUri = doc.output('datauristring');
+  return dataUri.slice(dataUri.indexOf(',') + 1);
+}
+
+// Nombre de archivo seguro (ASCII) para el adjunto
+function _nombreArchivoRubrica(r) {
+  var base = 'Rubrica Evaluada - ' + (r.nombre || 'Estudiante');
+  return base.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w\s.-]/g, '').replace(/\s+/g, '_') + '.pdf';
+}
+
 // ═══ Respaldo: enviar la rúbrica por correo institucional (Gmail API) ═══
-// Versión silenciosa para lotes: devuelve Promise, sin toasts ni ventanas.
-function _enviarRubricaPorCorreo(tok, email, registro) {
+// Envía el PDF con formato institucional como ADJUNTO (multipart/mixed) con
+// un mensaje breve en el cuerpo. Si jsPDF no puede cargarse (sin red al CDN),
+// recurre al texto plano para no bloquear el envío. Diagnóstico de errores
+// con sugerencia accionable, igual que el módulo de Classroom.
+async function _enviarRubricaPorCorreo(tok, email, registro) {
   var CRLF = '\r\n';
-  var asunto = 'R\u00fabrica evaluada \u2014 ' + (registro.rubricaNombre || 'Artes Visuales') + ' (' + (registro.instancia || 'Evaluaci\u00f3n 1') + ')';
-  var cuerpo = _rubricaTextoPlano(registro);
-  var hdrs = (_gmailLinkedEmail ? 'From: ' + _gmailLinkedEmail + CRLF : '')
-    + 'To: ' + email + CRLF
-    + 'Subject: =?UTF-8?B?' + btoa(unescape(encodeURIComponent(asunto))) + '?=' + CRLF
-    + 'MIME-Version: 1.0' + CRLF + 'Content-Type: text/plain; charset=UTF-8' + CRLF
-    + 'Content-Transfer-Encoding: base64' + CRLF;
-  var raw = btoa(hdrs + CRLF + btoa(unescape(encodeURIComponent(cuerpo)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-  return fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+  var asunto = 'Rúbrica evaluada — ' + (registro.rubricaNombre || 'Artes Visuales') + ' (' + (registro.instancia || 'Evaluación 1') + ')';
+  var b64utf8 = function(s){ return btoa(unescape(encodeURIComponent(s))); };
+
+  // Intentar generar el PDF institucional
+  var pdfB64 = null;
+  try {
+    await _cargarJsPDF();
+    pdfB64 = _generarPDFRubrica(registro);
+  } catch (ePdf) {
+    console.warn('[ArtEval·Correo] PDF no disponible, se enviará texto plano:', ePdf.message);
+  }
+
+  var raw;
+  if (pdfB64) {
+    var cuerpoBreve = 'Estimado/a ' + (registro.nombre || 'estudiante') + ',\n\n'
+      + 'Adjunto encontrarás el informe de tu rúbrica evaluada de Artes Visuales.\n'
+      + 'Instancia: ' + (registro.instancia || 'Evaluación 1') + ' · Rúbrica: ' + (registro.rubricaNombre || '—') + '\n'
+      + 'Nota final: ' + (((typeof registro.nota === 'number') ? registro.nota : parseFloat(registro.nota) || 1)).toFixed(1) + '\n\n'
+      + 'Este documento es informativo para el estudiante y su apoderado.\n'
+      + (localStorage.getItem('av_nombre_prof') ? '\n' + localStorage.getItem('av_nombre_prof') + '\nProfesor de Artes Visuales' : '');
+    var B = 'arteval_' + Date.now();
+    raw = btoa(
+      (_gmailLinkedEmail ? 'From: ' + _gmailLinkedEmail + CRLF : '')
+      + 'To: ' + email + CRLF
+      + 'Subject: =?UTF-8?B?' + b64utf8(asunto) + '?=' + CRLF
+      + 'MIME-Version: 1.0' + CRLF
+      + 'Content-Type: multipart/mixed; boundary="' + B + '"' + CRLF + CRLF
+      + '--' + B + CRLF
+      + 'Content-Type: text/plain; charset=UTF-8' + CRLF
+      + 'Content-Transfer-Encoding: base64' + CRLF + CRLF
+      + b64utf8(cuerpoBreve) + CRLF
+      + '--' + B + CRLF
+      + 'Content-Type: application/pdf; name="' + _nombreArchivoRubrica(registro) + '"' + CRLF
+      + 'Content-Disposition: attachment; filename="' + _nombreArchivoRubrica(registro) + '"' + CRLF
+      + 'Content-Transfer-Encoding: base64' + CRLF + CRLF
+      + pdfB64 + CRLF
+      + '--' + B + '--'
+    ).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  } else {
+    // Respaldo de texto plano (sin PDF)
+    raw = btoa(
+      (_gmailLinkedEmail ? 'From: ' + _gmailLinkedEmail + CRLF : '')
+      + 'To: ' + email + CRLF
+      + 'Subject: =?UTF-8?B?' + b64utf8(asunto) + '?=' + CRLF
+      + 'MIME-Version: 1.0' + CRLF + 'Content-Type: text/plain; charset=UTF-8' + CRLF
+      + 'Content-Transfer-Encoding: base64' + CRLF + CRLF
+      + b64utf8(_rubricaTextoPlano(registro))
+    ).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+
+  var resp = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
     method: 'POST',
     headers: { 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json' },
     body: JSON.stringify({ raw: raw })
-  }).then(function(r) {
-    if (!r.ok) throw new Error('Gmail HTTP ' + r.status);
-    return r.json();
   });
+  if (!resp.ok) {
+    var detalle = '';
+    try { var j = await resp.json(); detalle = (j.error && j.error.message) || ''; } catch (e) {}
+    console.warn('[ArtEval·Correo] Gmail HTTP ' + resp.status + ':', detalle);
+    var err = new Error('Gmail ' + resp.status + (detalle ? ': ' + detalle : ''));
+    if (resp.status === 403 && /has not been used|is disabled|SERVICE_DISABLED|accessNotConfigured/i.test(detalle)) {
+      err._sugerencia = 'La API de Gmail NO está habilitada en tu proyecto de Google Cloud (igual que pasó con Classroom). '
+        + 'Entra a console.cloud.google.com → APIs y servicios → Biblioteca → busca "Gmail API" → Habilitar, espera 2 minutos y reintenta.';
+    } else if (resp.status === 403 && /Delegation denied|Mail service not enabled|failedPrecondition/i.test(detalle)) {
+      err._sugerencia = 'El Workspace del colegio tiene restricciones sobre esta casilla (Gmail deshabilitado o delegación bloqueada). Consulta con el administrador del dominio.';
+    } else if (resp.status === 403) {
+      err._sugerencia = 'Permiso denegado por Google. Desconecta y vuelve a conectar tu cuenta en la pestaña Correo aceptando el permiso de envío.';
+    } else if (resp.status === 401) {
+      err._sugerencia = 'La sesión de Gmail expiró. Reconecta tu cuenta en la pestaña Correo.';
+    }
+    throw err;
+  }
+  return resp.json();
 }
+
 function _tokenGmailPromise() {
   return new Promise(function(res) {
     if (typeof _obtenerTokenGmail !== 'function') { res(null); return; }
@@ -25332,7 +25557,7 @@ async function _ejecutarEnvioClassroom() {
           if (m.crStudent.profile && m.crStudent.profile.emailAddress) _emailEstudianteSet(m.registro.nombre, m.registro.curso, emailCR);
           resultados.push({ nombre: m.registro.nombre, estado: 'correo_inst', detalle: emailCR });
         } catch (eC) {
-          resultados.push({ nombre: m.registro.nombre, estado: 'error', detalle: 'Correo: ' + eC.message });
+          resultados.push({ nombre: m.registro.nombre, estado: 'error', detalle: 'Correo: ' + eC.message + (eC._sugerencia ? ' → ' + eC._sugerencia : '') });
         }
       }
       await new Promise(function(rs){ setTimeout(rs, 200); });
@@ -25357,7 +25582,7 @@ async function _ejecutarEnvioClassroom() {
             huboCambios = true;
             resultados.push({ nombre: m.registro.nombre, estado: 'correo_fallback', detalle: emailFb });
           } catch (e2) {
-            resultados.push({ nombre: m.registro.nombre, estado: 'error', detalle: 'Classroom: ' + e.message + ' \u00b7 Correo: ' + e2.message });
+            resultados.push({ nombre: m.registro.nombre, estado: 'error', detalle: 'Classroom: ' + e.message + ' \u00b7 Correo: ' + e2.message + (e2._sugerencia ? ' → ' + e2._sugerencia : '') });
           }
         } else {
           resultados.push({ nombre: m.registro.nombre, estado: 'error', detalle: e.message + ' \u2014 sin correo registrado para respaldo' });
@@ -25384,7 +25609,7 @@ async function _ejecutarEnvioClassroom() {
       huboCambios = true;
       resultados.push({ nombre: r.nombre, estado: 'correo', detalle: emailDest });
     } catch (e) {
-      resultados.push({ nombre: r.nombre, estado: 'error', detalle: e.message });
+      resultados.push({ nombre: r.nombre, estado: 'error', detalle: e.message + (e._sugerencia ? ' → ' + e._sugerencia : '') });
     }
     await new Promise(function(rs){ setTimeout(rs, 200); });
   }
