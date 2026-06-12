@@ -5890,7 +5890,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
                 <div style="font-size:11px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;font-family:var(--font-mono);letter-spacing:0.4px;">Tu origen actual (agrégalo en Google Cloud):</div>
                 <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                   <code id="driveCurrentOrigin" style="font-size:13px;font-weight:700;color:var(--accent);background:var(--accent-bg);padding:4px 10px;border-radius:var(--rad);font-family:var(--font-mono);"></code>
-                  <button onclick="navigator.clipboard.writeText(document.getElementById('driveCurrentOrigin').textContent).then(function(){toast('✅ Copiado','ok',1500)}).catch(function(){toast('No se pudo copiar — selecciona y copia manualmente','err',3000)})" class="btn btn-sm" style="font-size:11px;">📋 Copiar</button>
+                  <button onclick="if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(document.getElementById('driveCurrentOrigin').textContent).then(function(){toast('✅ Copiado','ok',1500)}).catch(function(){toast('No se pudo copiar — selecciona y copia manualmente','err',3000)})}else{toast('Copia manualmente el texto mostrado','err',3000)}" class="btn btn-sm" style="font-size:11px;">📋 Copiar</button>
                 </div>
                 <div id="driveOriginHint" style="font-size:11px;color:var(--text3);margin-top:6px;line-height:1.6;"></div>
               </div>
@@ -6661,7 +6661,6 @@ function saveRegistros() {
     _checkStorageSize();
     setTimeout(function(){
       if(typeof _actualizarEstadoSync==='function') _actualizarEstadoSync();
-      else if(typeof _updateDriveIntegrityBadge==='function') _updateDriveIntegrityBadge();
     }, 200);
   } catch(e) {
     if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
@@ -16827,7 +16826,6 @@ function _actualizarEstadoSync() {
                    Date.now() < (typeof _driveTokenExp !== 'undefined' ? _driveTokenExp : 0);
 
   // Badge de integridad
-  if (typeof _updateDriveIntegrityBadge === 'function') _updateDriveIntegrityBadge();
 
   // Si hay pendientes y token activo, disparar sync
   if (localCount > driveCount && driveCount > 0 && tieneToken) {
@@ -20888,6 +20886,11 @@ function _registrosConNota(curso) {
   return registros.filter(function(r) {
     if ((r.curso || '') !== curso) return false;
     if (r._deletedAt) return false;
+    // CONFLICTO SEMESTRE (corregido): el envío masivo y la descarga de informes
+    // respetan el semestre activo del header, igual que el resto de la app.
+    // Sin esto, "Todas las instancias" mezclaba rúbricas de ambos semestres
+    // (los nombres de instancia se repiten entre semestres).
+    if (typeof _semestrePorInstancia === 'function' && _semestrePorInstancia(r.instancia || '') !== _semestreActivo) return false;
     var n = (typeof r.nota === 'number') ? r.nota : parseFloat(r.nota);
     return !isNaN(n) && n > 0; // solo estudiantes con nota registrada
   });
@@ -20920,7 +20923,7 @@ function descargarTodosInformes() {
   var cursoSafe = curso.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
   abrirModal(
     '<div style="padding:4px 2px;">'
-    + '<div style="font-size:15px;font-weight:700;margin-bottom:6px;">📥 Descargar todos los informes — ' + _esc(curso) + '</div>'
+    + '<div style="font-size:15px;font-weight:700;margin-bottom:6px;">📥 Descargar todos los informes — ' + _esc(curso) + ' <span style="font-size:10px;font-weight:700;color:var(--accent);background:rgba(255,149,0,0.12);padding:2px 9px;border-radius:20px;vertical-align:middle;">📅 ' + _semestreActivo + '° Semestre</span></div>'
     + '<div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:12px;">'
     + 'Se generará <strong>una sola vista de impresión</strong> con un informe por página. '
     + 'En el diálogo de impresión elige <strong>"Guardar como PDF"</strong> para obtener un único archivo con todos los informes del curso.'
@@ -22767,7 +22770,6 @@ function _onAccessToken(tokenResponse) {
       console.warn('[ArtEval] SmartSync falló:', e.message);
       // Fallback: solo actualizar panel
       _checkDriveSyncInfo();
-      if (typeof _updateDriveIntegrityBadge === 'function') _updateDriveIntegrityBadge();
     });
   }, 300);
   // PASO 3: verificar espacio local
@@ -23302,7 +23304,6 @@ async function _smartSyncOnConnect() {
         console.error('[ArtEval] Error al restaurar en dispositivo nuevo:', restoreErr.message);
         toast('⚠️ Error al restaurar desde Drive: ' + restoreErr.message, 'err', 6000);
       }
-      if (typeof _updateDriveIntegrityBadge === 'function') _updateDriveIntegrityBadge();
       return;
     }
 
@@ -23392,7 +23393,6 @@ async function _smartSyncOnConnect() {
     }
 
     // Actualizar badge de integridad
-    if (typeof _updateDriveIntegrityBadge === 'function') _updateDriveIntegrityBadge();
 
   } catch(e) {
     console.warn('[ArtEval] SmartSync error (silencioso):', e.message);
@@ -23502,7 +23502,6 @@ async function syncToDrive() {
     localStorage.setItem('av_sync_pending',     '0'); // limpiar flag online/offline
     _updateCloudUI('synced');
     _checkDriveSyncInfo();
-    if (typeof _updateDriveIntegrityBadge === 'function') _updateDriveIntegrityBadge();
 
     // ── Drive-first cleanup: subir imágenes pendientes y limpiar base64 de RAM ──
     // Cualquier registro con _pendingDriveUpload=true tiene imagenBase64 en RAM
@@ -24638,7 +24637,7 @@ var _classroomTokenExp    = 0;
 var _classroomCursoCR     = null;   // curso de Classroom elegido {id, name}
 var CLASSROOM_SCOPES =
     'https://www.googleapis.com/auth/classroom.courses.readonly '
-  + 'https://www.googleapis.com/auth/classroom.rosters.readonly '
+  + 'https://www.googleapis.com/auth/classroom.rosters '
   + 'https://www.googleapis.com/auth/classroom.announcements '
   + 'https://www.googleapis.com/auth/classroom.coursework.students';
 
@@ -24927,11 +24926,114 @@ async function _classroomElegirCurso(courseId, courseName) {
   }
 }
 
+// ═══ Correos institucionales de estudiantes (para invitar / respaldo) ═══
+// Mapa persistente nombre+curso → email, clave 'av_emails_estudiantes'.
+function _emailEstudianteKey(nombre, curso) {
+  return normalizarStrict(nombre || '') + '|' + _normCursoKey(curso || '');
+}
+function _emailEstudianteGet(nombre, curso) {
+  try { var m = JSON.parse(localStorage.getItem('av_emails_estudiantes') || '{}'); return m[_emailEstudianteKey(nombre, curso)] || ''; } catch (e) { return ''; }
+}
+function _emailEstudianteSet(nombre, curso, email) {
+  try {
+    var m = JSON.parse(localStorage.getItem('av_emails_estudiantes') || '{}');
+    m[_emailEstudianteKey(nombre, curso)] = (email || '').trim();
+    localStorage.setItem('av_emails_estudiantes', JSON.stringify(m));
+  } catch (e) {}
+}
+
+// Modal compacto para capturar el correo institucional de un estudiante.
+// onOk(email) se invoca tras guardar.
+function _pedirEmailEstudiante(nombre, curso, onOk) {
+  window._emailEstCb = onOk;
+  var actual = _emailEstudianteGet(nombre, curso);
+  var nomSafe = (nombre || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  var curSafe = (curso || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  abrirModal(
+    '<div style="padding:4px 2px;">'
+    + '<div style="font-size:15px;font-weight:700;margin-bottom:6px;">\u2709\ufe0f Correo institucional del estudiante</div>'
+    + '<div style="font-size:12px;color:var(--text2);margin-bottom:12px;">' + _esc(nombre) + ' \u00b7 ' + _esc(curso) + '</div>'
+    + '<input type="email" id="emailEstInput" class="filter-select" style="width:100%;margin-bottom:14px;" placeholder="nombre.apellido@colegio.cl" value="' + _esc(actual) + '" autocomplete="off">'
+    + '<div style="font-size:11px;color:var(--text3);margin-bottom:12px;">Se guardar\u00e1 para futuros env\u00edos e invitaciones de este estudiante.</div>'
+    + '<div style="display:flex;gap:8px;justify-content:flex-end;">'
+    + '<button class="btn" onclick="cerrarModal()">Cancelar</button>'
+    + '<button class="btn btn-primary" onclick="(function(){var v=(document.getElementById(\'emailEstInput\').value||\'\').trim();if(!v||v.indexOf(\'@\')<1){toast(\'\u26a0 Ingresa un correo v\u00e1lido\',\'err\',3000);return;}_emailEstudianteSet(\'' + nomSafe + '\',\'' + curSafe + '\',v);cerrarModal();if(window._emailEstCb){var cb=window._emailEstCb;window._emailEstCb=null;cb(v);}})()">S\u00ed aceptar</button>'
+    + '</div></div>'
+  );
+  setTimeout(function(){ var i = document.getElementById('emailEstInput'); if (i) i.focus(); }, 120);
+}
+
+// ═══ Invitación a Classroom (classroom.invitations.create) ═══
+function _invitarAClassroom(j) {
+  var sm = (window._classroomSinMatch || [])[j];
+  if (!sm || !_classroomCursoCR) return;
+  var email = _emailEstudianteGet(sm.nombre, sm.curso);
+  if (!email) {
+    _pedirEmailEstudiante(sm.nombre, sm.curso, function() {
+      _classroomRenderMatchModal(window._classroomInstanciaSel || '__TODAS__');
+      setTimeout(function(){ _invitarAClassroom(j); }, 150);
+    });
+    return;
+  }
+  var btn = document.getElementById('btnInvitar_' + j);
+  if (btn) { btn.disabled = true; btn.textContent = 'Invitando\u2026'; }
+  _classroomApi('invitations', { method: 'POST', body: { courseId: _classroomCursoCR.id, role: 'STUDENT', userId: email } })
+  .then(function(resp) {
+    console.log('[ArtEval\u00b7Classroom] Invitaci\u00f3n creada:', resp.id, 'para', email);
+    if (btn) { btn.textContent = '\u2713 Invitaci\u00f3n enviada'; btn.style.background = 'rgba(52,199,89,0.12)'; btn.style.color = '#188038'; }
+    toast('\ud83d\udce7 Invitaci\u00f3n enviada a ' + email, 'ok', 4000);
+  })
+  .catch(function(e) {
+    if (/409|ALREADY_EXISTS/i.test(e.message)) {
+      if (btn) { btn.textContent = '\u2713 Ya invitado'; btn.disabled = true; btn.style.color = '#188038'; }
+      toast('\u2139\ufe0f ' + sm.nombre.split(' ')[0] + ' ya tiene una invitaci\u00f3n pendiente', 'info', 4000);
+    } else if (/404|NOT_FOUND/i.test(e.message)) {
+      if (btn) { btn.disabled = false; btn.textContent = '\ud83d\udce7 Invitar a Classroom'; }
+      _classroomMostrarError('Google no encontr\u00f3 la cuenta ' + email, {
+        message: e.message,
+        _sugerencia: 'Verifica que el correo sea exactamente el institucional del estudiante (dominio del colegio). Las cuentas personales @gmail.com pueden estar bloqueadas por las pol\u00edticas del Workspace del colegio.'
+      });
+    } else {
+      if (btn) { btn.disabled = false; btn.textContent = '\ud83d\udce7 Invitar a Classroom'; }
+      _classroomMostrarError('No se pudo crear la invitaci\u00f3n', e);
+    }
+  });
+}
+
+// ═══ Respaldo: enviar la rúbrica por correo institucional (Gmail API) ═══
+// Versión silenciosa para lotes: devuelve Promise, sin toasts ni ventanas.
+function _enviarRubricaPorCorreo(tok, email, registro) {
+  var CRLF = '\r\n';
+  var asunto = 'R\u00fabrica evaluada \u2014 ' + (registro.rubricaNombre || 'Artes Visuales') + ' (' + (registro.instancia || 'Evaluaci\u00f3n 1') + ')';
+  var cuerpo = _rubricaTextoPlano(registro);
+  var hdrs = (_gmailLinkedEmail ? 'From: ' + _gmailLinkedEmail + CRLF : '')
+    + 'To: ' + email + CRLF
+    + 'Subject: =?UTF-8?B?' + btoa(unescape(encodeURIComponent(asunto))) + '?=' + CRLF
+    + 'MIME-Version: 1.0' + CRLF + 'Content-Type: text/plain; charset=UTF-8' + CRLF
+    + 'Content-Transfer-Encoding: base64' + CRLF;
+  var raw = btoa(hdrs + CRLF + btoa(unescape(encodeURIComponent(cuerpo)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  return fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ raw: raw })
+  }).then(function(r) {
+    if (!r.ok) throw new Error('Gmail HTTP ' + r.status);
+    return r.json();
+  });
+}
+function _tokenGmailPromise() {
+  return new Promise(function(res) {
+    if (typeof _obtenerTokenGmail !== 'function') { res(null); return; }
+    _obtenerTokenGmail(function(t) { res(t); }, function() { res(null); });
+  });
+}
+
 // Renderiza (y re-renderiza al cambiar instancia) el modal de emparejamiento.
 function _classroomRenderMatchModal(instanciaFiltro) {
   var alumnosCR = window._classroomAlumnosCR || [];
   var res = _matchAlumnosClassroom(cursoSeleccionado, alumnosCR, instanciaFiltro);
   window._classroomMatchesPendientes = res.matches;
+  window._classroomSinMatch = res.sinMatch;
   window._classroomInstanciaSel = instanciaFiltro;
 
   // Selector de instancia (mismas opciones que la descarga masiva)
@@ -24944,33 +25046,88 @@ function _classroomRenderMatchModal(instanciaFiltro) {
     return '<option value="' + _esc(inst) + '"' + sel + '>' + _esc(inst) + '</option>';
   }).join('') + '<option value="__TODAS__"' + (instanciaFiltro === '__TODAS__' ? ' selected' : '') + '>Todas las instancias</option>';
 
-  // ── Selección individual por estudiante ──
-  // Por defecto: marcados los que NO han recibido su rúbrica; los ya enviados
-  // quedan desmarcados (márcalos solo si quieres reenviar a alguien puntual).
+  // ── PANEL DE DIAGNÓSTICO: alumnos locales que NO están en Classroom ──
+  var alumnosNoInscritos = [];
+  var vistosNI = {};
+  res.sinMatch.forEach(function(r) {
+    var k = _emailEstudianteKey(r.nombre, r.curso);
+    if (!vistosNI[k]) { vistosNI[k] = true; alumnosNoInscritos.push(r); }
+  });
+  var alertaAudit = alumnosNoInscritos.length
+    ? '<div style="display:flex;align-items:center;gap:8px;background:rgba(255,204,0,0.14);border:1px solid rgba(255,204,0,0.45);border-radius:10px;padding:9px 13px;margin-bottom:10px;">'
+      + '<span style="font-size:15px;">\u26a0\ufe0f</span>'
+      + '<span style="font-size:12px;font-weight:600;color:#8a6d00;">' + alumnosNoInscritos.length + ' alumno' + (alumnosNoInscritos.length !== 1 ? 's' : '') + ' no est\u00e1' + (alumnosNoInscritos.length !== 1 ? 'n' : '') + ' inscrito' + (alumnosNoInscritos.length !== 1 ? 's' : '') + ' en Classroom</span>'
+      + '<span style="font-size:11px;color:#8a6d00;margin-left:auto;">inv\u00edtalos o env\u00edales su r\u00fabrica por correo \u2193</span>'
+      + '</div>'
+    : '';
+
+  // ── Filas emparejadas (env\u00edo v\u00eda Classroom) ──
   var okRows = res.matches.map(function(m, i) {
     var full = m.crStudent.profile.name.fullName;
     var enviado = !!m.registro._classroomEnviadoAt;
-    var sello = enviado
+    // CONFLICTO "rúbrica corregida tras envío" (corregido): si el registro fue
+    // editado DESPUÉS del último envío, el estudiante tiene una versión
+    // desactualizada → sello naranja y casilla marcada para reenvío natural.
+    // Tolerancia de 60s: saveRegistros estampa _savedAt instantes después del envío.
+    var _envTs = enviado ? +new Date(m.registro._classroomEnviadoAt)
+               : (m.registro._rubricaCorreoAt ? +new Date(m.registro._rubricaCorreoAt) : 0);
+    var _edTs = Math.max(
+      m.registro._savedAt ? +new Date(m.registro._savedAt) : 0,
+      m.registro._editedAt ? +new Date(m.registro._editedAt) : 0
+    );
+    var modificadoTras = _envTs > 0 && _edTs > _envTs + 60000;
+    var sello = modificadoTras
+      ? '<span style="font-size:9px;color:#FF9500;font-weight:700;margin-left:6px;white-space:nowrap;">\u26a0 modificado tras env\u00edo \u2014 reenviar</span>'
+      : enviado
       ? '<span style="font-size:9px;color:#188038;font-weight:700;margin-left:6px;white-space:nowrap;">\u2713 enviado ' + new Date(m.registro._classroomEnviadoAt).toLocaleDateString('es-CL') + '</span>'
-      : '';
+      : (m.registro._rubricaCorreoAt
+        ? '<span style="font-size:9px;color:#0A84FF;font-weight:700;margin-left:6px;white-space:nowrap;">\u2709 por correo ' + new Date(m.registro._rubricaCorreoAt).toLocaleDateString('es-CL') + '</span>'
+        : '');
+    var marcadoCR = (!enviado || modificadoTras) ? ' checked' : '';
     return '<tr style="cursor:pointer;" onclick="var c=this.querySelector(\'.crSelChk\');if(event.target!==c){c.checked=!c.checked;}_classroomActualizarSeleccion();">'
-      + '<td style="padding:4px 8px;border-bottom:1px solid var(--border);width:26px;text-align:center;"><input type="checkbox" class="crSelChk" data-i="' + i + '"' + (enviado ? '' : ' checked') + ' onclick="event.stopPropagation();_classroomActualizarSeleccion();"></td>'
+      + '<td style="padding:4px 8px;border-bottom:1px solid var(--border);width:26px;text-align:center;"><input type="checkbox" class="crSelChk" data-tipo="cr" data-i="' + i + '"' + marcadoCR + ' onclick="event.stopPropagation();_classroomActualizarSeleccion();"></td>'
       + '<td style="padding:4px 8px;border-bottom:1px solid var(--border);">' + _esc(m.registro.nombre) + sello
       + '</td><td style="padding:4px 8px;border-bottom:1px solid var(--border);color:var(--text2);">' + _esc(full)
       + '</td><td style="padding:4px 8px;border-bottom:1px solid var(--border);font-family:var(--font-mono);">' + ((m.registro.nota||1).toFixed ? (m.registro.nota||1).toFixed(1) : m.registro.nota) + '</td></tr>';
   }).join('');
-  var failRows = res.sinMatch.map(function(r) {
-    return '<tr><td style="padding:4px 8px;border-bottom:1px solid var(--border);"></td><td colspan="3" style="padding:4px 8px;border-bottom:1px solid var(--border);color:var(--red);">\u26a0 ' + _esc(r.nombre) + ' \u2014 sin coincidencia en Classroom (no recibir\u00e1 anuncio)</td></tr>';
+
+  // ── Filas SIN match (no inscritos): invitar + env\u00edo por correo ──
+  var failRows = res.sinMatch.map(function(r, j) {
+    var email = _emailEstudianteGet(r.nombre, r.curso);
+    var yaCorreo = !!r._rubricaCorreoAt;
+    var _edTsM = Math.max(r._savedAt ? +new Date(r._savedAt) : 0, r._editedAt ? +new Date(r._editedAt) : 0);
+    var modifTrasM = yaCorreo && _edTsM > (+new Date(r._rubricaCorreoAt)) + 60000;
+    var marcado = (email && (!yaCorreo || modifTrasM)) ? ' checked' : '';
+    var nomSafe = (r.nombre || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    var curSafe = (r.curso || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    var chipEmail = email
+      ? '<span style="font-size:10px;color:var(--text3);font-family:var(--font-mono);">' + _esc(email) + '</span>'
+      : '<a href="#" onclick="event.preventDefault();event.stopPropagation();_pedirEmailEstudiante(\'' + nomSafe + '\',\'' + curSafe + '\',function(){_classroomRenderMatchModal(window._classroomInstanciaSel);});" style="font-size:10px;color:var(--accent);font-weight:600;text-decoration:none;">+ registrar correo</a>';
+    var selloCorreo = modifTrasM
+      ? '<span style="font-size:9px;color:#FF9500;font-weight:700;margin-left:6px;white-space:nowrap;">\u26a0 modificado tras env\u00edo \u2014 reenviar</span>'
+      : yaCorreo
+      ? '<span style="font-size:9px;color:#0A84FF;font-weight:700;margin-left:6px;white-space:nowrap;">\u2709 por correo ' + new Date(r._rubricaCorreoAt).toLocaleDateString('es-CL') + '</span>'
+      : '';
+    return '<tr style="background:rgba(255,204,0,0.05);cursor:pointer;" onclick="var c=this.querySelector(\'.crSelChk\');if(event.target!==c&&event.target.tagName!==\'BUTTON\'&&event.target.tagName!==\'A\'){c.checked=!c.checked;}_classroomActualizarSeleccion();">'
+      + '<td style="padding:4px 8px;border-bottom:1px solid var(--border);width:26px;text-align:center;"><input type="checkbox" class="crSelChk" data-tipo="mail" data-j="' + j + '"' + marcado + ' onclick="event.stopPropagation();_classroomActualizarSeleccion();"></td>'
+      + '<td style="padding:4px 8px;border-bottom:1px solid var(--border);">' + _esc(r.nombre) + selloCorreo
+      + '<div style="margin-top:2px;">' + chipEmail + '</div></td>'
+      + '<td style="padding:4px 8px;border-bottom:1px solid var(--border);">'
+      + '<span style="font-size:9px;font-weight:700;color:#8a6d00;background:rgba(255,204,0,0.18);padding:2px 8px;border-radius:20px;white-space:nowrap;">No inscrito</span>'
+      + '<button id="btnInvitar_' + j + '" onclick="event.stopPropagation();_invitarAClassroom(' + j + ');" style="display:inline-flex;align-items:center;gap:4px;margin-left:6px;padding:3px 10px;background:rgba(10,132,255,0.10);border:none;border-radius:14px;cursor:pointer;font-size:10px;font-weight:600;color:#0A84FF;white-space:nowrap;">\ud83d\udce7 Invitar a Classroom</button>'
+      + '</td>'
+      + '<td style="padding:4px 8px;border-bottom:1px solid var(--border);font-family:var(--font-mono);">' + ((r.nota||1).toFixed ? (r.nota||1).toFixed(1) : r.nota) + '</td></tr>';
   }).join('');
 
   abrirModal(
     '<div style="padding:4px 2px;">'
-    + '<div style="font-size:15px;font-weight:700;margin-bottom:6px;">\ud83d\udfe2 Emparejamiento ' + _esc(cursoSeleccionado) + ' \u2194 ' + _esc(_classroomCursoCR.name) + '</div>'
+    + '<div style="font-size:15px;font-weight:700;margin-bottom:6px;">\ud83d\udfe2 Emparejamiento ' + _esc(cursoSeleccionado) + ' \u2194 ' + _esc(_classroomCursoCR.name) + ' <span style="font-size:10px;font-weight:700;color:var(--accent);background:rgba(255,149,0,0.12);padding:2px 9px;border-radius:20px;vertical-align:middle;">\ud83d\udcc5 ' + _semestreActivo + '\u00b0 Semestre</span></div>'
+    + alertaAudit
     + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;">'
     + '<label style="font-size:11px;font-weight:600;color:var(--text2);">Instancia</label>'
     + '<select class="filter-select" style="font-size:12px;" onchange="_classroomRenderMatchModal(this.value)">' + opciones + '</select>'
-    + '<span style="font-size:12px;color:var(--text2);"><strong>' + res.matches.length + '</strong> coincidencia' + (res.matches.length !== 1 ? 's' : '')
-    + (res.sinMatch.length ? ' \u00b7 <span style="color:var(--red);font-weight:600;">' + res.sinMatch.length + ' sin match</span>' : '')
+    + '<span style="font-size:12px;color:var(--text2);"><strong>' + res.matches.length + '</strong> en Classroom'
+    + (res.sinMatch.length ? ' \u00b7 <span style="color:#8a6d00;font-weight:600;">' + res.sinMatch.length + ' por correo</span>' : '')
     + '</span></div>'
     + '<div style="max-height:260px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--rad);">'
     + '<table style="width:100%;border-collapse:collapse;font-size:11px;">'
@@ -24980,9 +25137,9 @@ function _classroomRenderMatchModal(instanciaFiltro) {
     + '<tbody>' + okRows + failRows + '</tbody></table></div>'
     + '<div id="crSelCount" style="font-size:12px;font-weight:600;color:var(--text2);margin-top:10px;"></div>'
     + '<div style="font-size:11px;color:var(--text3);margin-top:6px;line-height:1.6;">'
-    + 'Marca a qui\u00e9nes enviar \u2014 puedes hacerlo de forma individual o con la casilla superior para todos. '
-    + 'Cada seleccionado recibir\u00e1 su r\u00fabrica como <strong>anuncio individual</strong> en su Stream de Classroom. '
-    + 'Los ya enviados parten desmarcados: m\u00e1rcalos solo si quieres reenviar.'
+    + 'Los inscritos reciben su r\u00fabrica como <strong>anuncio individual</strong> en Classroom. '
+    + 'Los no inscritos seleccionados la reciben por <strong>correo institucional</strong> directo (requiere correo registrado). '
+    + 'Si Classroom rechaza a un estudiante durante el env\u00edo, el sistema reintenta autom\u00e1ticamente por correo.'
     + '</div>'
     + '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">'
     + '<button class="btn" onclick="cerrarModal()">Cancelar</button>'
@@ -24992,7 +25149,7 @@ function _classroomRenderMatchModal(instanciaFiltro) {
   _classroomActualizarSeleccion();
 }
 
-// Casilla maestra: marca/desmarca todos los estudiantes emparejados
+// Casilla maestra: marca/desmarca todos los estudiantes
 function _classroomSeleccionarTodos(estado) {
   document.querySelectorAll('.crSelChk').forEach(function(c){ c.checked = estado; });
   _classroomActualizarSeleccion();
@@ -25010,68 +25167,149 @@ function _classroomActualizarSeleccion() {
   if (btn) { btn.disabled = (sel === 0); btn.style.opacity = sel === 0 ? '0.45' : '1'; btn.style.cursor = sel === 0 ? 'not-allowed' : 'pointer'; }
 }
 
+// ═══ ENVÍO TOLERANTE A FALLOS: Classroom con respaldo automático Gmail ═══
 async function _ejecutarEnvioClassroom() {
   var matches = window._classroomMatchesPendientes || [];
-  // Selección individual: enviar EXACTAMENTE a los estudiantes marcados
-  var seleccion = [];
-  document.querySelectorAll('.crSelChk').forEach(function(c){ if (c.checked) seleccion.push(parseInt(c.dataset.i, 10)); });
+  var sinMatch = window._classroomSinMatch || [];
+  // Leer selección ANTES de cerrar el modal
+  var crSel = [], mailSel = [];
+  document.querySelectorAll('.crSelChk').forEach(function(c) {
+    if (!c.checked) return;
+    if (c.dataset.tipo === 'cr') crSel.push(parseInt(c.dataset.i, 10));
+    else if (c.dataset.tipo === 'mail') mailSel.push(parseInt(c.dataset.j, 10));
+  });
   cerrarModal();
-  if (!matches.length || !_classroomCursoCR) { toast('\u26a0 No hay emparejamientos para enviar', 'err', 3000); return; }
-  var pendientes = seleccion.map(function(i){ return matches[i]; }).filter(Boolean);
-  var omitidos = matches.length - pendientes.length;
-  if (!pendientes.length) {
+  if (!_classroomCursoCR) { toast('\u26a0 No hay curso de Classroom vinculado', 'err', 3000); return; }
+  var colaCR   = crSel.map(function(i){ return matches[i]; }).filter(Boolean);
+  var colaMail = mailSel.map(function(j){ return sinMatch[j]; }).filter(Boolean);
+  var total = colaCR.length + colaMail.length;
+  var omitidos = (matches.length + sinMatch.length) - total;
+  if (!total) {
     toast('\u2139\ufe0f No hay estudiantes seleccionados \u2014 marca al menos uno en la lista', 'info', 4000);
+    return;
+  }
+
+  // Token de Gmail institucional (para la cola de correo y el respaldo ante errores)
+  var necesitaGmail = colaMail.length > 0;
+  var tokGmail = null;
+  if (typeof _gmailLinkedEmail !== 'undefined' && _gmailLinkedEmail) {
+    tokGmail = await _tokenGmailPromise();
+  }
+  if (necesitaGmail && !tokGmail) {
+    abrirModal('<div style="padding:4px 2px;">'
+      + '<div style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--red);">\u26a0\ufe0f Correo institucional no disponible</div>'
+      + '<div style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:12px;">Seleccionaste ' + colaMail.length + ' estudiante' + (colaMail.length !== 1 ? 's' : '') + ' no inscrito' + (colaMail.length !== 1 ? 's' : '') + ' en Classroom, cuyo env\u00edo va por correo. Para eso necesitas vincular tu cuenta institucional: pesta\u00f1a <strong>Correo</strong> \u2192 \ud83d\udd17 Conectar Cuenta Google.</div>'
+      + '<div style="display:flex;justify-content:flex-end;"><button class="btn btn-primary" onclick="cerrarModal()">Cerrar</button></div></div>');
     return;
   }
 
   // Modal de progreso
   abrirModal('<div style="padding:8px 2px;text-align:center;">'
-    + '<div style="font-size:15px;font-weight:700;margin-bottom:8px;">\ud83d\udfe2 Publicando en Classroom\u2026</div>'
-    + '<div id="classroomProgresoTxt" style="font-size:13px;color:var(--text2);font-family:var(--font-mono);">0 / ' + pendientes.length + '</div>'
+    + '<div style="font-size:15px;font-weight:700;margin-bottom:8px;">\ud83d\udfe2 Enviando r\u00fabricas\u2026</div>'
+    + '<div id="classroomProgresoTxt" style="font-size:13px;color:var(--text2);font-family:var(--font-mono);">0 / ' + total + '</div>'
     + '</div>');
+  var nProg = 0;
+  function _prog(nombre) {
+    nProg++;
+    var p = document.getElementById('classroomProgresoTxt');
+    if (p) p.textContent = nProg + ' / ' + total + ' \u2014 ' + nombre;
+  }
 
-  var ok = [], fallidos = [];
-  for (var i = 0; i < pendientes.length; i++) {
-    var m = pendientes[i];
-    var prog = document.getElementById('classroomProgresoTxt');
-    if (prog) prog.textContent = (i + 1) + ' / ' + pendientes.length + ' \u2014 ' + m.registro.nombre;
+  var resultados = []; // {nombre, estado:'classroom'|'correo'|'correo_fallback'|'error', link?, detalle?}
+  var huboCambios = false;
+
+  // ── Cola 1: inscritos → anuncio en Classroom, con respaldo Gmail ante 404 ──
+  for (var i = 0; i < colaCR.length; i++) {
+    var m = colaCR[i];
+    _prog(m.registro.nombre);
     try {
       var resp = await _subirRubricaClassroom(_classroomCursoCR.id, m.crStudent.userId, m.registro);
-      // Verificación: la API devuelve el anuncio creado con id + alternateLink
       if (!resp || !resp.id) throw new Error('Respuesta sin id de publicaci\u00f3n');
       m.registro._classroomEnviadoAt = new Date().toISOString();
-      ok.push({ nombre: m.registro.nombre, link: resp.alternateLink || '' });
+      huboCambios = true;
+      resultados.push({ nombre: m.registro.nombre, estado: 'classroom', link: resp.alternateLink || '' });
     } catch (e) {
-      fallidos.push({ nombre: m.registro.nombre, error: e.message });
-      console.warn('[ArtEval\u00b7Classroom] Error con ' + m.registro.nombre + ':', e.message);
+      console.warn('[ArtEval\u00b7Classroom] Error publicando para ' + m.registro.nombre + ':', e.message);
+      // RESPALDO AUTOMÁTICO: usuario no encontrado/rechazado → correo institucional
+      if (/404|NOT_FOUND|FAILED_PRECONDITION|user/i.test(e.message) && tokGmail) {
+        var emailFb = _emailEstudianteGet(m.registro.nombre, m.registro.curso);
+        if (emailFb) {
+          try {
+            await _enviarRubricaPorCorreo(tokGmail, emailFb, m.registro);
+            m.registro._rubricaCorreoAt = new Date().toISOString();
+            huboCambios = true;
+            resultados.push({ nombre: m.registro.nombre, estado: 'correo_fallback', detalle: emailFb });
+          } catch (e2) {
+            resultados.push({ nombre: m.registro.nombre, estado: 'error', detalle: 'Classroom: ' + e.message + ' \u00b7 Correo: ' + e2.message });
+          }
+        } else {
+          resultados.push({ nombre: m.registro.nombre, estado: 'error', detalle: e.message + ' \u2014 sin correo registrado para respaldo' });
+        }
+      } else {
+        resultados.push({ nombre: m.registro.nombre, estado: 'error', detalle: e.message });
+      }
     }
-    await new Promise(function(rs){ setTimeout(rs, 200); }); // respiro anti rate-limit
+    await new Promise(function(rs){ setTimeout(rs, 200); });
   }
-  if (ok.length && typeof saveRegistros === 'function') saveRegistros(); // persistir sellos _classroomEnviadoAt
 
-  // Resumen final verificable
-  var okHtml = ok.map(function(o) {
-    return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:0.5px solid var(--border);font-size:12px;">'
-      + '<span style="color:#188038;font-weight:700;">\u2713</span><span style="flex:1;">' + _esc(o.nombre) + '</span>'
-      + (o.link ? '<a href="' + o.link + '" target="_blank" rel="noopener" style="font-size:11px;color:var(--accent);font-weight:600;text-decoration:none;">Ver en Classroom \u2197</a>' : '')
-      + '</div>';
-  }).join('');
-  var failHtml = fallidos.map(function(f) {
-    return '<div style="padding:4px 0;border-bottom:0.5px solid var(--border);font-size:12px;color:var(--red);">\u2717 ' + _esc(f.nombre) + ' \u2014 ' + _esc(f.error) + '</div>';
+  // ── Cola 2: no inscritos → correo institucional directo ──
+  for (var k = 0; k < colaMail.length; k++) {
+    var r = colaMail[k];
+    _prog(r.nombre);
+    var emailDest = _emailEstudianteGet(r.nombre, r.curso);
+    if (!emailDest) {
+      resultados.push({ nombre: r.nombre, estado: 'error', detalle: 'Sin correo registrado \u2014 usa "+ registrar correo" en la lista' });
+      continue;
+    }
+    try {
+      await _enviarRubricaPorCorreo(tokGmail, emailDest, r);
+      r._rubricaCorreoAt = new Date().toISOString();
+      huboCambios = true;
+      resultados.push({ nombre: r.nombre, estado: 'correo', detalle: emailDest });
+    } catch (e) {
+      resultados.push({ nombre: r.nombre, estado: 'error', detalle: e.message });
+    }
+    await new Promise(function(rs){ setTimeout(rs, 200); });
+  }
+
+  if (huboCambios && typeof saveRegistros === 'function') saveRegistros();
+
+  // ── Resumen verificable ──
+  var nCR = resultados.filter(function(x){ return x.estado === 'classroom'; }).length;
+  var nMail = resultados.filter(function(x){ return x.estado === 'correo' || x.estado === 'correo_fallback'; }).length;
+  var nErr = resultados.filter(function(x){ return x.estado === 'error'; }).length;
+  var filas = resultados.map(function(x) {
+    if (x.estado === 'classroom') {
+      return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:0.5px solid var(--border);font-size:12px;">'
+        + '<span style="color:#188038;font-weight:700;">\u2713</span><span style="flex:1;">' + _esc(x.nombre) + ' <span style="font-size:10px;color:#188038;">\ud83d\udfe2 Publicado en Classroom</span></span>'
+        + (x.link ? '<a href="' + x.link + '" target="_blank" rel="noopener" style="font-size:11px;color:var(--accent);font-weight:600;text-decoration:none;">Ver \u2197</a>' : '')
+        + '</div>';
+    }
+    if (x.estado === 'correo' || x.estado === 'correo_fallback') {
+      var motivo = x.estado === 'correo' ? 'No registrado en Classroom' : 'Respaldo autom\u00e1tico por error en Classroom';
+      return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:0.5px solid var(--border);font-size:12px;">'
+        + '<span style="color:#0A84FF;font-weight:700;">\u2713</span><span style="flex:1;">' + _esc(x.nombre)
+        + ' <span style="font-size:10px;color:#0A84FF;">\ud83d\udfe2 Enviado por Correo (' + motivo + ')</span>'
+        + '<span style="font-size:10px;color:var(--text3);font-family:var(--font-mono);display:block;">' + _esc(x.detalle || '') + '</span></span>'
+        + '</div>';
+    }
+    return '<div style="padding:4px 0;border-bottom:0.5px solid var(--border);font-size:12px;color:var(--red);">\u2717 ' + _esc(x.nombre) + ' \u2014 ' + _esc(x.detalle || '') + '</div>';
   }).join('');
   abrirModal(
     '<div style="padding:4px 2px;">'
-    + '<div style="font-size:15px;font-weight:700;margin-bottom:6px;">' + (fallidos.length ? '\u26a0\ufe0f' : '\u2705') + ' Resultado del env\u00edo \u2014 ' + _esc(_classroomCursoCR.name) + '</div>'
-    + '<div style="font-size:12px;color:var(--text2);margin-bottom:10px;"><strong style="color:#188038;">' + ok.length + ' publicada' + (ok.length !== 1 ? 's' : '') + '</strong>'
-    + (fallidos.length ? ' \u00b7 <strong style="color:var(--red);">' + fallidos.length + ' fallida' + (fallidos.length !== 1 ? 's' : '') + '</strong>' : '')
-    + (omitidos ? ' \u00b7 ' + omitidos + ' omitida' + (omitidos !== 1 ? 's' : '') + ' (no seleccionadas)' : '') + '</div>'
-    + '<div style="max-height:260px;overflow-y:auto;">' + okHtml + failHtml + '</div>'
-    + '<div style="font-size:11px;color:var(--text3);margin-top:10px;">Verifica con "Ver en Classroom" \u2014 abre el anuncio individual publicado. Los enviados quedan sellados y no se duplican en futuros env\u00edos.</div>'
+    + '<div style="font-size:15px;font-weight:700;margin-bottom:6px;">' + (nErr ? '\u26a0\ufe0f' : '\u2705') + ' Resultado del env\u00edo \u2014 ' + _esc(_classroomCursoCR.name) + '</div>'
+    + '<div style="font-size:12px;color:var(--text2);margin-bottom:10px;">'
+    + '<strong style="color:#188038;">' + nCR + ' en Classroom</strong>'
+    + ' \u00b7 <strong style="color:#0A84FF;">' + nMail + ' por correo</strong>'
+    + (nErr ? ' \u00b7 <strong style="color:var(--red);">' + nErr + ' con error</strong>' : '')
+    + (omitidos ? ' \u00b7 ' + omitidos + ' omitido' + (omitidos !== 1 ? 's' : '') + ' (no seleccionados)' : '') + '</div>'
+    + '<div style="max-height:260px;overflow-y:auto;">' + filas + '</div>'
+    + '<div style="font-size:11px;color:var(--text3);margin-top:10px;">Los sellos quedan guardados: \u2713 Classroom y \u2709 correo no se duplican en futuros env\u00edos.</div>'
     + '<div style="display:flex;justify-content:flex-end;margin-top:12px;">'
     + '<button class="btn btn-primary" onclick="cerrarModal()">Cerrar</button>'
     + '</div></div>'
   );
-  toast((fallidos.length ? '\u26a0\ufe0f ' : '\ud83d\udfe2 ') + ok.length + ' r\u00fabrica' + (ok.length !== 1 ? 's' : '') + ' publicada' + (ok.length !== 1 ? 's' : '') + ' en Classroom' + (fallidos.length ? ' \u00b7 ' + fallidos.length + ' con error' : ''), fallidos.length ? 'err' : 'ok', 5000);
+  toast((nErr ? '\u26a0\ufe0f ' : '\ud83d\udfe2 ') + nCR + ' en Classroom \u00b7 ' + nMail + ' por correo' + (nErr ? ' \u00b7 ' + nErr + ' con error' : ''), nErr ? 'err' : 'ok', 5000);
 }
 
 </script>
