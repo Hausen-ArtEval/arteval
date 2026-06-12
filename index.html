@@ -24637,18 +24637,26 @@ var CLASSROOM_SCOPES =
 // ── Conexión (mismo patrón que _vincularCorreoInstitucional) ────────────────
 function _conectarClassroom(onReady) {
   if (!window.google || !window.google.accounts || !GOOG_CLIENT_ID) {
-    toast('\u26a0 Google no disponible o Client ID no configurado (pestaña Sistema)', 'err', 4500);
+    cerrarModal();
+    _classroomMostrarError('Google no disponible', {
+      message: !GOOG_CLIENT_ID ? 'No hay Client ID de Google configurado.' : 'La librer\u00eda de Google (gsi/client) no carg\u00f3.',
+      _sugerencia: !GOOG_CLIENT_ID ? 'Configura tu Client ID en la pesta\u00f1a Sistema y reintenta.' : 'Revisa tu conexi\u00f3n a internet y recarga la p\u00e1gina (la librer\u00eda se carga desde accounts.google.com).'
+    });
     return;
   }
   // Token vigente → continuar directo
-  if (_classroomToken && Date.now() < _classroomTokenExp) { onReady(); return; }
+  if (_classroomToken && Date.now() < _classroomTokenExp) { console.log('[ArtEval\u00b7Classroom] Token vigente, reutilizando'); onReady(); return; }
   var cfg = {
     client_id: GOOG_CLIENT_ID,
     scope: CLASSROOM_SCOPES,
     callback: function(tokenResponse) {
       if (!tokenResponse || tokenResponse.error) {
+        console.warn('[ArtEval\u00b7Classroom] Autorizaci\u00f3n rechazada:', tokenResponse && tokenResponse.error);
         _actualizarEstadoClassroomUI(false);
-        toast('\u26a0 No se pudo autorizar Classroom', 'err', 4000);
+        _classroomMostrarError('No se pudo autorizar Classroom', {
+          message: 'Google devolvi\u00f3: ' + ((tokenResponse && tokenResponse.error) || 'sin respuesta'),
+          _sugerencia: 'Vuelve a intentar y acepta TODOS los permisos solicitados (cursos, n\u00f3mina, anuncios y tareas). Si tu app est\u00e1 en modo "Prueba" en Google Cloud, tu correo debe estar agregado como usuario de prueba.'
+        });
         return;
       }
       _classroomToken    = tokenResponse.access_token;
@@ -24656,7 +24664,16 @@ function _conectarClassroom(onReady) {
       _actualizarEstadoClassroomUI(true);
       onReady();
     },
-    error_callback: function(e) { toast('\u26a0 Error Classroom: ' + e.type, 'err', 4000); },
+    error_callback: function(e) {
+      console.warn('[ArtEval\u00b7Classroom] error_callback GIS:', e);
+      var esCierre = e && (e.type === 'popup_closed' || e.type === 'popup_closed_by_user');
+      _classroomMostrarError(esCierre ? 'Ventana de Google cerrada' : 'Error al abrir la autorizaci\u00f3n de Google', {
+        message: 'Tipo: ' + ((e && e.type) || 'desconocido'),
+        _sugerencia: esCierre
+          ? 'Cerraste la ventana antes de autorizar. Pulsa el bot\u00f3n de nuevo y completa la autorizaci\u00f3n.'
+          : 'El navegador pudo haber bloqueado la ventana emergente de Google. Permite pop-ups para este sitio y reintenta.'
+      });
+    },
     prompt: ''
   };
   var ie = localStorage.getItem('av_email_institucional') || '';
@@ -24672,7 +24689,7 @@ function _actualizarEstadoClassroomUI(conectado) {
   st.style.color = conectado ? '#188038' : 'var(--text3)';
 }
 
-// ── Wrapper fetch con Bearer ────────────────────────────────────────────────
+// ── Wrapper fetch con Bearer + diagnóstico de errores accionable ────────────
 async function _classroomApi(path, opts) {
   opts = opts || {};
   opts.headers = Object.assign({ 'Authorization': 'Bearer ' + _classroomToken }, opts.headers || {});
@@ -24680,13 +24697,53 @@ async function _classroomApi(path, opts) {
     opts.body = JSON.stringify(opts.body);
     opts.headers['Content-Type'] = 'application/json';
   }
-  var resp = await fetch('https://classroom.googleapis.com/v1/' + path, opts);
+  var resp;
+  try {
+    resp = await fetch('https://classroom.googleapis.com/v1/' + path, opts);
+  } catch (eRed) {
+    console.warn('[ArtEval\u00b7Classroom] Error de red:', eRed);
+    var er = new Error('Sin conexi\u00f3n con classroom.googleapis.com \u2014 revisa tu red o un bloqueador de contenido');
+    er._sugerencia = 'Verifica tu conexi\u00f3n a internet. Si usas un bloqueador (extensi\u00f3n o red del colegio), permite el dominio classroom.googleapis.com.';
+    throw er;
+  }
   if (!resp.ok) {
-    var detalle = '';
-    try { detalle = (await resp.json()).error.message || ''; } catch (e) {}
-    throw new Error('Classroom ' + resp.status + (detalle ? ': ' + detalle : ''));
+    var detalle = '', razon = '', cuerpo = null;
+    try { cuerpo = await resp.json(); detalle = (cuerpo.error && cuerpo.error.message) || ''; razon = (cuerpo.error && cuerpo.error.status) || ''; } catch (e) {}
+    console.warn('[ArtEval\u00b7Classroom] HTTP ' + resp.status + ' en ' + path + ':', detalle, cuerpo);
+    var err = new Error('Classroom ' + resp.status + (detalle ? ': ' + detalle : ''));
+    if (resp.status === 403 && /has not been used|is disabled|SERVICE_DISABLED|accessNotConfigured/i.test(detalle)) {
+      err._sugerencia = 'La API de Google Classroom NO est\u00e1 habilitada en tu proyecto de Google Cloud. '
+        + 'Entra a console.cloud.google.com \u2192 APIs y servicios \u2192 Biblioteca \u2192 busca "Google Classroom API" \u2192 Habilitar. '
+        + 'Luego espera 1-2 minutos y reintenta.';
+    } else if (resp.status === 403) {
+      err._sugerencia = 'Permiso denegado. Revisa que autorizaste TODOS los permisos de Classroom en la ventana de Google '
+        + '(si tu app est\u00e1 en modo "Prueba" en Cloud Console, tu correo debe estar en la lista de usuarios de prueba), '
+        + 'y que los 4 scopes de Classroom est\u00e9n agregados en la pantalla de consentimiento.';
+    } else if (resp.status === 401) {
+      _classroomToken = null; _classroomTokenExp = 0; _actualizarEstadoClassroomUI(false);
+      err._sugerencia = 'La sesi\u00f3n de Classroom expir\u00f3 o fue revocada. Pulsa el bot\u00f3n nuevamente para volver a autorizar.';
+    } else if (resp.status === 429) {
+      err._sugerencia = 'L\u00edmite de peticiones de Google alcanzado. Espera un minuto y reintenta.';
+    }
+    throw err;
   }
   return resp.json();
+}
+
+// Modal de error persistente (no toast fugaz) con causa y solución
+function _classroomMostrarError(titulo, e) {
+  var detalle = (e && e.message) || String(e);
+  var sugerencia = (e && e._sugerencia) || '';
+  abrirModal(
+    '<div style="padding:4px 2px;">'
+    + '<div style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--red);">\u26a0\ufe0f ' + _esc(titulo) + '</div>'
+    + '<div style="font-size:12px;background:var(--bg3);border-radius:var(--rad);padding:10px 12px;font-family:var(--font-mono);color:var(--text2);word-break:break-word;margin-bottom:10px;">' + _esc(detalle) + '</div>'
+    + (sugerencia ? '<div style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:10px;"><strong>C\u00f3mo resolverlo:</strong> ' + _esc(sugerencia) + '</div>' : '')
+    + '<div style="font-size:11px;color:var(--text3);">Detalle t\u00e9cnico registrado en la consola del navegador (F12 \u2192 Console, prefijo [ArtEval\u00b7Classroom]).</div>'
+    + '<div style="display:flex;justify-content:flex-end;margin-top:12px;">'
+    + '<button class="btn btn-primary" onclick="cerrarModal()">Cerrar</button>'
+    + '</div></div>'
+  );
 }
 
 // ── Listados (con paginación) ───────────────────────────────────────────────
@@ -24790,50 +24847,75 @@ async function _subirRubricaClassroom(courseId, crStudentId, registro) {
 
 // ── Orquestador: botón "Enviar Rúbricas a Google Classroom" ─────────────────
 function enviarAClassroom() {
-  if (!cursoSeleccionado) {
-    toast('\u26a0\ufe0f Selecciona primero un curso en la lista de Cursos', 'err', 3500);
-    return;
-  }
-  if (!_registrosConNota(cursoSeleccionado).length) {
-    toast('\u26a0\ufe0f ' + cursoSeleccionado + ' no tiene evaluaciones con nota registrada', 'err', 3500);
-    return;
-  }
-  _conectarClassroom(async function() {
-    try {
-      toast('Buscando tus cursos de Classroom\u2026', 'info', 2000);
-      var cursos = await _listarCursosClassroom();
-      if (!cursos.length) { toast('\u26a0 No se encontraron cursos activos en Classroom', 'err', 4000); return; }
-      var items = cursos.map(function(c) {
-        var sec = c.section ? ' \u00b7 ' + _esc(c.section) : '';
-        return '<div class="reg-card" style="cursor:pointer;padding:10px 14px;margin-bottom:6px;" '
-          + 'onclick="_classroomElegirCurso(\'' + c.id + '\',\'' + _esc(c.name).replace(/\\/g,'\\\\').replace(/'/g, "\\'") + '\')">'
-          + '<strong>' + _esc(c.name) + '</strong>' + sec
-          + '</div>';
-      }).join('');
-      abrirModal(
-        '<div style="padding:4px 2px;">'
-        + '<div style="font-size:15px;font-weight:700;margin-bottom:6px;">\ud83d\udfe2 Vincular ' + _esc(cursoSeleccionado) + ' con Classroom</div>'
-        + '<div style="font-size:12px;color:var(--text2);margin-bottom:12px;">Elige el curso de Google Classroom que corresponde a <strong>' + _esc(cursoSeleccionado) + '</strong>:</div>'
-        + '<div style="max-height:300px;overflow-y:auto;">' + items + '</div>'
-        + '<div style="display:flex;justify-content:flex-end;margin-top:10px;">'
-        + '<button class="btn" onclick="cerrarModal()">Cancelar</button>'
-        + '</div></div>'
-      );
-    } catch (e) {
-      toast('\u26a0 ' + e.message, 'err', 5000);
+  try {
+    console.log('[ArtEval\u00b7Classroom] Click \u2014 curso seleccionado:', cursoSeleccionado || '(ninguno)');
+    if (!cursoSeleccionado) {
+      toast('\u26a0\ufe0f Selecciona primero un curso en la lista de Cursos', 'err', 3500);
+      return;
     }
-  });
+    if (!_registrosConNota(cursoSeleccionado).length) {
+      toast('\u26a0\ufe0f ' + cursoSeleccionado + ' no tiene evaluaciones con nota registrada', 'err', 3500);
+      return;
+    }
+    // Reacción visual INMEDIATA: modal de trabajo antes de cualquier paso de red
+    abrirModal('<div style="padding:14px 2px;text-align:center;">'
+      + '<div style="font-size:15px;font-weight:700;margin-bottom:6px;">\ud83d\udfe2 Conectando con Google Classroom\u2026</div>'
+      + '<div id="classroomPasoTxt" style="font-size:12px;color:var(--text2);">Autorizando cuenta de Google</div>'
+      + '</div>');
+    _conectarClassroom(async function() {
+      try {
+        var paso = document.getElementById('classroomPasoTxt');
+        if (paso) paso.textContent = 'Buscando tus cursos activos de Classroom\u2026';
+        console.log('[ArtEval\u00b7Classroom] Token OK \u2014 listando cursos\u2026');
+        var cursos = await _listarCursosClassroom();
+        console.log('[ArtEval\u00b7Classroom] Cursos activos encontrados:', cursos.length);
+        if (!cursos.length) {
+          _classroomMostrarError('No se encontraron cursos activos', {
+            message: 'Tu cuenta de Google no tiene cursos de Classroom en estado ACTIVO.',
+            _sugerencia: 'Verifica que iniciaste sesi\u00f3n con la cuenta institucional correcta (la que es profesor en Classroom). Usa "Cambiar cuenta" autorizando de nuevo si conectaste otra. Los cursos archivados no aparecen.'
+          });
+          return;
+        }
+        var items = cursos.map(function(c) {
+          var sec = c.section ? ' \u00b7 ' + _esc(c.section) : '';
+          return '<div class="reg-card" style="cursor:pointer;padding:10px 14px;margin-bottom:6px;" '
+            + 'onclick="_classroomElegirCurso(\'' + c.id + '\',\'' + _esc(c.name).replace(/\\/g,'\\\\').replace(/'/g, "\\'") + '\')">'
+            + '<strong>' + _esc(c.name) + '</strong>' + sec
+            + '</div>';
+        }).join('');
+        abrirModal(
+          '<div style="padding:4px 2px;">'
+          + '<div style="font-size:15px;font-weight:700;margin-bottom:6px;">\ud83d\udfe2 Vincular ' + _esc(cursoSeleccionado) + ' con Classroom</div>'
+          + '<div style="font-size:12px;color:var(--text2);margin-bottom:12px;">Elige el curso de Google Classroom que corresponde a <strong>' + _esc(cursoSeleccionado) + '</strong>:</div>'
+          + '<div style="max-height:300px;overflow-y:auto;">' + items + '</div>'
+          + '<div style="display:flex;justify-content:flex-end;margin-top:10px;">'
+          + '<button class="btn" onclick="cerrarModal()">Cancelar</button>'
+          + '</div></div>'
+        );
+      } catch (e) {
+        console.warn('[ArtEval\u00b7Classroom] Fallo al listar cursos:', e);
+        _classroomMostrarError('No se pudo acceder a Google Classroom', e);
+      }
+    });
+  } catch (eSync) {
+    console.warn('[ArtEval\u00b7Classroom] Error inesperado:', eSync);
+    _classroomMostrarError('Error inesperado al iniciar el env\u00edo', eSync);
+  }
 }
 
 async function _classroomElegirCurso(courseId, courseName) {
-  cerrarModal();
   _classroomCursoCR = { id: courseId, name: courseName };
+  abrirModal('<div style="padding:14px 2px;text-align:center;">'
+    + '<div style="font-size:15px;font-weight:700;margin-bottom:6px;">\ud83d\udfe2 ' + _esc(courseName) + '</div>'
+    + '<div style="font-size:12px;color:var(--text2);">Cargando la lista de estudiantes\u2026</div>'
+    + '</div>');
   try {
-    toast('Cargando estudiantes de "' + courseName + '"\u2026', 'info', 2000);
     window._classroomAlumnosCR = await _listarAlumnosClassroom(courseId);
+    console.log('[ArtEval\u00b7Classroom] Estudiantes en "' + courseName + '":', window._classroomAlumnosCR.length);
     _classroomRenderMatchModal('__TODAS__');
   } catch (e) {
-    toast('\u26a0 ' + e.message, 'err', 5000);
+    console.warn('[ArtEval\u00b7Classroom] Fallo al cargar n\u00f3mina:', e);
+    _classroomMostrarError('No se pudo cargar la n\u00f3mina del curso', e);
   }
 }
 
