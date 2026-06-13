@@ -4582,7 +4582,8 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
       </button>
     </div>
     <!-- Sistema: Drive | Rúbricas | Duplicados | Ajustes -->
-    <div id="sistemaSubNav" class="ae-subnav">
+    <div id="sistemaSubNav" class="ae-subnav" style="gap:6px;padding:8px 16px;">
+      <span style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-right:4px;white-space:nowrap;">Sistema:</span>
       <button data-sub="drive" onclick="showSistemaSub('drive')" class="sub-tab sub-active ios-segment-btn active">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>
         Drive
@@ -5586,6 +5587,12 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
 
   <div id="tab-sistema" style="display:none;">
     <div id="sistema-sec-drive" style="display:block;">
+      <!-- Acceso directo visible a las 3 secciones de Sistema (respaldo del subnav) -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+        <button onclick="showSistemaSub('drive')" class="btn btn-sm" style="background:var(--accent);color:#fff;border-color:var(--accent);font-size:12px;">☁️ Drive</button>
+        <button onclick="showSistemaSub('rubricas')" class="btn btn-sm" style="font-size:12px;">✏️ Rúbricas</button>
+        <button onclick="showSistemaSub('config')" class="btn btn-sm" style="font-size:12px;">⚙️ Ajustes (Client ID, respaldos, borrar datos)</button>
+      </div>
       <div class="config-card" style="border-left:3px solid var(--accent);">
         <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
           <div style="width:44px;height:44px;background:var(--accent-bg);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
@@ -5734,6 +5741,12 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
       </div>
     </div>
     <div id="sistema-sec-rubricas" style="display:none;">
+      <!-- Acceso directo visible a las 3 secciones de Sistema -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+        <button onclick="showSistemaSub('drive')" class="btn btn-sm" style="font-size:12px;">☁️ Drive</button>
+        <button onclick="showSistemaSub('rubricas')" class="btn btn-sm" style="background:var(--accent);color:#fff;border-color:var(--accent);font-size:12px;">✏️ Rúbricas</button>
+        <button onclick="showSistemaSub('config')" class="btn btn-sm" style="font-size:12px;">⚙️ Ajustes</button>
+      </div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
         <div>
           <div style="font-size:15px;font-weight:600;">Mis rúbricas</div>
@@ -5800,6 +5813,12 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
       </div>
     </div>
     <div id="sistema-sec-config" style="display:none;">
+      <!-- Acceso directo visible a las 3 secciones de Sistema -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+        <button onclick="showSistemaSub('drive')" class="btn btn-sm" style="font-size:12px;">☁️ Drive</button>
+        <button onclick="showSistemaSub('rubricas')" class="btn btn-sm" style="font-size:12px;">✏️ Rúbricas</button>
+        <button onclick="showSistemaSub('config')" class="btn btn-sm" style="background:var(--accent);color:#fff;border-color:var(--accent);font-size:12px;">⚙️ Ajustes</button>
+      </div>
       <!-- Configuración Gemini + ajustes -->
 
       <div class="config-card">
@@ -6147,7 +6166,14 @@ let listaCursos = (function(){
       var arr = raw[curso];
       // Nota: normalizarCurso no está disponible aquí (se define más adelante).
       // La normalización de claves se aplica en saveListaCursos() al primer guardado.
-      var filtered = Array.isArray(arr) ? arr.filter(function(e) { return e && typeof e === 'object'; }) : [];
+      var filtered = Array.isArray(arr) ? arr.map(function(e) {
+        // Entradas válidas son objetos {nombre,...}. Si por una fusión defectuosa
+        // llega un string suelto, NO descartarlo: envolverlo en objeto para no
+        // perder al estudiante. Se descartan solo entradas nulas/vacías.
+        if (e && typeof e === 'object') return e;
+        if (typeof e === 'string' && e.trim()) return { nombre: e.trim() };
+        return null;
+      }).filter(function(e){ return e && (e.nombre || typeof e === 'object'); }) : [];
       if (clean[curso]) {
         clean[curso] = clean[curso].concat(filtered);
       } else {
@@ -13152,12 +13178,15 @@ function _renderDashPendientes() {
     Object.keys(listaCursos || {}).sort().forEach(function(curso) {
       var nomina = listaCursos[curso] || [];
       nomina.forEach(function(nombreNomina) {
-        var normNom = normalizarStrict(nombreNomina || '');
+        // Las entradas de nómina son objetos {nombre, pie}; extraer el texto.
+        var nomStr = (nombreNomina && typeof nombreNomina === 'object')
+          ? (nombreNomina.nombre || '') : (nombreNomina || '');
+        var normNom = normalizarStrict(nomStr);
         var faltantes = instancias.filter(function(inst) {
           return !evaluadoSet.has(curso + '|' + inst + '|' + normNom); // O(1)
         });
         if (faltantes.length > 0) {
-          pendientes.push({ nombre: nombreNomina, curso: curso, faltantes: faltantes });
+          pendientes.push({ nombre: nomStr, curso: curso, faltantes: faltantes });
         }
       });
     });
@@ -16837,10 +16866,15 @@ function _actualizarEstadoSync() {
   // Badge de integridad
 
   // Si hay pendientes y token activo, disparar sync
+  // CORRECCIÓN v200: la auto-sync silenciosa en segundo plano cambiaba los
+  // conteos sin avisar al profesor. Ahora solo SUBE local→Drive cuando local
+  // tiene MÁS (caso seguro: hay ediciones nuevas que respaldar). Si Drive
+  // tuviera más, NO se toca aquí — esa divergencia la resuelve el modal de
+  // decisión explícita (_mostrarDecisionSync), nunca en silencio.
   if (localCount > driveCount && driveCount > 0 && tieneToken) {
-    console.info('[ArtEval] Estado: ' + localCount + ' local vs ' + driveCount + ' drive → sync automática');
+    console.info('[ArtEval] Estado: ' + localCount + ' local > ' + driveCount + ' drive → subiendo respaldo');
     if (typeof syncToDrive === 'function') {
-      syncToDrive().catch(function(e){ console.warn('[ArtEval] Auto-sync silencioso falló:', e.message); });
+      syncToDrive().catch(function(e){ console.warn('[ArtEval] Auto-sync (subida) falló:', e.message); });
     }
   }
 }
@@ -19842,7 +19876,15 @@ function tokensSimilares(t1, t2) {
 // Cache is invalidated when registros changes (via saveRegistros).
 var _normStrictCache = Object.create(null);
 function normalizarStrict(s) {
+  // ROBUSTEZ v200: tolerar entradas que no sean string. Tras una fusión de
+  // datos, las nóminas pueden contener objetos {nombre:...} en vez de texto;
+  // antes esto rompía con "key.toLowerCase is not a function" en el dashboard.
+  if (s != null && typeof s !== 'string') {
+    if (typeof s === 'object') s = s.nombre || s.name || s.texto || '';
+    else s = String(s);
+  }
   var key = s || '';
+  if (typeof key !== 'string') key = '';
   if (_normStrictCache[key] !== undefined) return _normStrictCache[key];
   var result = key.toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -22737,11 +22779,42 @@ function _onIdToken(response) {
     var user = { name: payload.name, email: payload.email, picture: payload.picture };
     localStorage.setItem('av_drive_user', JSON.stringify(user));
     _showDriveUser(user);
-    // Solicitar token de acceso OAuth2 para Drive
-    _requestToken();
+    // CORRECCIÓN COOP v200: NO encadenar requestAccessToken dentro de este
+    // callback. Abrir un segundo popup desde el callback de One Tap dispara el
+    // bloqueo Cross-Origin-Opener-Policy y el permiso de Drive nunca se concede.
+    // En su lugar, mostramos un botón explícito para que el profesor autorice
+    // Drive con su propio clic (gesto de usuario directo = sin bloqueo COOP).
+    _pedirPermisoDriveConGesto();
   } catch(e) {
     console.warn('[ArtEval] _onIdToken error:', e.message);
     toast('⚠️ Error al iniciar sesión con Google. Intenta de nuevo.', 'err', 4000);
+  }
+}
+
+// Muestra un botón claro "Autorizar Google Drive" que dispara el permiso de
+// escritura con un gesto de usuario directo (evita el bloqueo COOP de popups
+// encadenados). Si el contenedor no existe, cae al método directo.
+function _pedirPermisoDriveConGesto() {
+  var cont = document.getElementById('googleSignInBtn');
+  if (!cont) { _requestTokenInteractivo(); return; }
+  cont.innerHTML = '<button onclick="_requestTokenInteractivo()" '
+    + 'style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;'
+    + 'background:#0A84FF;color:#fff;border:none;border-radius:10px;cursor:pointer;'
+    + 'font-size:13px;font-weight:600;font-family:var(--font-ui);">'
+    + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>'
+    + 'Autorizar acceso a Google Drive</button>'
+    + '<div style="font-size:11px;color:var(--text3);margin-top:8px;">Un paso más: concede el permiso para guardar tus respaldos.</div>';
+}
+
+// Solicitud de token CON interacción (gesto del usuario) — para conceder el
+// permiso de Drive por primera vez. prompt:'consent' garantiza la pantalla.
+function _requestTokenInteractivo() {
+  if (!_gisTokenClient) { toast('⚠️ Reconecta tu cuenta de Google', 'err', 4000); return; }
+  try {
+    _gisTokenClient.requestAccessToken({ prompt: 'consent' });
+  } catch(e) {
+    console.warn('[ArtEval] _requestTokenInteractivo:', e.message);
+    toast('⚠️ Permite las ventanas emergentes para arteval.app y reintenta', 'err', 5000);
   }
 }
 
@@ -23337,67 +23410,25 @@ async function _smartSyncOnConnect() {
         console.info('[ArtEval] SmartSync: sin cambios detectados, ya sincronizado');
       }
     } else {
-      // DRIVE TIENE MÁS: merge inteligente
-      console.info('[ArtEval] SmartSync: Drive tiene más (' + driveCount + ' vs ' + localCount + ') → fusionando');
-      if (driveData && driveData.registros) {
-        // Construir índice local por _id y por clave semántica
-        var localById  = {};
-        var localByKey = {};
-        registros.forEach(function(r, i) {
-          if (r._id) localById[r._id] = i;
-          var sem = normalizarStrict(r.nombre||'') + '|' + _normCursoKey(r.curso||'') + '|' + (r.instancia||'Evaluación 1') + '|' + (r.rubricaNombre||'');
-          localByKey[sem] = i;
-        });
-
-        var fusionados = 0;
-        var actualizados = 0;
-        driveData.registros.forEach(function(driveReg) {
-          if (!driveReg) return;
-          // Buscar por _id primero (más preciso)
-          var localIdx = driveReg._id ? localById[driveReg._id] : -1;
-          // Si no por _id, buscar por clave semántica
-          if (localIdx === undefined || localIdx === -1) {
-            var sem2 = normalizarStrict(driveReg.nombre||'') + '|' + _normCursoKey(driveReg.curso||'') + '|' + (driveReg.instancia||'Evaluación 1') + '|' + (driveReg.rubricaNombre||'');
-            localIdx = (localByKey[sem2] !== undefined) ? localByKey[sem2] : -1;
-          }
-
-          if (localIdx === -1) {
-            // Registro nuevo desde Drive — agregar
-            if (driveReg.curso) driveReg.curso = normalizarCurso(driveReg.curso);
-            registros.push(driveReg);
-            fusionados++;
-          } else {
-            // Registro existente — comparar timestamps para ver cuál es más nuevo
-            var localReg   = registros[localIdx];
-            var driveTs    = driveReg._savedAt || driveReg.fechaISO || driveReg.fecha || '';
-            var localTs2   = localReg._savedAt || localReg.fechaISO || localReg.fecha || '';
-            if (driveTs && localTs2 && driveTs > localTs2) {
-              // Drive tiene versión más reciente — actualizar local
-              if (driveReg.curso) driveReg.curso = normalizarCurso(driveReg.curso);
-              registros[localIdx] = driveReg;
-              actualizados++;
-            }
-            // Si local es más reciente o igual, mantener local
-          }
-        });
-
-        if (fusionados > 0 || actualizados > 0) {
-          saveRegistros();
-          actualizarConteo();
-          renderSidebarCounts();
-          actualizarTodaLaApp();
-          // Subir fusión a Drive
-          await syncToDrive();
-          var msg = '✅ Sincronizado con Drive';
-          if (fusionados > 0) msg += ' — ' + fusionados + ' nuevos';
-          if (actualizados > 0) msg += ' — ' + actualizados + ' actualizados';
-          toast(msg + ' · Total: ' + registros.length, 'ok', 5000);
-          console.info('[ArtEval] SmartSync: merge completado, fusionados=' + fusionados + ' actualizados=' + actualizados);
-        } else {
-          // Drive tiene más count pero todos ya están en local — subir local como maestro
-          console.info('[ArtEval] SmartSync: Drive count > local pero registros ya incluidos → subiendo local');
-          if (_hayEdicion) await syncToDrive();
-        }
+      // ── DRIVE TIENE MÁS REGISTROS QUE LOCAL ──────────────────────────────
+      // CORRECCIÓN CRÍTICA v200: antes fusionaba automáticamente, asumiendo que
+      // "Drive tiene más = Drive tiene datos que faltan". Eso reinyectaba
+      // registros viejos/borrados de la nube sobre datos locales correctos
+      // (causa de los +1100 y +17 tras migrar de dominio).
+      // Ahora NO se decide solo: se pregunta al profesor qué versión conservar.
+      console.info('[ArtEval] SmartSync: Drive tiene más (' + driveCount + ' vs ' + localCount + ') → requiere decisión del profesor');
+      if (driveData && driveData.registros && localCount > 0) {
+        // Guardar el snapshot remoto para que el modal pueda aplicarlo si el
+        // profesor lo elige, y mostrar la decisión explícita.
+        window._drivePendienteDecision = driveData;
+        _mostrarDecisionSync(localCount, driveCount, driveData);
+        // No tocar nada hasta que el profesor decida.
+      } else if (driveData && driveData.registros && localCount === 0) {
+        // Local vacío ya fue manejado arriba (dispositivo nuevo); por seguridad,
+        // si llegáramos aquí con local vacío, restaurar desde Drive directamente.
+        registros = JSON.parse(JSON.stringify(driveData.registros));
+        saveRegistros(); actualizarConteo(); actualizarTodaLaApp();
+        _updateCloudUI('synced');
       }
     }
 
@@ -23406,6 +23437,112 @@ async function _smartSyncOnConnect() {
   } catch(e) {
     console.warn('[ArtEval] SmartSync error (silencioso):', e.message);
     // No mostrar toast de error — es silencioso para no interrumpir al profesor
+  }
+}
+
+// ── Modal de decisión de sincronización (local vs Drive divergen) ──────────
+// Tres opciones explícitas, sin fusión a ciegas:
+//   1. Conservar lo de este equipo  → sube local, reemplaza Drive
+//   2. Usar lo de Drive             → baja Drive, reemplaza local
+//   3. Combinar ambos               → fusión por UUID (solo si el profesor lo pide)
+function _mostrarDecisionSync(localCount, driveCount, driveData) {
+  // Evitar abrir el modal repetidamente si ya está visible
+  if (document.getElementById('modalActivo') && window._syncModalAbierto) return;
+  window._syncModalAbierto = true;
+  var lastSync = localStorage.getItem('av_last_drive_sync');
+  var fechaDrive = (driveData && driveData._savedAt)
+    ? new Date(driveData._savedAt).toLocaleString('es-CL')
+    : (lastSync ? new Date(lastSync).toLocaleString('es-CL') : 'desconocida');
+  abrirModal(
+    '<div style="padding:4px 2px;">'
+    + '<div style="font-size:15px;font-weight:700;margin-bottom:8px;">☁️ Los datos de este equipo y los de Drive no coinciden</div>'
+    + '<div style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:14px;">'
+    + 'Para no mezclar nada por error, elige qué versión conservar. '
+    + 'Tus datos no se tocarán hasta que decidas.'
+    + '</div>'
+    + '<div style="display:flex;gap:10px;margin-bottom:16px;">'
+    + '<div style="flex:1;border:1px solid var(--border2);border-radius:10px;padding:12px;text-align:center;">'
+    + '<div style="font-size:22px;font-weight:800;color:var(--accent);">' + localCount + '</div>'
+    + '<div style="font-size:11px;color:var(--text2);font-weight:600;">En este equipo</div>'
+    + '<div style="font-size:10px;color:var(--text3);">ahora mismo</div></div>'
+    + '<div style="flex:1;border:1px solid var(--border2);border-radius:10px;padding:12px;text-align:center;">'
+    + '<div style="font-size:22px;font-weight:800;color:#0A84FF;">' + driveCount + '</div>'
+    + '<div style="font-size:11px;color:var(--text2);font-weight:600;">En Google Drive</div>'
+    + '<div style="font-size:10px;color:var(--text3);">' + _esc(fechaDrive) + '</div></div>'
+    + '</div>'
+    + '<div style="display:flex;flex-direction:column;gap:8px;">'
+    + '<button class="btn btn-primary" style="text-align:left;padding:11px 14px;" onclick="_resolverSync(\'local\')">'
+    + '⬆️ Conservar lo de este equipo <span style="font-weight:400;font-size:11px;opacity:0.85;">(sube ' + localCount + ' y reemplaza Drive)</span></button>'
+    + '<button class="btn" style="text-align:left;padding:11px 14px;" onclick="_resolverSync(\'drive\')">'
+    + '⬇️ Usar lo de Drive <span style="font-weight:400;font-size:11px;color:var(--text3);">(baja ' + driveCount + ' y reemplaza este equipo)</span></button>'
+    + '<button class="btn" style="text-align:left;padding:11px 14px;" onclick="_resolverSync(\'merge\')">'
+    + '🔀 Combinar ambos <span style="font-weight:400;font-size:11px;color:var(--text3);">(une por identificador único, sin duplicar)</span></button>'
+    + '</div>'
+    + '<div style="font-size:11px;color:var(--text3);margin-top:12px;line-height:1.6;">'
+    + '💡 Si acabas de migrar o restaurar un respaldo, lo correcto suele ser <strong>"Conservar lo de este equipo"</strong>.'
+    + '</div>'
+    + '<div style="display:flex;justify-content:flex-end;margin-top:10px;">'
+    + '<button class="btn" onclick="_resolverSync(\'cancelar\')" style="font-size:12px;">Decidir después</button>'
+    + '</div></div>'
+  );
+}
+
+async function _resolverSync(opcion) {
+  window._syncModalAbierto = false;
+  var driveData = window._drivePendienteDecision;
+  cerrarModal();
+  if (opcion === 'cancelar' || !driveData) {
+    toast('Sin cambios — tus datos de este equipo siguen intactos', 'info', 3500);
+    return;
+  }
+  try {
+    if (opcion === 'local') {
+      // Subir local como maestro, reemplazando Drive
+      _updateCloudUI('saving');
+      await syncToDrive();
+      toast('✅ Drive actualizado con los ' + registros.length + ' registros de este equipo', 'ok', 4500);
+    } else if (opcion === 'drive') {
+      // Reemplazar local con Drive (reemplazo total, NO fusión)
+      registros     = JSON.parse(JSON.stringify(driveData.registros || []));
+      if (driveData.rubricas)    rubricas    = JSON.parse(JSON.stringify(driveData.rubricas));
+      if (driveData.listaCursos) listaCursos = JSON.parse(JSON.stringify(driveData.listaCursos));
+      if (typeof driveData.rubricaActiva !== 'undefined') rubricaActiva = driveData.rubricaActiva;
+      saveRegistros();
+      actualizarConteo(); renderRegistros(); renderSidebarCounts(); renderCursosChips(); actualizarTodaLaApp();
+      _updateCloudUI('synced');
+      toast('✅ Datos reemplazados con los ' + registros.length + ' registros de Drive', 'ok', 4500);
+    } else if (opcion === 'merge') {
+      // Fusión EXPLÍCITA por UUID (_id), sin duplicar
+      var localById = {};
+      registros.forEach(function(r){ if (r && r._id) localById[r._id] = true; });
+      var agregados = 0;
+      (driveData.registros || []).forEach(function(dr) {
+        if (!dr) return;
+        if (dr._id && localById[dr._id]) return; // ya existe — no duplicar
+        // Sin _id: comparar por clave semántica para no reinyectar duplicados
+        if (!dr._id) {
+          var semK = normalizarStrict(dr.nombre||'') + '|' + _normCursoKey(dr.curso||'') + '|' + (dr.instancia||'Evaluación 1') + '|' + (dr.rubricaNombre||'');
+          var existe = registros.some(function(r){
+            return (normalizarStrict(r.nombre||'') + '|' + _normCursoKey(r.curso||'') + '|' + (r.instancia||'Evaluación 1') + '|' + (r.rubricaNombre||'')) === semK;
+          });
+          if (existe) return;
+        }
+        if (dr.curso) dr.curso = normalizarCurso(dr.curso);
+        registros.push(dr);
+        agregados++;
+      });
+      saveRegistros();
+      actualizarConteo(); renderRegistros(); renderSidebarCounts(); renderCursosChips(); actualizarTodaLaApp();
+      _updateCloudUI('saving');
+      await syncToDrive();
+      toast('✅ Combinado — ' + agregados + ' registros añadidos · Total: ' + registros.length, 'ok', 5000);
+    }
+  } catch(e) {
+    console.warn('[ArtEval] _resolverSync:', e.message);
+    toast('⚠️ Error al aplicar la decisión: ' + e.message, 'err', 5000);
+    _updateCloudUI('error');
+  } finally {
+    window._drivePendienteDecision = null;
   }
 }
 
@@ -23633,7 +23770,30 @@ function _scheduleAutoBackup() {
 // Forzar respaldo ahora — usa deep copy, nunca muta localStorage
 async function _forzarRespaldoAhora() {
   if (!_driveToken || Date.now() >= _driveTokenExp) {
-    toast('❌ No hay sesión activa de Drive.', 'err', 4000); return;
+    // CLARIDAD v200: en vez de un toast fugaz, explicar QUÉ pasó y CÓMO resolverlo.
+    abrirModal(
+      '<div style="padding:4px 2px;">'
+      + '<div style="font-size:15px;font-weight:700;margin-bottom:8px;">☁️ Drive no está autorizado para guardar</div>'
+      + '<div style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:12px;">'
+      + 'Tu sesión de Google está activa para identificarte, pero falta conceder el <strong>permiso de escritura</strong> en Drive (o expiró). '
+      + 'Por eso el respaldo automático no puede guardarse todavía.'
+      + '</div>'
+      + '<div style="background:var(--bg3);border-radius:10px;padding:12px;font-size:12px;color:var(--text2);line-height:1.8;margin-bottom:14px;">'
+      + '<strong style="color:var(--text);">Cómo resolverlo:</strong><br>'
+      + '1. En el panel de Google Drive, pulsa <strong>"Salir"</strong> y vuelve a conectar.<br>'
+      + '2. Cuando Google muestre los permisos, <strong>acepta el acceso a Google Drive</strong>.<br>'
+      + '3. Si no aparece la ventana, permite las <strong>ventanas emergentes</strong> para arteval.app.'
+      + '</div>'
+      + '<div style="font-size:11px;color:var(--text3);margin-bottom:12px;">'
+      + '💡 Mientras tanto, tus datos están seguros en este equipo. Puedes respaldar manualmente en '
+      + '<strong>Estudio → Copia de seguridad → Descargar</strong>.'
+      + '</div>'
+      + '<div style="display:flex;justify-content:flex-end;gap:8px;">'
+      + '<button class="btn btn-primary" onclick="cerrarModal()">Entendido</button>'
+      + '</div></div>'
+    );
+    _updateCloudUI('error');
+    return;
   }
   if (!registros.length) {
     toast('⚠️ No hay registros que respaldar.', 'err', 3000); return;
@@ -23658,8 +23818,8 @@ async function _forzarRespaldoAhora() {
     } else if (_eMsg.includes('401') || _eMsg.includes('unauthorized') || _eMsg.includes('invalid_token')) {
       _driveErrMsg = 'Sesión de Drive expirada — reconéctate en Sistema → Drive.';
       _driveToken = null; _driveTokenExp = 0;
-    } else if (_eMsg.includes('403') || _eMsg.includes('quota')) {
-      _driveErrMsg = 'Cuota de Drive alcanzada o permisos insuficientes.';
+    } else if (_eMsg.includes('403') || _eMsg.includes('quota') || _eMsg.includes('insufficient')) {
+      _driveErrMsg = 'Permiso de Drive insuficiente. Desconéctate y reconéctate aceptando el acceso a Google Drive, o verifica que la API de Drive esté habilitada en Google Cloud.';
     } else if (_eMsg.includes('404')) {
       _driveErrMsg = 'Archivo de Drive no encontrado. Se creará uno nuevo.';
       localStorage.removeItem('av_drive_file_id'); _driveFileId = null;
@@ -24289,6 +24449,37 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!listaCursos || typeof listaCursos !== 'object' || Array.isArray(listaCursos)) {
       console.warn('[ArtEval] ⚠️ listaCursos inválido — restaurando {}');
       listaCursos = {};
+    }
+    // 3b. NORMALIZAR NÓMINAS v200: las nóminas son arrays de OBJETOS
+    //     {nombre, pie, ...} por diseño. Tras una fusión defectuosa, alguna
+    //     entrada pudo quedar como string suelto o quedar sin .nombre. Aquí
+    //     solo garantizamos que toda entrada sea un objeto con .nombre string,
+    //     SIN alterar las que ya están bien (no tocar mayúsculas ni orden).
+    var _nominasReparadas = 0;
+    Object.keys(listaCursos).forEach(function(curso) {
+      var lista = listaCursos[curso];
+      if (!Array.isArray(lista)) { listaCursos[curso] = []; return; }
+      listaCursos[curso] = lista.map(function(entry) {
+        if (entry && typeof entry === 'object') {
+          // Objeto correcto: solo asegurar que .nombre sea string
+          if (typeof entry.nombre !== 'string') {
+            _nominasReparadas++;
+            entry.nombre = String(entry.nombre || entry.name || entry.texto || '').trim();
+          }
+          return entry;
+        }
+        if (typeof entry === 'string') {
+          // String suelto (malformado): envolver en objeto con .nombre
+          _nominasReparadas++;
+          return { nombre: entry.trim() };
+        }
+        _nominasReparadas++;
+        return { nombre: String(entry == null ? '' : entry).trim() };
+      }).filter(function(e){ return e && e.nombre && e.nombre.length; });
+    });
+    if (_nominasReparadas > 0) {
+      console.info('[ArtEval] Nóminas normalizadas: ' + _nominasReparadas + ' entrada(s) corregida(s)');
+      try { localStorage.setItem('av_lista_cursos', JSON.stringify(listaCursos)); } catch(e) {}
     }
     // 4. Invalidar cachés para forzar reconstrucción limpia
     _cursosUnicosCache = null;
