@@ -22579,7 +22579,15 @@ document.addEventListener('DOMContentLoaded', () => {
 // IMPORTANTE: Reemplaza con tu Client ID de Google Cloud Console
 // (APIs & Services > Credentials > OAuth 2.0 Client ID — tipo "Web application")
 // Dominios autorizados: el dominio donde sirvas ArtEval
-var GOOG_CLIENT_ID = localStorage.getItem('av_goog_client_id') || '';
+// CLIENT ID v200: valor por defecto incrustado para ArtEval. Así tú y tus
+// usuarios de prueba ya NO tienen que pegar el Client ID por consola en cada
+// dominio. Si un usuario configura el suyo propio (av_goog_client_id), ese
+// tiene prioridad; si no, se usa este por defecto.
+// NOTA: el Client ID NO es secreto (es un identificador público que de todos
+// modos viaja en las peticiones OAuth). Para el producto multi-usuario con
+// control de cuotas se moverá a un backend.
+window.GOOG_CLIENT_ID_DEFAULT = '415428654298-nqts5pa7uogpgv0vko497clt6ahv37df.apps.googleusercontent.com';
+var GOOG_CLIENT_ID = localStorage.getItem('av_goog_client_id') || window.GOOG_CLIENT_ID_DEFAULT || '';
 var DRIVE_SCOPE    = 'https://www.googleapis.com/auth/drive.file';
 const DRIVE_FOLDER   = 'ArtEval_Backups';
 const DRIVE_FILENAME        = 'arteval_database.json';
