@@ -4730,6 +4730,15 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
               <span id="classroomStatus" style="font-size:11px;font-family:var(--font-mono);font-weight:600;"></span>
             </div>
           </div>
+          <!-- ══ COPIA DE SEGURIDAD (atajo directo) ══ -->
+          <div id="respaldoWrap" style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--rad);padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <span style="font-size:12px;font-weight:700;color:var(--text2);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;"><path d="M3 12a9 3 0 1 0 18 0 9 3 0 1 0-18 0"/><path d="M3 12v6a9 3 0 0 0 18 0v-6"/><path d="M3 6a9 3 0 0 0 18 0 9 3 0 0 0-18 0v6"/></svg> Copia de seguridad</span>
+            <span style="font-size:11px;color:var(--text3);">Respaldo completo (registros, cursos, rúbricas) en un archivo — úsalo antes de migrar o cambiar de equipo</span>
+            <div style="margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <button class="btn btn-primary" style="font-size:12px;padding:5px 14px;" onclick="exportarBackupJSON()" title="Descarga un archivo .json con todos tus datos — guárdalo fuera de este equipo (Drive personal o correo)">💾 Descargar copia de seguridad</button>
+              <button class="btn" style="font-size:12px;padding:5px 14px;" onclick="restaurarBackupJSON()" title="Carga un archivo .json de respaldo — los datos se agregan sin borrar lo existente">↩ Restaurar copia</button>
+            </div>
+          </div>
           <!-- Importar lista PIE -->
           <div style="background:var(--pie-bg);border:1px solid var(--pie-border);border-radius:var(--rad);padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
             <span style="font-size:12px;color:var(--pie);font-weight:700;"><svg width="12" height="12" viewBox="0 0 100 100" fill="#FF9500" style="flex-shrink:0;vertical-align:middle;display:inline-block" aria-label="PIE"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="#FF9500" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/></svg> Importar lista PIE</span>
