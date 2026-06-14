@@ -9268,102 +9268,152 @@ function renderRegistros() {
   }
 
   var _cardIndex = 0;
-  // v190: _alumnosAgrupados — un alumno = una tarjeta, todas sus evals dentro
-  // DocumentFragment: todas las tarjetas se construyen off-DOM y se insertan en 1 reflow
+  // v200 RENDIMIENTO: en vez de construir las ~1760 tarjetas de golpe (7s de
+  // congelación), renderizamos por lotes con scroll progresivo. Guardamos los
+  // grupos agrupados y dejamos que _rrRenderProgresivo pinte el primer lote
+  // ya, y agregue los siguientes a medida que el profesor hace scroll.
+  _rrAgrupadosData = _alumnosAgrupados;
+  _rrAgrupadosLoaded = 0;
+  _rrFragGruposVivos = {};
+  if (_rrObserver) { _rrObserver.disconnect(); _rrObserver = null; }
+
+  // Pintar el primer lote inmediatamente (rápido: solo lo visible)
+  _rrRenderProgresivo(list, 30);
+
+  // Si quedan más, observar un centinela al final para cargar el resto al scroll
+  if (_rrAgrupadosLoaded < _rrAgrupadosData.length) {
+    var _sentinel = document.createElement('div');
+    _sentinel.id = '_rrSentinelGrupos';
+    _sentinel.style.cssText = 'height:1px;visibility:hidden;';
+    list.appendChild(_sentinel);
+    _rrObserver = new IntersectionObserver(function(entries) {
+      if (entries[0] && entries[0].isIntersecting) {
+        _rrRenderProgresivo(list, 30);
+        if (_rrAgrupadosLoaded >= _rrAgrupadosData.length) {
+          _rrObserver.disconnect(); _rrObserver = null;
+          var s = document.getElementById('_rrSentinelGrupos');
+          if (s) s.remove();
+        } else {
+          // Mover el centinela al final para seguir detectando scroll
+          var s = document.getElementById('_rrSentinelGrupos');
+          if (s) list.appendChild(s);
+        }
+      }
+    }, { root: null, rootMargin: '400px', threshold: 0 });
+    _rrObserver.observe(_sentinel);
+  }
+}
+
+// Estado del render progresivo de tarjetas de alumno agrupadas
+var _rrAgrupadosData = [];
+var _rrAgrupadosLoaded = 0;
+var _rrFragGruposVivos = {};
+
+// Renderiza el siguiente lote de tarjetas de alumno, manteniendo la agrupación
+// por curso (grupos iOS). Inserta antes del centinela si existe.
+function _rrRenderProgresivo(list, batchSize) {
+  var end = Math.min(_rrAgrupadosLoaded + batchSize, _rrAgrupadosData.length);
   var _listFrag = document.createDocumentFragment();
-  var _fragGrups = {}; // curso → grp element dentro del frag
-
-  _alumnosAgrupados.forEach(function(grupo) {
-    var r   = grupo.primerReg;
-    var _regsAlumno = grupo.registros;  // todos sus registros
-    if (!r) return;
-    const idx = registros.indexOf(r);
-
-    // Calcular nota representativa: promedio de todas las evaluaciones del alumno
-    var _notas = _regsAlumno.map(function(rx){ return (typeof rx.nota==='number') ? rx.nota : (parseFloat(rx.nota)||1.0); });
-    var _notaMedia = _notas.reduce(function(s,n){return s+n;},0) / _notas.length;
-    const nota = _notaMedia;
-    let bg, clr;
-    if (nota >= 6.0)      { bg='var(--blue-bg)';  clr='var(--blue)';  }
-    else if (nota >= 4.0) { bg='var(--green-bg)'; clr='var(--green)'; }
-    else                  { bg='var(--red-bg)';   clr='var(--red)';   }
-    const nLabel = nota>=6.0?'Excelente':nota>=5.0?'Muy bien':nota>=4.0?'Logrado':nota>=3.0?'En proceso':'No logrado';
-    const instancia = r.instancia || 'Evaluación 1';
-
-    const card = document.createElement('div');
-    card.className = 'reg-card' + (r.pie?' pie-card':'') + (r.noEntregado?' no-entregado ne-card':'');
-    var delay = Math.min(_cardIndex * 22, 220);
-    card.style.animationDelay = delay + 'ms';
-    card.setAttribute('role', 'article');
-    card.setAttribute('aria-label', (r.nombre||'Registro') + ' — promedio ' + nota.toFixed(1));
-    _cardIndex++;
-
-    // Barra de progreso basada en nota media
-    const pct = Math.round(Math.max(0, Math.min(100, (nota - 1) / 6 * 100)));
-    const barClr = nota>=6.0?'#007AFF':nota>=5.0?'#34C759':nota>=4.0?'#30D158':nota>=3.0?'#FF9500':'#FF3B30';
-    const notaShort = nota>=6.0?'Excelente':nota>=5.0?'Muy bien':nota>=4.0?'Logrado':nota>=3.0?'En proceso':'No logrado';
-    const pieSVG = r.pie?'<span class="pie-badge"><svg width="12" height="12" viewBox="0 0 100 100" fill="#FF9500" style="flex-shrink:0;vertical-align:middle;display:inline-block" aria-label="PIE"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="#FF9500" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/></svg>PIE</span>':'';
-
-    // Mini-chips de cada evaluación (cuando hay más de una)
-    var _evalsHtml = '';
-    if (_regsAlumno.length > 1) {
-      _evalsHtml = '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:5px;">'
-        + _regsAlumno.map(function(rx, ri) {
-            var rn = (typeof rx.nota==='number') ? rx.nota : (parseFloat(rx.nota)||1.0);
-            var rc = rn>=4.0 ? '#34C759' : '#FF3B30';
-            var rInst = (rx.instancia||'Ev.'+(ri+1)).replace('Evaluación ','Ev.');
-            var rIdx  = registros.indexOf(rx);
-            return '<span onclick="event.stopPropagation();verDetalle('+rIdx+')" title="'+_esc(rx.instancia||'Ev.'+(ri+1))+' · '+rn.toFixed(1)+' — clic para ver detalle"'
-              +' style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;cursor:pointer;'
-              +'background:rgba('+(rn>=4.0?'52,199,89':'255,59,48')+',0.10);color:'+rc+';border:0.5px solid '+rc+';">'
-              + _esc(rInst) + ' ' + rn.toFixed(1)
-              + '</span>';
-          }).join('')
-        + '</div>';
-    }
-
-    card.innerHTML = `
-      <div class="reg-card-body">
-        <div class="reg-nota-col">
-          <div class="reg-nota-num" style="color:${clr}">${nota.toFixed(1)}</div>
-          <div class="reg-nota-lbl">${notaShort}</div>
-        </div>
-        <div class="reg-vdivider"></div>
-        <div class="reg-info">
-          <div class="reg-nombre">${_esc(r.nombre||'Sin nombre')}${pieSVG}</div>
-          <div class="reg-meta">${r.curso?_esc(r.curso):''}${r.rubricaNombre?' · '+_esc(r.rubricaNombre):''}</div>
-          ${_evalsHtml || `<div class="reg-meta" style="display:flex;align-items:center;gap:6px;margin-top:3px;">
-            <span class="instancia-badge" onclick="event.stopPropagation();filtrarPorInstancia('${instancia}')" style="cursor:pointer;">${_esc(instancia)}</span>
-            ${r.noEntregado?'<span class="no-entregado-badge">✕ NE</span>':''}
-            <span style="font-family:var(--font-mono);font-size:10px;color:var(--text3);">${pct}%</span>
-          </div>`}
-        </div>
-        <div class="reg-actions">
-          <button class="btn btn-icon" title="Ver detalle" onclick="verDetalle(${idx})"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
-          <button class="btn btn-icon" title="Presentar" onclick="modoPresentacion(${idx})"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></button>
-          <button class="btn btn-icon" title="Editar nota rápida" onclick="editarNotaRapida(${idx}, this)" style="font-size:11px;padding:4px 7px;font-family:var(--font-mono);">${nota.toFixed(1)}</button>
-          <button class="btn btn-icon" title="Editar" onclick="editarRegistro(${idx})"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-          <button class="btn btn-icon btn-danger" title="Eliminar" onclick="eliminar(${idx})"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-        </div>
-      </div>`;
-    // Agrupar en iOS Grouped List por curso — off-DOM en el fragment
-    const cardCurso = r.curso || 'Sin curso';
-    let grp = _fragGrups[cardCurso];
+  for (var _i = _rrAgrupadosLoaded; _i < end; _i++) {
+    var card = _construirCardAlumno(_rrAgrupadosData[_i], _i);
+    if (!card) continue;
+    var cardCurso = card._curso || 'Sin curso';
+    var grp = _rrFragGruposVivos[cardCurso];
     if (!grp) {
-      grp = document.createElement('div');
-      grp.className = 'reg-group';
-      grp.setAttribute('data-curso', cardCurso);
-      const hdr = document.createElement('div');
-      hdr.className = 'reg-group-header';
-      hdr.textContent = cardCurso;
-      grp.appendChild(hdr);
-      _fragGrups[cardCurso] = grp;
-      _listFrag.appendChild(grp);
+      // ¿Ya existe el grupo en el DOM (de un lote anterior)?
+      grp = list.querySelector('.reg-group[data-curso="' + (cardCurso.replace(/"/g,'\\"')) + '"]');
+      if (!grp) {
+        grp = document.createElement('div');
+        grp.className = 'reg-group';
+        grp.setAttribute('data-curso', cardCurso);
+        var hdr = document.createElement('div');
+        hdr.className = 'reg-group-header';
+        hdr.textContent = cardCurso;
+        grp.appendChild(hdr);
+        _listFrag.appendChild(grp);
+      }
+      _rrFragGruposVivos[cardCurso] = grp;
     }
-    grp.appendChild(card);
-  });
-  // Un solo reflow: volcar todo el fragment al DOM
-  list.appendChild(_listFrag);
+    grp.appendChild(card.el);
+  }
+  var sentinel = document.getElementById('_rrSentinelGrupos');
+  if (sentinel) list.insertBefore(_listFrag, sentinel);
+  else list.appendChild(_listFrag);
+  _rrAgrupadosLoaded = end;
+}
+
+// Construye una tarjeta de alumno (extraído de renderRegistros para reutilizar
+// en el render progresivo). Devuelve {el, _curso} o null.
+function _construirCardAlumno(grupo, _cardIndex) {
+  var r   = grupo.primerReg;
+  var _regsAlumno = grupo.registros;
+  if (!r) return null;
+  const idx = registros.indexOf(r);
+
+  var _notas = _regsAlumno.map(function(rx){ return (typeof rx.nota==='number') ? rx.nota : (parseFloat(rx.nota)||1.0); });
+  var _notaMedia = _notas.reduce(function(s,n){return s+n;},0) / _notas.length;
+  const nota = _notaMedia;
+  let bg, clr;
+  if (nota >= 6.0)      { bg='var(--blue-bg)';  clr='var(--blue)';  }
+  else if (nota >= 4.0) { bg='var(--green-bg)'; clr='var(--green)'; }
+  else                  { bg='var(--red-bg)';   clr='var(--red)';   }
+  const nLabel = nota>=6.0?'Excelente':nota>=5.0?'Muy bien':nota>=4.0?'Logrado':nota>=3.0?'En proceso':'No logrado';
+  const instancia = r.instancia || 'Evaluación 1';
+
+  const card = document.createElement('div');
+  card.className = 'reg-card' + (r.pie?' pie-card':'') + (r.noEntregado?' no-entregado ne-card':'');
+  var delay = Math.min((_cardIndex||0) * 22, 220);
+  card.style.animationDelay = delay + 'ms';
+  card.setAttribute('role', 'article');
+  card.setAttribute('aria-label', (r.nombre||'Registro') + ' — promedio ' + nota.toFixed(1));
+
+  const pct = Math.round(Math.max(0, Math.min(100, (nota - 1) / 6 * 100)));
+  const barClr = nota>=6.0?'#007AFF':nota>=5.0?'#34C759':nota>=4.0?'#30D158':nota>=3.0?'#FF9500':'#FF3B30';
+  const notaShort = nota>=6.0?'Excelente':nota>=5.0?'Muy bien':nota>=4.0?'Logrado':nota>=3.0?'En proceso':'No logrado';
+  const pieSVG = r.pie?'<span class="pie-badge"><svg width="12" height="12" viewBox="0 0 100 100" fill="#FF9500" style="flex-shrink:0;vertical-align:middle;display:inline-block" aria-label="PIE"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="#FF9500" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/></svg>PIE</span>':'';
+
+  var _evalsHtml = '';
+  if (_regsAlumno.length > 1) {
+    _evalsHtml = '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:5px;">'
+      + _regsAlumno.map(function(rx, ri) {
+          var rn = (typeof rx.nota==='number') ? rx.nota : (parseFloat(rx.nota)||1.0);
+          var rc = rn>=4.0 ? '#34C759' : '#FF3B30';
+          var rInst = (rx.instancia||'Ev.'+(ri+1)).replace('Evaluación ','Ev.');
+          var rIdx  = registros.indexOf(rx);
+          return '<span onclick="event.stopPropagation();verDetalle('+rIdx+')" title="'+_esc(rx.instancia||'Ev.'+(ri+1))+' · '+rn.toFixed(1)+' — clic para ver detalle"'
+            +' style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;cursor:pointer;'
+            +'background:rgba('+(rn>=4.0?'52,199,89':'255,59,48')+',0.10);color:'+rc+';border:0.5px solid '+rc+';">'
+            + _esc(rInst) + ' ' + rn.toFixed(1)
+            + '</span>';
+        }).join('')
+      + '</div>';
+  }
+
+  card.innerHTML = `
+    <div class="reg-card-body">
+      <div class="reg-nota-col">
+        <div class="reg-nota-num" style="color:${clr}">${nota.toFixed(1)}</div>
+        <div class="reg-nota-lbl">${notaShort}</div>
+      </div>
+      <div class="reg-vdivider"></div>
+      <div class="reg-info">
+        <div class="reg-nombre">${_esc(r.nombre||'Sin nombre')}${pieSVG}</div>
+        <div class="reg-meta">${r.curso?_esc(r.curso):''}${r.rubricaNombre?' · '+_esc(r.rubricaNombre):''}</div>
+        ${_evalsHtml || `<div class="reg-meta" style="display:flex;align-items:center;gap:6px;margin-top:3px;">
+          <span class="instancia-badge" onclick="event.stopPropagation();filtrarPorInstancia('${instancia}')" style="cursor:pointer;">${_esc(instancia)}</span>
+          ${r.noEntregado?'<span class="no-entregado-badge">✕ NE</span>':''}
+          <span style="font-family:var(--font-mono);font-size:10px;color:var(--text3);">${pct}%</span>
+        </div>`}
+      </div>
+      <div class="reg-actions">
+        <button class="btn btn-icon" title="Ver detalle" onclick="verDetalle(${idx})"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+        <button class="btn btn-icon" title="Presentar" onclick="modoPresentacion(${idx})"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></button>
+        <button class="btn btn-icon" title="Editar nota rápida" onclick="editarNotaRapida(${idx}, this)" style="font-size:11px;padding:4px 7px;font-family:var(--font-mono);">${nota.toFixed(1)}</button>
+        <button class="btn btn-icon" title="Editar" onclick="editarRegistro(${idx})"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+        <button class="btn btn-icon btn-danger" title="Eliminar" onclick="eliminar(${idx})"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+    </div>`;
+  return { el: card, _curso: r.curso || 'Sin curso' };
 }
 
 // ── Libro de Clases: tabla dinámica por curso con columnas por instancia ──
@@ -21995,59 +22045,63 @@ function _similitudNombre(a, b) {
   var na = norm(a), nb = norm(b);
   if (na === nb) return 1;
   if (!na.length || !nb.length) return 0;
-  // Distancia Levenshtein → similitud
+  // DESCARTE RÁPIDO v200: si las longitudes difieren más del 5%, es imposible
+  // alcanzar 95% de similitud (la distancia mínima ya es la diferencia de
+  // longitudes). Evita el costoso Levenshtein en la mayoría de los pares.
   var m = na.length, n = nb.length;
+  var maxLen = Math.max(m, n);
+  if (Math.abs(m - n) / maxLen > 0.05) return 0;
+  // Distancia Levenshtein → similitud (solo para nombres de longitud parecida)
   var dp = Array.from({length:m+1}, function(_, i){ return [i]; });
   for (var j=0;j<=n;j++) dp[0][j]=j;
   for (var i=1;i<=m;i++)
     for (var j=1;j<=n;j++)
       dp[i][j] = na[i-1]===nb[j-1] ? dp[i-1][j-1] : 1+Math.min(dp[i-1][j],dp[i][j-1],dp[i-1][j-1]);
-  return 1 - dp[m][n] / Math.max(m, n);
+  return 1 - dp[m][n] / maxLen;
 }
 
 // Auditoría de duplicados: retorna grupos de registros similares
 function auditarDuplicados() {
-  // MEMOIZACIÓN: el escaneo de similitud es O(n²) y se invocaba en CADA render
+  // MEMOIZACIÓN: el escaneo de similitud se invocaba en CADA render
   // (búsqueda, filtros, guardado) → lag perceptible con +1700 registros.
   // Solo se recalcula cuando los datos cambian (_lastSaveTs, mismo patrón
   // de invalidación que normalizarStrict). Mientras no cambien, devuelve caché.
   var _fp = registros.length + '|' + (typeof _lastSaveTs !== 'undefined' ? _lastSaveTs : 0);
   if (auditarDuplicados._fp === _fp && auditarDuplicados._res) return auditarDuplicados._res;
-  // LLAVE COMPUESTA v195: nombre + curso + rúbrica + instancia
-  // Los CUATRO campos deben coincidir simultáneamente para ser duplicado real.
-  // Alumno con Ev.1 y Ev.2 bajo la misma rúbrica → instancias distintas → NO duplicado.
-  // Alumno con misma rubrica + misma instancia → SÍ duplicado (registro accidental doble).
+  // OPTIMIZACIÓN v200: antes era O(n²) — doble bucle comparando TODOS los
+  // registros entre sí (≈3 millones de comparaciones con 1760 registros = 7s
+  // de congelación). Ahora agrupamos primero por clave exacta (curso+rúbrica+
+  // instancia) en un Map O(n), y solo comparamos similitud de nombres DENTRO
+  // de cada cubeta (que tiene poquísimos elementos). De 7s a milisegundos.
   var grupos = [];
-  var usados = new Set();
-
+  // Cubetas por clave exacta: solo registros con la misma clave PUEDEN ser duplicados
+  var cubetas = new Map();
   registros.forEach(function(r, i) {
-    if (usados.has(i)) return;
-    var grupo = [i];
-    var rubricaR  = (r.rubricaNombre || '').trim().toUpperCase();
-    var instanciaR = (r.instancia    || 'Evaluación 1').trim();
+    var rubricaR = (r.rubricaNombre || '').trim().toUpperCase();
+    if (rubricaR === '') return; // sin rúbrica no hay base para determinar duplicado
+    var instanciaR = (r.instancia || 'Evaluación 1').trim();
     var cursoR     = _normCursoKey(r.curso || '');
-
-    registros.forEach(function(r2, j) {
-      if (i === j || usados.has(j)) return;
-      var rubricaR2  = (r2.rubricaNombre || '').trim().toUpperCase();
-      var instanciaR2 = (r2.instancia    || 'Evaluación 1').trim();
-      var cursoR2     = _normCursoKey(r2.curso || '');
-
-      // Llave compuesta: curso + rúbrica + instancia + nombre similar ≥ 95%
-      // Umbral más alto (0.95) para reducir falsos positivos entre alumnos con nombres similares
-      if (cursoR    === cursoR2    &&
-          rubricaR  === rubricaR2  &&
-          rubricaR  !== ''         &&   // sin rúbrica no hay base para determinar duplicado
-          instanciaR === instanciaR2 &&  // ← NUEVO: misma instancia/evaluación obligatoria
-          _similitudNombre(r.nombre, r2.nombre) >= 0.95) {
-        grupo.push(j);
-        usados.add(j);
+    var clave = cursoR + '|||' + rubricaR + '|||' + instanciaR;
+    if (!cubetas.has(clave)) cubetas.set(clave, []);
+    cubetas.get(clave).push(i);
+  });
+  // Dentro de cada cubeta, comparar similitud de nombres (cubetas pequeñas → barato)
+  cubetas.forEach(function(indices) {
+    if (indices.length < 2) return; // una sola entrada → imposible duplicado
+    var usados = new Set();
+    for (var a = 0; a < indices.length; a++) {
+      var i = indices[a];
+      if (usados.has(i)) continue;
+      var grupo = [i];
+      for (var b = a + 1; b < indices.length; b++) {
+        var j = indices[b];
+        if (usados.has(j)) continue;
+        if (_similitudNombre(registros[i].nombre, registros[j].nombre) >= 0.95) {
+          grupo.push(j);
+          usados.add(j);
+        }
       }
-    });
-
-    if (grupo.length > 1) {
-      usados.add(i);
-      grupos.push(grupo);
+      if (grupo.length > 1) { usados.add(i); grupos.push(grupo); }
     }
   });
   auditarDuplicados._fp = _fp;
