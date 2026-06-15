@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v202">
+<meta name="arteval-version" content="v203">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4309,7 +4309,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v202</span>
+      ">v203</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -25231,7 +25231,73 @@ function _entregaLink(sub) {
   return (sub && sub.alternateLink) || '';
 }
 
-var _bandejaEstado = { cursos: [], cursoId: '', cursoNombre: '', work: [], rosterCache: {} };
+var _bandejaEstado = {
+  cursos: [], cursoId: '', cursoNombre: '', cursoMatch: '', work: [],
+  rosterCache: {}, subsCache: {},
+  cwId: '', titulo: '', instancia: '',
+  lastSubs: null, lastRoster: null
+};
+
+// Infiere el curso de ArtEval contenido en el nombre del curso de Classroom.
+function _bandejaInferirCurso(cursoCR) {
+  var match = '';
+  try {
+    var crN = normalizarStrict(cursoCR || '');
+    Object.keys(listaCursos || {}).forEach(function(k) {
+      var kn = normalizarStrict(k);
+      if (kn && kn.length >= 2 && crN.indexOf(kn) !== -1) match = k;
+    });
+  } catch (e) {}
+  return match;
+}
+
+// Instancia de referencia para saber qué cuenta como "ya evaluado".
+function _bandejaInstanciaRef() {
+  return _bandejaEstado.instancia
+    || (document.getElementById('instanciaSelect') && document.getElementById('instanciaSelect').value)
+    || 'Evaluación 1';
+}
+
+// Registro evaluado del alumno para la instancia (y curso, si se infirió) de referencia.
+function _bandejaRegistroDe(nombre) {
+  var instRef = _bandejaInstanciaRef();
+  var cursoMatch = _bandejaEstado.cursoMatch || '';
+  var cand = (registros || []).filter(function(r) {
+    if ((r.instancia || 'Evaluación 1') !== instRef) return false;
+    if (cursoMatch && normalizarCurso(r.curso || '') !== normalizarCurso(cursoMatch)) return false;
+    return mismoEstudiante(r.nombre || '', nombre);
+  });
+  if (!cand.length) return null;
+  cand.sort(function(a, b) { return new Date(b.fechaISO || b.fecha || 0) - new Date(a.fechaISO || a.fecha || 0); });
+  return cand[0];
+}
+
+// Selector de instancia de referencia (clona las opciones del selector de Evaluar).
+function _bandejaInstanciaSelectHTML() {
+  var actual = _bandejaInstanciaRef();
+  var src = document.getElementById('instanciaSelect');
+  var opts = '';
+  if (src && src.options && src.options.length) {
+    opts = Array.prototype.map.call(src.options, function(o) {
+      return '<option value="' + _esc(o.value) + '"' + (o.value === actual ? ' selected' : '') + '>' + _esc(o.textContent || o.value) + '</option>';
+    }).join('');
+  } else {
+    ['Evaluación 1','Evaluación 2','Evaluación 3','Evaluación 4','Evaluación 5','Evaluación 6','Diagnóstico','Proceso','Final'].forEach(function(v) {
+      opts += '<option value="' + _esc(v) + '"' + (v === actual ? ' selected' : '') + '>' + _esc(v) + '</option>';
+    });
+  }
+  return '<select onchange="_bandejaSetInstancia(this.value)" style="font-size:11px;padding:4px 8px;border:0.5px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-family:var(--font-ui);max-width:150px;">' + opts + '</select>';
+}
+
+function _bandejaSetInstancia(v) {
+  _bandejaEstado.instancia = v;
+  if (_bandejaEstado.lastSubs) _renderBandejaEntregas(_bandejaEstado.lastSubs, _bandejaEstado.lastRoster, _bandejaEstado.titulo);
+}
+
+// Refrescar entregas de la tarea actual (ignora la caché)
+function _bandejaRefrescar() {
+  if (_bandejaEstado.cwId) _bandejaAbrirTarea(_bandejaEstado.cwId, _bandejaEstado.titulo, true);
+}
 
 // Cabecera reutilizable del modal de la bandeja
 function _bandejaHeader(titulo, sub) {
@@ -25290,6 +25356,7 @@ function _renderBandejaCursos() {
 async function _bandejaAbrirCurso(cursoId, cursoNombre) {
   _bandejaEstado.cursoId = cursoId;
   _bandejaEstado.cursoNombre = cursoNombre;
+  _bandejaEstado.cursoMatch = _bandejaInferirCurso(cursoNombre);
   abrirModal('<div style="padding:16px;text-align:center;font-size:13px;color:var(--text2);">Cargando tareas de <strong>' + _esc(cursoNombre) + '</strong>\u2026</div>');
   try {
     var work = await _listarCourseWorkClassroom(cursoId);
@@ -25320,22 +25387,36 @@ function _renderBandejaTareas() {
   );
 }
 
-// Paso 3 — cargar entregas de la tarea + roster, emparejar y renderizar
-async function _bandejaAbrirTarea(courseWorkId, tareaTitulo) {
+// Paso 3 — cargar entregas de la tarea + roster (en paralelo, con caché)
+async function _bandejaAbrirTarea(courseWorkId, tareaTitulo, forzar) {
   var cursoId = _bandejaEstado.cursoId;
-  abrirModal('<div style="padding:16px;text-align:center;font-size:13px;color:var(--text2);">Cargando entregas de <strong>' + _esc(tareaTitulo) + '</strong>\u2026</div>');
+  _bandejaEstado.cwId = courseWorkId;
+  _bandejaEstado.titulo = tareaTitulo;
+  var subsKey = cursoId + '|' + courseWorkId;
+  var enCache = !forzar && _bandejaEstado.subsCache[subsKey] && _bandejaEstado.rosterCache[cursoId];
+  if (!enCache) {
+    abrirModal('<div style="padding:16px;text-align:center;font-size:13px;color:var(--text2);">Cargando entregas de <strong>' + _esc(tareaTitulo) + '</strong>\u2026</div>');
+  }
   try {
-    var roster = _bandejaEstado.rosterCache[cursoId];
-    if (!roster) {
-      var alumnos = await _listarAlumnosClassroom(cursoId);
-      roster = {};
-      (alumnos || []).forEach(function(a) {
-        roster[a.userId] = (a.profile && a.profile.name && a.profile.name.fullName) || ('Alumno ' + a.userId);
-      });
-      _bandejaEstado.rosterCache[cursoId] = roster;
-    }
-    var subs = await _listarEntregasClassroom(cursoId, courseWorkId);
-    _renderBandejaEntregas(subs || [], roster, tareaTitulo);
+    // Roster y entregas en paralelo (la primera vez); reutiliza caché si existe.
+    var rosterPromise = _bandejaEstado.rosterCache[cursoId]
+      ? Promise.resolve(_bandejaEstado.rosterCache[cursoId])
+      : _listarAlumnosClassroom(cursoId).then(function(alumnos) {
+          var r = {};
+          (alumnos || []).forEach(function(a) {
+            r[a.userId] = (a.profile && a.profile.name && a.profile.name.fullName) || ('Alumno ' + a.userId);
+          });
+          _bandejaEstado.rosterCache[cursoId] = r;
+          return r;
+        });
+    var subsPromise = (!forzar && _bandejaEstado.subsCache[subsKey])
+      ? Promise.resolve(_bandejaEstado.subsCache[subsKey])
+      : _listarEntregasClassroom(cursoId, courseWorkId).then(function(s) {
+          _bandejaEstado.subsCache[subsKey] = s;
+          return s;
+        });
+    var res = await Promise.all([rosterPromise, subsPromise]);
+    _renderBandejaEntregas(res[1] || [], res[0], tareaTitulo);
   } catch (e) {
     _classroomMostrarError('No se pudieron cargar las entregas', e);
   }
@@ -25343,23 +25424,50 @@ async function _bandejaAbrirTarea(courseWorkId, tareaTitulo) {
 
 function _renderBandejaEntregas(subs, roster, tareaTitulo) {
   var curso = _bandejaEstado.cursoNombre;
-  var entregados = [], pendientes = [];
-  subs.forEach(function(s) {
-    var item = { nombre: roster[s.userId] || ('Alumno ' + s.userId), sub: s };
-    if (_entregaHecha(s)) entregados.push(item); else pendientes.push(item);
-  });
-  entregados.sort(function(a, b) { return a.nombre.localeCompare(b.nombre, 'es'); });
-  pendientes.sort(function(a, b) { return a.nombre.localeCompare(b.nombre, 'es'); });
+  // Guardar para re-render al cambiar la instancia de referencia
+  _bandejaEstado.lastSubs = subs;
+  _bandejaEstado.lastRoster = roster;
+  _bandejaEstado.titulo = tareaTitulo;
 
-  function filaEntregado(it) {
+  var porEvaluar = [], yaEvaluados = [], pendientes = [];
+  subs.forEach(function(s) {
+    var nombre = roster[s.userId] || ('Alumno ' + s.userId);
+    if (!_entregaHecha(s)) { pendientes.push({ nombre: nombre, sub: s }); return; }
+    var reg = _bandejaRegistroDe(nombre);
+    var item = { nombre: nombre, sub: s, reg: reg };
+    if (reg) yaEvaluados.push(item); else porEvaluar.push(item);
+  });
+  var ordenar = function(a, b) { return a.nombre.localeCompare(b.nombre, 'es'); };
+  porEvaluar.sort(ordenar); yaEvaluados.sort(ordenar); pendientes.sort(ordenar);
+
+  function badges(it) {
+    return (it.sub.late ? ' <span style="font-size:9px;color:#FF9500;font-weight:700;">ATRASADA</span>' : '')
+      + (it.sub.state === 'RETURNED' ? ' <span style="font-size:9px;color:#0A84FF;font-weight:700;">DEVUELTA</span>' : '');
+  }
+  function verLink(it) {
     var link = _entregaLink(it.sub);
-    var late = it.sub.late ? ' <span style="font-size:9px;color:#FF9500;font-weight:700;">ATRASADA</span>' : '';
-    var dev  = it.sub.state === 'RETURNED' ? ' <span style="font-size:9px;color:#0A84FF;font-weight:700;">DEVUELTA</span>' : '';
+    return link
+      ? '<a href="' + _esc(link) + '" target="_blank" rel="noopener" style="flex-shrink:0;font-size:11px;color:var(--accent);font-weight:600;text-decoration:none;">Ver \u2197</a>'
+      : '<span style="flex-shrink:0;font-size:10px;color:var(--text3);">sin archivo</span>';
+  }
+
+  function filaPorEvaluar(it) {
     return '<div style="display:flex;align-items:center;gap:8px;padding:9px 10px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rad);margin-bottom:6px;">'
       + '<span style="color:#188038;font-weight:700;flex-shrink:0;">\u2713</span>'
-      + '<span style="flex:1;min-width:0;font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _esc(it.nombre) + late + dev + '</span>'
-      + (link ? '<a href="' + _esc(link) + '" target="_blank" rel="noopener" style="flex-shrink:0;font-size:11px;color:var(--accent);font-weight:600;text-decoration:none;">Ver \u2197</a>' : '<span style="flex-shrink:0;font-size:10px;color:var(--text3);">sin archivo</span>')
+      + '<span style="flex:1;min-width:0;font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _esc(it.nombre) + badges(it) + '</span>'
+      + verLink(it)
       + '<button class="btn btn-sm" style="flex-shrink:0;padding:4px 10px;font-size:11px;" onclick="_bandejaEvaluar(\'' + _bjJs(it.nombre) + '\')">Evaluar</button>'
+      + '</div>';
+  }
+  function filaEvaluado(it) {
+    var nota = (typeof it.reg.nota === 'number' ? it.reg.nota : parseFloat(it.reg.nota) || 0).toFixed(1);
+    var clr = nota >= 6 ? '#2563eb' : nota >= 4 ? '#16a34a' : '#dc2626';
+    return '<div style="display:flex;align-items:center;gap:8px;padding:9px 10px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rad);margin-bottom:6px;opacity:.92;">'
+      + '<span style="color:#188038;font-weight:700;flex-shrink:0;font-size:13px;">\u2713\u2713</span>'
+      + '<span style="flex:1;min-width:0;font-size:13px;font-weight:600;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _esc(it.nombre) + '</span>'
+      + '<span style="flex-shrink:0;font-size:11px;font-weight:700;font-family:var(--font-mono);background:' + clr + '1a;color:' + clr + ';border-radius:8px;padding:2px 8px;">' + nota + '</span>'
+      + verLink(it)
+      + '<button class="btn btn-sm" style="flex-shrink:0;padding:4px 9px;font-size:11px;" onclick="_bandejaEvaluar(\'' + _bjJs(it.nombre) + '\')">Re-evaluar</button>'
       + '</div>';
   }
   function filaPendiente(it) {
@@ -25370,17 +25478,35 @@ function _renderBandejaEntregas(subs, roster, tareaTitulo) {
       + '</div>';
   }
 
+  function caja(num, label, color) {
+    return '<div style="flex:1;background:' + color + '12;border:0.5px solid ' + color + '33;border-radius:var(--rad);padding:8px;text-align:center;">'
+      + '<div style="font-size:20px;font-weight:700;color:' + color + ';line-height:1;">' + num + '</div>'
+      + '<div style="font-size:9.5px;color:' + color + ';">' + label + '</div></div>';
+  }
+
   var html = '<div style="padding:2px;">'
     + _bandejaHeader(tareaTitulo, curso)
-    + '<div style="margin-top:8px;"><button onclick="_renderBandejaTareas()" style="background:none;border:none;color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;padding:4px 0;">\u2039 Volver a tareas</button></div>'
-    + '<div style="display:flex;gap:8px;margin:8px 0 12px;">'
-    + '<div style="flex:1;background:rgba(24,128,56,0.07);border:0.5px solid rgba(24,128,56,0.20);border-radius:var(--rad);padding:8px;text-align:center;"><div style="font-size:20px;font-weight:700;color:#188038;line-height:1;">' + entregados.length + '</div><div style="font-size:10px;color:#188038;">entregaron</div></div>'
-    + '<div style="flex:1;background:rgba(255,59,48,0.07);border:0.5px solid rgba(255,59,48,0.20);border-radius:var(--rad);padding:8px;text-align:center;"><div style="font-size:20px;font-weight:700;color:#FF3B30;line-height:1;">' + pendientes.length + '</div><div style="font-size:10px;color:#FF3B30;">sin entregar</div></div>'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;flex-wrap:wrap;">'
+    + '<button onclick="_renderBandejaTareas()" style="background:none;border:none;color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;padding:4px 0;">\u2039 Volver a tareas</button>'
+    + '<button onclick="_bandejaRefrescar()" style="background:none;border:none;color:var(--text3);font-size:11px;font-weight:600;cursor:pointer;padding:4px 0;">\u21bb Actualizar</button>'
     + '</div>'
-    + '<div style="max-height:46vh;overflow-y:auto;">';
-  if (entregados.length) {
-    html += '<div style="font-size:11px;font-weight:700;color:var(--text3);font-family:var(--font-mono);margin:4px 0 6px;">ENTREGARON (' + entregados.length + ')</div>'
-      + entregados.map(filaEntregado).join('');
+    + '<div style="display:flex;align-items:center;gap:8px;margin:8px 0;flex-wrap:wrap;">'
+    + '<span style="font-size:11px;color:var(--text3);">Evaluación de referencia:</span>'
+    + _bandejaInstanciaSelectHTML()
+    + '</div>'
+    + '<div style="display:flex;gap:8px;margin:6px 0 12px;">'
+    + caja(porEvaluar.length, 'por evaluar', '#FF9500')
+    + caja(yaEvaluados.length, 'evaluados', '#188038')
+    + caja(pendientes.length, 'sin entregar', '#FF3B30')
+    + '</div>'
+    + '<div style="max-height:44vh;overflow-y:auto;">';
+  if (porEvaluar.length) {
+    html += '<div style="font-size:11px;font-weight:700;color:#FF9500;font-family:var(--font-mono);margin:4px 0 6px;">POR EVALUAR (' + porEvaluar.length + ')</div>'
+      + porEvaluar.map(filaPorEvaluar).join('');
+  }
+  if (yaEvaluados.length) {
+    html += '<div style="font-size:11px;font-weight:700;color:#188038;font-family:var(--font-mono);margin:14px 0 6px;">YA EVALUADOS (' + yaEvaluados.length + ')</div>'
+      + yaEvaluados.map(filaEvaluado).join('');
   }
   if (pendientes.length) {
     html += '<div style="font-size:11px;font-weight:700;color:var(--text3);font-family:var(--font-mono);margin:14px 0 6px;">SIN ENTREGAR (' + pendientes.length + ')</div>'
@@ -25391,32 +25517,24 @@ function _renderBandejaEntregas(subs, roster, tareaTitulo) {
   abrirModal(html);
 }
 
-// Salto a Evaluar con el alumno precargado. Intenta calzar el curso de ArtEval
-// dentro del nombre del curso de Classroom; si no, deja el curso ya seleccionado.
+// Salto a Evaluar con el alumno precargado. Usa el curso ya inferido y evita
+// disparar el autocompletado (que abría el desplegable y causaba lag).
 function _bandejaEvaluar(nombre) {
   cerrarModal();
-  var cursoCR = _bandejaEstado.cursoNombre || '';
-  var cursoMatch = '';
-  try {
-    var crN = normalizarStrict(cursoCR);
-    Object.keys(listaCursos || {}).forEach(function(k) {
-      var kn = normalizarStrict(k);
-      if (kn && kn.length >= 2 && crN.indexOf(kn) !== -1) cursoMatch = k;
-    });
-  } catch (e) {}
+  var cursoMatch = _bandejaEstado.cursoMatch || '';
+  var tabEl = document.querySelector('[data-maintab="evaluar"]');
+  if (tabEl && typeof _activarTab === 'function') { _activarTab(tabEl, 'estudio', 'evaluar'); }
+  else if (typeof showEstudioSub === 'function') { showEstudioSub('evaluar'); }
   setTimeout(function() {
-    var tabEl = document.querySelector('[data-maintab="evaluar"]');
-    if (tabEl && typeof _activarTab === 'function') { _activarTab(tabEl, 'estudio', 'evaluar'); }
-    else if (typeof showEstudioSub === 'function') { showEstudioSub('evaluar'); }
-    setTimeout(function() {
-      var inpN = document.getElementById('inputNombre');
-      var inpC = document.getElementById('inputCurso');
-      if (inpC && cursoMatch) inpC.value = cursoMatch;
-      if (inpN) { inpN.value = nombre; inpN.dispatchEvent(new Event('input')); inpN.focus(); inpN.select(); }
-      if (typeof actualizarBarraProgresoCurso === 'function') actualizarBarraProgresoCurso();
-      if (cursoMatch && typeof _sugerirRubricaPorCurso === 'function') _sugerirRubricaPorCurso(cursoMatch);
-    }, 200);
-  }, 60);
+    var inpN = document.getElementById('inputNombre');
+    var inpC = document.getElementById('inputCurso');
+    if (inpC && cursoMatch) inpC.value = cursoMatch;
+    if (inpN) { inpN.value = nombre; inpN.focus(); inpN.select(); }
+    if (typeof cerrarSugerencia === 'function') cerrarSugerencia();
+    if (typeof ocultarAutocompletado === 'function') ocultarAutocompletado();
+    if (typeof actualizarBarraProgresoCurso === 'function') actualizarBarraProgresoCurso();
+    if (cursoMatch && typeof _sugerirRubricaPorCurso === 'function') _sugerirRubricaPorCurso(cursoMatch);
+  }, 140);
 }
 
 // ── Match de nombres ArtEval ↔ Classroom ────────────────────────────────────
