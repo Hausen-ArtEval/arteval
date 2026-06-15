@@ -22832,6 +22832,9 @@ function initGoogleAuth() {
     try {
       var u = JSON.parse(savedUser);
       _showDriveUser(u);
+      // Sesión previa identificada: el chip muestra "Conecta Drive" mientras se
+      // renueva el token en silencio (en vez de "Desconectado", que confundía).
+      _updateCloudUI('identified');
       _requestTokenSilent();
     } catch(e) { /* ignorar */ }
   }
@@ -22847,6 +22850,10 @@ function _onIdToken(response) {
     var user = { name: payload.name, email: payload.email, picture: payload.picture };
     localStorage.setItem('av_drive_user', JSON.stringify(user));
     _showDriveUser(user);
+    // El usuario quedó identificado pero aún sin token de escritura de Drive.
+    // El chip de arriba debe reflejar este estado intermedio ("Conecta Drive")
+    // en vez de "Desconectado", que parecía un error pese a estar con sesión.
+    _updateCloudUI('identified');
     // CORRECCIÓN COOP v200: NO encadenar requestAccessToken dentro de este
     // callback. Abrir un segundo popup desde el callback de One Tap dispara el
     // bloqueo Cross-Origin-Opener-Policy y el permiso de Drive nunca se concede.
@@ -22989,16 +22996,19 @@ function _updateCloudUI(state) {
   if (!btn) return;
   btn.classList.remove('synced','saving','error');
   var map = {
-    synced:       ['☁️ ✓','Sincronizado', 'synced'],
-    saving:       ['⏳','Guardando…',   'saving'],
-    restoring:    ['⬇️','Restaurando…', 'saving'],
-    error:        ['⚠️','Error Drive',  'error'],
-    disconnected: ['☁️','Desconectado', ''],
+    synced:       ['Sincronizado', 'synced'],
+    saving:       ['Guardando…',   'saving'],
+    restoring:    ['Restaurando…', 'saving'],
+    error:        ['Error Drive',  'error'],
+    identified:   ['Conecta Drive', ''],
+    disconnected: ['Desconectado', ''],
   };
   // FIX QA v72: feedback visual mientras Drive guarda
   btn.style.animation = (state==='saving'||state==='restoring') ? 'arteval-pulse 1.2s ease-in-out infinite' : '';
-  var [ic, tx, cls] = map[state] || map.disconnected;
-  if (icon) icon.textContent = ic;
+  var entry = map[state] || map.disconnected;
+  var tx = entry[0], cls = entry[1];
+  // No tocar el ícono: mantener el SVG de trazo fino (estética iOS) en vez de
+  // reemplazarlo por un emoji ☁️. Solo se actualiza el texto y la clase de color.
   if (txt)  txt.textContent  = tx;
   if (cls)  btn.classList.add(cls);
 }
@@ -24409,6 +24419,10 @@ function _irARubricas(btnEl) {
     document.querySelectorAll('.tabs-inner .tab').forEach(function(b){ b.classList.remove('active'); });
     if (btnEl) btnEl.classList.add('active');
     window._enPestanaRubricas = true;
+    // Dibujar las rúbricas guardadas inmediatamente al entrar a la pestaña.
+    // Antes solo aparecían tras realizar otra acción (evaluar, crear, etc.),
+    // porque _irARubricas no invocaba el render de la lista.
+    try { if (typeof renderRubricas === 'function') renderRubricas(); } catch(e) {}
   }, 60);
 }
 
