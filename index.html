@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v201">
+<meta name="arteval-version" content="v202">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4309,7 +4309,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v201</span>
+      ">v202</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -5106,6 +5106,22 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
             </button>
           </div>
         </div>
+      </div>
+
+      <!-- BANDEJA DE ENTREGAS (CLASSROOM) — revisar trabajos de todos los cursos en un solo lugar -->
+      <div id="dashBandejaWrap" style="margin-bottom:16px;">
+        <button onclick="abrirBandejaEntregas()" style="width:100%;box-sizing:border-box;display:flex;align-items:center;gap:12px;padding:13px 16px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rad);cursor:pointer;text-align:left;transition:background .12s,border-color .12s;"
+          onmouseenter="this.style.background='var(--bg3)';this.style.borderColor='var(--accent-border)';"
+          onmouseleave="this.style.background='var(--bg2)';this.style.borderColor='var(--border)';">
+          <span style="flex-shrink:0;width:34px;height:34px;border-radius:9px;background:rgba(24,128,56,0.10);display:flex;align-items:center;justify-content:center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#188038" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+          </span>
+          <span style="flex:1;min-width:0;">
+            <span style="display:block;font-size:13px;font-weight:700;color:var(--text);letter-spacing:-.1px;">Bandeja de entregas (Classroom)</span>
+            <span style="display:block;font-size:11px;color:var(--text3);margin-top:1px;">Revisa en un solo lugar quién entregó su trabajo en cada curso</span>
+          </span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2.5" stroke-linecap="round" style="flex-shrink:0;opacity:.45;"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
       </div>
 
       <!-- PENDIENTES DEL DÍA — widget de acción inmediata -->
@@ -25157,6 +25173,250 @@ async function _listarAlumnosClassroom(courseId) {
     pageToken = data.nextPageToken || '';
   } while (pageToken);
   return alumnos;
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  BANDEJA DE ENTREGAS — revisar quién entregó su trabajo en Classroom
+//  Reutiliza la conexión, los scopes y los helpers del envío de rúbricas.
+//  Es SOLO LECTURA: no modifica nada en Classroom. No requiere permisos nuevos
+//  porque el scope classroom.coursework.students ya autoriza leer las entregas.
+// ══════════════════════════════════════════════════════════════════════════
+
+// Escapa un valor para incrustarlo como argumento de string en un onclick=""
+function _bjJs(s) { return String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
+
+// Lista las tareas (courseWork) PUBLICADAS de un curso, con paginación.
+async function _listarCourseWorkClassroom(courseId) {
+  var work = [], pageToken = '';
+  do {
+    var data = await _classroomApi('courses/' + encodeURIComponent(courseId)
+      + '/courseWork?courseWorkStates=PUBLISHED&pageSize=50'
+      + (pageToken ? '&pageToken=' + encodeURIComponent(pageToken) : ''));
+    work = work.concat(data.courseWork || []);
+    pageToken = data.nextPageToken || '';
+  } while (pageToken);
+  return work;
+}
+
+// Lista las entregas (studentSubmissions) de una tarea, con paginación.
+async function _listarEntregasClassroom(courseId, courseWorkId) {
+  var subs = [], pageToken = '';
+  do {
+    var data = await _classroomApi('courses/' + encodeURIComponent(courseId)
+      + '/courseWork/' + encodeURIComponent(courseWorkId)
+      + '/studentSubmissions?pageSize=100'
+      + (pageToken ? '&pageToken=' + encodeURIComponent(pageToken) : ''));
+    subs = subs.concat(data.studentSubmissions || []);
+    pageToken = data.nextPageToken || '';
+  } while (pageToken);
+  return subs;
+}
+
+// ¿La entrega cuenta como "entregada"? TURNED_IN o RETURNED (devuelta/corregida).
+function _entregaHecha(sub) {
+  var s = (sub && sub.state) || '';
+  return s === 'TURNED_IN' || s === 'RETURNED';
+}
+
+// Mejor enlace para ver el trabajo entregado (no requiere acceso a Drive).
+function _entregaLink(sub) {
+  var att = (sub && sub.assignmentSubmission && sub.assignmentSubmission.attachments) || [];
+  for (var i = 0; i < att.length; i++) {
+    var a = att[i];
+    if (a.driveFile && a.driveFile.alternateLink) return a.driveFile.alternateLink;
+    if (a.link && a.link.url) return a.link.url;
+    if (a.form && a.form.formUrl) return a.form.formUrl;
+    if (a.youTubeVideo && a.youTubeVideo.alternateLink) return a.youTubeVideo.alternateLink;
+  }
+  return (sub && sub.alternateLink) || '';
+}
+
+var _bandejaEstado = { cursos: [], cursoId: '', cursoNombre: '', work: [], rosterCache: {} };
+
+// Cabecera reutilizable del modal de la bandeja
+function _bandejaHeader(titulo, sub) {
+  return '<div style="display:flex;align-items:center;gap:10px;">'
+    + '<span style="flex-shrink:0;width:32px;height:32px;border-radius:9px;background:rgba(24,128,56,0.10);display:flex;align-items:center;justify-content:center;">'
+    + '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#188038" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></span>'
+    + '<div style="flex:1;min-width:0;"><div style="font-size:15px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _esc(titulo) + '</div>'
+    + '<div style="font-size:11px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _esc(sub) + '</div></div>'
+    + '<button onclick="cerrarModal()" style="flex-shrink:0;background:none;border:none;cursor:pointer;color:var(--text3);font-size:22px;line-height:1;padding:2px 6px;">\u00d7</button>'
+    + '</div>';
+}
+
+// Entry point: abre la bandeja. Conecta a Classroom si hace falta.
+function abrirBandejaEntregas() {
+  abrirModal(
+    '<div style="padding:6px 2px;text-align:center;">'
+    + '<div style="font-size:15px;font-weight:700;margin-bottom:6px;">\ud83d\udfe2 Conectando con Google Classroom\u2026</div>'
+    + '<div style="font-size:12px;color:var(--text2);">Autorizando y buscando tus cursos activos</div>'
+    + '</div>'
+  );
+  _conectarClassroom(async function() {
+    try {
+      var cursos = await _listarCursosClassroom();
+      _bandejaEstado.cursos = cursos || [];
+      if (!cursos || !cursos.length) {
+        abrirModal('<div style="padding:4px 2px;"><div style="font-size:15px;font-weight:700;margin-bottom:8px;">Sin cursos activos</div><div style="font-size:12px;color:var(--text2);margin-bottom:12px;">No se encontraron cursos activos en tu cuenta de Classroom.</div><div style="display:flex;justify-content:flex-end;"><button class="btn btn-primary" onclick="cerrarModal()">Cerrar</button></div></div>');
+        return;
+      }
+      _renderBandejaCursos();
+    } catch (e) {
+      _classroomMostrarError('No se pudo cargar la bandeja de entregas', e);
+    }
+  });
+}
+
+// Paso 1 — elegir curso
+function _renderBandejaCursos() {
+  var cursos = _bandejaEstado.cursos || [];
+  var items = cursos.map(function(c) {
+    return '<button onclick="_bandejaAbrirCurso(\'' + _bjJs(c.id) + '\',\'' + _bjJs(c.name) + '\')" '
+      + 'style="width:100%;box-sizing:border-box;text-align:left;display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rad);cursor:pointer;margin-bottom:8px;">'
+      + '<span style="flex:1;min-width:0;font-size:14px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _esc(c.name || '(sin nombre)') + '</span>'
+      + (c.section ? '<span style="flex-shrink:0;font-size:11px;color:var(--text3);font-family:var(--font-mono);">' + _esc(c.section) + '</span>' : '')
+      + '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2.5" stroke-linecap="round" style="flex-shrink:0;opacity:.5;"><polyline points="9 18 15 12 9 6"/></svg>'
+      + '</button>';
+  }).join('');
+  abrirModal(
+    '<div style="padding:2px;">'
+    + _bandejaHeader('Bandeja de entregas', 'Elige un curso para ver sus tareas y entregas')
+    + '<div style="max-height:62vh;overflow-y:auto;margin-top:12px;">' + items + '</div>'
+    + '</div>'
+  );
+}
+
+// Paso 2 — cargar tareas del curso
+async function _bandejaAbrirCurso(cursoId, cursoNombre) {
+  _bandejaEstado.cursoId = cursoId;
+  _bandejaEstado.cursoNombre = cursoNombre;
+  abrirModal('<div style="padding:16px;text-align:center;font-size:13px;color:var(--text2);">Cargando tareas de <strong>' + _esc(cursoNombre) + '</strong>\u2026</div>');
+  try {
+    var work = await _listarCourseWorkClassroom(cursoId);
+    _bandejaEstado.work = work || [];
+    _renderBandejaTareas();
+  } catch (e) {
+    _classroomMostrarError('No se pudieron cargar las tareas', e);
+  }
+}
+
+function _renderBandejaTareas() {
+  var work = _bandejaEstado.work || [];
+  var lista = work.length ? work.map(function(w) {
+    var fecha = (w.dueDate ? (w.dueDate.day + '/' + w.dueDate.month) : '');
+    return '<button onclick="_bandejaAbrirTarea(\'' + _bjJs(w.id) + '\',\'' + _bjJs(w.title) + '\')" '
+      + 'style="width:100%;box-sizing:border-box;text-align:left;display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rad);cursor:pointer;margin-bottom:8px;">'
+      + '<span style="flex:1;min-width:0;"><span style="display:block;font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _esc(w.title || '(sin t\u00edtulo)') + '</span>'
+      + (fecha ? '<span style="display:block;font-size:10px;color:var(--text3);font-family:var(--font-mono);margin-top:1px;">Entrega: ' + fecha + '</span>' : '') + '</span>'
+      + '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2.5" stroke-linecap="round" style="flex-shrink:0;opacity:.5;"><polyline points="9 18 15 12 9 6"/></svg>'
+      + '</button>';
+  }).join('') : '<div style="padding:16px;text-align:center;font-size:13px;color:var(--text3);">Este curso no tiene tareas publicadas.</div>';
+  abrirModal(
+    '<div style="padding:2px;">'
+    + _bandejaHeader(_bandejaEstado.cursoNombre, 'Elige una tarea para ver las entregas')
+    + '<div style="margin-top:8px;"><button onclick="_renderBandejaCursos()" style="background:none;border:none;color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;padding:4px 0;">\u2039 Volver a cursos</button></div>'
+    + '<div style="max-height:56vh;overflow-y:auto;margin-top:6px;">' + lista + '</div>'
+    + '</div>'
+  );
+}
+
+// Paso 3 — cargar entregas de la tarea + roster, emparejar y renderizar
+async function _bandejaAbrirTarea(courseWorkId, tareaTitulo) {
+  var cursoId = _bandejaEstado.cursoId;
+  abrirModal('<div style="padding:16px;text-align:center;font-size:13px;color:var(--text2);">Cargando entregas de <strong>' + _esc(tareaTitulo) + '</strong>\u2026</div>');
+  try {
+    var roster = _bandejaEstado.rosterCache[cursoId];
+    if (!roster) {
+      var alumnos = await _listarAlumnosClassroom(cursoId);
+      roster = {};
+      (alumnos || []).forEach(function(a) {
+        roster[a.userId] = (a.profile && a.profile.name && a.profile.name.fullName) || ('Alumno ' + a.userId);
+      });
+      _bandejaEstado.rosterCache[cursoId] = roster;
+    }
+    var subs = await _listarEntregasClassroom(cursoId, courseWorkId);
+    _renderBandejaEntregas(subs || [], roster, tareaTitulo);
+  } catch (e) {
+    _classroomMostrarError('No se pudieron cargar las entregas', e);
+  }
+}
+
+function _renderBandejaEntregas(subs, roster, tareaTitulo) {
+  var curso = _bandejaEstado.cursoNombre;
+  var entregados = [], pendientes = [];
+  subs.forEach(function(s) {
+    var item = { nombre: roster[s.userId] || ('Alumno ' + s.userId), sub: s };
+    if (_entregaHecha(s)) entregados.push(item); else pendientes.push(item);
+  });
+  entregados.sort(function(a, b) { return a.nombre.localeCompare(b.nombre, 'es'); });
+  pendientes.sort(function(a, b) { return a.nombre.localeCompare(b.nombre, 'es'); });
+
+  function filaEntregado(it) {
+    var link = _entregaLink(it.sub);
+    var late = it.sub.late ? ' <span style="font-size:9px;color:#FF9500;font-weight:700;">ATRASADA</span>' : '';
+    var dev  = it.sub.state === 'RETURNED' ? ' <span style="font-size:9px;color:#0A84FF;font-weight:700;">DEVUELTA</span>' : '';
+    return '<div style="display:flex;align-items:center;gap:8px;padding:9px 10px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rad);margin-bottom:6px;">'
+      + '<span style="color:#188038;font-weight:700;flex-shrink:0;">\u2713</span>'
+      + '<span style="flex:1;min-width:0;font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _esc(it.nombre) + late + dev + '</span>'
+      + (link ? '<a href="' + _esc(link) + '" target="_blank" rel="noopener" style="flex-shrink:0;font-size:11px;color:var(--accent);font-weight:600;text-decoration:none;">Ver \u2197</a>' : '<span style="flex-shrink:0;font-size:10px;color:var(--text3);">sin archivo</span>')
+      + '<button class="btn btn-sm" style="flex-shrink:0;padding:4px 10px;font-size:11px;" onclick="_bandejaEvaluar(\'' + _bjJs(it.nombre) + '\')">Evaluar</button>'
+      + '</div>';
+  }
+  function filaPendiente(it) {
+    return '<div style="display:flex;align-items:center;gap:8px;padding:9px 10px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rad);margin-bottom:6px;opacity:.9;">'
+      + '<span style="color:#FF3B30;font-weight:700;flex-shrink:0;">\u25cb</span>'
+      + '<span style="flex:1;min-width:0;font-size:13px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _esc(it.nombre) + '</span>'
+      + '<span style="flex-shrink:0;font-size:10px;color:#FF3B30;font-weight:700;font-family:var(--font-mono);">Sin entregar</span>'
+      + '</div>';
+  }
+
+  var html = '<div style="padding:2px;">'
+    + _bandejaHeader(tareaTitulo, curso)
+    + '<div style="margin-top:8px;"><button onclick="_renderBandejaTareas()" style="background:none;border:none;color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;padding:4px 0;">\u2039 Volver a tareas</button></div>'
+    + '<div style="display:flex;gap:8px;margin:8px 0 12px;">'
+    + '<div style="flex:1;background:rgba(24,128,56,0.07);border:0.5px solid rgba(24,128,56,0.20);border-radius:var(--rad);padding:8px;text-align:center;"><div style="font-size:20px;font-weight:700;color:#188038;line-height:1;">' + entregados.length + '</div><div style="font-size:10px;color:#188038;">entregaron</div></div>'
+    + '<div style="flex:1;background:rgba(255,59,48,0.07);border:0.5px solid rgba(255,59,48,0.20);border-radius:var(--rad);padding:8px;text-align:center;"><div style="font-size:20px;font-weight:700;color:#FF3B30;line-height:1;">' + pendientes.length + '</div><div style="font-size:10px;color:#FF3B30;">sin entregar</div></div>'
+    + '</div>'
+    + '<div style="max-height:46vh;overflow-y:auto;">';
+  if (entregados.length) {
+    html += '<div style="font-size:11px;font-weight:700;color:var(--text3);font-family:var(--font-mono);margin:4px 0 6px;">ENTREGARON (' + entregados.length + ')</div>'
+      + entregados.map(filaEntregado).join('');
+  }
+  if (pendientes.length) {
+    html += '<div style="font-size:11px;font-weight:700;color:var(--text3);font-family:var(--font-mono);margin:14px 0 6px;">SIN ENTREGAR (' + pendientes.length + ')</div>'
+      + pendientes.map(filaPendiente).join('');
+  }
+  if (!subs.length) html += '<div style="padding:16px;text-align:center;font-size:13px;color:var(--text3);">Esta tarea no tiene estudiantes asignados.</div>';
+  html += '</div></div>';
+  abrirModal(html);
+}
+
+// Salto a Evaluar con el alumno precargado. Intenta calzar el curso de ArtEval
+// dentro del nombre del curso de Classroom; si no, deja el curso ya seleccionado.
+function _bandejaEvaluar(nombre) {
+  cerrarModal();
+  var cursoCR = _bandejaEstado.cursoNombre || '';
+  var cursoMatch = '';
+  try {
+    var crN = normalizarStrict(cursoCR);
+    Object.keys(listaCursos || {}).forEach(function(k) {
+      var kn = normalizarStrict(k);
+      if (kn && kn.length >= 2 && crN.indexOf(kn) !== -1) cursoMatch = k;
+    });
+  } catch (e) {}
+  setTimeout(function() {
+    var tabEl = document.querySelector('[data-maintab="evaluar"]');
+    if (tabEl && typeof _activarTab === 'function') { _activarTab(tabEl, 'estudio', 'evaluar'); }
+    else if (typeof showEstudioSub === 'function') { showEstudioSub('evaluar'); }
+    setTimeout(function() {
+      var inpN = document.getElementById('inputNombre');
+      var inpC = document.getElementById('inputCurso');
+      if (inpC && cursoMatch) inpC.value = cursoMatch;
+      if (inpN) { inpN.value = nombre; inpN.dispatchEvent(new Event('input')); inpN.focus(); inpN.select(); }
+      if (typeof actualizarBarraProgresoCurso === 'function') actualizarBarraProgresoCurso();
+      if (cursoMatch && typeof _sugerirRubricaPorCurso === 'function') _sugerirRubricaPorCurso(cursoMatch);
+    }, 200);
+  }, 60);
 }
 
 // ── Match de nombres ArtEval ↔ Classroom ────────────────────────────────────
