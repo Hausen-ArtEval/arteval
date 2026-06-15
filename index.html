@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v203">
+<meta name="arteval-version" content="v205">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4309,7 +4309,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v203</span>
+      ">v205</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -25251,6 +25251,30 @@ function _bandejaInferirCurso(cursoCR) {
   return match;
 }
 
+// Resuelve un alumno de Classroom contra la nómina/registros de ArtEval.
+// Devuelve { nombre: <nombre tal como está en ArtEval>, curso: <curso ArtEval> }
+// o null. Esto corrige el orden de nombre/apellido (Classroom usa Nombre
+// Apellido; ArtEval, Apellido Nombre) usando el match por tokens, e infiere el
+// curso REAL del alumno en vez de adivinarlo del nombre del curso de Classroom.
+function _bandejaResolverAlumno(nombreCR, cursoPref) {
+  var mejor = null;
+  Object.keys(listaCursos || {}).forEach(function(curso) {
+    (listaCursos[curso] || []).forEach(function(e) {
+      var nom = (e && typeof e === 'object') ? (e.nombre || '') : (e || '');
+      if (!nom || !mismoEstudiante(nom, nombreCR)) return;
+      if (!mejor) { mejor = { nombre: nom, curso: curso }; }
+      else if (cursoPref && normalizarCurso(curso) === normalizarCurso(cursoPref)) { mejor = { nombre: nom, curso: curso }; }
+    });
+  });
+  if (mejor) return mejor;
+  var regs = (registros || []).filter(function(r) { return mismoEstudiante(r.nombre || '', nombreCR); });
+  if (regs.length) {
+    regs.sort(function(a, b) { return new Date(b.fechaISO || b.fecha || 0) - new Date(a.fechaISO || a.fecha || 0); });
+    return { nombre: regs[0].nombre, curso: regs[0].curso || '' };
+  }
+  return null;
+}
+
 // Instancia de referencia para saber qué cuenta como "ya evaluado".
 function _bandejaInstanciaRef() {
   return _bandejaEstado.instancia
@@ -25258,18 +25282,42 @@ function _bandejaInstanciaRef() {
     || 'Evaluación 1';
 }
 
-// Registro evaluado del alumno para la instancia (y curso, si se infirió) de referencia.
+// Registro evaluado del alumno. Empareja por nombre (sin importar el orden) e
+// instancia; si hay un curso inferido prefiere ese, pero NO descarta la nota si
+// el curso no calza (así las notas siempre aparecen aunque la inferencia falle).
 function _bandejaRegistroDe(nombre) {
   var instRef = _bandejaInstanciaRef();
   var cursoMatch = _bandejaEstado.cursoMatch || '';
   var cand = (registros || []).filter(function(r) {
-    if ((r.instancia || 'Evaluación 1') !== instRef) return false;
-    if (cursoMatch && normalizarCurso(r.curso || '') !== normalizarCurso(cursoMatch)) return false;
-    return mismoEstudiante(r.nombre || '', nombre);
+    return (r.instancia || 'Evaluación 1') === instRef && mismoEstudiante(r.nombre || '', nombre);
   });
   if (!cand.length) return null;
+  if (cursoMatch) {
+    var mismo = cand.filter(function(r) { return normalizarCurso(r.curso || '') === normalizarCurso(cursoMatch); });
+    if (mismo.length) cand = mismo;
+  }
   cand.sort(function(a, b) { return new Date(b.fechaISO || b.fecha || 0) - new Date(a.fechaISO || a.fecha || 0); });
   return cand[0];
+}
+
+// ── Botón flotante "Volver a la bandeja" ────────────────────────────────────
+// Tras pulsar "Evaluar" se cierra el modal y se salta a Evaluar; este botón
+// permite regresar a la MISMA tarea en un toque, sin reingresar curso/tarea.
+function _bandejaQuitarFab() { var f = document.getElementById('bandejaFab'); if (f) f.remove(); }
+function _bandejaMostrarFab() {
+  _bandejaQuitarFab();
+  if (!_bandejaEstado.cwId) return;
+  var fab = document.createElement('button');
+  fab.id = 'bandejaFab';
+  fab.onclick = _bandejaVolver;
+  fab.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:max(18px,env(safe-area-inset-bottom));z-index:9000;display:inline-flex;align-items:center;gap:8px;padding:11px 18px;background:#188038;color:#fff;border:none;border-radius:24px;box-shadow:0 4px 16px rgba(0,0,0,0.22);cursor:pointer;font-size:13px;font-weight:700;font-family:var(--font-ui);';
+  fab.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> Volver a la bandeja';
+  document.body.appendChild(fab);
+}
+function _bandejaVolver() {
+  _bandejaQuitarFab();
+  if (_bandejaEstado.cwId) { _bandejaAbrirTarea(_bandejaEstado.cwId, _bandejaEstado.titulo); }
+  else { abrirBandejaEntregas(); }
 }
 
 // Selector de instancia de referencia (clona las opciones del selector de Evaluar).
@@ -25291,12 +25339,168 @@ function _bandejaInstanciaSelectHTML() {
 
 function _bandejaSetInstancia(v) {
   _bandejaEstado.instancia = v;
+  if (_bandejaEstado.cwId) _bandejaTaskMapSet(_bandejaEstado.cwId, { instancia: v });
   if (_bandejaEstado.lastSubs) _renderBandejaEntregas(_bandejaEstado.lastSubs, _bandejaEstado.lastRoster, _bandejaEstado.titulo);
 }
 
 // Refrescar entregas de la tarea actual (ignora la caché)
 function _bandejaRefrescar() {
   if (_bandejaEstado.cwId) _bandejaAbrirTarea(_bandejaEstado.cwId, _bandejaEstado.titulo, true);
+}
+
+// ── Memoria por tarea: rúbrica e instancia (persistente en localStorage) ─────
+function _bandejaTaskMap() {
+  try { return JSON.parse(localStorage.getItem('av_bandeja_taskmap') || '{}'); } catch (e) { return {}; }
+}
+function _bandejaTaskMapSet(cwId, patch) {
+  try {
+    var m = _bandejaTaskMap();
+    m[cwId] = Object.assign({}, m[cwId] || {}, patch);
+    localStorage.setItem('av_bandeja_taskmap', JSON.stringify(m));
+  } catch (e) {}
+}
+// Auto-detecta la instancia desde el título de la tarea de Classroom
+function _bandejaInstanciaDesdeTitulo(titulo) {
+  var t = (titulo || '').toLowerCase();
+  if (/diagn[oó]stic/.test(t)) return 'Diagnóstico';
+  if (/\bproceso\b/.test(t)) return 'Proceso';
+  if (/\bfinal\b/.test(t)) return 'Final';
+  var m = t.match(/evaluaci[oó]n\s*(\d+)/) || t.match(/\bev\.?\s*(\d+)/) || t.match(/\bunidad\s*(\d+)/);
+  if (m) return 'Evaluación ' + m[1];
+  return '';
+}
+
+// Selector de rúbrica de la tarea (recordado por tarea)
+function _bandejaRubricaSelectHTML() {
+  var actual = (typeof _bandejaEstado.rubricaIdx === 'number') ? _bandejaEstado.rubricaIdx : rubricaActiva;
+  var opts = (rubricas || []).map(function(r, i) {
+    return '<option value="' + i + '"' + (i === actual ? ' selected' : '') + '>' + _esc(r.nombre || ('Rúbrica ' + (i + 1))) + '</option>';
+  }).join('');
+  return '<select onchange="_bandejaSetRubrica(this.value)" style="font-size:11px;padding:4px 8px;border:0.5px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-family:var(--font-ui);max-width:170px;">' + opts + '</select>';
+}
+function _bandejaSetRubrica(idx) {
+  var i = parseInt(idx, 10);
+  if (!isNaN(i) && rubricas[i]) {
+    _bandejaEstado.rubricaIdx = i;
+    if (_bandejaEstado.cwId) _bandejaTaskMapSet(_bandejaEstado.cwId, { rubricaIdx: i });
+  }
+}
+
+// ── (1) Devolver la nota a Classroom ────────────────────────────────────────
+function _bjNota(reg) { return typeof reg.nota === 'number' ? reg.nota : (parseFloat(reg.nota) || 1); }
+function _bjLogro(reg) {
+  if (typeof reg.pct === 'number') return reg.pct;
+  if (reg.pts != null && reg.maxPts) return Math.round(reg.pts / reg.maxPts * 100);
+  return Math.round((_bjNota(reg) - 1) / 6 * 100);
+}
+// Mapea la nota a la escala de puntos de la tarea de Classroom
+function _bjGrade(reg, modo, maxPoints) {
+  if (!maxPoints) return null;
+  if (modo === 'nota') return Math.min(maxPoints, Math.max(0, Math.round(_bjNota(reg) * 10) / 10));
+  return Math.round(_bjLogro(reg) / 100 * maxPoints * 10) / 10; // modo 'logro'
+}
+
+// Abre el diálogo de envío de notas (con vista previa y modo de mapeo)
+function _bandejaEnviarNotas() {
+  var lista = _bandejaEstado.lastEvaluados || [];
+  if (!lista.length) { toast('No hay evaluaciones para enviar en esta tarea', 'info', 3500); return; }
+  var maxP = _bandejaEstado.maxPoints || 0;
+  // Modo por defecto: si la tarea está sobre 7, usar la nota; si no, usar logro %
+  _bandejaEstado.modoNota = (maxP === 7) ? 'nota' : 'logro';
+  _bandejaEstado.devolver = true;
+  var avisoSinPuntaje = maxP ? '' :
+    '<div style="font-size:11px;color:#FF9500;background:rgba(255,149,0,0.08);border:0.5px solid rgba(255,149,0,0.25);border-radius:8px;padding:8px 10px;margin-bottom:10px;">Esta tarea no tiene puntaje en Classroom, así que no se puede escribir una nota numérica. Puedes igualmente marcarla como <strong>devuelta</strong>, o asignar un puntaje a la tarea en Classroom y reintentar.</div>';
+  var html = '<div style="padding:2px;">'
+    + '<div style="font-size:15px;font-weight:700;margin-bottom:4px;">Enviar notas a Classroom</div>'
+    + '<div style="font-size:12px;color:var(--text2);margin-bottom:10px;">' + _esc(_bandejaEstado.titulo || '') + ' · ' + _esc(_bandejaEstado.cursoNombre || '') + ' · ' + lista.length + ' evaluado' + (lista.length !== 1 ? 's' : '') + (maxP ? ' · tarea sobre ' + maxP + ' pts' : '') + '</div>'
+    + avisoSinPuntaje;
+  if (maxP) {
+    html += '<div style="display:flex;gap:14px;align-items:center;margin-bottom:8px;font-size:12px;">'
+      + '<span style="color:var(--text3);">Escribir como:</span>'
+      + '<label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="radio" name="bjModo" value="logro"' + (_bandejaEstado.modoNota === 'logro' ? ' checked' : '') + ' onchange="_bandejaEstado.modoNota=this.value;_bandejaPreviewNotas();"> Logro %</label>'
+      + '<label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="radio" name="bjModo" value="nota"' + (_bandejaEstado.modoNota === 'nota' ? ' checked' : '') + ' onchange="_bandejaEstado.modoNota=this.value;_bandejaPreviewNotas();"> Nota 1–7</label>'
+      + '</div>';
+  }
+  html += '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;margin-bottom:10px;"><input type="checkbox" id="bjDevolver" checked onchange="_bandejaEstado.devolver=this.checked;"> Marcar como <strong>devuelto</strong> (la nota queda visible para el estudiante)</label>'
+    + '<div id="bandejaPreview" style="max-height:38vh;overflow-y:auto;border-top:0.5px solid var(--border);padding-top:8px;"></div>'
+    + '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px;">'
+    + '<button class="btn" onclick="cerrarModal()">Cancelar</button>'
+    + '<button class="btn btn-primary" onclick="_bandejaEnviarNotasConfirmar()">Sí aceptar</button>'
+    + '</div></div>';
+  abrirModal(html);
+  _bandejaPreviewNotas();
+}
+
+function _bandejaPreviewNotas() {
+  var cont = document.getElementById('bandejaPreview');
+  if (!cont) return;
+  var lista = _bandejaEstado.lastEvaluados || [];
+  var maxP = _bandejaEstado.maxPoints || 0;
+  var modo = _bandejaEstado.modoNota || 'logro';
+  cont.innerHTML = lista.map(function(it) {
+    var nota = _bjNota(it.reg).toFixed(1);
+    var logro = _bjLogro(it.reg);
+    var g = _bjGrade(it.reg, modo, maxP);
+    var destino = (g == null) ? '—' : (g + (maxP ? ' / ' + maxP + ' pts' : ''));
+    return '<div style="display:flex;align-items:center;gap:8px;padding:5px 2px;font-size:12px;border-bottom:0.5px solid var(--border);">'
+      + '<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);">' + _esc(it.nombre) + '</span>'
+      + '<span style="flex-shrink:0;color:var(--text3);font-family:var(--font-mono);">Nota ' + nota + ' · ' + logro + '%</span>'
+      + '<span style="flex-shrink:0;color:var(--accent);font-weight:700;font-family:var(--font-mono);">' + destino + '</span>'
+      + '</div>';
+  }).join('');
+}
+
+async function _bandejaEnviarNotasConfirmar() {
+  var lista = (_bandejaEstado.lastEvaluados || []).slice();
+  var maxP = _bandejaEstado.maxPoints || 0;
+  var modo = _bandejaEstado.modoNota || 'logro';
+  var devolver = !!_bandejaEstado.devolver;
+  var cursoId = _bandejaEstado.cursoId, cwId = _bandejaEstado.cwId;
+  if (!devolver && !maxP) { toast('No hay nada que enviar: sin puntaje y sin devolver', 'info', 3500); return; }
+  abrirModal('<div style="padding:16px;text-align:center;font-size:13px;color:var(--text2);">Enviando notas a Classroom\u2026<div id="bjEnvioProg" style="margin-top:8px;font-family:var(--font-mono);font-size:12px;color:var(--text3);">0 / ' + lista.length + '</div></div>');
+  var prog = document.getElementById('bjEnvioProg');
+  var resultados = [];
+  for (var i = 0; i < lista.length; i++) {
+    var it = lista[i];
+    var subId = it.sub && it.sub.id;
+    try {
+      if (!subId) throw new Error('Sin id de entrega');
+      var g = _bjGrade(it.reg, modo, maxP);
+      if (g != null) {
+        await _classroomApi('courses/' + encodeURIComponent(cursoId) + '/courseWork/' + encodeURIComponent(cwId)
+          + '/studentSubmissions/' + encodeURIComponent(subId)
+          + '?updateMask=' + (devolver ? 'assignedGrade,draftGrade' : 'draftGrade'),
+          { method: 'PATCH', body: devolver ? { assignedGrade: g, draftGrade: g } : { draftGrade: g } });
+      }
+      if (devolver) {
+        await _classroomApi('courses/' + encodeURIComponent(cursoId) + '/courseWork/' + encodeURIComponent(cwId)
+          + '/studentSubmissions/' + encodeURIComponent(subId) + ':return', { method: 'POST', body: {} });
+      }
+      resultados.push({ nombre: it.nombre, ok: true, g: g });
+    } catch (e) {
+      resultados.push({ nombre: it.nombre, ok: false, detalle: (e && e.message) || 'error' });
+    }
+    if (prog) prog.textContent = (i + 1) + ' / ' + lista.length;
+    await new Promise(function (rs) { setTimeout(rs, 160); });
+  }
+  // Invalida la caché de entregas para que se reflejen los estados nuevos
+  _bandejaEstado.subsCache[cursoId + '|' + cwId] = null;
+  var nOk = resultados.filter(function (r) { return r.ok; }).length;
+  var nErr = resultados.length - nOk;
+  var filas = resultados.map(function (r) {
+    return r.ok
+      ? '<div style="display:flex;gap:8px;padding:4px 0;border-bottom:0.5px solid var(--border);font-size:12px;"><span style="color:#188038;font-weight:700;">\u2713</span><span style="flex:1;">' + _esc(r.nombre) + '</span>' + (r.g != null ? '<span style="font-family:var(--font-mono);color:var(--text3);">' + r.g + ' pts</span>' : '') + '</div>'
+      : '<div style="padding:4px 0;border-bottom:0.5px solid var(--border);font-size:12px;color:var(--red);">\u2717 ' + _esc(r.nombre) + ' \u2014 ' + _esc(r.detalle || '') + '</div>';
+  }).join('');
+  abrirModal(
+    '<div style="padding:2px;">'
+    + '<div style="font-size:15px;font-weight:700;margin-bottom:6px;">' + (nErr ? '\u26a0\ufe0f' : '\u2705') + ' Notas enviadas a Classroom</div>'
+    + '<div style="font-size:12px;color:var(--text2);margin-bottom:10px;"><strong style="color:#188038;">' + nOk + ' enviada' + (nOk !== 1 ? 's' : '') + '</strong>' + (nErr ? ' \u00b7 <strong style="color:var(--red);">' + nErr + ' con error</strong>' : '') + (devolver ? ' \u00b7 marcadas como devueltas' : ' \u00b7 guardadas como borrador') + '</div>'
+    + '<div style="max-height:40vh;overflow-y:auto;">' + filas + '</div>'
+    + '<div style="display:flex;justify-content:flex-end;margin-top:12px;"><button class="btn btn-primary" onclick="cerrarModal();_bandejaRefrescar();">Cerrar</button></div>'
+    + '</div>'
+  );
+  toast((nErr ? '\u26a0\ufe0f ' : '\ud83d\udfe2 ') + nOk + ' nota' + (nOk !== 1 ? 's' : '') + ' a Classroom' + (nErr ? ' \u00b7 ' + nErr + ' con error' : ''), nErr ? 'err' : 'ok', 5000);
 }
 
 // Cabecera reutilizable del modal de la bandeja
@@ -25312,6 +25516,7 @@ function _bandejaHeader(titulo, sub) {
 
 // Entry point: abre la bandeja. Conecta a Classroom si hace falta.
 function abrirBandejaEntregas() {
+  _bandejaQuitarFab();
   abrirModal(
     '<div style="padding:6px 2px;text-align:center;">'
     + '<div style="font-size:15px;font-weight:700;margin-bottom:6px;">\ud83d\udfe2 Conectando con Google Classroom\u2026</div>'
@@ -25389,9 +25594,19 @@ function _renderBandejaTareas() {
 
 // Paso 3 — cargar entregas de la tarea + roster (en paralelo, con caché)
 async function _bandejaAbrirTarea(courseWorkId, tareaTitulo, forzar) {
+  _bandejaQuitarFab();
   var cursoId = _bandejaEstado.cursoId;
   _bandejaEstado.cwId = courseWorkId;
   _bandejaEstado.titulo = tareaTitulo;
+  // Memoria por tarea: instancia + rúbrica (guardada o auto-detectada del título)
+  var saved = _bandejaTaskMap()[courseWorkId] || {};
+  var autoInst = _bandejaInstanciaDesdeTitulo(tareaTitulo);
+  var instSelVal = (document.getElementById('instanciaSelect') && document.getElementById('instanciaSelect').value) || 'Evaluación 1';
+  _bandejaEstado.instancia = saved.instancia || autoInst || instSelVal;
+  _bandejaEstado.rubricaIdx = (typeof saved.rubricaIdx === 'number' && rubricas[saved.rubricaIdx]) ? saved.rubricaIdx : rubricaActiva;
+  // Puntaje de la tarea (para mapear la nota al enviarla a Classroom)
+  var wItem = (_bandejaEstado.work || []).find(function (w) { return w.id === courseWorkId; });
+  _bandejaEstado.maxPoints = (wItem && typeof wItem.maxPoints === 'number') ? wItem.maxPoints : 0;
   var subsKey = cursoId + '|' + courseWorkId;
   var enCache = !forzar && _bandejaEstado.subsCache[subsKey] && _bandejaEstado.rosterCache[cursoId];
   if (!enCache) {
@@ -25429,6 +25644,20 @@ function _renderBandejaEntregas(subs, roster, tareaTitulo) {
   _bandejaEstado.lastRoster = roster;
   _bandejaEstado.titulo = tareaTitulo;
 
+  // Si no se infirió el curso de ArtEval del nombre del curso de Classroom,
+  // deducirlo del curso REAL de los alumnos emparejados en la nómina (más fiable).
+  if (!_bandejaEstado.cursoMatch) {
+    var conteo = {};
+    subs.forEach(function(s) {
+      var nom = roster[s.userId];
+      var r = nom && _bandejaResolverAlumno(nom);
+      if (r && r.curso) conteo[r.curso] = (conteo[r.curso] || 0) + 1;
+    });
+    var best = '', bestN = 0;
+    Object.keys(conteo).forEach(function(k) { if (conteo[k] > bestN) { bestN = conteo[k]; best = k; } });
+    if (best) _bandejaEstado.cursoMatch = best;
+  }
+
   var porEvaluar = [], yaEvaluados = [], pendientes = [];
   subs.forEach(function(s) {
     var nombre = roster[s.userId] || ('Alumno ' + s.userId);
@@ -25439,6 +25668,7 @@ function _renderBandejaEntregas(subs, roster, tareaTitulo) {
   });
   var ordenar = function(a, b) { return a.nombre.localeCompare(b.nombre, 'es'); };
   porEvaluar.sort(ordenar); yaEvaluados.sort(ordenar); pendientes.sort(ordenar);
+  _bandejaEstado.lastEvaluados = yaEvaluados; // para "Enviar notas a Classroom"
 
   function badges(it) {
     return (it.sub.late ? ' <span style="font-size:9px;color:#FF9500;font-weight:700;">ATRASADA</span>' : '')
@@ -25491,9 +25721,14 @@ function _renderBandejaEntregas(subs, roster, tareaTitulo) {
     + '<button onclick="_bandejaRefrescar()" style="background:none;border:none;color:var(--text3);font-size:11px;font-weight:600;cursor:pointer;padding:4px 0;">\u21bb Actualizar</button>'
     + '</div>'
     + '<div style="display:flex;align-items:center;gap:8px;margin:8px 0;flex-wrap:wrap;">'
-    + '<span style="font-size:11px;color:var(--text3);">Evaluación de referencia:</span>'
+    + '<span style="font-size:11px;color:var(--text3);">Evaluación:</span>'
     + _bandejaInstanciaSelectHTML()
+    + '<span style="font-size:11px;color:var(--text3);margin-left:4px;">Rúbrica:</span>'
+    + _bandejaRubricaSelectHTML()
     + '</div>'
+    + (yaEvaluados.length ? ('<div style="margin:0 0 10px;"><button class="btn btn-sm" style="width:100%;background:#188038;color:#fff;border-color:#188038;gap:6px;" onclick="_bandejaEnviarNotas()">'
+        + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg>'
+        + 'Enviar ' + yaEvaluados.length + ' nota' + (yaEvaluados.length !== 1 ? 's' : '') + ' a Classroom</button></div>') : '')
     + '<div style="display:flex;gap:8px;margin:6px 0 12px;">'
     + caja(porEvaluar.length, 'por evaluar', '#FF9500')
     + caja(yaEvaluados.length, 'evaluados', '#188038')
@@ -25517,23 +25752,47 @@ function _renderBandejaEntregas(subs, roster, tareaTitulo) {
   abrirModal(html);
 }
 
-// Salto a Evaluar con el alumno precargado. Usa el curso ya inferido y evita
-// disparar el autocompletado (que abría el desplegable y causaba lag).
+// Salto a Evaluar con el alumno precargado. Resuelve el nombre/curso contra la
+// nómina de ArtEval (corrige el orden Nombre↔Apellido y deduce el curso real),
+// fija la rúbrica e instancia recordadas, y deja un botón para volver a la bandeja.
 function _bandejaEvaluar(nombre) {
   cerrarModal();
-  var cursoMatch = _bandejaEstado.cursoMatch || '';
+  // Resolver contra la nómina: usar el nombre tal como está en ArtEval y su curso
+  var resuelto = _bandejaResolverAlumno(nombre, _bandejaEstado.cursoMatch);
+  var nombreFinal = resuelto ? resuelto.nombre : nombre;
+  var cursoMatch = (resuelto && resuelto.curso) ? resuelto.curso : (_bandejaEstado.cursoMatch || '');
+  var rIdx = _bandejaEstado.rubricaIdx;
+  var inst = _bandejaEstado.instancia;
+  // Activar la rúbrica recordada para esta tarea (si hay)
+  var rubricaFijada = false;
+  if (typeof rIdx === 'number' && rubricas[rIdx]) {
+    rubricaActiva = rIdx;
+    try { localStorage.setItem('av_rubrica_activa', String(rIdx)); } catch (e) {}
+    if (typeof actualizarRubricaSelect === 'function') actualizarRubricaSelect();
+    rubricaFijada = true;
+  }
   var tabEl = document.querySelector('[data-maintab="evaluar"]');
   if (tabEl && typeof _activarTab === 'function') { _activarTab(tabEl, 'estudio', 'evaluar'); }
   else if (typeof showEstudioSub === 'function') { showEstudioSub('evaluar'); }
   setTimeout(function() {
     var inpN = document.getElementById('inputNombre');
     var inpC = document.getElementById('inputCurso');
+    var selI = document.getElementById('instanciaSelect');
     if (inpC && cursoMatch) inpC.value = cursoMatch;
-    if (inpN) { inpN.value = nombre; inpN.focus(); inpN.select(); }
+    if (inpN) { inpN.value = nombreFinal; inpN.focus(); inpN.select(); }
+    // Pre-seleccionar la instancia recordada de la tarea
+    if (selI && inst) {
+      var found = Array.prototype.find.call(selI.options, function(o) { return o.value === inst; });
+      if (found) { selI.value = inst; if (typeof _sincronizarSemestrePorInstancia === 'function') _sincronizarSemestrePorInstancia(); }
+    }
     if (typeof cerrarSugerencia === 'function') cerrarSugerencia();
     if (typeof ocultarAutocompletado === 'function') ocultarAutocompletado();
+    if (typeof renderCriterios === 'function') renderCriterios();
     if (typeof actualizarBarraProgresoCurso === 'function') actualizarBarraProgresoCurso();
-    if (cursoMatch && typeof _sugerirRubricaPorCurso === 'function') _sugerirRubricaPorCurso(cursoMatch);
+    // Solo sugerir rúbrica por curso si la tarea no tenía una rúbrica fijada
+    if (!rubricaFijada && cursoMatch && typeof _sugerirRubricaPorCurso === 'function') _sugerirRubricaPorCurso(cursoMatch);
+    // Botón flotante para volver a la bandeja en un toque
+    _bandejaMostrarFab();
   }, 140);
 }
 
