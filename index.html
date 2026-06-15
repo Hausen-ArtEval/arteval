@@ -4711,7 +4711,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
               <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-top:4px;border-top:1px solid var(--border);">
                 <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
                   <input type="file" id="importListaFile" aria-label="Importar lista de estudiantes desde archivo" accept=".txt,.csv,.xls,.xlsx" style="display:none" onchange="importarListaArchivo(this)">
-                  <button class="btn btn-primary" style="font-size:12px;padding:5px 14px;" onclick="document.getElementById('importListaFile').click()">📂 Subir planilla Alexia (.xls/.xlsx)</button>
+                  <button class="btn btn-primary" style="font-size:12px;padding:5px 14px;" onclick="document.getElementById('importListaFile').click()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> Subir planilla Alexia (.xls/.xlsx)</button>
                 </label>
                 <span style="font-size:11px;color:var(--text3);">También acepta TXT y CSV con nombres</span>
                 <span id="importListaStatus" style="font-size:11px;color:var(--text3);font-family:var(--font-mono);margin-left:auto;"></span>
@@ -4725,7 +4725,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
             <span style="font-size:12px;font-weight:700;color:var(--text2);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Entrega masiva</span>
             <span style="font-size:11px;color:var(--text3);">Genera todos los informes del curso seleccionado para apoderados y estudiantes</span>
             <div style="margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-              <button class="btn btn-primary" style="font-size:12px;padding:5px 14px;" onclick="descargarTodosInformes()" title="Una sola vista de impresión: un informe por página — Guardar como PDF produce un archivo único">📥 Descargar Todos los Informes (PDF/Imprimir)</button>
+              <button class="btn btn-primary" style="font-size:12px;padding:5px 14px;" onclick="descargarTodosInformes()" title="Una sola vista de impresión: un informe por página — Guardar como PDF produce un archivo único"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Descargar Todos los Informes (PDF/Imprimir)</button>
               <button class="btn" style="font-size:12px;padding:5px 14px;background:#188038;color:#fff;border-color:#188038;" onclick="enviarAClassroom()" title="Empareja la nómina de ArtEval con el curso de Classroom y prepara el envío de las rúbricas evaluadas"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg> Enviar Rúbricas a Google Classroom</button>
               <span id="classroomStatus" style="font-size:11px;font-family:var(--font-mono);font-weight:600;"></span>
             </div>
@@ -5486,7 +5486,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
                 <div><div style="font-size:13px;font-weight:600;color:#1C1C1E;" id="gmailEmailLabel"></div><div style="font-size:11px;color:#34C759;">🟢 Enviando desde esta cuenta</div></div>
               </div>
               <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                <button id="btnCambiarGmail" onclick="_cambiarCuentaGmail()" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:rgba(142,142,147,0.10);border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:#3C4043;">🔄 Cambiar Cuenta de Google</button>
+                <button id="btnCambiarGmail" onclick="_cambiarCuentaGmail()" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:rgba(142,142,147,0.10);border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:#3C4043;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Cambiar Cuenta de Google</button>
                 <button id="btnDesconectarGmail" onclick="_desconectarGmail()" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:rgba(255,59,48,0.08);border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:#FF3B30;">Desconectar</button>
               </div>
             </div>
@@ -5743,7 +5743,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
       <div class="sistema-acceso-bar" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
         <button onclick="showSistemaSub('drive')" class="btn btn-sm" style="font-size:12px;">☁️ Drive</button>
         <button onclick="showSistemaSub('rubricas')" class="btn btn-sm" style="background:var(--accent);color:#fff;border-color:var(--accent);font-size:12px;">✏️ Rúbricas</button>
-        <button onclick="showSistemaSub('config')" class="btn btn-sm" style="font-size:12px;">⚙️ Ajustes</button>
+        <button onclick="showSistemaSub('config')" class="btn btn-sm" style="font-size:12px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg> Ajustes</button>
       </div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
         <div>
@@ -5876,7 +5876,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
             <div class="drive-step-body">
               <div class="drive-step-title">Crea un proyecto nuevo</div>
               <div class="drive-step-desc">En la barra superior, haz clic en el selector de proyectos (donde dice "Seleccionar proyecto") → <strong>Proyecto nuevo</strong> → ponle el nombre <em>"ArtEval"</em> → <strong>Crear</strong>.</div>
-              <div class="drive-step-hint">💡 Si ya tienes un proyecto tuyo, puedes usarlo directamente.</div>
+              <div class="drive-step-hint"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.5.5.9 1.2 1 1.9h6c.1-.7.5-1.4 1-1.9A7 7 0 0 0 12 2z"/></svg> Si ya tienes un proyecto tuyo, puedes usarlo directamente.</div>
             </div>
           </div>
 
@@ -5964,7 +5964,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         <div id="_storageStatBar" style="margin-bottom:12px;padding:11px 14px;background:var(--bg3);border:0.5px solid var(--border);border-radius:var(--rad-lg);font-size:12px;color:var(--text3);">Calculando almacenamiento…</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
           <button class="btn btn-primary" onclick="forzarReparacion()">Recalcular todas las notas</button>
-          <button class="btn" onclick="optimizarStorage()" style="border-color:var(--amber,#d97706);color:var(--amber,#d97706);" title="Libera espacio eliminando buffers binarios de Alexia. Las notas y nóminas no se tocan.">🗜 Liberar espacio</button>
+          <button class="btn" onclick="optimizarStorage()" style="border-color:var(--amber,#d97706);color:var(--amber,#d97706);" title="Libera espacio eliminando buffers binarios de Alexia. Las notas y nóminas no se tocan."><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg> Liberar espacio</button>
           <button class="btn btn-danger" onclick="borrarTodosLosDatos()">Borrar todos los datos</button>
 <button class="btn" onclick="ejecutarDiagnostico()" style="display:inline-flex;align-items:center;gap:6px;border-color:var(--accent);color:var(--accent);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Test del Sistema</button>
       </div>
@@ -6045,13 +6045,13 @@ function actualizarEstadoConfigDrive() {
       hintEl.innerHTML = '✅ <strong>GitHub Pages detectado</strong> — agrega esta URL en "Orígenes de JavaScript autorizados". También agrega <code>' + origin + '/arteval</code> si tu repo no está en la raíz.';
       hintEl.style.color = 'var(--green)';
     } else if (isLocal) {
-      hintEl.innerHTML = '💻 <strong>Servidor local</strong> — agrega también <code>http://127.0.0.1:8000</code> y <code>http://localhost:8000</code>.';
+      hintEl.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> <strong>Servidor local</strong> — agrega también <code>http://127.0.0.1:8000</code> y <code>http://localhost:8000</code>.';
       hintEl.style.color = 'var(--accent)';
     } else if (isFile) {
-      hintEl.innerHTML = '📁 <strong>Archivo local</strong> — agrega <code>null</code> (sin comillas) en los orígenes autorizados. Nota: Chrome puede bloquear OAuth desde file:// por políticas de seguridad. Recomendamos usar GitHub Pages.';
+      hintEl.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> <strong>Archivo local</strong> — agrega <code>null</code> (sin comillas) en los orígenes autorizados. Nota: Chrome puede bloquear OAuth desde file:// por políticas de seguridad. Recomendamos usar GitHub Pages.';
       hintEl.style.color = 'var(--amber)';
     } else {
-      hintEl.innerHTML = '🌐 <strong>Servidor detectado</strong> — copia el origen de arriba y agrégalo en Google Cloud Console.';
+      hintEl.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> <strong>Servidor detectado</strong> — copia el origen de arriba y agrégalo en Google Cloud Console.';
       hintEl.style.color = 'var(--text2)';
     }
   }
@@ -12095,7 +12095,7 @@ function abrirExportUniversal() {
   // FIX v175: pre-seleccionar el curso activo en Registros si hay uno
   var _cursoActivoReg = (document.getElementById('filtroCurso')?.value || '').trim();
 
-  var html = '<div class="modal-title">📤 Exportar notas — Sistema escolar</div>'
+  var html = '<div class="modal-title"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Exportar notas — Sistema escolar</div>'
     + '<div class="modal-hint">Selecciona el sistema de tu colegio. ArtEval genera el archivo exacto que necesitas para importar las notas.</div>'
     + '<div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px;">Curso:</div>'
     + '<select id="exportSistCurso" class="filter-select" style="width:100%;margin-bottom:16px;min-height:40px;">'
@@ -12945,7 +12945,7 @@ function _exportAlexiaDiagnostico(cursos) {
         + 'border-radius:8px;margin-bottom:10px;">✅ Todos los alumnos con nota.</div>';
 
   abrirModal(
-    '<div class="modal-title">📊 Diagnóstico — listo para exportar</div>'
+    '<div class="modal-title"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Diagnóstico — listo para exportar</div>'
     + '<div style="display:flex;gap:8px;margin-bottom:12px;">'
     +   '<div style="flex:1;text-align:center;padding:12px 8px;background:var(--bg3);border-radius:var(--rad);">'
     +     '<div style="font-size:24px;font-weight:800;color:var(--green);">' + conNota + '</div>'
@@ -13490,7 +13490,7 @@ function _renderDashKpiGlobal(instFiltro) {
       ? ''
       : hayEnOtroSem
         ? '<div style="grid-column:1/-1;text-align:center;padding:28px 20px;">'
-          + '<div style="font-size:28px;margin-bottom:8px;">📋</div>'
+          + '<div style="margin-bottom:8px;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg></div>'
           + '<div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px;">Sin evaluaciones en ' + _semestreActivo + '° Semestre</div>'
           + '<div style="font-size:12px;color:var(--text3);margin-bottom:12px;">Hay ' + _registrosSemestre(otroSem).length + ' evaluaciones en el ' + otroSem + '° Semestre.</div>'
           + '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">'
@@ -13612,7 +13612,7 @@ function _mostrarDetalleCursoDash(curso) {
       // Header con nombre del curso y promedio grande
       '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;">'
       +'<div>'
-      +'<div class="modal-title" style="margin-bottom:2px;">📚 '+_esc(curso)+'</div>'
+      +'<div class="modal-title" style="margin-bottom:2px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> '+_esc(curso)+'</div>'
       +'<div style="font-size:12px;color:var(--text3);">'+(_semestreActivo===1?'1°':'2°')+' Semestre · '+regsSem.length+' evaluaciones</div>'
       +'</div>'
       +'<div style="font-size:36px;font-weight:800;color:'+promClr+';font-family:var(--font-mono);line-height:1;">'
@@ -16168,7 +16168,7 @@ input:focus, textarea:focus, select:focus {
 }
 
 </style></head><body>
-  <h1>📋 Informe de Evaluaciones · Artes Visuales</h1>
+  <h1><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg> Informe de Evaluaciones · Artes Visuales</h1>
   <div class="meta">
     Generado el ${hoy} · Total registros: ${totalRegs} · Promedio general: ${promGen} · Logrado general: ${Math.round(totalApr/totalRegs*100)||0}%
     ${instancias.length ? '· Instancias: ' + instancias.join(', ') : ''}
@@ -17813,14 +17813,14 @@ function _abrirCorreoTab(idx){
     + 'background:var(--accent-bg);cursor:pointer;'
     + 'font-size:13px;font-weight:600;font-family:var(--font-ui);color:var(--accent);'
     + 'transition:opacity 0.15s;-webkit-tap-highlight-color:transparent;';
-  iaBtn.innerHTML = '✨ Mejorar con IA';
+  iaBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;"><path d="M12 3l1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3z"/></svg> Mejorar con IA';
   iaBtn.title = 'Genera una frase personalizada según las evaluaciones del alumno';
   iaBtn.onclick = function() {
     iaBtn.innerHTML = '⏳ Generando…';
     iaBtn.style.opacity = '0.6';
     iaBtn.disabled = true;
     _generarFraseIACorreo(al, function(frase) {
-      iaBtn.innerHTML = '✨ Mejorar con IA';
+      iaBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;"><path d="M12 3l1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3z"/></svg> Mejorar con IA';
       iaBtn.style.opacity = '1';
       iaBtn.disabled = false;
       if (!frase) {
@@ -17835,7 +17835,7 @@ function _abrirCorreoTab(idx){
       iaBtn.style.color = 'var(--green)';
       toast('✨ Frase IA incluida en el correo', 2500);
       setTimeout(function() {
-        iaBtn.innerHTML = '✨ Mejorar con IA';
+        iaBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;"><path d="M12 3l1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3z"/></svg> Mejorar con IA';
         iaBtn.style.borderColor = 'var(--accent-border)';
         iaBtn.style.color = 'var(--accent)';
       }, 3000);
@@ -17904,7 +17904,7 @@ function abrirModalCorreosApoderados() {
     '<div class="email-modal-box">' +
       '<div class="email-modal-header">' +
         '<div>' +
-          '<div class="email-modal-title">📧 Correos a apoderados — Promedio crítico</div>' +
+          '<div class="email-modal-title"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg> Correos a apoderados — Promedio crítico</div>' +
           '<div style="font-size:12px;color:var(--text3);margin-top:2px;">Alumnos con 2+ evaluaciones y promedio &lt; 4,0</div>' +
         '</div>' +
         '<button onclick="_cerrarEmailModal()" style="background:none;border:none;cursor:pointer;' +
@@ -18383,8 +18383,8 @@ function verDetalle(idx) {
     <div class="detalle-criterios">${critHTML || '<p style="color:var(--text3);font-size:13px;text-align:center;padding:16px">Detalle no disponible para evaluaciones anteriores.<br><span style="font-size:11px;opacity:0.7">Las nuevas evaluaciones guardan el desglose completo por criterio.</span></p>'}</div>
     <div class="modal-footer" style="justify-content:space-between;flex-wrap:wrap;gap:8px;">
       <div style="display:flex;gap:8px;">
-        <button class="btn" id="_vdPerfilBtn">👤 Perfil</button>
-        <button class="btn" onclick="modoPresentacion(${idx});cerrarModal()">🖥️ Presentar</button>
+        <button class="btn" id="_vdPerfilBtn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Perfil</button>
+        <button class="btn" onclick="modoPresentacion(${idx});cerrarModal()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> Presentar</button>
       </div>
       <div style="display:flex;gap:8px;">
         <button class="btn btn-primary" id="_vdRubricaBtn" style="gap:6px;" title="Descargar Rúbrica Evaluada — informe imprimible para el apoderado"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Rúbrica Evaluada</button>
@@ -21030,7 +21030,7 @@ function descargarTodosInformes() {
   var cursoSafe = curso.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
   abrirModal(
     '<div style="padding:4px 2px;">'
-    + '<div style="font-size:15px;font-weight:700;margin-bottom:6px;">📥 Descargar todos los informes — ' + _esc(curso) + ' <span style="font-size:10px;font-weight:700;color:var(--accent);background:rgba(255,149,0,0.12);padding:2px 9px;border-radius:20px;vertical-align:middle;">📅 ' + _semestreActivo + '° Semestre</span></div>'
+    + '<div style="font-size:15px;font-weight:700;margin-bottom:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Descargar todos los informes — ' + _esc(curso) + ' <span style="font-size:10px;font-weight:700;color:var(--accent);background:rgba(255,149,0,0.12);padding:2px 9px;border-radius:20px;vertical-align:middle;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> ' + _semestreActivo + '° Semestre</span></div>'
     + '<div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:12px;">'
     + 'Se generará <strong>una sola vista de impresión</strong> con un informe por página. '
     + 'En el diálogo de impresión elige <strong>"Guardar como PDF"</strong> para obtener un único archivo con todos los informes del curso.'
