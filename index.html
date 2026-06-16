@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v207">
+<meta name="arteval-version" content="v208">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4309,7 +4309,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v207</span>
+      ">v208</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -9948,6 +9948,13 @@ function editarRegistro(idx) {
       nameEl.addEventListener('keydown', e => { if (e.key==='Enter') { e.preventDefault(); nameEl.blur(); } });
     }
   });
+
+  // Registros sin detalle (p. ej. notas de "Promedio automático"): mostrar los
+  // criterios de la rúbrica seleccionada para poder evaluarlos y asignar rúbrica,
+  // por si el estudiante entrega su trabajo a último momento.
+  if (!r.detalle || !r.detalle.length) {
+    if (typeof cambiarRubricaEdicion === 'function') cambiarRubricaEdicion(idx);
+  }
 }
 
 function toggleEditNivel(btn, nivel, idx) {
@@ -10066,6 +10073,9 @@ function confirmarEdicion(idx) {
   r.curso  = curso;
   r.instancia = instancia;
   if (rubrica) r.rubricaNombre = rubrica;
+  // Si era una nota de promedio automático y ahora se le asigna una rúbrica real,
+  // deja de ser sintética: pasa a ser una evaluación normal.
+  if (r.autoPromedio && rubrica && rubrica !== '(Promedio automático)') r.autoPromedio = false;
   if (fecha)   r.fecha = fecha;
 
   // Guardar nivel, nombre del criterio editado y observación
