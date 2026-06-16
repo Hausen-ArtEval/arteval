@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v208">
+<meta name="arteval-version" content="v209">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -41,6 +41,8 @@
 <!-- SheetJS para leer XLS/XLSX -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<!-- LZString (MIT, pieroxy/lz-string) — compresión transparente de localStorage para los registros -->
+<script>var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",n="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-$",e={};function t(r,o){if(!e[r]){e[r]={};for(var n=0;n<r.length;n++)e[r][r.charAt(n)]=n}return e[r][o]}var i={compressToBase64:function(r){if(null==r)return"";var n=i._compress(r,6,function(r){return o.charAt(r)});switch(n.length%4){default:case 0:return n;case 1:return n+"===";case 2:return n+"==";case 3:return n+"="}},decompressFromBase64:function(r){return null==r?"":""==r?null:i._decompress(r.length,32,function(n){return t(o,r.charAt(n))})},compressToUTF16:function(o){return null==o?"":i._compress(o,15,function(o){return r(o+32)})+" "},decompressFromUTF16:function(r){return null==r?"":""==r?null:i._decompress(r.length,16384,function(o){return r.charCodeAt(o)-32})},compressToUint8Array:function(r){for(var o=i.compress(r),n=new Uint8Array(2*o.length),e=0,t=o.length;e<t;e++){var s=o.charCodeAt(e);n[2*e]=s>>>8,n[2*e+1]=s%256}return n},decompressFromUint8Array:function(o){if(null==o)return i.decompress(o);for(var n=new Array(o.length/2),e=0,t=n.length;e<t;e++)n[e]=256*o[2*e]+o[2*e+1];var s=[];return n.forEach(function(o){s.push(r(o))}),i.decompress(s.join(""))},compressToEncodedURIComponent:function(r){return null==r?"":i._compress(r,6,function(r){return n.charAt(r)})},decompressFromEncodedURIComponent:function(r){return null==r?"":""==r?null:(r=r.replace(/ /g,"+"),i._decompress(r.length,32,function(o){return t(n,r.charAt(o))}))},compress:function(o){return i._compress(o,16,function(o){return r(o)})},_compress:function(r,o,n){if(null==r)return"";var e,t,i,s={},u={},a="",p="",c="",l=2,f=3,h=2,d=[],m=0,v=0;for(i=0;i<r.length;i+=1)if(a=r.charAt(i),Object.prototype.hasOwnProperty.call(s,a)||(s[a]=f++,u[a]=!0),p=c+a,Object.prototype.hasOwnProperty.call(s,p))c=p;else{if(Object.prototype.hasOwnProperty.call(u,c)){if(c.charCodeAt(0)<256){for(e=0;e<h;e++)m<<=1,v==o-1?(v=0,d.push(n(m)),m=0):v++;for(t=c.charCodeAt(0),e=0;e<8;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}else{for(t=1,e=0;e<h;e++)m=m<<1|t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t=0;for(t=c.charCodeAt(0),e=0;e<16;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}0==--l&&(l=Math.pow(2,h),h++),delete u[c]}else for(t=s[c],e=0;e<h;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;0==--l&&(l=Math.pow(2,h),h++),s[p]=f++,c=String(a)}if(""!==c){if(Object.prototype.hasOwnProperty.call(u,c)){if(c.charCodeAt(0)<256){for(e=0;e<h;e++)m<<=1,v==o-1?(v=0,d.push(n(m)),m=0):v++;for(t=c.charCodeAt(0),e=0;e<8;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}else{for(t=1,e=0;e<h;e++)m=m<<1|t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t=0;for(t=c.charCodeAt(0),e=0;e<16;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}0==--l&&(l=Math.pow(2,h),h++),delete u[c]}else for(t=s[c],e=0;e<h;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;0==--l&&(l=Math.pow(2,h),h++)}for(t=2,e=0;e<h;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;for(;;){if(m<<=1,v==o-1){d.push(n(m));break}v++}return d.join("")},decompress:function(r){return null==r?"":""==r?null:i._decompress(r.length,32768,function(o){return r.charCodeAt(o)})},_decompress:function(o,n,e){var t,i,s,u,a,p,c,l=[],f=4,h=4,d=3,m="",v=[],g={val:e(0),position:n,index:1};for(t=0;t<3;t+=1)l[t]=t;for(s=0,a=Math.pow(2,2),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;switch(s){case 0:for(s=0,a=Math.pow(2,8),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;c=r(s);break;case 1:for(s=0,a=Math.pow(2,16),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;c=r(s);break;case 2:return""}for(l[3]=c,i=c,v.push(c);;){if(g.index>o)return"";for(s=0,a=Math.pow(2,d),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;switch(c=s){case 0:for(s=0,a=Math.pow(2,8),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;l[h++]=r(s),c=h-1,f--;break;case 1:for(s=0,a=Math.pow(2,16),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;l[h++]=r(s),c=h-1,f--;break;case 2:return v.join("")}if(0==f&&(f=Math.pow(2,d),d++),l[c])m=l[c];else{if(c!==h)return null;m=i+i.charAt(0)}v.push(m),l[h++]=i+m.charAt(0),i=m,0==--f&&(f=Math.pow(2,d),d++)}}};return i}();"function"==typeof define&&define.amd?define(function(){return LZString}):"undefined"!=typeof module&&null!=module?module.exports=LZString:"undefined"!=typeof angular&&null!=angular&&angular.module("LZString",[]).factory("LZString",function(){return LZString});</script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap');
@@ -4309,7 +4311,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v208</span>
+      ">v209</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -4728,15 +4730,6 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
               <button class="btn btn-primary" style="font-size:12px;padding:5px 14px;" onclick="descargarTodosInformes()" title="Una sola vista de impresión: un informe por página — Guardar como PDF produce un archivo único"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Descargar Todos los Informes (PDF/Imprimir)</button>
               <button class="btn" style="font-size:12px;padding:5px 14px;background:#188038;color:#fff;border-color:#188038;" onclick="enviarAClassroom()" title="Empareja la nómina de ArtEval con el curso de Classroom y prepara el envío de las rúbricas evaluadas"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg> Enviar Rúbricas a Google Classroom</button>
               <span id="classroomStatus" style="font-size:11px;font-family:var(--font-mono);font-weight:600;"></span>
-            </div>
-          </div>
-          <!-- ══ COPIA DE SEGURIDAD (atajo directo) ══ -->
-          <div id="respaldoWrap" style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--rad);padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-            <span style="font-size:12px;font-weight:700;color:var(--text2);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;"><path d="M3 12a9 3 0 1 0 18 0 9 3 0 1 0-18 0"/><path d="M3 12v6a9 3 0 0 0 18 0v-6"/><path d="M3 6a9 3 0 0 0 18 0 9 3 0 0 0-18 0v6"/></svg> Copia de seguridad</span>
-            <span style="font-size:11px;color:var(--text3);">Respaldo completo (registros, cursos, rúbricas) en un archivo — úsalo antes de migrar o cambiar de equipo</span>
-            <div style="margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-              <button class="btn btn-primary" style="font-size:12px;padding:5px 14px;display:inline-flex;align-items:center;gap:6px;" onclick="exportarBackupJSON()" title="Descarga un archivo .json con todos tus datos — guárdalo fuera de este equipo (Drive personal o correo)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Descargar copia de seguridad</button>
-              <button class="btn" style="font-size:12px;padding:5px 14px;display:inline-flex;align-items:center;gap:6px;" onclick="restaurarBackupJSON()" title="Carga un archivo .json de respaldo — los datos se agregan sin borrar lo existente"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg> Restaurar copia</button>
             </div>
           </div>
           <!-- Importar lista PIE -->
@@ -5301,10 +5294,6 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
                 <button onclick="_exportItem('universal')" style="width:100%;text-align:left;padding:10px 12px;border:none;background:none;border-radius:10px;font-size:13px;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:10px;font-family:var(--font-ui);" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">
                   <span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:var(--bg3);flex-shrink:0;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;" ><path d="M8 7H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3"/><polyline points="12 2 12 12"/><polyline points="9 5 12 2 15 5"/></svg></span>
                   <div><div style="font-weight:600;">Exportar notas</div><div style="font-size:11px;color:var(--text3);">Schooltrack · Napsis · Excel</div></div>
-                </button>
-                <button onclick="_exportItem('backup')" style="width:100%;text-align:left;padding:10px 12px;border:none;background:none;border-radius:10px;font-size:13px;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:10px;font-family:var(--font-ui);" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">
-                  <span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:var(--bg3);flex-shrink:0;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></span>
-                  <div><div style="font-weight:600;">Copia de seguridad</div><div style="font-size:11px;color:var(--text3);">Respaldo completo local · sin internet</div></div>
                 </button>
                 <div style="height:0.5px;background:var(--border);margin:4px 12px;"></div>
                 <button onclick="_exportItem('limpiar')" id="btnLimpiarDups" style="width:100%;text-align:left;padding:10px 12px;border:none;background:none;border-radius:10px;font-size:13px;color:var(--amber);cursor:pointer;display:flex;align-items:center;gap:10px;font-family:var(--font-ui);" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">
@@ -6156,9 +6145,39 @@ function normalizarCurso(c) {
 }
 function _normCursoKey(c) { return normalizarCurso(c).replace(/°/g, '').toUpperCase(); }
 
+// ── Almacenamiento comprimido de registros (transparente) ───────────────────
+// Los registros se guardan en localStorage comprimidos con LZString para evitar
+// llenar el cupo (~5 MB). Se preservan TODOS los campos: solo cambia el formato
+// en disco. Marca de formato: prefijo "LZ1:". Si por algún motivo no hubiera
+// LZString, cae a JSON plano (retrocompatible). Las imágenes nunca van aquí.
+function _lsSetRegistros(arr) {
+  var payload = (arr || []).map(function(r) {
+    if (!r) return r;
+    var c = Object.assign({}, r);
+    delete c.imagenBase64; // jamás en localStorage — va solo a Drive
+    return c;
+  });
+  var json = JSON.stringify(payload);
+  var out = (window.LZString && typeof LZString.compressToUTF16 === 'function')
+    ? ('LZ1:' + LZString.compressToUTF16(json)) : json;
+  localStorage.setItem('av_registros', out);
+}
+function _lsGetRegistrosRaw() {
+  var raw = localStorage.getItem('av_registros');
+  if (raw == null) return null;
+  if (raw.indexOf('LZ1:') === 0) {
+    if (window.LZString && typeof LZString.decompressFromUTF16 === 'function') {
+      var dec = LZString.decompressFromUTF16(raw.slice(4));
+      return dec || null;
+    }
+    return null; // sin LZString no se puede leer (no debería ocurrir: va embebido)
+  }
+  return raw; // JSON plano (datos antiguos o respaldo sin compresión)
+}
+
 let registros = (function(){
   try {
-    var raw = JSON.parse(localStorage.getItem('av_registros') || '[]');
+    var raw = JSON.parse(_lsGetRegistrosRaw() || '[]');
     if (!Array.isArray(raw)) { console.warn('[ArtEval] av_registros no es array, reseteando.'); return []; }
     // Filtrar entradas corruptas (null/undefined/no-objeto) y garantizar campos mínimos
     return raw.filter(function(r) {
@@ -6713,14 +6732,14 @@ function saveRegistros() {
       return c;
     });
     try {
-      localStorage.setItem('av_registros', JSON.stringify(_payload));
+      _lsSetRegistros(_payload);
     } catch(e) {
       if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
         console.error('[ArtEval] localStorage lleno incluso sin imágenes:', e);
         // Fallback extremo: guardar solo los últimos 200 registros
         var _mini = _payload.slice(-200);
         try {
-          localStorage.setItem('av_registros', JSON.stringify(_mini));
+          _lsSetRegistros(_mini);
           toast('⚠️ Almacenamiento casi lleno — guardando los últimos 200 registros localmente. Sincroniza Drive.', 'err', 6000);
         } catch(e2) {
           toast('🚨 Sin espacio local. Sincroniza Drive desde Sistema → Drive.', 'err', 10000);
@@ -19987,7 +20006,10 @@ function tokensSimilares(t1, t2) {
 // Esto libera espacio inmediatamente al abrir la app sin tocar los datos de Drive.
 (function _purgeLegacyBase64() {
   try {
-    var raw = localStorage.getItem('av_registros');
+    var rawStored = localStorage.getItem('av_registros');
+    if (!rawStored) return;
+    var wasPlain = rawStored.indexOf('LZ1:') !== 0;
+    var raw = _lsGetRegistrosRaw();
     if (!raw) return;
     var arr = JSON.parse(raw);
     if (!Array.isArray(arr)) return;
@@ -19996,9 +20018,10 @@ function tokensSimilares(t1, t2) {
       if (r && r.imagenBase64) { delete r.imagenBase64; dirty = true; }
       if (r && r._pendingDriveUpload) { delete r._pendingDriveUpload; dirty = true; }
     });
-    if (dirty) {
-      localStorage.setItem('av_registros', JSON.stringify(arr));
-      console.info('[ArtEval] Base64 legado purgado de localStorage (' + arr.length + ' registros)');
+    // Recomprimir si estaba en JSON plano (libera espacio de inmediato al abrir)
+    if (dirty || wasPlain) {
+      _lsSetRegistros(arr);
+      console.info('[ArtEval] Registros ' + (wasPlain ? 'comprimidos' : 'depurados') + ' en localStorage (' + arr.length + ')');
     }
   } catch(e) { console.warn('[ArtEval] _purgeLegacyBase64:', e.message); }
 })();
@@ -23426,7 +23449,7 @@ async function guardarYLiberarLocalStorage() {
     try { localStorage.setItem('av_alexia_datos', JSON.stringify(alexiaDatos)); } catch(e) {}
 
     // Guardar registros de vuelta en localStorage (ahora hay espacio)
-    try { localStorage.setItem('av_registros', JSON.stringify(registros)); } catch(e) {
+    try { _lsSetRegistros(registros); } catch(e) {
       // Si aún no cabe, está bien — están en Drive
     }
 
