@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v205">
+<meta name="arteval-version" content="v206">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4309,7 +4309,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v205</span>
+      ">v206</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -5124,7 +5124,21 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         </button>
       </div>
 
-      <!-- PENDIENTES DEL DÍA — widget de acción inmediata -->
+      <!-- COMPLETAR NOTA FALTANTE CON PROMEDIO -->
+      <div id="dashPromedioWrap" style="margin-bottom:16px;">
+        <button onclick="abrirCompletarPromedio()" style="width:100%;box-sizing:border-box;display:flex;align-items:center;gap:12px;padding:13px 16px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rad);cursor:pointer;text-align:left;transition:background .12s,border-color .12s;"
+          onmouseenter="this.style.background='var(--bg3)';this.style.borderColor='var(--accent-border)';"
+          onmouseleave="this.style.background='var(--bg2)';this.style.borderColor='var(--border)';">
+          <span style="flex-shrink:0;width:34px;height:34px;border-radius:9px;background:rgba(10,132,255,0.10);display:flex;align-items:center;justify-content:center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0A84FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="17" x2="14" y2="17"/></svg>
+          </span>
+          <span style="flex:1;min-width:0;">
+            <span style="display:block;font-size:13px;font-weight:700;color:var(--text);letter-spacing:-.1px;">Completar nota faltante con promedio</span>
+            <span style="display:block;font-size:11px;color:var(--text3);margin-top:1px;">Rellena la instancia que falte con el promedio de las otras notas</span>
+          </span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2.5" stroke-linecap="round" style="flex-shrink:0;opacity:.45;"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
       <div id="dashPendientesWrap" style="margin-bottom:16px;display:none;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
           <div style="display:flex;align-items:center;gap:8px;">
@@ -25320,6 +25334,150 @@ function _bandejaVolver() {
   else { abrirBandejaEntregas(); }
 }
 
+// ── Marca manual de "revisado" (persistente por tarea+alumno) ───────────────
+// Para alumnos a los que ya respondiste/calificaste antes (en Classroom u otro
+// medio) y que no tienen nota en ArtEval: así no quedan como "por evaluar".
+function _bandejaRevisadosMap() {
+  try { return JSON.parse(localStorage.getItem('av_bandeja_revisados') || '{}'); } catch (e) { return {}; }
+}
+function _bandejaEsRevisadoManual(userId) {
+  return !!_bandejaRevisadosMap()[_bandejaEstado.cwId + '|' + userId];
+}
+function _bandejaMarcarRevisado(userId, val) {
+  var m = _bandejaRevisadosMap();
+  var k = _bandejaEstado.cwId + '|' + userId;
+  if (val) m[k] = true; else delete m[k];
+  try { localStorage.setItem('av_bandeja_revisados', JSON.stringify(m)); } catch (e) {}
+  if (_bandejaEstado.lastSubs) _renderBandejaEntregas(_bandejaEstado.lastSubs, _bandejaEstado.lastRoster, _bandejaEstado.titulo);
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  COMPLETAR NOTA FALTANTE CON EL PROMEDIO
+//  Si a un estudiante le falta la nota de una instancia, se rellena con el
+//  promedio de sus otras notas del curso (semestre activo), para no perjudicarlo.
+// ══════════════════════════════════════════════════════════════════════════
+var _promEstado = { curso: '', instancia: '', candidatos: [] };
+
+// Inverso de ptsANota: aprox. puntaje que produce esa nota (exigencia 60%)
+function _notaAPts(nota, maxPts) {
+  var n = Math.min(7, Math.max(1, Number(nota) || 1));
+  var pct = n >= 4 ? 0.60 + (n - 4) / 3 * 0.40 : (n - 1) / 3 * 0.60;
+  return Math.round(pct * maxPts);
+}
+
+function _promAgruparAlumnos(regs) {
+  var grupos = [];
+  regs.forEach(function(r) {
+    var g = grupos.find(function(x) { return mismoEstudiante(x.nombre, r.nombre || ''); });
+    if (!g) { g = { nombre: r.nombre || '', items: [] }; grupos.push(g); }
+    g.items.push(r);
+    if ((r.nombre || '').length > g.nombre.length) g.nombre = r.nombre;
+  });
+  return grupos;
+}
+
+function _promCursosDisponibles() {
+  var set = {};
+  (registros || []).forEach(function(r) {
+    if (r._deletedAt) return;
+    var n = (typeof r.nota === 'number') ? r.nota : parseFloat(r.nota);
+    if (isNaN(n) || n <= 0) return;
+    if (typeof _semestrePorInstancia === 'function' && _semestrePorInstancia(r.instancia || '') !== _semestreActivo) return;
+    if (r.curso) set[r.curso] = true;
+  });
+  return Object.keys(set).sort();
+}
+
+function abrirCompletarPromedio() {
+  var cursos = _promCursosDisponibles();
+  if (!cursos.length) { toast('No hay cursos con notas en el semestre activo', 'info', 3500); return; }
+  var insts = _TODAS_INSTANCIAS.filter(function(i) { return _semestrePorInstancia(i) === _semestreActivo; });
+  _promEstado = { curso: cursos[0], instancia: insts[0] || 'Evaluación 1', candidatos: [] };
+  var cursoOpts = cursos.map(function(c) { return '<option value="' + _esc(c) + '"' + (c === _promEstado.curso ? ' selected' : '') + '>' + _esc(c) + '</option>'; }).join('');
+  var instOpts = insts.map(function(i) { return '<option value="' + _esc(i) + '"' + (i === _promEstado.instancia ? ' selected' : '') + '>' + _esc(i) + '</option>'; }).join('');
+  var html = '<div style="padding:2px;">'
+    + '<div style="font-size:15px;font-weight:700;margin-bottom:4px;">Completar nota faltante con el promedio</div>'
+    + '<div style="font-size:12px;color:var(--text2);margin-bottom:12px;">Rellena la instancia que falte con el promedio de las otras notas del estudiante en el curso, para no perjudicar su evaluación.</div>'
+    + '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">'
+    + '<label style="font-size:11px;color:var(--text3);">Curso<br><select id="promCurso" onchange="_promEstado.curso=this.value;_completarPromedioPreview();" style="margin-top:3px;font-size:13px;padding:6px 10px;border:0.5px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);">' + cursoOpts + '</select></label>'
+    + '<label style="font-size:11px;color:var(--text3);">Instancia a completar<br><select id="promInst" onchange="_promEstado.instancia=this.value;_completarPromedioPreview();" style="margin-top:3px;font-size:13px;padding:6px 10px;border:0.5px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);">' + instOpts + '</select></label>'
+    + '</div>'
+    + '<div id="promPreview" style="max-height:42vh;overflow-y:auto;border-top:0.5px solid var(--border);padding-top:8px;"></div>'
+    + '<div id="promFooter" style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px;"></div>'
+    + '</div>';
+  abrirModal(html);
+  _completarPromedioPreview();
+}
+
+function _completarPromedioPreview() {
+  var cont = document.getElementById('promPreview');
+  var footer = document.getElementById('promFooter');
+  if (!cont) return;
+  var curso = _promEstado.curso, inst = _promEstado.instancia;
+  var regs = _registrosConNota(curso); // semestre activo, nota>0, no borrados
+  var grupos = _promAgruparAlumnos(regs);
+  var candidatos = [];
+  grupos.forEach(function(g) {
+    var tiene = g.items.some(function(r) { return (r.instancia || 'Evaluación 1') === inst; });
+    if (tiene) return;
+    var notas = g.items.map(function(r) { return (typeof r.nota === 'number') ? r.nota : parseFloat(r.nota); }).filter(function(n) { return !isNaN(n) && n > 0; });
+    if (!notas.length) return;
+    var avg = Math.round(notas.reduce(function(a, b) { return a + b; }, 0) / notas.length * 10) / 10;
+    candidatos.push({ nombre: g.nombre, notas: notas, avg: avg });
+  });
+  candidatos.sort(function(a, b) { return a.nombre.localeCompare(b.nombre, 'es'); });
+  _promEstado.candidatos = candidatos;
+  if (!candidatos.length) {
+    cont.innerHTML = '<div style="padding:14px;text-align:center;font-size:13px;color:var(--text3);">No hay estudiantes a quienes completar: o ya tienen nota en \u00ab' + _esc(inst) + '\u00bb, o no tienen otras notas para promediar.</div>';
+    if (footer) footer.innerHTML = '<button class="btn" onclick="cerrarModal()">Cerrar</button>';
+    return;
+  }
+  cont.innerHTML = '<div style="font-size:11px;color:var(--text3);margin-bottom:6px;">Se creará la nota de <strong>' + _esc(inst) + '</strong> para ' + candidatos.length + ' estudiante' + (candidatos.length !== 1 ? 's' : '') + ':</div>'
+    + candidatos.map(function(c) {
+      return '<div style="display:flex;align-items:center;gap:8px;padding:5px 2px;font-size:12px;border-bottom:0.5px solid var(--border);">'
+        + '<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);">' + _esc(c.nombre) + '</span>'
+        + '<span style="flex-shrink:0;color:var(--text3);font-family:var(--font-mono);">' + c.notas.map(function(n) { return n.toFixed(1); }).join(' \u00b7 ') + '</span>'
+        + '<span style="flex-shrink:0;color:var(--accent);font-weight:700;font-family:var(--font-mono);">\u2192 ' + c.avg.toFixed(1) + '</span>'
+        + '</div>';
+    }).join('');
+  if (footer) footer.innerHTML = '<button class="btn" onclick="cerrarModal()">Cancelar</button>'
+    + '<button class="btn btn-primary" onclick="_completarPromedioConfirmar()">Sí aceptar</button>';
+}
+
+function _completarPromedioConfirmar() {
+  var curso = _promEstado.curso, inst = _promEstado.instancia;
+  var candidatos = _promEstado.candidatos || [];
+  if (!candidatos.length) { cerrarModal(); return; }
+  var creados = 0;
+  candidatos.forEach(function(c) {
+    var existe = registros.some(function(r) {
+      return !r._deletedAt && mismoEstudiante(r.nombre || '', c.nombre) && (r.curso || '') === curso && (r.instancia || 'Evaluación 1') === inst;
+    });
+    if (existe) return;
+    var maxPts = 24;
+    var pts = _notaAPts(c.avg, maxPts);
+    var pct = Math.round(pts / maxPts * 100);
+    var guid = (listaCursos[curso] || []).find(function(e) { return mismoEstudiante(e.nombre || '', c.nombre); });
+    registros.push({
+      _id: _uuidV4(), _savedAt: new Date().toISOString(), _editHistory: [],
+      nombre: c.nombre, curso: curso,
+      fecha: new Date().toLocaleDateString('es-CL'), fechaISO: new Date().toISOString(),
+      pts: pts, maxPts: maxPts, pct: pct, nota: c.avg,
+      conteo: { MB: 0, L: 0, M: 0, N: 0 }, detalle: [],
+      rubricaNombre: '(Promedio automático)',
+      instancia: inst, semestre: _semestrePorInstancia(inst),
+      guidMatricula: (guid && guid.guidMatricula) || '',
+      pie: false, pieRubrica: null, pieExigencia: null,
+      autoPromedio: true
+    });
+    creados++;
+  });
+  if (typeof saveRegistros === 'function') saveRegistros();
+  if (typeof actualizarTodaLaApp === 'function') actualizarTodaLaApp();
+  cerrarModal();
+  toast('\u2713 ' + creados + ' nota' + (creados !== 1 ? 's' : '') + ' de promedio creada' + (creados !== 1 ? 's' : '') + ' en ' + inst, 'ok', 4500);
+}
+
 // Selector de instancia de referencia (clona las opciones del selector de Evaluar).
 function _bandejaInstanciaSelectHTML() {
   var actual = _bandejaInstanciaRef();
@@ -25658,17 +25816,20 @@ function _renderBandejaEntregas(subs, roster, tareaTitulo) {
     if (best) _bandejaEstado.cursoMatch = best;
   }
 
-  var porEvaluar = [], yaEvaluados = [], pendientes = [];
+  var porEvaluar = [], yaEvaluados = [], revisados = [], pendientes = [];
   subs.forEach(function(s) {
     var nombre = roster[s.userId] || ('Alumno ' + s.userId);
     if (!_entregaHecha(s)) { pendientes.push({ nombre: nombre, sub: s }); return; }
     var reg = _bandejaRegistroDe(nombre);
-    var item = { nombre: nombre, sub: s, reg: reg };
-    if (reg) yaEvaluados.push(item); else porEvaluar.push(item);
+    if (reg) { yaEvaluados.push({ nombre: nombre, sub: s, reg: reg }); return; }
+    var manual = _bandejaEsRevisadoManual(s.userId);
+    var enClassroom = (s.state === 'RETURNED'); // ya devuelto/calificado en Classroom
+    if (manual || enClassroom) { revisados.push({ nombre: nombre, sub: s, manual: manual, cr: enClassroom }); return; }
+    porEvaluar.push({ nombre: nombre, sub: s });
   });
   var ordenar = function(a, b) { return a.nombre.localeCompare(b.nombre, 'es'); };
-  porEvaluar.sort(ordenar); yaEvaluados.sort(ordenar); pendientes.sort(ordenar);
-  _bandejaEstado.lastEvaluados = yaEvaluados; // para "Enviar notas a Classroom"
+  porEvaluar.sort(ordenar); yaEvaluados.sort(ordenar); revisados.sort(ordenar); pendientes.sort(ordenar);
+  _bandejaEstado.lastEvaluados = yaEvaluados; // para "Enviar notas a Classroom" (solo con nota ArtEval)
 
   function badges(it) {
     return (it.sub.late ? ' <span style="font-size:9px;color:#FF9500;font-weight:700;">ATRASADA</span>' : '')
@@ -25686,6 +25847,7 @@ function _renderBandejaEntregas(subs, roster, tareaTitulo) {
       + '<span style="color:#188038;font-weight:700;flex-shrink:0;">\u2713</span>'
       + '<span style="flex:1;min-width:0;font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _esc(it.nombre) + badges(it) + '</span>'
       + verLink(it)
+      + '<button class="btn btn-sm" style="flex-shrink:0;padding:4px 8px;font-size:11px;" title="Marcar como ya revisado (no crea nota en ArtEval)" onclick="_bandejaMarcarRevisado(\'' + _bjJs(it.sub.userId) + '\',true)">Revisado</button>'
       + '<button class="btn btn-sm" style="flex-shrink:0;padding:4px 10px;font-size:11px;" onclick="_bandejaEvaluar(\'' + _bjJs(it.nombre) + '\')">Evaluar</button>'
       + '</div>';
   }
@@ -25698,6 +25860,22 @@ function _renderBandejaEntregas(subs, roster, tareaTitulo) {
       + '<span style="flex-shrink:0;font-size:11px;font-weight:700;font-family:var(--font-mono);background:' + clr + '1a;color:' + clr + ';border-radius:8px;padding:2px 8px;">' + nota + '</span>'
       + verLink(it)
       + '<button class="btn btn-sm" style="flex-shrink:0;padding:4px 9px;font-size:11px;" onclick="_bandejaEvaluar(\'' + _bjJs(it.nombre) + '\')">Re-evaluar</button>'
+      + '</div>';
+  }
+  function filaRevisado(it) {
+    var tag = it.cr
+      ? '<span style="flex-shrink:0;font-size:9px;font-weight:700;color:#0A84FF;font-family:var(--font-mono);">CLASSROOM</span>'
+      : '<span style="flex-shrink:0;font-size:9px;font-weight:700;color:var(--text3);font-family:var(--font-mono);">MARCADO</span>';
+    var quitar = it.manual
+      ? '<button class="btn btn-sm" style="flex-shrink:0;padding:4px 8px;font-size:11px;" title="Quitar la marca manual" onclick="_bandejaMarcarRevisado(\'' + _bjJs(it.sub.userId) + '\',false)">Quitar</button>'
+      : '';
+    return '<div style="display:flex;align-items:center;gap:8px;padding:9px 10px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rad);margin-bottom:6px;opacity:.85;">'
+      + '<span style="color:#0A84FF;font-weight:700;flex-shrink:0;font-size:13px;">\u2713</span>'
+      + '<span style="flex:1;min-width:0;font-size:13px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _esc(it.nombre) + '</span>'
+      + tag
+      + verLink(it)
+      + '<button class="btn btn-sm" style="flex-shrink:0;padding:4px 9px;font-size:11px;" onclick="_bandejaEvaluar(\'' + _bjJs(it.nombre) + '\')">Evaluar</button>'
+      + quitar
       + '</div>';
   }
   function filaPendiente(it) {
@@ -25731,7 +25909,7 @@ function _renderBandejaEntregas(subs, roster, tareaTitulo) {
         + 'Enviar ' + yaEvaluados.length + ' nota' + (yaEvaluados.length !== 1 ? 's' : '') + ' a Classroom</button></div>') : '')
     + '<div style="display:flex;gap:8px;margin:6px 0 12px;">'
     + caja(porEvaluar.length, 'por evaluar', '#FF9500')
-    + caja(yaEvaluados.length, 'evaluados', '#188038')
+    + caja(yaEvaluados.length + revisados.length, 'evaluados', '#188038')
     + caja(pendientes.length, 'sin entregar', '#FF3B30')
     + '</div>'
     + '<div style="max-height:44vh;overflow-y:auto;">';
@@ -25742,6 +25920,10 @@ function _renderBandejaEntregas(subs, roster, tareaTitulo) {
   if (yaEvaluados.length) {
     html += '<div style="font-size:11px;font-weight:700;color:#188038;font-family:var(--font-mono);margin:14px 0 6px;">YA EVALUADOS (' + yaEvaluados.length + ')</div>'
       + yaEvaluados.map(filaEvaluado).join('');
+  }
+  if (revisados.length) {
+    html += '<div style="font-size:11px;font-weight:700;color:#0A84FF;font-family:var(--font-mono);margin:14px 0 6px;">REVISADOS, SIN NOTA EN ARTEVAL (' + revisados.length + ')</div>'
+      + revisados.map(filaRevisado).join('');
   }
   if (pendientes.length) {
     html += '<div style="font-size:11px;font-weight:700;color:var(--text3);font-family:var(--font-mono);margin:14px 0 6px;">SIN ENTREGAR (' + pendientes.length + ')</div>'
