@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v213">
+<meta name="arteval-version" content="v214">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4311,7 +4311,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v213</span>
+      ">v214</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -14814,6 +14814,9 @@ function _abrirInformeEstudiante() {
     + '<select id="infEstCurso" class="filter-select" style="width:100%;margin:4px 0 12px;" onchange="_informeEstCargarAlumnos(this.value)">' + optsCurso + '</select>'
     + '<label style="font-size:11px;font-weight:700;color:var(--text3);font-family:var(--font-mono);">ESTUDIANTE</label>'
     + '<select id="infEstAlumno" class="filter-select" style="width:100%;margin:4px 0 4px;"><option value="">Primero elige un curso…</option></select>'
+    + '<label style="display:flex;align-items:center;gap:9px;margin-top:14px;cursor:pointer;font-size:13px;color:var(--text);">'
+    + '<input type="checkbox" id="infEstObs" checked style="width:18px;height:18px;accent-color:var(--accent);cursor:pointer;">'
+    + 'Incluir las observaciones por criterio</label>'
     + '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;">'
     + '<button class="btn" onclick="cerrarModal()">Cancelar</button>'
     + '<button class="btn btn-primary" onclick="_informeEstGenerar()">Generar informe</button>'
@@ -14828,11 +14831,12 @@ function _informeEstCargarAlumnos(curso) {
 function _informeEstGenerar() {
   var curso = (document.getElementById('infEstCurso') || {}).value || '';
   var alumno = (document.getElementById('infEstAlumno') || {}).value || '';
+  var incluirObs = !!(document.getElementById('infEstObs') || {}).checked;
   if (!curso || !alumno) { toast('Selecciona curso y estudiante', 'info', 2500); return; }
   cerrarModal();
-  _generarInformeEstudiante(alumno, curso);
+  _generarInformeEstudiante(alumno, curso, incluirObs);
 }
-function _generarInformeEstudiante(nombre, curso) {
+function _generarInformeEstudiante(nombre, curso, incluirObs) {
   var sem = (typeof _semestreActivo !== 'undefined') ? _semestreActivo : 1;
   var nc = _normCursoKey(curso);
   var regs = registros.filter(function(r) {
@@ -14872,6 +14876,25 @@ function _generarInformeEstudiante(nombre, curso) {
     return '<div style="margin-bottom:7px;"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;"><span>' + label + '</span><span>' + val + ' (' + pct + '%)</span></div>'
       + '<div style="height:8px;background:#eee;border-radius:4px;overflow:hidden;"><div style="height:100%;width:' + pct + '%;background:' + clr + ';"></div></div></div>';
   }
+  // ── Observaciones por criterio (opcional) ───────────────────────────────
+  var nivelLabel = { MB: 'Muy bien logrado', L: 'Logrado', M: 'Medianamente logrado', N: 'Por lograr' };
+  var obsSection = '';
+  if (incluirObs) {
+    var bloques = regs.map(function(r, i) {
+      var det = Array.isArray(r.detalle) ? r.detalle : [];
+      if (!det.length) return '';
+      var rows = det.map(function(d) {
+        var nm = (typeof _critNombre === 'function') ? _critNombre(d.criterio) : (d && d.criterio);
+        var niv = nivelLabel[d.nivel] || d.nivel || '—';
+        var obs = (d && d.nota && String(d.nota).trim()) ? _esc(String(d.nota)) : '—';
+        return '<tr><td>' + _esc(nm || 'Criterio') + '</td><td style="white-space:nowrap;">' + _esc(niv) + '</td><td>' + obs + '</td></tr>';
+      }).join('');
+      return '<div style="margin-bottom:16px;break-inside:avoid;"><div style="font-weight:700;font-size:13px;margin-bottom:6px;color:#333;">'
+        + _esc(r.instancia || ('Evaluación ' + (i + 1))) + ' — ' + _esc(r.rubricaNombre || '') + ' · Nota ' + notas[i].toFixed(1) + '</div>'
+        + '<table><thead><tr><th>Criterio</th><th>Nivel</th><th>Observación</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+    }).join('');
+    if (bloques) obsSection = '<div class="card"><div style="font-weight:700;margin-bottom:12px;">Observaciones por criterio</div>' + bloques + '</div>';
+  }
   var win = window.open('', '_blank');
   if (!win) { toast('⚠️ El navegador bloqueó la ventana. Permite pop-ups e intenta de nuevo.', 'err', 5000); return; }
   var doc = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
@@ -14899,6 +14922,7 @@ function _generarInformeEstudiante(nombre, curso) {
     + '</div></div>'
     + '<div class="card"><div style="font-weight:700;margin-bottom:10px;">Calificaciones del semestre</div>'
     + '<table><thead><tr><th>Instancia</th><th>Rúbrica</th><th>Fecha</th><th style="text-align:center;">Nota</th><th style="text-align:center;">Nivel</th></tr></thead><tbody>' + filas + '</tbody></table></div>'
+    + obsSection
     + (totalCrit ? ('<div class="card"><div style="font-weight:700;margin-bottom:10px;">Desempeño por nivel de logro (criterios evaluados)</div>'
         + barra('Muy bien logrado', cMB, '#1e40af') + barra('Logrado', cL, '#166534')
         + barra('Medianamente logrado', cM, '#d97706') + barra('Por lograr', cN, '#991b1b') + '</div>') : '')
