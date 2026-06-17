@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v212">
+<meta name="arteval-version" content="v213">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4311,7 +4311,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v212</span>
+      ">v213</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -5445,7 +5445,22 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         </div>
       </div>
       <!-- Botón Acta UTP — generador de informe para UTP -->
-      <div style="display:flex;justify-content:flex-end;padding:0 2px 8px;">
+      <div style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;padding:0 2px 8px;">
+        <button onclick="_abrirInformeEstudiante()"
+          style="display:inline-flex;align-items:center;gap:7px;
+                 padding:8px 16px;border-radius:20px;border:1.5px solid var(--accent);
+                 background:transparent;color:var(--accent);
+                 font-size:13px;font-weight:600;font-family:var(--font-ui);
+                 cursor:pointer;transition:opacity 0.15s;-webkit-tap-highlight-color:transparent;"
+          onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'"
+          title="Genera un informe imprimible con el rendimiento de notas de un estudiante">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+            <line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/>
+          </svg>
+          Informe por estudiante
+        </button>
         <button onclick="generarActaUTP()"
           style="display:inline-flex;align-items:center;gap:7px;
                  padding:8px 16px;border-radius:20px;border:none;
@@ -14756,6 +14771,142 @@ function _copiarActaUTPFallback(txt) {
   }
 }
 
+
+// ══════════════════════════════════════════════════════════════════════════
+//  INFORME DE RENDIMIENTO POR ESTUDIANTE — imprimible / PDF
+//  Reutiliza el patrón de ventana imprimible de generarInformeUTP.
+//  Sin notas del alumno → no aplica (eso lo cubre "Sin evaluaciones" en Correo).
+// ══════════════════════════════════════════════════════════════════════════
+function _infEstCursosConNota() {
+  var sem = (typeof _semestreActivo !== 'undefined') ? _semestreActivo : 1;
+  var set = {};
+  registros.forEach(function(r) {
+    if (!r || r._deletedAt) return;
+    var n = (typeof r.nota === 'number') ? r.nota : parseFloat(r.nota);
+    if (isNaN(n)) return;
+    if (typeof _semestrePorInstancia === 'function' && _semestrePorInstancia(r.instancia || '') !== sem) return;
+    if (r.curso) set[r.curso] = true;
+  });
+  return Object.keys(set).sort(function(a, b) { return a.localeCompare(b, 'es'); });
+}
+function _infEstAlumnosConNota(curso) {
+  var sem = (typeof _semestreActivo !== 'undefined') ? _semestreActivo : 1;
+  var nc = _normCursoKey(curso);
+  var map = {};
+  registros.forEach(function(r) {
+    if (!r || r._deletedAt) return;
+    var n = (typeof r.nota === 'number') ? r.nota : parseFloat(r.nota);
+    if (isNaN(n)) return;
+    if (_normCursoKey(r.curso || '') !== nc) return;
+    if (typeof _semestrePorInstancia === 'function' && _semestrePorInstancia(r.instancia || '') !== sem) return;
+    var k = (r.nombre || '').trim(); if (k) map[k.toUpperCase()] = r.nombre;
+  });
+  return Object.keys(map).map(function(k) { return map[k]; }).sort(function(a, b) { return a.localeCompare(b, 'es'); });
+}
+function _abrirInformeEstudiante() {
+  var cursos = _infEstCursosConNota();
+  if (!cursos.length) { toast('No hay evaluaciones con nota en el semestre activo', 'info', 3000); return; }
+  var optsCurso = '<option value="">Selecciona curso…</option>' + cursos.map(function(c) { return '<option value="' + _esc(c) + '">' + _esc(c) + '</option>'; }).join('');
+  abrirModal('<div style="padding:2px;">'
+    + '<div style="font-size:15px;font-weight:700;margin-bottom:2px;">Informe de rendimiento</div>'
+    + '<div style="font-size:12px;color:var(--text2);margin-bottom:12px;">Genera un informe imprimible (PDF) con las notas y el nivel de logro de un estudiante en el semestre activo.</div>'
+    + '<label style="font-size:11px;font-weight:700;color:var(--text3);font-family:var(--font-mono);">CURSO</label>'
+    + '<select id="infEstCurso" class="filter-select" style="width:100%;margin:4px 0 12px;" onchange="_informeEstCargarAlumnos(this.value)">' + optsCurso + '</select>'
+    + '<label style="font-size:11px;font-weight:700;color:var(--text3);font-family:var(--font-mono);">ESTUDIANTE</label>'
+    + '<select id="infEstAlumno" class="filter-select" style="width:100%;margin:4px 0 4px;"><option value="">Primero elige un curso…</option></select>'
+    + '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;">'
+    + '<button class="btn" onclick="cerrarModal()">Cancelar</button>'
+    + '<button class="btn btn-primary" onclick="_informeEstGenerar()">Generar informe</button>'
+    + '</div></div>');
+}
+function _informeEstCargarAlumnos(curso) {
+  var sel = document.getElementById('infEstAlumno'); if (!sel) return;
+  if (!curso) { sel.innerHTML = '<option value="">Primero elige un curso…</option>'; return; }
+  var als = _infEstAlumnosConNota(curso);
+  sel.innerHTML = '<option value="">Selecciona estudiante…</option>' + als.map(function(a) { return '<option value="' + _esc(a) + '">' + _esc(a) + '</option>'; }).join('');
+}
+function _informeEstGenerar() {
+  var curso = (document.getElementById('infEstCurso') || {}).value || '';
+  var alumno = (document.getElementById('infEstAlumno') || {}).value || '';
+  if (!curso || !alumno) { toast('Selecciona curso y estudiante', 'info', 2500); return; }
+  cerrarModal();
+  _generarInformeEstudiante(alumno, curso);
+}
+function _generarInformeEstudiante(nombre, curso) {
+  var sem = (typeof _semestreActivo !== 'undefined') ? _semestreActivo : 1;
+  var nc = _normCursoKey(curso);
+  var regs = registros.filter(function(r) {
+    if (!r || r._deletedAt) return false;
+    if (_normCursoKey(r.curso || '') !== nc) return false;
+    if (typeof _semestrePorInstancia === 'function' && _semestrePorInstancia(r.instancia || '') !== sem) return false;
+    if (!mismoEstudiante(r.nombre || '', nombre)) return false;
+    var n = (typeof r.nota === 'number') ? r.nota : parseFloat(r.nota);
+    return !isNaN(n);
+  });
+  if (!regs.length) { toast('Ese estudiante no tiene notas en el semestre activo', 'info', 3000); return; }
+  regs.sort(function(a, b) { return String(a.instancia || '').localeCompare(String(b.instancia || ''), 'es'); });
+  var notas = regs.map(function(r) { return (typeof r.nota === 'number') ? r.nota : parseFloat(r.nota); });
+  var prom = notas.reduce(function(s, n) { return s + n; }, 0) / notas.length;
+  var aprob = notas.filter(function(n) { return n >= 4; }).length;
+  var pctAprob = Math.round(aprob / notas.length * 100);
+  var esPie = regs.some(function(r) { return r.pie; });
+  var cMB = 0, cL = 0, cM = 0, cN = 0;
+  regs.forEach(function(r) { var c = r.conteo || {}; cMB += c.MB || 0; cL += c.L || 0; cM += c.M || 0; cN += c.N || 0; });
+  var totalCrit = cMB + cL + cM + cN;
+  function logro(n) { return n >= 6 ? 'Destacado' : n >= 5 ? 'Logrado' : n >= 4 ? 'Suficiente' : 'Por reforzar'; }
+  function notaClr(n) { return n >= 6 ? '#1e40af' : n >= 4 ? '#166534' : '#991b1b'; }
+  var hoy = new Date().toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' });
+  var prof = localStorage.getItem('av_email_prof') || '';
+  var cole = localStorage.getItem('av_email_colegio') || '';
+  var filas = regs.map(function(r, i) {
+    var n = notas[i];
+    var fch = r.fecha || (r.fechaISO ? new Date(r.fechaISO).toLocaleDateString('es-CL') : '');
+    return '<tr><td>' + _esc(r.instancia || ('Evaluación ' + (i + 1))) + '</td>'
+      + '<td>' + _esc(r.rubricaNombre || '—') + '</td>'
+      + '<td style="text-align:center;">' + _esc(fch) + '</td>'
+      + '<td style="text-align:center;font-weight:700;color:' + notaClr(n) + ';">' + n.toFixed(1) + '</td>'
+      + '<td style="text-align:center;">' + logro(n) + '</td></tr>';
+  }).join('');
+  function barra(label, val, clr) {
+    var pct = totalCrit ? Math.round(val / totalCrit * 100) : 0;
+    return '<div style="margin-bottom:7px;"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;"><span>' + label + '</span><span>' + val + ' (' + pct + '%)</span></div>'
+      + '<div style="height:8px;background:#eee;border-radius:4px;overflow:hidden;"><div style="height:100%;width:' + pct + '%;background:' + clr + ';"></div></div></div>';
+  }
+  var win = window.open('', '_blank');
+  if (!win) { toast('⚠️ El navegador bloqueó la ventana. Permite pop-ups e intenta de nuevo.', 'err', 5000); return; }
+  var doc = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+    + '<title>Informe de rendimiento — ' + _esc(nombre) + '</title><style>'
+    + '*{box-sizing:border-box;}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#1c1c1e;margin:0;padding:32px;background:#fff;}'
+    + '.wrap{max-width:760px;margin:0 auto;}h1{font-size:20px;margin:0 0 2px;}.sub{color:#666;font-size:13px;margin-bottom:18px;}'
+    + '.cole{font-size:13px;font-weight:700;}.card{border:1px solid #e5e5e7;border-radius:12px;padding:16px 18px;margin-bottom:16px;}'
+    + 'table{width:100%;border-collapse:collapse;font-size:13px;}th,td{padding:8px 10px;border-bottom:1px solid #eee;text-align:left;}th{background:#f7f7f8;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#666;}'
+    + '.kpis{display:flex;gap:12px;flex-wrap:wrap;}.kpi{flex:1;min-width:110px;border:1px solid #e5e5e7;border-radius:12px;padding:12px 14px;text-align:center;}.kpi .v{font-size:22px;font-weight:800;}.kpi .l{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.5px;}'
+    + '.firma{margin-top:44px;display:flex;justify-content:space-between;gap:24px;}.firma div{flex:1;border-top:1px solid #999;padding-top:6px;font-size:12px;color:#555;text-align:center;}'
+    + '@media print{body{padding:0;}.noprint{display:none;}.card,.kpi{break-inside:avoid;}}'
+    + '.btnbar{position:fixed;top:12px;right:12px;}.btnbar button{font-size:13px;padding:8px 16px;border-radius:8px;border:none;background:#FF9500;color:#fff;font-weight:600;cursor:pointer;}'
+    + '</style></head><body><div class="wrap">'
+    + '<div class="btnbar noprint"><button onclick="window.print()">Imprimir / Guardar PDF</button></div>'
+    + (cole ? '<div class="cole">' + _esc(cole) + '</div>' : '')
+    + '<h1>Informe de rendimiento — Artes Visuales</h1>'
+    + '<div class="sub">Semestre ' + sem + ' · ' + hoy + '</div>'
+    + '<div class="card"><div style="font-size:16px;font-weight:700;">' + _esc(nombre) + (esPie ? ' · <span style="color:#FF9500;">PIE</span>' : '') + '</div>'
+    + '<div style="font-size:12px;color:#555;margin:2px 0 14px;">Curso: ' + _esc(curso) + '</div>'
+    + '<div class="kpis">'
+    + '<div class="kpi"><div class="v" style="color:' + notaClr(prom) + ';">' + prom.toFixed(1) + '</div><div class="l">Promedio</div></div>'
+    + '<div class="kpi"><div class="v">' + notas.length + '</div><div class="l">Evaluaciones</div></div>'
+    + '<div class="kpi"><div class="v">' + pctAprob + '%</div><div class="l">Aprobadas</div></div>'
+    + '<div class="kpi"><div class="v" style="font-size:15px;">' + logro(prom) + '</div><div class="l">Nivel general</div></div>'
+    + '</div></div>'
+    + '<div class="card"><div style="font-weight:700;margin-bottom:10px;">Calificaciones del semestre</div>'
+    + '<table><thead><tr><th>Instancia</th><th>Rúbrica</th><th>Fecha</th><th style="text-align:center;">Nota</th><th style="text-align:center;">Nivel</th></tr></thead><tbody>' + filas + '</tbody></table></div>'
+    + (totalCrit ? ('<div class="card"><div style="font-weight:700;margin-bottom:10px;">Desempeño por nivel de logro (criterios evaluados)</div>'
+        + barra('Muy bien logrado', cMB, '#1e40af') + barra('Logrado', cL, '#166534')
+        + barra('Medianamente logrado', cM, '#d97706') + barra('Por lograr', cN, '#991b1b') + '</div>') : '')
+    + '<div class="firma"><div>' + (prof ? _esc(prof) : 'Profesor(a)') + '<br>Docente de Artes Visuales</div><div>Apoderado(a)</div></div>'
+    + '</div><scr' + 'ipt>setTimeout(function(){try{window.focus();}catch(e){}},150);</scr' + 'ipt></body></html>';
+  win.document.write(doc);
+  win.document.close();
+}
 
 function generarInformeUTP() {
   const hoy = new Date().toLocaleDateString('es-CL', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
