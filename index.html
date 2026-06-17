@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v209">
+<meta name="arteval-version" content="v212">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4311,7 +4311,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v209</span>
+      ">v212</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -5527,7 +5527,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
     <div class="config-card" style="border-left:3px solid var(--accent);margin-bottom:14px;">
         <div style="display:flex;align-items:center;gap:14px;">
           <div style="width:44px;height:44px;background:var(--accent-bg);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
-          <div style="flex:1;"><h3 style="margin-bottom:2px;">Correos a apoderados</h3><div style="font-size:13px;color:var(--text3);">Alumnos con promedio crítico (bajo 4,0)</div></div>
+          <div style="flex:1;"><h3 style="margin-bottom:2px;">Correos a apoderados</h3><div style="font-size:13px;color:var(--text3);">Promedio crítico o estudiantes sin evaluaciones</div></div>
           <span id="correoTabEmailBadge" style="font-size:11px;color:var(--accent);font-weight:600;background:var(--accent-bg);padding:4px 10px;border-radius:20px;white-space:nowrap;"></span>
         </div>
       </div>
@@ -5995,6 +5995,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
           <button class="btn" onclick="optimizarStorage()" style="border-color:var(--amber,#d97706);color:var(--amber,#d97706);" title="Libera espacio eliminando buffers binarios de Alexia. Las notas y nóminas no se tocan."><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg> Liberar espacio</button>
           <button class="btn btn-danger" onclick="borrarTodosLosDatos()">Borrar todos los datos</button>
 <button class="btn" onclick="ejecutarDiagnostico()" style="display:inline-flex;align-items:center;gap:6px;border-color:var(--accent);color:var(--accent);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Test del Sistema</button>
+          <button class="btn" onclick="_abrirCentroRendimiento()" style="display:inline-flex;align-items:center;gap:6px;border-color:#188038;color:#188038;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg> Centro de rendimiento</button>
       </div>
     </div>
     </div>
@@ -6433,8 +6434,10 @@ function _mostrarStorageStats() {
   if (pct > 80) {
     msgExtra = '<div style="font-size:11px;line-height:1.55;margin-top:8px;padding:8px 10px;'
       + 'background:var(--red-bg);border:0.5px solid rgba(255,59,48,0.25);border-radius:8px;color:var(--red);">'
-      + '<strong>Almacenamiento crítico</strong> — las imágenes ocupan '
-      + st.imgKB + ' KB. Libéralas o conecta Drive para usar la nube como almacén principal.'
+      + '<strong>Almacenamiento alto</strong> — '
+      + (st.imgKB > 0
+          ? 'las imágenes ocupan ' + st.imgKB + ' KB. Libéralas o conecta Drive para usar la nube como almacén principal.'
+          : 'usa <strong>Centro de rendimiento → Optimizar almacenamiento</strong> para recomprimir, o conecta Drive como respaldo.')
       + '</div>';
   } else if (pct > 60) {
     msgExtra = '<div style="font-size:11px;color:var(--amber);margin-top:6px;">'
@@ -6467,6 +6470,89 @@ function _mostrarStorageStats() {
     +   '</span>'
     + '</div>'
     + msgExtra;
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  CENTRO DE RENDIMIENTO Y DATOS — diagnóstico + mantenimiento SEGURO
+//  Solo lee el estado y reutiliza funciones existentes; no toca el render ni el
+//  guardado en caliente. Ninguna acción borra notas.
+// ══════════════════════════════════════════════════════════════════════════
+function _centroSincronizar() { cerrarModal(); if (typeof syncToDrive === 'function') syncToDrive(); }
+function _centroRevisarDuplicados() { cerrarModal(); if (typeof _exportItem === 'function') _exportItem('limpiar'); }
+function _centroLiberarImagenes() { cerrarModal(); if (typeof _limpiarImagenesAnteriores === 'function') _limpiarImagenesAnteriores(); }
+
+function _recomprimirAlmacenamiento() {
+  try {
+    _lsSetRegistros(registros);
+    if (typeof _mostrarStorageStats === 'function') _mostrarStorageStats();
+    toast('✓ Almacenamiento recomprimido y optimizado', 'ok', 3000);
+  } catch (e) { toast('No se pudo optimizar: ' + (e.message || e), 'err', 4000); }
+  _abrirCentroRendimiento();
+}
+
+function _abrirCentroRendimiento() {
+  var st = _calcularStorageStats();
+  var libres = Math.max(0, 5120 - st.totalKB);
+  var pct = st.pct;
+  var clr = pct > 80 ? '#FF3B30' : pct > 60 ? '#FF9500' : '#188038';
+
+  var activos = 0, sinCurso = 0, sinNota = 0, eliminados = 0, sem1 = 0, sem2 = 0;
+  (registros || []).forEach(function(r) {
+    if (!r) return;
+    if (r._deletedAt) { eliminados++; return; }
+    activos++;
+    if (!r.curso) sinCurso++;
+    var n = (typeof r.nota === 'number') ? r.nota : parseFloat(r.nota);
+    if (isNaN(n) || n <= 0) sinNota++;
+    var s = (typeof _semestrePorInstancia === 'function') ? _semestrePorInstancia(r.instancia || '') : 1;
+    if (s === 2) sem2++; else sem1++;
+  });
+  var driveOn = (typeof _driveToken !== 'undefined' && _driveToken && Date.now() < _driveTokenExp);
+  var lastSync = localStorage.getItem('av_last_drive_sync');
+  var lastSyncTxt = lastSync ? new Date(lastSync).toLocaleString('es-CL') : 'nunca';
+  var pend = 0; try { pend = JSON.parse(localStorage.getItem('av_pending_queue') || '[]').length; } catch (e) {}
+  var dups = 0; try { var d = auditarDuplicados(); dups = Array.isArray(d) ? d.length : 0; } catch (e) {}
+  var comprimido = (localStorage.getItem('av_registros') || '').indexOf('LZ1:') === 0;
+
+  function fila(label, valor, color) {
+    return '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:0.5px solid var(--border);font-size:13px;">'
+      + '<span style="color:var(--text2);">' + label + '</span>'
+      + '<span style="font-weight:700;font-family:var(--font-mono);color:' + (color || 'var(--text)') + ';">' + valor + '</span></div>';
+  }
+  function seccion(t) {
+    return '<div style="font-size:11px;font-weight:700;color:var(--text3);font-family:var(--font-mono);margin:15px 0 4px;">' + t + '</div>';
+  }
+  function btn(label, onclick, color) {
+    return '<button class="btn btn-sm" style="font-size:12px;' + (color ? 'border-color:' + color + ';color:' + color + ';' : '') + '" onclick="' + onclick + '">' + label + '</button>';
+  }
+
+  var acciones = [btn('Optimizar almacenamiento', '_recomprimirAlmacenamiento()', '#188038')];
+  if (driveOn) acciones.push(btn('Sincronizar con Drive', '_centroSincronizar()', '#0A84FF'));
+  if (st.imgKB > 0) acciones.push(btn('Liberar imágenes', '_centroLiberarImagenes()', '#FF9500'));
+  if (dups > 0) acciones.push(btn('Revisar duplicados (' + dups + ')', '_centroRevisarDuplicados()', '#FF9500'));
+
+  var html = '<div style="padding:2px;">'
+    + '<div style="font-size:15px;font-weight:700;margin-bottom:2px;">Centro de rendimiento y datos</div>'
+    + '<div style="font-size:12px;color:var(--text2);margin-bottom:6px;">Estado del sistema y mantenimiento seguro. Ninguna acción borra tus notas.</div>'
+    + seccion('ALMACENAMIENTO')
+    + '<div style="height:6px;background:var(--bg4);border-radius:3px;overflow:hidden;margin:6px 0 8px;"><div style="height:100%;width:' + pct + '%;background:' + clr + ';border-radius:3px;"></div></div>'
+    + fila('Usado', st.totalKB + ' KB / ~5 MB (' + pct + '%)', clr)
+    + fila('Libre', libres + ' KB', libres > 256 ? '#188038' : '#FF9500')
+    + fila('Formato', comprimido ? 'Comprimido \u2713' : 'Sin comprimir', comprimido ? '#188038' : 'var(--text)')
+    + seccion('REGISTROS')
+    + fila('Evaluaciones activas', activos, 'var(--text)')
+    + fila('1\u00b0 / 2\u00b0 semestre', sem1 + ' / ' + sem2, 'var(--text)')
+    + (sinCurso ? fila('Sin curso', sinCurso, '#FF9500') : '')
+    + (sinNota ? fila('Sin nota', sinNota, '#FF9500') : '')
+    + (dups ? fila('Posibles duplicados', dups, '#FF9500') : fila('Duplicados', 'ninguno', '#188038'))
+    + seccion('SINCRONIZACI\u00d3N')
+    + fila('Google Drive', driveOn ? 'Conectado \u2713' : 'Sin conectar', driveOn ? '#188038' : 'var(--text3)')
+    + fila('\u00daltima sincronizaci\u00f3n', lastSyncTxt, 'var(--text)')
+    + fila('Pendientes sin sincronizar', pend, pend ? '#FF9500' : '#188038')
+    + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;">' + acciones.join('') + '</div>'
+    + '<div style="display:flex;justify-content:flex-end;margin-top:12px;"><button class="btn btn-primary" onclick="cerrarModal()">Cerrar</button></div>'
+    + '</div>';
+  abrirModal(html);
 }
 
 function _limpiarImagenesAnteriores() {
@@ -15623,6 +15709,16 @@ input[type="search"]:not(.noop), .global-search-input {
   cursor: pointer; transition: background var(--t-fast), border-color var(--t-fast), box-shadow var(--t-fast);
   z-index: 2; flex-shrink: 0;
 }
+.coment-btn {
+  position: absolute; top: 8px; right: 8px;
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--bg2); border: 0.5px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: background var(--t-fast), border-color var(--t-fast);
+  z-index: 2; flex-shrink: 0; color: var(--text3);
+}
+.coment-btn:hover { background: var(--bg3); border-color: var(--accent); color: var(--accent); }
+.coment-btn svg { width: 12px; height: 12px; }
 .mic-btn:hover { background: var(--bg3); border-color: var(--accent); }
 .mic-btn.recording {
   background: var(--red-bg); border-color: var(--red);
@@ -17317,9 +17413,24 @@ function _procesarPlanillaApoderadosRows(rows, fileName) {
   _renderEmailCards();
 }
 function _generarTextoEmail(al, nombreProfesor, nombreColegio, fraseIA) {
+  var fechaHoy=new Date().toLocaleDateString('es-CL',{day:'numeric',month:'long',year:'numeric'});
+  // ── Modo "sin evaluaciones": solicitar fotos de la croquera ───────────────
+  if (al && al.sinEval) {
+    return 'Estimado/a apoderado/a de '+al.nombre+':\n\n'
+      +fechaHoy+'\n\n'
+      +'Me dirijo a usted en relaci\u00f3n con la asignatura de Artes Visuales, correspondiente al curso '+al.curso+'.\n\n'
+      +'A la fecha, su estudiante no registra ninguna evaluaci\u00f3n en el presente per\u00edodo, ya sea porque a\u00fan no ha presentado sus trabajos o por inasistencia a clases. Para poder calificar y obtener su promedio, es necesario contar con evidencia de su trabajo.\n\n'
+      +'Por lo anterior, solicito que su estudiante env\u00ede a la brevedad, a este mismo correo, fotograf\u00edas de los dibujos realizados en su croquera (cuaderno de dibujo), de modo de poder evaluarlos y regularizar sus calificaciones.\n\n'
+      +'Indicaciones para enviar las fotograf\u00edas:\n\n'
+      +'   \u2022 Tome las fotos con buena luz, sobre una superficie plana y sin sombras.\n'
+      +'   \u2022 Procure que cada dibujo se vea completo y n\u00edtido.\n'
+      +'   \u2022 Indique el nombre del estudiante y el curso en el correo.\n\n'
+      +'Agradezco su apoyo para regularizar esta situaci\u00f3n antes del cierre del per\u00edodo. Quedo atento/a ante cualquier consulta.\n\n'
+      +'Atentamente,\n'
+      +'Profesor de Artes Visuales.';
+  }
   var notas=al.notas||[],instancias=al.instancias||[],rubricas=al.rubricas||[];
   var prom=al.promedio?al.promedio.toFixed(1):'?';
-  var fechaHoy=new Date().toLocaleDateString('es-CL',{day:'numeric',month:'long',year:'numeric'});
   var detalleNotas='';
   notas.forEach(function(n,i){
     var inst=instancias[i]||('Evaluación '+(i+1));
@@ -17678,10 +17789,11 @@ function _renderCriticosList(criticos) {
       // Usar índice en criticos originales para que los botones de acción funcionen bien
       var idxReal = criticos.indexOf(al);
       var email = _getEmailApoderado(al.nombre);
-      var prom  = al.promedio.toFixed(1);
-      var pc    = al.promedio < 2.5 ? '#FF3B30' : '#FF9500';
+      var prom  = (al.promedio != null) ? al.promedio.toFixed(1) : null;
+      var promData = prom || '0';
+      var pc    = al.sinEval ? '#FF9500' : (al.promedio < 2.5 ? '#FF3B30' : '#FF9500');
       var texto = _generarTextoEmail(al, prof, cole);
-      var ns    = al.notas.map(function(n,i){ return (al.instancias[i]||'Ev.'+(i+1))+': '+n.toFixed(1); }).join(' · ');
+      var ns    = al.sinEval ? 'Sin evaluaciones en el semestre activo' : al.notas.map(function(n,i){ return (al.instancias[i]||'Ev.'+(i+1))+': '+n.toFixed(1); }).join(' · ');
       var pie   = al.pie ? '<svg width="11" height="11" viewBox="0 0 100 100" fill="'+pc+'" style="vertical-align:middle;margin-left:4px;"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="'+pc+'" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="'+pc+'" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="'+pc+'" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="'+pc+'" stroke-width="8" stroke-linecap="round" fill="none"/></svg>' : '';
       var enviado = _getEnvio(al.nombre);
       var badgeEnvio = enviado
@@ -17693,8 +17805,11 @@ function _renderCriticosList(criticos) {
         + '<div><div style="font-size:15px;font-weight:700;color:var(--text);">'+al.nombre+pie+'</div>'
         + '<div style="font-size:11px;color:var(--text3);margin-top:3px;">'+al.curso+' · '+ns+'</div>'
         + badgeEnvio + '</div>'
-        + '<div style="text-align:right;"><div style="font-size:20px;font-weight:800;font-family:var(--font-mono);color:'+pc+';">'+prom+'</div>'
-        + '<div style="font-size:10px;color:var(--text3);">promedio</div></div></div>'
+        + '<div style="text-align:right;">'
+        + (al.sinEval
+            ? '<div style="font-size:13px;font-weight:800;font-family:var(--font-mono);color:#FF9500;line-height:1.1;">SIN<br>NOTAS</div>'
+            : '<div style="font-size:20px;font-weight:800;font-family:var(--font-mono);color:'+pc+';">'+prom+'</div><div style="font-size:10px;color:var(--text3);">promedio</div>')
+        + '</div></div>'
         + '<div style="display:flex;align-items:center;padding:10px 0;border-top:0.5px solid var(--border);border-bottom:0.5px solid var(--border);margin-bottom:10px;gap:10px;">'
         + '<div style="font-size:13px;font-weight:500;color:var(--text);flex:1;">Email apoderado</div>'
         + '<input type="email" id="cEmailInp_'+idxReal+'" placeholder="correo@ejemplo.cl" value="'+email+'" style="max-width:240px;padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-family:var(--font-ui);text-align:right;"></div>'
@@ -17706,12 +17821,13 @@ function _renderCriticosList(criticos) {
         + '<button class="btn" data-idx="'+idxReal+'" data-nom="'+al.nombre.replace(/"/g,'&quot;')+'" onclick="_guardarCorreoTab(parseInt(this.dataset.idx),this.dataset.nom)" style="display:inline-flex;align-items:center;gap:6px;min-height:36px;font-size:13px;border-radius:10px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Guardar</button>'
         + (enviado
           ? '<button class="btn" data-nom="'+al.nombre.replace(/"/g,'&quot;')+'" onclick="var k=this.dataset.nom.toUpperCase();delete _historialCorreos[k];_saveHistorialCorreos();_correoFiltroActivo=null;_renderCorreoTab();" style="display:inline-flex;align-items:center;gap:5px;min-height:36px;font-size:12px;border-radius:10px;color:#8E8E93;border-color:rgba(142,142,147,0.3);"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#8E8E93" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Desmarcar</button>'
-          : '<button class="btn" data-nom="'+al.nombre.replace(/"/g,'&quot;')+'" data-curso="'+al.curso+'" data-prom="'+prom+'" onclick="_marcarCorreoEnviado(this.dataset.nom,this.dataset.email||String(),this.dataset.curso,parseFloat(this.dataset.prom)||0);_renderCorreoTab();" style="display:inline-flex;align-items:center;gap:5px;min-height:36px;font-size:12px;border-radius:10px;color:#34C759;border-color:rgba(52,199,89,0.3);background:rgba(52,199,89,0.08);"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#34C759" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Marcar enviado</button>')
+          : '<button class="btn" data-nom="'+al.nombre.replace(/"/g,'&quot;')+'" data-curso="'+al.curso+'" data-prom="'+promData+'" onclick="_marcarCorreoEnviado(this.dataset.nom,this.dataset.email||String(),this.dataset.curso,parseFloat(this.dataset.prom)||0);_renderCorreoTab();" style="display:inline-flex;align-items:center;gap:5px;min-height:36px;font-size:12px;border-radius:10px;color:#34C759;border-color:rgba(52,199,89,0.3);background:rgba(52,199,89,0.08);"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#34C759" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Marcar enviado</button>')
         + '</div></div>';
     });
   }
 
   ct.innerHTML =
+      _correoModoToggleHTML() +
       // ── Buscador al INICIO — profesor busca primero, luego filtra ────────
       '<div class="search-wrap" style="margin:0 0 10px;">'    + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"'    + ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round"'    + ' style="position:absolute;left:14px;top:50%;transform:translateY(-50%);opacity:.45;pointer-events:none;">'    + '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'    + '<input class="search-input" id="buscarHistorialCorreo" type="text"'    + ' placeholder="Buscar estudiante en correos enviados…"'    + ' oninput="_debouncedFiltrarCorreo(this.value)"'    + ' style="padding-left:45px !important;width:100%;"'    + ' autocomplete="off" autocorrect="off" spellcheck="false">'    + '</div>'    // ── Tabs de filtro (Enviados / Pendientes) ────────────────────────────
     + headerHtml    + listHtml;
@@ -17732,6 +17848,51 @@ function _renderCriticosList(criticos) {
   }, 50);
 }
 
+var _correoModo = 'critico'; // 'critico' | 'sineval'
+function _setCorreoModo(modo){ _correoModo = modo; _correoFiltroActivo = null; if (typeof _renderCorreoTab === 'function') _renderCorreoTab(); }
+function _correoModoToggleHTML(){
+  var m = (typeof _correoModo !== 'undefined') ? _correoModo : 'critico';
+  function pill(modo, label){
+    var act = (m === modo);
+    return '<button onclick="_setCorreoModo(\'' + modo + '\')" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:20px;cursor:pointer;font-family:var(--font-ui);font-size:13px;font-weight:700;transition:all .15s ease;'
+      + (act ? 'background:var(--accent);color:#fff;border:none;box-shadow:0 2px 8px rgba(255,149,0,0.30);' : 'background:var(--bg3);color:var(--text2);border:1px solid var(--border);')
+      + '">' + label + '</button>';
+  }
+  return '<div style="display:flex;gap:8px;margin:0 0 14px;flex-wrap:wrap;">'
+    + pill('critico', 'Promedio crítico')
+    + pill('sineval', 'Sin evaluaciones')
+    + '</div>';
+}
+// Estudiantes de la nómina SIN ninguna evaluación con nota en el semestre activo.
+function _alumnosSinEvaluacion(){
+  var out = [];
+  var cursos = Object.keys(listaCursos || {});
+  var semActivo = (typeof _semestreActivo !== 'undefined') ? _semestreActivo : 1;
+  cursos.forEach(function(curso){
+    var nomina = listaCursos[curso] || [];
+    if (!nomina.length) return;
+    var ncCurso = (typeof _normCursoKey === 'function') ? _normCursoKey(curso) : curso;
+    // Registros con nota del curso en el semestre activo
+    var regsCurso = registros.filter(function(r){
+      if (!r || r._deletedAt) return false;
+      var nc = (typeof _normCursoKey === 'function') ? _normCursoKey(r.curso || '') : (r.curso || '');
+      if (nc !== ncCurso) return false;
+      if (typeof _semestrePorInstancia === 'function' && _semestrePorInstancia(r.instancia || '') !== semActivo) return false;
+      var n = (typeof r.nota === 'number') ? r.nota : parseFloat(r.nota);
+      return !isNaN(n);
+    });
+    nomina.forEach(function(e){
+      var nombre = (typeof e === 'string') ? e : (e && e.nombre || '');
+      if (!nombre) return;
+      var tiene = regsCurso.some(function(r){ return mismoEstudiante(r.nombre || '', nombre); });
+      if (!tiene) {
+        out.push({ nombre: nombre, curso: curso, sinEval: true, notas: [], instancias: [], rubricas: [], pie: !!(e && e.pie) });
+      }
+    });
+  });
+  out.sort(function(a,b){ return (a.curso||'').localeCompare(b.curso||'') || (a.nombre||'').localeCompare(b.nombre||''); });
+  return out;
+}
 function _renderCorreoTab(){ try { /* try-open */
   // Sincronizar la barra de estado institucional al entrar a la pestaña
   if(typeof _actualizarEstadoGmailUI==='function') _actualizarEstadoGmailUI(typeof _gmailLinkedEmail!=='undefined'&&!!_gmailLinkedEmail);
@@ -17766,10 +17927,19 @@ function _renderCorreoTab(){ try { /* try-open */
     });
   });
   criticos.sort(function(a,b){return a.promedio-b.promedio;});
-  if(!criticos.length){ct.innerHTML='<div style="text-align:center;padding:60px 20px;"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#34C759" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:0 auto 12px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px;">Sin alumnos críticos</div><div style="font-size:13px;color:var(--text3);">Todos tienen promedio ≥ 4,0</div></div>';return;}
+  var _modo = (typeof _correoModo !== 'undefined') ? _correoModo : 'critico';
+  var _lista, _vacioHtml;
+  if (_modo === 'sineval') {
+    _lista = (typeof _alumnosSinEvaluacion === 'function') ? _alumnosSinEvaluacion() : [];
+    _vacioHtml = '<div style="text-align:center;padding:60px 20px;"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#34C759" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:0 auto 12px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px;">Sin estudiantes pendientes</div><div style="font-size:13px;color:var(--text3);">Todos los estudiantes de tus nóminas tienen al menos una evaluación en el semestre activo. Si falta alguien, revisa que su nómina esté importada en Estudio.</div></div>';
+  } else {
+    _lista = criticos;
+    _vacioHtml = '<div style="text-align:center;padding:60px 20px;"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#34C759" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:0 auto 12px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px;">Sin alumnos críticos</div><div style="font-size:13px;color:var(--text3);">Todos tienen promedio ≥ 4,0</div></div>';
+  }
+  if(!_lista.length){ ct.innerHTML = _correoModoToggleHTML() + _vacioHtml; window._correoTabCriticos = []; return; }
   // v190: Delegar a _renderCriticosList (contadores interactivos + filtro reactivo)
   _correoFiltroActivo = null; // Reset filtro al recargar tab completo
-  _renderCriticosList(criticos);
+  _renderCriticosList(_lista);
   } catch(_correoErr) { console.warn('[ArtEval] _renderCorreoTab:', _correoErr.message); }
 }
 function _abrirCorreoTab(idx){
@@ -17780,7 +17950,9 @@ function _abrirCorreoTab(idx){
   var cole =(document.getElementById('correoNombreColegio')||{}).value||localStorage.getItem('av_email_colegio')||'';
   var inst =(document.getElementById('correoInstitucional')||{}).value||localStorage.getItem('av_email_institucional')||'';
   var texto =_generarTextoEmail(al,prof,cole);
-  var asunto='Situaci\u00f3n acad\u00e9mica Artes Visuales \u2014 '+al.nombre;
+  var asunto = al.sinEval
+    ? ('Artes Visuales \u2014 Solicitud de trabajos pendientes \u2014 '+al.nombre)
+    : ('Situaci\u00f3n acad\u00e9mica Artes Visuales \u2014 '+al.nombre);
   if(email&&email.includes('@')){
     _apoderadoEmails[al.nombre.trim().toUpperCase()]=email.toLowerCase();
     _saveApoderadoEmails();
@@ -19154,6 +19326,7 @@ function _micBtnHTML(targetId) {
 
 // Inyectar botones de micrófono en textareas .obs-input dinámicas
 function _inyectarMicObsInput() {
+  if (typeof _inyectarComentariosObsInput === 'function') _inyectarComentariosObsInput();
   var sup = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
   if (!sup) return;
   document.querySelectorAll('.obs-input').forEach(function(ta, i) {
@@ -19170,6 +19343,118 @@ function _inyectarMicObsInput() {
       wrap.insertAdjacentHTML('beforeend', _micBtnHTML(id));
     }
   });
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  BANCO DE COMENTARIOS FRECUENTES — reutilizar observaciones en un toque
+//  Aditivo: inyecta un botón en cada campo de observación (mismo patrón del
+//  micrófono). No modifica el render de criterios ni el guardado.
+// ══════════════════════════════════════════════════════════════════════════
+function _comentariosBanco() {
+  try { var a = JSON.parse(localStorage.getItem('av_comentarios_banco') || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; }
+}
+function _comentariosBancoSet(arr) {
+  try { localStorage.setItem('av_comentarios_banco', JSON.stringify(arr)); } catch (e) {}
+}
+function _comentBtnHTML(targetId) {
+  return '<button class="coment-btn" title="Comentarios frecuentes" aria-label="Comentarios frecuentes" '
+    + 'onclick="_abrirBancoComentarios(\'' + targetId + '\')">'
+    + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'
+    + '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>';
+}
+function _inyectarComentariosObsInput() {
+  document.querySelectorAll('.obs-input').forEach(function(ta, i) {
+    if (ta.dataset.comentOk) return;
+    ta.dataset.comentOk = '1';
+    var id = ta.id || ('_obsTA_' + i);
+    ta.id = id;
+    if (!ta.parentElement.classList.contains('obs-input-wrap')) {
+      var wrap = document.createElement('div');
+      wrap.className = 'obs-input-wrap';
+      ta.parentElement.insertBefore(wrap, ta);
+      wrap.appendChild(ta);
+    }
+    ta.parentElement.insertAdjacentHTML('beforeend', _comentBtnHTML(id));
+  });
+}
+
+function _abrirBancoComentarios(targetId) {
+  var ta = document.getElementById(targetId);
+  var actual = ta ? (ta.value || '').trim() : '';
+  var banco = _comentariosBanco();
+  banco.sort(function(a, b) { return (b.u || 0) - (a.u || 0); });
+  var lista = banco.length ? banco.map(function(c, i) {
+    return '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;margin-bottom:6px;">'
+      + '<button style="flex:1;min-width:0;text-align:left;background:none;border:none;cursor:pointer;font-size:13px;color:var(--text);line-height:1.4;" onclick="_insertarComentario(\'' + targetId + '\',' + i + ')">' + _esc(c.t) + '</button>'
+      + '<button title="Eliminar" style="flex-shrink:0;background:none;border:none;cursor:pointer;color:var(--text3);padding:4px;font-size:13px;" onclick="_eliminarComentario(' + i + ',\'' + targetId + '\')">\u2715</button>'
+      + '</div>';
+  }).join('') : '<div style="padding:14px;text-align:center;font-size:12px;color:var(--text3);">Aún no tienes comentarios guardados. Escribe una observación y guárdala para reutilizarla.</div>';
+  var guardarActual = actual ? '<button class="btn btn-sm btn-primary" style="font-size:12px;" onclick="_guardarComentarioActual(\'' + targetId + '\')">+ Guardar el texto actual</button>' : '';
+  abrirModal('<div style="padding:2px;">'
+    + '<div style="font-size:15px;font-weight:700;margin-bottom:2px;">Comentarios frecuentes</div>'
+    + '<div style="font-size:12px;color:var(--text2);margin-bottom:10px;">Toca uno para insertarlo en la observación.</div>'
+    + '<div style="max-height:50vh;overflow-y:auto;">' + lista + '</div>'
+    + '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px;">' + guardarActual
+    + '<button class="btn btn-sm" style="font-size:12px;" onclick="_nuevoComentario(\'' + targetId + '\')">+ Nuevo</button>'
+    + '<button class="btn btn-sm" style="font-size:12px;margin-left:auto;" onclick="cerrarModal()">Cerrar</button>'
+    + '</div></div>');
+}
+function _insertarComentario(targetId, idx) {
+  var banco = _comentariosBanco();
+  banco.sort(function(a, b) { return (b.u || 0) - (a.u || 0); });
+  var c = banco[idx]; if (!c) return;
+  var ta = document.getElementById(targetId);
+  if (ta) {
+    var cur = (ta.value || '').replace(/\s+$/, '');
+    ta.value = cur ? (cur + ' ' + c.t) : c.t;
+    ta.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  c.u = (c.u || 0) + 1;
+  _comentariosBancoSet(banco);
+  cerrarModal();
+  if (ta) ta.focus();
+}
+function _eliminarComentario(idx, targetId) {
+  var banco = _comentariosBanco();
+  banco.sort(function(a, b) { return (b.u || 0) - (a.u || 0); });
+  banco.splice(idx, 1);
+  _comentariosBancoSet(banco);
+  _abrirBancoComentarios(targetId);
+}
+function _guardarComentarioActual(targetId) {
+  var ta = document.getElementById(targetId);
+  var txt = ta ? (ta.value || '').trim() : '';
+  if (!txt) { toast('No hay texto para guardar', 'info', 2500); return; }
+  var banco = _comentariosBanco();
+  if (banco.some(function(c) { return (c.t || '').trim().toLowerCase() === txt.toLowerCase(); })) {
+    toast('Ese comentario ya está guardado', 'info', 2500);
+  } else {
+    banco.push({ t: txt, u: 1 });
+    _comentariosBancoSet(banco);
+    toast('✓ Comentario guardado', 'ok', 2500);
+  }
+  _abrirBancoComentarios(targetId);
+}
+function _nuevoComentario(targetId) {
+  abrirModal('<div style="padding:2px;">'
+    + '<div style="font-size:15px;font-weight:700;margin-bottom:8px;">Nuevo comentario</div>'
+    + '<textarea id="nuevoComentInput" rows="3" placeholder="Escribe un comentario reutilizable…" style="width:100%;box-sizing:border-box;padding:10px;border:0.5px solid var(--border);border-radius:10px;font-size:13px;font-family:var(--font-ui);background:var(--bg2);color:var(--text);resize:vertical;"></textarea>'
+    + '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px;">'
+    + '<button class="btn" onclick="_abrirBancoComentarios(\'' + targetId + '\')">Cancelar</button>'
+    + '<button class="btn btn-primary" onclick="_guardarNuevoComentario(\'' + targetId + '\')">Guardar</button>'
+    + '</div></div>');
+  setTimeout(function () { var el = document.getElementById('nuevoComentInput'); if (el) el.focus(); }, 100);
+}
+function _guardarNuevoComentario(targetId) {
+  var el = document.getElementById('nuevoComentInput');
+  var txt = el ? (el.value || '').trim() : '';
+  if (!txt) { toast('Escribe algo primero', 'info', 2000); return; }
+  var banco = _comentariosBanco();
+  if (!banco.some(function(c) { return (c.t || '').trim().toLowerCase() === txt.toLowerCase(); })) {
+    banco.push({ t: txt, u: 0 });
+    _comentariosBancoSet(banco);
+  }
+  _abrirBancoComentarios(targetId);
 }
 
 
