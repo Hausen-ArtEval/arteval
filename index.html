@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v214">
+<meta name="arteval-version" content="v215">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4311,7 +4311,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v214</span>
+      ">v215</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -21154,7 +21154,7 @@ function _renderCursoMainImpl() {
       if (entregado) {
         btnAcc.title = 'Ver evaluación';
         btnAcc.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>';
-        (function(nb, cb){ btnAcc.onclick = function(){ verDetalleEstCurso(nb, cb); }; })(e.nombre, curso);
+        (function(reg){ btnAcc.onclick = function(){ _verDetallePorReg(reg); }; })(ultimaReg);
       } else {
         btnAcc.title = 'Evaluar ahora';
         btnAcc.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>';
@@ -21168,10 +21168,10 @@ function _renderCursoMainImpl() {
         btnEdit.className = 'est-btn';
         btnEdit.title = 'Editar evaluación';
         btnEdit.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>';
-        (function(nb, cb){
-        btnEdit.onclick = function(e){ e.stopPropagation(); editarDesde(nb, cb); };
-        btnEdit.ontouchend = function(e){ e.preventDefault(); e.stopPropagation(); editarDesde(nb, cb); };
-      })(e.nombre, curso);
+        (function(reg){
+        btnEdit.onclick = function(e){ e.stopPropagation(); _editarRegPorReg(reg); };
+        btnEdit.ontouchend = function(e){ e.preventDefault(); e.stopPropagation(); _editarRegPorReg(reg); };
+      })(ultimaReg);
         acts.appendChild(btnEdit);
       }
 
@@ -21189,7 +21189,7 @@ function _renderCursoMainImpl() {
         btnRub.className = 'est-btn';
         btnRub.title = 'Descargar Rúbrica Evaluada — informe imprimible para el apoderado';
         btnRub.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
-        (function(nb, cb){ btnRub.onclick = function(ev){ if(ev){ev.stopPropagation();} descargarRubricaEvaluada(nb, cb); }; })(e.nombre, curso);
+        (function(reg){ btnRub.onclick = function(ev){ if(ev){ev.stopPropagation();} _descargarRubricaPorReg(reg); }; })(ultimaReg);
         acts.appendChild(btnRub);
       }
 
@@ -21412,6 +21412,20 @@ async function eliminarEst(nombreOIdx, curso) {
   }}
 
 // ── Ver detalle desde cursos ──
+// Resolver acciones por el REGISTRO EXACTO que muestra la fila (no por nombre).
+// Corrige el caso de un estudiante con varias evaluaciones: ver/editar/descargar
+// deben operar sobre la evaluación mostrada (respeta el filtro de instancia),
+// no sobre la última evaluación del estudiante.
+function _idxRegPorId(id){ if(!id) return -1; for(var i=0;i<registros.length;i++){ if(registros[i] && registros[i]._id===id) return i; } return -1; }
+function _resolverIdxReg(reg){ var i=(reg&&reg._id)?_idxRegPorId(reg._id):-1; if(i<0&&reg) i=registros.indexOf(reg); return i; }
+function _verDetallePorReg(reg){ var i=_resolverIdxReg(reg); if(i>-1) verDetalle(i); }
+function _descargarRubricaPorReg(reg){ var i=_resolverIdxReg(reg); if(i>-1) imprimirRubricaEvaluada(i); else toast('No se encontró la evaluación','err',3000); }
+function _editarRegPorReg(reg){
+  var i=_resolverIdxReg(reg); if(i<0){ toast('No se encontró la evaluación','err',3000); return; }
+  var _tR=document.querySelector('[data-maintab="registros"]')||document.querySelector('[data-maintab="estudio"]');
+  if(_tR&&typeof _activarTab==='function'){_activarTab(_tR,'estudio','registros');}else if(typeof showEstudioSub==='function'){showEstudioSub('registros');}
+  setTimeout(function(){ editarRegistro(i); }, 120);
+}
 function verDetalleEstCurso(nombre, curso) {
   const regs = getRegsEstudiante(nombre, curso);
   if (!regs.length) return;
