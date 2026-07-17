@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v215">
+<meta name="arteval-version" content="v216">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4311,7 +4311,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v215</span>
+      ">v216</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -6173,6 +6173,9 @@ function _lsSetRegistros(arr) {
     delete c.imagenBase64; // jamás en localStorage — va solo a Drive
     return c;
   });
+  // v216: IndexedDB primero — almacén principal sin techo de ~5 MB.
+  // localStorage sigue como espejo de arranque (comprimido, igual que antes).
+  if (typeof _idbSetRegistros === 'function') _idbSetRegistros(payload);
   var json = JSON.stringify(payload);
   var out = (window.LZString && typeof LZString.compressToUTF16 === 'function')
     ? ('LZ1:' + LZString.compressToUTF16(json)) : json;
@@ -6191,10 +6194,11 @@ function _lsGetRegistrosRaw() {
   return raw; // JSON plano (datos antiguos o respaldo sin compresión)
 }
 
-let registros = (function(){
-  try {
-    var raw = JSON.parse(_lsGetRegistrosRaw() || '[]');
-    if (!Array.isArray(raw)) { console.warn('[ArtEval] av_registros no es array, reseteando.'); return []; }
+// ── Saneamiento de registros cargados ────────────────────────────────────────
+// v216: factorizado en función propia para reutilizarlo desde la hidratación
+// de IndexedDB. Misma lógica exacta que usaba el cargador de localStorage.
+function _sanearRegistrosArray(raw) {
+    if (!Array.isArray(raw)) return [];
     // Filtrar entradas corruptas (null/undefined/no-objeto) y garantizar campos mínimos
     return raw.filter(function(r) {
       return r && typeof r === 'object' && (r.nombre || r.pts !== undefined);
@@ -6225,8 +6229,137 @@ let registros = (function(){
       // Normalización de curso se hace en saveRegistros() donde normalizarCurso ya está definida
       return r;
     });
+}
+let registros = (function(){
+  try {
+    var raw = JSON.parse(_lsGetRegistrosRaw() || '[]');
+    if (!Array.isArray(raw)) { console.warn('[ArtEval] av_registros no es array, reseteando.'); return []; }
+    return _sanearRegistrosArray(raw);
   } catch(e) { console.error('[ArtEval] av_registros corrupto:', e.message); return []; }
 })();
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  MOTOR DE ALMACENAMIENTO INDEXEDDB — v216
+//  IndexedDB pasa a ser el almacén PRINCIPAL de registros: no tiene el techo
+//  de ~5 MB de localStorage (el navegador otorga cientos de MB o más).
+//  localStorage se conserva como espejo de arranque y respaldo de emergencia:
+//  si IndexedDB no estuviera disponible, la app funciona EXACTAMENTE igual
+//  que antes. Ningún flujo existente cambia: _lsSetRegistros escribe en ambos.
+//  Los motores protegidos (exportación Alexia, evaluación Gemini, sync Drive)
+//  no se tocan: solo cambia dónde persisten los datos, no cómo se usan.
+// ═══════════════════════════════════════════════════════════════════════════
+var _IDB_NAME = 'arteval_db', _IDB_STORE = 'kv', _idbHandle = null;
+function _idbOpen() {
+  return new Promise(function(resolve, reject) {
+    if (!window.indexedDB) { reject(new Error('IndexedDB no disponible')); return; }
+    if (_idbHandle) { resolve(_idbHandle); return; }
+    var req = indexedDB.open(_IDB_NAME, 1);
+    req.onupgradeneeded = function() {
+      var db = req.result;
+      if (!db.objectStoreNames.contains(_IDB_STORE)) db.createObjectStore(_IDB_STORE);
+    };
+    req.onsuccess = function() {
+      _idbHandle = req.result;
+      // Si otra pestaña necesitara actualizar la versión, soltar el handle
+      _idbHandle.onversionchange = function() { try { _idbHandle.close(); } catch(e) {} _idbHandle = null; };
+      resolve(_idbHandle);
+    };
+    req.onerror   = function() { reject(req.error || new Error('No se pudo abrir IndexedDB')); };
+    req.onblocked = function() { reject(new Error('IndexedDB bloqueado por otra pestaña')); };
+  });
+}
+function _idbGet(key) {
+  return _idbOpen().then(function(db) {
+    return new Promise(function(resolve, reject) {
+      var tx = db.transaction(_IDB_STORE, 'readonly');
+      var rq = tx.objectStore(_IDB_STORE).get(key);
+      rq.onsuccess = function() { resolve(rq.result); };
+      rq.onerror   = function() { reject(rq.error); };
+    });
+  });
+}
+function _idbSet(key, val) {
+  return _idbOpen().then(function(db) {
+    return new Promise(function(resolve, reject) {
+      var tx = db.transaction(_IDB_STORE, 'readwrite');
+      tx.objectStore(_IDB_STORE).put(val, key);
+      tx.oncomplete = function() { resolve(true); };
+      tx.onerror    = function() { reject(tx.error); };
+      tx.onabort    = function() { reject(tx.error || new Error('Transacción abortada')); };
+    });
+  });
+}
+function _idbClear() {
+  return _idbOpen().then(function(db) {
+    return new Promise(function(resolve, reject) {
+      var tx = db.transaction(_IDB_STORE, 'readwrite');
+      tx.objectStore(_IDB_STORE).clear();
+      tx.oncomplete = function() { resolve(true); };
+      tx.onerror    = function() { reject(tx.error); };
+    });
+  }).catch(function(e) { console.warn('[ArtEval] _idbClear:', e && e.message); });
+}
+// Escritura serializada con coalescencia: si llegan guardados en ráfaga, solo
+// se persiste el último estado (evita transacciones acumuladas en iPad).
+var _idbWriteChain = Promise.resolve();
+var _idbHydrated  = false;  // true cuando la hidratación inicial ya decidió la fuente de verdad
+var _idbLastError = null;
+function _idbSetRegistros(arr) {
+  // PROTECCIÓN: antes de la hidratación el espejo de localStorage podría estar
+  // truncado (fallback de 200 registros) — no sobrescribir el almacén completo.
+  if (!_idbHydrated) return;
+  var snapshot;
+  try { snapshot = JSON.parse(JSON.stringify(arr || [])); } catch(e) { return; }
+  _idbSetRegistros._pending = { registros: snapshot, count: snapshot.length, ts: new Date().toISOString() };
+  _idbWriteChain = _idbWriteChain.then(function() {
+    var p = _idbSetRegistros._pending;
+    if (!p) return; // ya lo tomó una escritura anterior de la ráfaga
+    _idbSetRegistros._pending = null;
+    return _idbSet('registros', p).then(function() { _idbLastError = null; });
+  }).catch(function(e) {
+    _idbLastError = (e && e.message) || 'error desconocido';
+    console.warn('[ArtEval] IndexedDB write:', _idbLastError);
+  });
+}
+// ── Hidratación inicial ──────────────────────────────────────────────────────
+// IndexedDB manda si tiene MÁS registros que lo cargado desde localStorage.
+// Caso que resuelve: el espejo local se llenó y quedó truncado; IndexedDB
+// conserva el conjunto completo. En empate se mantiene lo ya cargado (idéntico).
+// Los callbacks corren después del parseo completo, así que las funciones de
+// UI referenciadas ya existen al ejecutarse.
+var _idbHydration = _idbGet('registros').then(function(rec) {
+  var lsCount = Array.isArray(registros) ? registros.length : 0;
+  if (rec && Array.isArray(rec.registros) && rec.registros.length > lsCount) {
+    var completos = _sanearRegistrosArray(JSON.parse(JSON.stringify(rec.registros)));
+    if (completos.length > lsCount) {
+      console.info('[ArtEval] IndexedDB tiene ' + completos.length + ' registros vs ' + lsCount + ' del espejo local — restaurando conjunto completo.');
+      registros = completos;
+      if (typeof repararRegistros === 'function') { try { repararRegistros(); } catch(e) {} }
+      // Invalidar cachés de rendimiento y refrescar la UI visible
+      _regsMapCache = null; _cursosUnicosCache = null; _regsSemCache = null;
+      if (typeof _invalidarNormCache === 'function') _invalidarNormCache();
+      if (typeof _invalidarCandidatos === 'function') _invalidarCandidatos();
+      if (typeof actualizarConteo === 'function') { try { actualizarConteo(); } catch(e) {} }
+      if (typeof renderRegistros === 'function') { try { renderRegistros(); } catch(e) {} }
+      if (typeof toast === 'function') toast('✓ ' + completos.length + ' registros restaurados desde el almacenamiento ampliado', 'ok', 4000);
+    }
+  }
+}).catch(function(e) {
+  console.warn('[ArtEval] Hidratación IndexedDB:', e && e.message);
+}).then(function() {
+  _idbHydrated = true;
+  // Sincronizar SIEMPRE el estado vigente hacia IndexedDB (esto ejecuta la
+  // migración inicial la primera vez que se abre esta versión).
+  try {
+    var _payload = (registros || []).map(function(r) {
+      if (!r) return r;
+      var c = Object.assign({}, r);
+      delete c.imagenBase64; // las imágenes van solo a Drive, igual que siempre
+      return c;
+    });
+    _idbSetRegistros(_payload);
+  } catch(e) { console.warn('[ArtEval] Sync inicial a IndexedDB:', e && e.message); }
+});
 let listaCursos = (function(){
   try {
     var raw = JSON.parse(localStorage.getItem('av_lista_cursos') || '{}');
@@ -6550,8 +6683,9 @@ function _abrirCentroRendimiento() {
     + '<div style="font-size:15px;font-weight:700;margin-bottom:2px;">Centro de rendimiento y datos</div>'
     + '<div style="font-size:12px;color:var(--text2);margin-bottom:6px;">Estado del sistema y mantenimiento seguro. Ninguna acción borra tus notas.</div>'
     + seccion('ALMACENAMIENTO')
+    + fila('Motor principal', (typeof _idbHydrated !== 'undefined' && _idbHydrated && !_idbLastError) ? 'IndexedDB \\u2713 (sin l\\u00edmite de 5 MB)' : 'localStorage (respaldo)', (typeof _idbHydrated !== 'undefined' && _idbHydrated && !_idbLastError) ? '#188038' : '#FF9500')
     + '<div style="height:6px;background:var(--bg4);border-radius:3px;overflow:hidden;margin:6px 0 8px;"><div style="height:100%;width:' + pct + '%;background:' + clr + ';border-radius:3px;"></div></div>'
-    + fila('Usado', st.totalKB + ' KB / ~5 MB (' + pct + '%)', clr)
+    + fila('Espejo local usado', st.totalKB + ' KB / ~5 MB (' + pct + '%)', clr)
     + fila('Libre', libres + ' KB', libres > 256 ? '#188038' : '#FF9500')
     + fila('Formato', comprimido ? 'Comprimido \u2713' : 'Sin comprimir', comprimido ? '#188038' : 'var(--text)')
     + seccion('REGISTROS')
@@ -6841,7 +6975,7 @@ function saveRegistros() {
         var _mini = _payload.slice(-200);
         try {
           _lsSetRegistros(_mini);
-          toast('⚠️ Almacenamiento casi lleno — guardando los últimos 200 registros localmente. Sincroniza Drive.', 'err', 6000);
+          toast('⚠️ Espejo local lleno: se respaldan los últimos 200 registros en localStorage, pero el conjunto COMPLETO está seguro en el almacenamiento ampliado. Sincroniza Drive cuando puedas.', 'err', 7000);
         } catch(e2) {
           toast('🚨 Sin espacio local. Sincroniza Drive desde Sistema → Drive.', 'err', 10000);
         }
@@ -17250,11 +17384,17 @@ function actualizarCtxResumen() {
     if (banner) banner.style.display = 'none';
   }
   // Fusionar automáticamente SIN NÓMINA con sus entradas oficiales
-  setTimeout(function() {
-    var _le=localStorage.getItem('av_last_edit_ts')||'';
-    var _ls=localStorage.getItem('av_last_drive_sync')||'';
-    if(!_le||!_ls||_le<=_ls) deduplicarYFusionarTodos();
-  }, 100);
+  // v216: esperar la hidratación de IndexedDB para no deduplicar sobre un
+  // espejo local posiblemente truncado (la hidratación puede reemplazar registros)
+  var _postHidratacion = (typeof _idbHydration !== 'undefined' && _idbHydration && typeof _idbHydration.then === 'function')
+    ? _idbHydration : Promise.resolve();
+  _postHidratacion.then(function() {
+    setTimeout(function() {
+      var _le=localStorage.getItem('av_last_edit_ts')||'';
+      var _ls=localStorage.getItem('av_last_drive_sync')||'';
+      if(!_le||!_ls||_le<=_ls) deduplicarYFusionarTodos();
+    }, 100);
+  });
   // Verificar notas pendientes offline
   setTimeout(function() { if(typeof _checkPendingQueue==='function') _checkPendingQueue(); }, 500);
   // FIX SYNC: verificar si el cierre anterior dejó datos sin subir
@@ -22225,6 +22365,11 @@ async function borrarTodosLosDatos() {
   if (!ok) return;
   try {
   localStorage.clear();
+  // v216: borrar también el almacén principal IndexedDB (con tope de 3 s para
+  // que el reload nunca quede bloqueado si el navegador demora la transacción)
+  if (typeof _idbClear === 'function') {
+    await Promise.race([_idbClear(), new Promise(function(r) { setTimeout(r, 3000); })]);
+  }
   location.reload();
 
   } catch(e) {
@@ -25363,9 +25508,15 @@ async function ejecutarDiagnostico() {
   // ── 2. IndexedDB ────────────────────────────────────────────────────────────
   try {
     if (window.indexedDB) {
-      rows.push(ok('IndexedDB disponible', 'API presente en el navegador'));
+      if (typeof _idbHydrated !== 'undefined' && _idbHydrated && !_idbLastError) {
+        rows.push(ok('IndexedDB activo (motor principal)', 'Registros persistidos sin l\u00edmite de 5 MB'));
+      } else if (typeof _idbLastError !== 'undefined' && _idbLastError) {
+        rows.push(warn('IndexedDB con error', _idbLastError + ' \u2014 usando localStorage como respaldo'));
+      } else {
+        rows.push(ok('IndexedDB disponible', 'API presente en el navegador'));
+      }
     } else {
-      rows.push(warn('IndexedDB no detectado', 'El navegador puede no soportarlo'));
+      rows.push(warn('IndexedDB no detectado', 'El navegador puede no soportarlo \u2014 la app usa localStorage'));
     }
   } catch(e) {
     rows.push(err('IndexedDB error', e.message));
