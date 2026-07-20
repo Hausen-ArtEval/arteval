@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v216">
+<meta name="arteval-version" content="v219">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4176,13 +4176,23 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
     "});"
   ].join('\n');
   try {
-    // Intentar data: URL (funciona en Firefox y algunos contextos)
-    var dataUrl = 'data:application/javascript;base64,' + btoa(swSrc);
-    navigator.serviceWorker.register(dataUrl, { scope: './' })
-      .then(function(r){ console.info('[ArtEval] SW listo:', r.scope); })
+    // v217: PRIMERO el SW real (sw.js junto al index en Cloudflare Pages).
+    // Chrome y Safari BLOQUEAN los data: URLs como service worker, así que
+    // hasta ahora la PWA no tenía caché offline en la práctica. Con sw.js
+    // como archivo separado, la app abre sin conexión de verdad.
+    navigator.serviceWorker.register('./sw.js', { scope: './' })
+      .then(function(r){ console.info('[ArtEval] SW listo (sw.js):', r.scope); })
       .catch(function(){
-        // data: URL también bloqueado (Chrome) — SW no disponible, continúa sin él
-        console.info('[ArtEval] SW omitido (entorno no compatible) — app funciona normalmente.');
+        // Sin sw.js en el entorno (ej: index abierto como archivo local) —
+        // intentar data: URL (funciona en Firefox y algunos contextos)
+        try {
+          var dataUrl = 'data:application/javascript;base64,' + btoa(swSrc);
+          navigator.serviceWorker.register(dataUrl, { scope: './' })
+            .then(function(r){ console.info('[ArtEval] SW listo (data URL):', r.scope); })
+            .catch(function(){
+              console.info('[ArtEval] SW omitido (entorno no compatible) — app funciona normalmente.');
+            });
+        } catch(e2) { console.info('[ArtEval] SW omitido:', e2.message); }
       });
   } catch(e) {
     console.info('[ArtEval] SW omitido:', e.message);
@@ -4311,7 +4321,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v216</span>
+      ">v219</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -4631,42 +4641,13 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
               <option value="Final">Final</option>
             </select>
           </div>
-          <div class="cursos-grid-section">
-            <div class="cursos-nivel-titulo">3° Básico</div>
-            <div class="cursos-grid">
-              <button class="curso-sidebar-btn" data-curso="3°A" id="csb-3A">3°A<span class="cs-count" id="csc-3A"></span></button>
-              <button class="curso-sidebar-btn" data-curso="3°B" id="csb-3B">3°B<span class="cs-count" id="csc-3B"></span></button>
-              <button class="curso-sidebar-btn" data-curso="3°C" id="csb-3C">3°C<span class="cs-count" id="csc-3C"></span></button>
-              <button class="curso-sidebar-btn" data-curso="3°D" id="csb-3D">3°D<span class="cs-count" id="csc-3D"></span></button>
-            </div>
-          </div>
-          <div class="cursos-grid-section">
-            <div class="cursos-nivel-titulo">4° Básico</div>
-            <div class="cursos-grid">
-              <button class="curso-sidebar-btn" data-curso="4°A" id="csb-4A">4°A<span class="cs-count" id="csc-4A"></span></button>
-              <button class="curso-sidebar-btn" data-curso="4°B" id="csb-4B">4°B<span class="cs-count" id="csc-4B"></span></button>
-              <button class="curso-sidebar-btn" data-curso="4°C" id="csb-4C">4°C<span class="cs-count" id="csc-4C"></span></button>
-              <button class="curso-sidebar-btn" data-curso="4°D" id="csb-4D">4°D<span class="cs-count" id="csc-4D"></span></button>
-            </div>
-          </div>
-          <div class="cursos-grid-section">
-            <div class="cursos-nivel-titulo">5° Básico</div>
-            <div class="cursos-grid">
-              <button class="curso-sidebar-btn" data-curso="5°A" id="csb-5A">5°A<span class="cs-count" id="csc-5A"></span></button>
-              <button class="curso-sidebar-btn" data-curso="5°B" id="csb-5B">5°B<span class="cs-count" id="csc-5B"></span></button>
-              <button class="curso-sidebar-btn" data-curso="5°C" id="csb-5C">5°C<span class="cs-count" id="csc-5C"></span></button>
-              <button class="curso-sidebar-btn" data-curso="5°D" id="csb-5D">5°D<span class="cs-count" id="csc-5D"></span></button>
-            </div>
-          </div>
-          <div class="cursos-grid-section">
-            <div class="cursos-nivel-titulo">6° Básico</div>
-            <div class="cursos-grid">
-              <button class="curso-sidebar-btn" data-curso="6°A" id="csb-6A">6°A<span class="cs-count" id="csc-6A"></span></button>
-              <button class="curso-sidebar-btn" data-curso="6°B" id="csb-6B">6°B<span class="cs-count" id="csc-6B"></span></button>
-              <button class="curso-sidebar-btn" data-curso="6°C" id="csb-6C">6°C<span class="cs-count" id="csc-6C"></span></button>
-              <button class="curso-sidebar-btn" data-curso="6°D" id="csb-6D">6°D<span class="cs-count" id="csc-6D"></span></button>
-            </div>
-          </div>
+          <!-- v219: GRID DINÁMICO — se genera desde la configuración de cursos
+               del profesor (av_cursos_config). Por defecto: 3°–6° básico A–D. -->
+          <div id="cursosGridDinamico"></div>
+          <button class="btn btn-sm" onclick="_abrirConfigCursos()" style="width:100%;margin-top:10px;justify-content:center;gap:6px;font-size:12px;color:var(--text2);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            Configurar cursos
+          </button>
         </div>
 
         <!-- MAIN: detalle del curso seleccionado -->
@@ -5060,7 +5041,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
               <div class="ob-body">
                 <div class="ob-title">Importa la nómina de tu curso</div>
                 <div class="ob-desc">Agrega los estudiantes de cada curso para llevar un registro ordenado. Puedes pegar una lista de nombres o importar desde Excel.</div>
-                <button class="btn btn-primary ob-btn" onclick="_activarTab(document.querySelector('[data-maintab=estudio]'),'cursos',null)">
+                <button class="btn btn-primary ob-btn" onclick="_activarTab(document.getElementById('tabBtnEstudio'),'estudio','cursos')">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                   Ir a Cursos
                 </button>
@@ -5072,7 +5053,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
               <div class="ob-body">
                 <div class="ob-title">Revisa o crea tu rúbrica de evaluación</div>
                 <div class="ob-desc">ArtEval trae una rúbrica de Artes Visuales lista para usar. Puedes editarla o crear la tuya con los criterios que necesites.</div>
-                <button class="btn ob-btn" onclick="_activarTab(document.querySelector('[data-maintab=sistema]'),'rubricas',null)">
+                <button class="btn ob-btn" onclick="_irARubricas(document.getElementById('tabBtnRubricas'))">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                   Ver Rúbricas
                 </button>
@@ -5083,8 +5064,8 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
               <div class="ob-num ob-num-grey">3</div>
               <div class="ob-body">
                 <div class="ob-title">Evalúa tu primera obra</div>
-                <div class="ob-desc">Usa la cámara para capturar el trabajo del estudiante y la IA de Gemini evaluará automáticamente cada criterio de tu rúbrica.</div>
-                <button class="btn ob-btn" onclick="_activarTab(document.querySelector('[data-maintab=evaluar]'),'evaluar',null)">
+                <div class="ob-desc">Captura el trabajo con la cámara y deja que la IA evalúe cada criterio — o evalúa manualmente marcando los niveles tú mismo. Ambos caminos funcionan desde el primer día.</div>
+                <button class="btn ob-btn" onclick="_activarTab(document.getElementById('tabBtnEvaluar'),'estudio','evaluar')">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                   Ir a Evaluar
                 </button>
@@ -5093,6 +5074,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
           </div>
           <div style="margin-top:18px;padding-top:16px;border-top:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
             <div style="font-size:12px;color:var(--text3);">¿Ya tienes datos? Conéctate a Google Drive para restaurarlos.</div>
+            <button class="btn btn-sm" onclick="_omitirOnboarding()" style="color:var(--text3);">Omitir guía</button>
             <button class="btn btn-sm" onclick="abrirPanelDrive()" style="gap:5px;">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>
               Conectar Drive
@@ -6161,6 +6143,15 @@ function normalizarCurso(c) {
 }
 function _normCursoKey(c) { return normalizarCurso(c).replace(/°/g, '').toUpperCase(); }
 
+// ── Validación de correos (v217) ─────────────────────────────────────────────
+// Antes solo se comprobaba que el texto contuviera '@' — un correo mal digitado
+// como "mama@gmail" (sin dominio) pasaba la validación y fallaba recién en la
+// API de Gmail con un error críptico. Regex pragmático: algo@algo.tld
+function _emailValido(e) {
+  if (!e || typeof e !== 'string') return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e.trim());
+}
+
 // ── Almacenamiento comprimido de registros (transparente) ───────────────────
 // Los registros se guardan en localStorage comprimidos con LZString para evitar
 // llenar el cupo (~5 MB). Se preservan TODOS los campos: solo cambia el formato
@@ -6341,6 +6332,7 @@ var _idbHydration = _idbGet('registros').then(function(rec) {
       if (typeof _invalidarCandidatos === 'function') _invalidarCandidatos();
       if (typeof actualizarConteo === 'function') { try { actualizarConteo(); } catch(e) {} }
       if (typeof renderRegistros === 'function') { try { renderRegistros(); } catch(e) {} }
+      if (typeof _renderCursoSidebarGrid === 'function') { try { _renderCursoSidebarGrid(); } catch(e) {} }
       if (typeof toast === 'function') toast('✓ ' + completos.length + ' registros restaurados desde el almacenamiento ampliado', 'ok', 4000);
     }
   }
@@ -6986,6 +6978,11 @@ function saveRegistros() {
     _invalidarCandidatos();
     _flashAutoSave();
     _checkStorageSize();
+    // v217: AUTO-SYNC UNIVERSAL — saveRegistros es el punto por donde pasa TODO
+    // cambio de datos (evaluaciones, importaciones, fusiones, correcciones).
+    // Antes _driveSaveDebounced solo se disparaba en flujos específicos y las
+    // importaciones/fusiones quedaban sin respaldar hasta la guardia de cierre.
+    if (typeof _driveSaveDebounced === 'function') _driveSaveDebounced();
     setTimeout(function(){
       if(typeof _actualizarEstadoSync==='function') _actualizarEstadoSync();
     }, 200);
@@ -7018,6 +7015,21 @@ function _driveSaveDebounced() {
     }
   }, 2000); // esperar 2s para agrupar cambios rápidos
 }
+
+// v217: RED DE SEGURIDAD PERIÓDICA — cada 5 minutos, si hay ediciones
+// posteriores a la última sync y el token de Drive está activo, respaldar
+// automáticamente. Atrapa cualquier sync saltada o flujo no cubierto.
+setInterval(function() {
+  try {
+    if (typeof _driveToken === 'undefined' || !_driveToken || Date.now() >= _driveTokenExp) return;
+    var _le = localStorage.getItem('av_last_edit_ts')   || '';
+    var _ls = localStorage.getItem('av_last_drive_sync') || '';
+    if (_le && (!_ls || _le > _ls)) {
+      console.info('[ArtEval] Sync periódica: ediciones pendientes detectadas → respaldando');
+      _driveSaveDebounced();
+    }
+  } catch(e) { /* nunca interrumpir por la red de seguridad */ }
+}, 5 * 60 * 1000);
 
 // Auto-sync si el storage está lleno y Drive está activo
 function _flashDriveSaving(on){var b=document.querySelector('.cloud-btn');if(b){if(on)b.classList.add('drive-saving');else b.classList.remove('drive-saving');}}
@@ -8098,6 +8110,11 @@ async function analizarAhora() {
   //   3. Instrucción "NO_PREAMBLE" explícita → penaliza introductions que consumen tokens
   //   4. Formato JSON ejemplificado una sola vez (no dos veces como antes)
   //   5. pieContexto: 393 → ~70 tokens (comprimido arriba)
+  // v217: PROMPT VERSIONADO — al cambiar el texto del systemInstruction o del
+  // prompt de usuario, subir esta versión. Cuando un tester reporte "la IA
+  // evalúa raro", este número identifica exactamente qué prompt usaba.
+  const PROMPT_EVAL_VERSION = 'v3';
+  console.info('[ArtEval] Evaluación IA — prompt ' + PROMPT_EVAL_VERSION);
   const _systemInstruction = {
     parts: [{ text:
       `Eres un evaluador de artes visuales escolar. RESPONDE SOLO JSON. SIN introducción, sin explicaciones, sin markdown. Si el JSON no es válido, el sistema falla. Sé directo y conciso en las notas de observación (máx 12 palabras cada una).`
@@ -11960,12 +11977,151 @@ async function probarKey() {
 let cursosSeleccionados = new Set(); // vacío = todos
 
 // Cursos predefinidos del colegio — 4 cursos por nivel × 4 niveles
-const CURSOS_PREDEFINIDOS = {
+// ── CURSOS CONFIGURABLES (v219) ──────────────────────────────────────────────
+// Antes los 16 cursos (3°–6° básico A–D) estaban grabados en el HTML y en dos
+// listas fijas del JS — un profesor de media o de un colegio con otra
+// estructura no podía usar la app. Ahora la estructura vive en
+// av_cursos_config (localStorage) y el grid se genera dinámicamente.
+// El colegio de origen queda como configuración por defecto.
+var _CURSOS_DEFAULT = {
   '3° Básico': ['3°A','3°B','3°C','3°D'],
   '4° Básico': ['4°A','4°B','4°C','4°D'],
   '5° Básico': ['5°A','5°B','5°C','5°D'],
   '6° Básico': ['6°A','6°B','6°C','6°D'],
 };
+function _getCursosConfig() {
+  try {
+    var raw = JSON.parse(localStorage.getItem('av_cursos_config') || 'null');
+    if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+      var out = {}, valido = false;
+      Object.keys(raw).forEach(function(nivel) {
+        var lista = Array.isArray(raw[nivel])
+          ? raw[nivel].map(function(c){ return normalizarCurso(c); }).filter(Boolean)
+          : [];
+        if (nivel && nivel.trim() && lista.length) { out[nivel.trim()] = lista; valido = true; }
+      });
+      if (valido) return out;
+    }
+  } catch(e) { console.warn('[ArtEval] av_cursos_config inválido — usando cursos por defecto:', e.message); }
+  return JSON.parse(JSON.stringify(_CURSOS_DEFAULT));
+}
+var CURSOS_PREDEFINIDOS = _getCursosConfig();
+
+// Render dinámico del grid lateral. Mantiene EXACTAMENTE las clases y atributos
+// del grid estático anterior (curso-sidebar-btn, data-curso, cs-count): el click
+// delegado y el contador de pendientes siguen funcionando sin cambios.
+function _renderCursoSidebarGrid() {
+  var cont = document.getElementById('cursosGridDinamico');
+  if (!cont) return;
+  var html = '';
+  var enConfig = {};
+  Object.keys(CURSOS_PREDEFINIDOS).forEach(function(nivel) {
+    var lista = CURSOS_PREDEFINIDOS[nivel];
+    lista.forEach(function(c){ enConfig[c] = true; });
+    html += '<div class="cursos-grid-section"><div class="cursos-nivel-titulo">' + _esc(nivel) + '</div><div class="cursos-grid">'
+      + lista.map(function(c) {
+          return '<button class="curso-sidebar-btn" data-curso="' + _esc(c) + '">' + _esc(c) + '<span class="cs-count"></span></button>';
+        }).join('')
+      + '</div></div>';
+  });
+  // Cursos presentes en los DATOS pero fuera de la configuración (p. ej. un
+  // respaldo restaurado de otra estructura): nunca esconderlos.
+  var extras = [];
+  (registros || []).forEach(function(r) {
+    if (r && r.curso && !enConfig[r.curso] && extras.indexOf(r.curso) === -1) extras.push(r.curso);
+  });
+  Object.keys(listaCursos || {}).forEach(function(c) {
+    if ((listaCursos[c] || []).length && !enConfig[c] && extras.indexOf(c) === -1) extras.push(c);
+  });
+  if (extras.length) {
+    extras.sort();
+    html += '<div class="cursos-grid-section"><div class="cursos-nivel-titulo">Otros cursos</div><div class="cursos-grid">'
+      + extras.map(function(c) {
+          return '<button class="curso-sidebar-btn" data-curso="' + _esc(c) + '">' + _esc(c) + '<span class="cs-count"></span></button>';
+        }).join('')
+      + '</div></div>';
+  }
+  cont.innerHTML = html;
+  // Restaurar resaltado del curso seleccionado tras el re-render
+  if (typeof cursoSeleccionado !== 'undefined' && cursoSeleccionado) {
+    var b = cont.querySelector('.curso-sidebar-btn[data-curso="' + cursoSeleccionado.replace(/"/g, '\\"') + '"]');
+    if (b) b.classList.add('active');
+  }
+  if (typeof renderSidebarCounts === 'function') { try { renderSidebarCounts(); } catch(e) {} }
+}
+
+// Editor de la estructura de cursos
+function _abrirConfigCursos() {
+  function filaNivel(nivel, cursos) {
+    return '<div class="cfgCursoRow" style="display:flex;gap:8px;align-items:flex-start;margin-bottom:10px;flex-wrap:wrap;">'
+      + '<input type="text" class="cfgNivelNombre" value="' + _esc(nivel) + '" placeholder="Nivel (ej: 7° Básico)" style="flex:1;min-width:120px;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--rad);font-size:13px;background:var(--bg);">'
+      + '<input type="text" class="cfgNivelCursos" value="' + _esc(cursos.join(', ')) + '" placeholder="Cursos (ej: 7°A, 7°B)" style="flex:2;min-width:160px;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--rad);font-size:13px;background:var(--bg);font-family:var(--font-mono);">'
+      + '<button onclick="this.closest(\'.cfgCursoRow\').remove()" aria-label="Eliminar nivel" style="background:var(--red-bg);border:none;border-radius:8px;padding:8px 10px;cursor:pointer;line-height:0;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>'
+      + '</div>';
+  }
+  var filas = Object.keys(CURSOS_PREDEFINIDOS).map(function(n) {
+    return filaNivel(n, CURSOS_PREDEFINIDOS[n]);
+  }).join('');
+  var html = '<div style="padding:2px;">'
+    + '<div style="font-size:15px;font-weight:700;margin-bottom:2px;">Configurar cursos</div>'
+    + '<div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6;">Define los niveles y cursos de tu colegio. Los cursos se escriben separados por coma (ej: <span style="font-family:var(--font-mono);">1°A, 1°B</span>). Las evaluaciones ya guardadas nunca se pierden: los cursos con datos fuera de esta lista aparecen en "Otros cursos".</div>'
+    + '<div id="cfgCursosLista">' + filas + '</div>'
+    + '<button class="btn btn-sm" onclick="_cfgAgregarNivel()" style="gap:5px;font-size:12px;">'
+    + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Agregar nivel</button>'
+    + '<div style="display:flex;gap:8px;justify-content:space-between;align-items:center;margin-top:18px;flex-wrap:wrap;">'
+    + '<button class="btn btn-sm" onclick="_cfgRestaurarCursos()" style="color:var(--text3);font-size:12px;">Restaurar por defecto</button>'
+    + '<div style="display:flex;gap:8px;">'
+    + '<button class="btn" onclick="cerrarModal()">Cancelar</button>'
+    + '<button class="btn btn-primary" onclick="_cfgGuardarCursos()">Guardar</button>'
+    + '</div></div></div>';
+  abrirModal(html);
+}
+function _cfgAgregarNivel() {
+  var lista = document.getElementById('cfgCursosLista');
+  if (!lista) return;
+  var tmp = document.createElement('div');
+  tmp.innerHTML = '<div class="cfgCursoRow" style="display:flex;gap:8px;align-items:flex-start;margin-bottom:10px;flex-wrap:wrap;">'
+    + '<input type="text" class="cfgNivelNombre" value="" placeholder="Nivel (ej: 7° Básico)" style="flex:1;min-width:120px;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--rad);font-size:13px;background:var(--bg);">'
+    + '<input type="text" class="cfgNivelCursos" value="" placeholder="Cursos (ej: 7°A, 7°B)" style="flex:2;min-width:160px;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--rad);font-size:13px;background:var(--bg);font-family:var(--font-mono);">'
+    + '<button onclick="this.closest(\'.cfgCursoRow\').remove()" aria-label="Eliminar nivel" style="background:var(--red-bg);border:none;border-radius:8px;padding:8px 10px;cursor:pointer;line-height:0;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>'
+    + '</div>';
+  lista.appendChild(tmp.firstChild);
+  var inp = lista.lastChild.querySelector('.cfgNivelNombre');
+  if (inp) inp.focus();
+}
+function _cfgRestaurarCursos() {
+  localStorage.removeItem('av_cursos_config');
+  CURSOS_PREDEFINIDOS = _getCursosConfig();
+  cerrarModal();
+  _renderCursoSidebarGrid();
+  if (typeof renderCursosChips === 'function') { try { renderCursosChips(); } catch(e) {} }
+  toast('✓ Cursos restaurados a la configuración por defecto', 'ok', 3000);
+}
+function _cfgGuardarCursos() {
+  var filas = document.querySelectorAll('#cfgCursosLista .cfgCursoRow');
+  var out = {}, vistos = {}, dupes = [];
+  for (var i = 0; i < filas.length; i++) {
+    var nivel  = (filas[i].querySelector('.cfgNivelNombre') || {}).value || '';
+    var cursos = (filas[i].querySelector('.cfgNivelCursos') || {}).value || '';
+    nivel = nivel.trim();
+    var lista = cursos.split(',').map(function(c){ return normalizarCurso(c); }).filter(Boolean);
+    if (!nivel && !lista.length) continue; // fila vacía: ignorar
+    if (!nivel)        { toast('⚠ Hay una fila sin nombre de nivel', 'err', 4000); return; }
+    if (!lista.length) { toast('⚠ El nivel "' + nivel + '" no tiene cursos', 'err', 4000); return; }
+    lista.forEach(function(c) { if (vistos[c]) dupes.push(c); vistos[c] = true; });
+    if (out[nivel]) { toast('⚠ El nivel "' + nivel + '" está repetido', 'err', 4000); return; }
+    out[nivel] = lista;
+  }
+  if (!Object.keys(out).length) { toast('⚠ Define al menos un nivel con cursos', 'err', 4000); return; }
+  if (dupes.length) { toast('⚠ Cursos repetidos entre niveles: ' + dupes.join(', '), 'err', 5000); return; }
+  localStorage.setItem('av_cursos_config', JSON.stringify(out));
+  CURSOS_PREDEFINIDOS = _getCursosConfig();
+  cerrarModal();
+  _renderCursoSidebarGrid();
+  if (typeof renderCursosChips === 'function') { try { renderCursosChips(); } catch(e) {} }
+  var total = Object.keys(out).reduce(function(a, n){ return a + out[n].length; }, 0);
+  toast('✓ Estructura guardada: ' + Object.keys(out).length + ' nivel(es), ' + total + ' curso(s)', 'ok', 3500);
+}
 
 function renderCursosChips() {
   const wrap = document.getElementById('cursosChipsWrap');
@@ -13746,17 +13902,20 @@ function _actualizarPasosOnboarding() {
   var tieneEval    = registros.length > 0;
   var tieneDrive   = !!_driveToken;
 
-  // Mostrar onboarding si aún no completó todo — ocultar si ya completó los 4 pasos
-  var todoCompleto = tieneCursos && tieneRubrica && tieneEval && tieneDrive;
-  if (todoCompleto) {
+  // v218: REGLA ÚNICA DE VISIBILIDAD. Antes competían dos funciones por
+  // ob.style.display (esta mostraba si faltaba algún paso, _renderDashKpiGlobal
+  // ocultaba si no era primer uso) y el resultado dependía del orden de
+  // ejecución: un profesor con evaluaciones pero sin Drive conectado veía la
+  // guía de bienvenida para siempre. Regla nueva: la guía existe para llevar
+  // al profesor hasta su PRIMERA evaluación — lograda esa, cumplió y se
+  // retira. También puede descartarse manualmente con "Omitir guía".
+  if (tieneEval) {
     ob.style.display = 'none';
-    localStorage.setItem('ae_onboarding_done', '1');
+    if (!localStorage.getItem('ae_onboarding_done')) localStorage.setItem('ae_onboarding_done', '1');
     return;
   }
-  // Mostrar si no está marcado como completado
-  if (!localStorage.getItem('ae_onboarding_done')) {
-    ob.style.display = 'block';
-  }
+  if (localStorage.getItem('ae_onboarding_done')) { ob.style.display = 'none'; return; }
+  ob.style.display = 'block';
 
   // Paso 1 — Nómina de cursos
   var s1 = document.getElementById('obStep1');
@@ -13805,6 +13964,15 @@ function _actualizarPasosOnboarding() {
   }
 }
 
+// v218: descarte manual de la guía de bienvenida — antes no existía forma de
+// cerrarla sin completar los pasos.
+function _omitirOnboarding() {
+  localStorage.setItem('ae_onboarding_done', '1');
+  var ob = document.getElementById('dashOnboarding');
+  if (ob) ob.style.display = 'none';
+  toast('Guía ocultada. Puedes evaluar directamente desde la pestaña Evaluar.', 'ok', 3500);
+}
+
 function _renderDashKpiGlobal(instFiltro) {
   const kpiEl = document.getElementById('dashKpiGlobal');
   const obEl  = document.getElementById('dashOnboarding');
@@ -13827,8 +13995,8 @@ function _renderDashKpiGlobal(instFiltro) {
   const sinNomina    = Object.keys(listaCursos).every(k => !(listaCursos[k]||[]).length);
   const esPrimerUso  = sinRegistros && sinNomina;
 
-  // Onboarding: mostrar solo en primer uso real
-  if (obEl) obEl.style.display = esPrimerUso ? 'block' : 'none';
+  // v218: la visibilidad del onboarding la decide SOLO _actualizarPasosOnboarding
+  // (regla única) — antes esta línea competía con ella según el orden de render.
 
   if (!regs.length) {
     const otroSem = _semestreActivo === 1 ? 2 : 1;
@@ -17400,14 +17568,15 @@ function actualizarCtxResumen() {
   // FIX SYNC: verificar si el cierre anterior dejó datos sin subir
   setTimeout(function() {
     var pending = localStorage.getItem('av_sync_pending');
-    if (pending) {
-      try {
-        var p = JSON.parse(pending);
-        // Mostrar aviso al profesor
-        toast('⚠ La sesión anterior se cerró con ' + p.count + ' registros sin sincronizar. Conéctate a Drive para subirlos.', 'err', 8000);
-        console.info('[ArtEval] Sync pendiente del cierre anterior:', p);
-      } catch(e) {}
-    }
+    if (!pending || pending === '0') return;
+    var p = null;
+    try { p = JSON.parse(pending); } catch(e) {}
+    if (!p || !p.count) return;
+    // v217: antes era un toast de 8 segundos — el aviso más importante de la
+    // app en el formato más efímero. Ahora es un banner persistente con
+    // botón de acción directa; desaparece solo al sincronizar o al cerrarlo.
+    _mostrarBannerSyncPendiente(p.count);
+    console.info('[ArtEval] Sync pendiente del cierre anterior:', p);
   }, 1200);
   // Limpiar sync_pending cuando la sync sea exitosa (se hace en syncToDrive)
   actualizarConteo();
@@ -17415,6 +17584,8 @@ function actualizarCtxResumen() {
   actualizarRubricaSelect();
   actualizarSlider(); // label inicial con curso inferido
   actualizarPieRubricaSelect(); // inicializar select PIE
+  // v219: pintar el grid de cursos desde la configuración del profesor
+  if (typeof _renderCursoSidebarGrid === 'function') { try { _renderCursoSidebarGrid(); } catch(e) {} }
 })();
 
 
@@ -17428,6 +17599,39 @@ let _toastTimer = null;
 
 // ── Guardia de cierre: sincronizar antes de cerrar la pestaña ────────────
 // Se dispara con beforeunload (desktop) y pagehide (iOS/iPad)
+
+// ── Banner persistente de sync pendiente (v217) ──────────────────────────────
+// Reemplaza al toast efímero: registros sin respaldar del cierre anterior es
+// información crítica que merece permanecer visible hasta resolverse.
+function _mostrarBannerSyncPendiente(count) {
+  if (document.getElementById('syncPendBanner')) return;
+  var b = document.createElement('div');
+  b.id = 'syncPendBanner';
+  b.setAttribute('role', 'alert');
+  b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:var(--amber,#FF9F0A);color:#1C1C1E;padding:10px 14px;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;font-size:13px;font-weight:600;box-shadow:0 2px 10px rgba(0,0,0,0.18);';
+  b.innerHTML =
+      '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1C1C1E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
+    + '<span>' + count + ' registro(s) de la sesión anterior sin sincronizar con Drive</span>'
+    + '<button onclick="_syncDesdeBanner()" style="background:#1C1C1E;color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font-ui);">Sincronizar ahora</button>'
+    + '<button onclick="_cerrarBannerSync()" aria-label="Cerrar aviso" style="background:transparent;border:none;cursor:pointer;color:#1C1C1E;padding:4px;line-height:0;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1C1C1E" stroke-width="2.4" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>';
+  document.body.appendChild(b);
+}
+function _cerrarBannerSync() {
+  var b = document.getElementById('syncPendBanner');
+  if (b) b.remove();
+}
+function _syncDesdeBanner() {
+  _cerrarBannerSync();
+  var tieneToken = (typeof _driveToken !== 'undefined') && _driveToken && Date.now() < _driveTokenExp;
+  if (tieneToken) {
+    if (typeof syncToDrive === 'function') syncToDrive();
+  } else if (typeof _requestTokenInteractivo === 'function' && typeof _gisTokenClient !== 'undefined' && _gisTokenClient) {
+    // Sin token: pedir autorización — _onAccessToken dispara la SmartSync al conectar
+    _requestTokenInteractivo();
+  } else {
+    toast('Conecta Google Drive en Sistema para subir los registros pendientes', 'err', 5000);
+  }
+}
 
 // ── Estado de sync en tiempo real ────────────────────────────────────────
 function _actualizarEstadoSync() {
@@ -17697,7 +17901,7 @@ function _procesarPlanillaApoderadosRows(rows, fileName) {
     if (!nombre || nombre.length < 3) { sinNombre++; return; }
 
     var email = (row[colEmail]||'').toString().trim().toLowerCase();
-    if (!email || !email.includes('@')) { sinEmail++; }
+    if (!_emailValido(email)) { sinEmail++; }
 
     // Normalizar formato de curso: '3A' → '3°A', '3°A' → '3°A'
     var curso = colCurso !== -1 ? (row[colCurso]||'').toString().trim() : '';
@@ -17711,7 +17915,7 @@ function _procesarPlanillaApoderadosRows(rows, fileName) {
       curso:  curso,
       nombre: nombre
     };
-    if (email && email.includes('@')) importados++;
+    if (_emailValido(email)) importados++;
     else sinEmail++;
     if (curso) cursosEncontrados.add(curso);
   });
@@ -18268,7 +18472,7 @@ function _abrirCorreoTab(idx){
   var asunto = al.sinEval
     ? ('Artes Visuales \u2014 Solicitud de trabajos pendientes \u2014 '+al.nombre)
     : ('Situaci\u00f3n acad\u00e9mica Artes Visuales \u2014 '+al.nombre);
-  if(email&&email.includes('@')){
+  if(_emailValido(email)){
     _apoderadoEmails[al.nombre.trim().toUpperCase()]=email.toLowerCase();
     _saveApoderadoEmails();
   }
@@ -18356,7 +18560,7 @@ function _abrirCorreoTab(idx){
   // institucional vinculada — el correo SALE estrictamente desde esa cuenta,
   // sin abrir el navegador. Renueva el token en silencio si expiró.
   if(typeof _gmailLinkedEmail!=='undefined' && _gmailLinkedEmail){
-    if(email && email.includes('@')){
+    if(_emailValido(email)){
       mkBtn(SVG_SEND, 'Enviar ahora desde '+_gmailLinkedEmail, 'V\u00eda API de Gmail \u2014 directo, sin abrir el navegador', '#34C759', function(){
         _obtenerTokenGmail(function(tok){
           toast('Enviando\u2026','info',1500);
@@ -18373,7 +18577,7 @@ function _abrirCorreoTab(idx){
   }
 
   // Opción 1: cuenta institucional (si está configurada)
-  if(inst && inst.includes('@')){
+  if(_emailValido(inst)){
     mkBtn(SVG_MAIL, inst, 'Abre Gmail y selecciona esta cuenta', '#FF9500', function(){
       try { navigator.clipboard.writeText(texto); } catch(e){}
       window.open(buildGmailCompose(inst), '_blank');
@@ -18477,7 +18681,7 @@ function _copiarCorreoTab(idx){
 function _guardarCorreoTab(idx,nombreAlumno){
   var nom=(nombreAlumno||'').replace(/&#39;/g,"'").trim();
   var email=(document.getElementById('cEmailInp_'+idx)||{}).value||'';
-  if(!email||!email.includes('@')){toast('\u26a0 Email inv\u00e1lido','err');return;}
+  if(!_emailValido(email)){toast('\u26a0 Email inv\u00e1lido \u2014 revisa el formato (nombre@dominio.cl)','err',4000);return;}
   if(!nom){toast('\u26a0 Nombre no encontrado','err');return;}
   _apoderadoEmails[nom.toUpperCase()]=email.toLowerCase();_saveApoderadoEmails();
   var b=document.getElementById('correoTabEmailBadge');if(b)b.textContent=Object.keys(_apoderadoEmails).length+' emails';
@@ -18724,7 +18928,7 @@ function _abrirEnCorreo(idx) {
     + '&body=' + encodeURIComponent(texto);
 
   // Guardar email del apoderado si se escribió
-  if (email && email.includes('@')) {
+  if (_emailValido(email)) {
     _apoderadoEmails[al.nombre.trim().toUpperCase()] = email.toLowerCase();
     _saveApoderadoEmails();
   }
@@ -18754,7 +18958,7 @@ function _copiarTextoEmail(idx) {
 
 function _guardarEmailApoderado(idx, nombreAlumno) {
   var email = (document.getElementById('emailInp_' + idx) || {}).value || '';
-  if (!email || !email.includes('@')) {
+  if (!_emailValido(email)) {
     toast('⚠ Ingresa un email válido', 'err'); return;
   }
   _apoderadoEmails[nombreAlumno.trim().toUpperCase()] = email.toLowerCase();
@@ -20867,8 +21071,13 @@ function cambiarInstanciaSidebar(val) {
 
 function renderSidebarCounts() {
   const instFiltro = instanciaCursoFiltro || '';
-  const TODOS = ['3°A','3°B','3°C','3°D','4°A','4°B','4°C','4°D',
-                 '5°A','5°B','5°C','5°D','6°A','6°B','6°C','6°D'];
+  // v219: antes había una segunda lista fija de 16 cursos aquí — ahora se
+  // recorren los botones realmente presentes en el grid dinámico.
+  const TODOS = [];
+  document.querySelectorAll('.curso-sidebar-btn[data-curso]').forEach(function(b) {
+    const c = b.dataset.curso;
+    if (c && TODOS.indexOf(c) === -1) TODOS.push(c);
+  });
   TODOS.forEach(function(c) {
     const el = document.querySelector('.curso-sidebar-btn[data-curso="' + c + '"] .cs-count');
     if (!el) return;
@@ -23524,6 +23733,36 @@ function _actualizarEstadoGmailUI(conectado){
 }
 // Restaurar sesión persistida al cargar (después de definir todo el módulo)
 _restaurarSesionGmail();
+// ── Núcleo unificado de envío Gmail API (v217) ────────────────────────────────
+// Punto ÚNICO de contacto con gmail.googleapis.com/messages/send. Antes había
+// dos implementaciones separadas (envío simple y envío con PDF adjunto) con
+// manejo de errores distinto. El diagnóstico fino de 403/401 ahora aplica a
+// TODOS los envíos de la app.
+async function _gmailApiSend(tok, raw) {
+  var resp = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ raw: raw })
+  });
+  if (!resp.ok) {
+    var detalle = '';
+    try { var j = await resp.json(); detalle = (j.error && j.error.message) || ''; } catch (e) {}
+    console.warn('[ArtEval\u00b7Correo] Gmail HTTP ' + resp.status + ':', detalle);
+    var err = new Error('Gmail ' + resp.status + (detalle ? ': ' + detalle : ''));
+    if (resp.status === 403 && /has not been used|is disabled|SERVICE_DISABLED|accessNotConfigured/i.test(detalle)) {
+      err._sugerencia = 'La API de Gmail NO est\u00e1 habilitada en tu proyecto de Google Cloud (igual que pas\u00f3 con Classroom). '
+        + 'Entra a console.cloud.google.com \u2192 APIs y servicios \u2192 Biblioteca \u2192 busca "Gmail API" \u2192 Habilitar, espera 2 minutos y reintenta.';
+    } else if (resp.status === 403 && /Delegation denied|Mail service not enabled|failedPrecondition/i.test(detalle)) {
+      err._sugerencia = 'El Workspace del colegio tiene restricciones sobre esta casilla (Gmail deshabilitado o delegaci\u00f3n bloqueada). Consulta con el administrador del dominio.';
+    } else if (resp.status === 403) {
+      err._sugerencia = 'Permiso denegado por Google. Desconecta y vuelve a conectar tu cuenta en la pesta\u00f1a Correo aceptando el permiso de env\u00edo.';
+    } else if (resp.status === 401) {
+      err._sugerencia = 'La sesi\u00f3n de Gmail expir\u00f3. Reconecta tu cuenta en la pesta\u00f1a Correo.';
+    }
+    throw err;
+  }
+  return resp.json();
+}
 function _enviarViaGmailAPI(tok,toEmail,asunto,cuerpo,ccEmail,nombreAlumno){
   var CRLF='\r\n';
   var from=_gmailLinkedEmail?'From: '+_gmailLinkedEmail+CRLF:'';
@@ -23533,10 +23772,7 @@ function _enviarViaGmailAPI(tok,toEmail,asunto,cuerpo,ccEmail,nombreAlumno){
     +'Content-Transfer-Encoding: base64'+CRLF;
   var body=CRLF+btoa(unescape(encodeURIComponent(cuerpo)));
   var raw=btoa(hdrs+body).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-  fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send',{method:'POST',
-    headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
-    body:JSON.stringify({raw:raw})})
-  .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+  _gmailApiSend(tok, raw)
   .then(function(){
     toast('\u2705 Enviado desde '+(_gmailLinkedEmail||'cuenta institucional'),'ok',4000);
     if(typeof _marcarCorreoEnviado==='function'&&nombreAlumno)_marcarCorreoEnviado(nombreAlumno,toEmail,'',0);
@@ -23544,7 +23780,9 @@ function _enviarViaGmailAPI(tok,toEmail,asunto,cuerpo,ccEmail,nombreAlumno){
     if(typeof _apoderadoEmails!=='undefined'&&nombreAlumno){_apoderadoEmails[nombreAlumno.trim().toUpperCase()]=toEmail.toLowerCase();if(typeof _saveApoderadoEmails==='function')_saveApoderadoEmails();}
   })
   .catch(function(err){
-    toast('\u26a0 Error al enviar \u2014 abriendo Gmail en browser','err',5000);
+    // v217: si el núcleo diagnosticó la causa (API deshabilitada, sesión
+    // expirada, restricción del Workspace), mostrarla en vez del error genérico
+    toast(err && err._sugerencia ? '\u26a0 ' + err._sugerencia : '\u26a0 Error al enviar \u2014 abriendo Gmail en browser','err',7000);
     var url='https://mail.google.com/mail/?view=cm&to='+encodeURIComponent(toEmail)+'&su='+encodeURIComponent(asunto)+'&body='+encodeURIComponent(cuerpo)+(ccEmail?'&cc='+encodeURIComponent(ccEmail):'');
     window.open(url,'_blank');
   });
@@ -24478,6 +24716,7 @@ async function syncToDrive() {
     localStorage.setItem('av_drive_last_count', String(snapshot.registros.length));
     localStorage.setItem('av_drive_sync_ts',    _syncTs);
     localStorage.setItem('av_sync_pending',     '0'); // limpiar flag online/offline
+    if (typeof _cerrarBannerSync === 'function') _cerrarBannerSync(); // v217: sync exitosa → retirar banner
     _updateCloudUI('synced');
     _checkDriveSyncInfo();
 
@@ -24507,8 +24746,11 @@ async function syncToDrive() {
           huboSubida = true;
         }
         if (huboSubida) {
-          saveRegistros(); // persiste sin imagenBase64 (ya limpiado arriba)
-          syncToDrive();   // segunda sync para actualizar Drive con los driveIds correctos
+          // v217: saveRegistros ya programa la re-sync vía _driveSaveDebounced.
+          // Antes se llamaba syncToDrive() directo aquí, que se saltaba en
+          // SILENCIO si el flag _syncing seguía activo (carrera) — y los
+          // imagenDriveId no llegaban a Drive hasta la sync siguiente.
+          saveRegistros();
         }
       } catch(e) { console.warn('[ArtEval] _subirImagenesPendientes:', e.message); }
     })();
@@ -27106,29 +27348,9 @@ async function _enviarRubricaPorCorreo(tok, email, registro) {
     ).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   }
 
-  var resp = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
-    method: 'POST',
-    headers: { 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ raw: raw })
-  });
-  if (!resp.ok) {
-    var detalle = '';
-    try { var j = await resp.json(); detalle = (j.error && j.error.message) || ''; } catch (e) {}
-    console.warn('[ArtEval·Correo] Gmail HTTP ' + resp.status + ':', detalle);
-    var err = new Error('Gmail ' + resp.status + (detalle ? ': ' + detalle : ''));
-    if (resp.status === 403 && /has not been used|is disabled|SERVICE_DISABLED|accessNotConfigured/i.test(detalle)) {
-      err._sugerencia = 'La API de Gmail NO está habilitada en tu proyecto de Google Cloud (igual que pasó con Classroom). '
-        + 'Entra a console.cloud.google.com → APIs y servicios → Biblioteca → busca "Gmail API" → Habilitar, espera 2 minutos y reintenta.';
-    } else if (resp.status === 403 && /Delegation denied|Mail service not enabled|failedPrecondition/i.test(detalle)) {
-      err._sugerencia = 'El Workspace del colegio tiene restricciones sobre esta casilla (Gmail deshabilitado o delegación bloqueada). Consulta con el administrador del dominio.';
-    } else if (resp.status === 403) {
-      err._sugerencia = 'Permiso denegado por Google. Desconecta y vuelve a conectar tu cuenta en la pestaña Correo aceptando el permiso de envío.';
-    } else if (resp.status === 401) {
-      err._sugerencia = 'La sesión de Gmail expiró. Reconecta tu cuenta en la pestaña Correo.';
-    }
-    throw err;
-  }
-  return resp.json();
+  // v217: delegado al núcleo unificado _gmailApiSend — antes este bloque
+  // duplicaba el fetch y el diagnóstico de errores (deuda técnica eliminada)
+  return _gmailApiSend(tok, raw);
 }
 
 function _tokenGmailPromise() {
