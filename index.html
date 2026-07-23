@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v223">
+<meta name="arteval-version" content="v224">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4321,7 +4321,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v223</span>
+      ">v224</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -18096,33 +18096,33 @@ function _msgPersElegir(nombre) {
 var _MSG_PERS_CATALOGO = [
   { cat: 'Conducta', color: '#FF3B30', items: [
     { id: 'interrumpe', label: 'Interrumpe la clase', asunto: 'Situación de comportamiento en clases',
-      cuerpo: 'me comunico con usted para informar que {estudiante} ({curso}) presentó conductas que interrumpieron el normal desarrollo de la clase del día {fecha}.\n\nDescripción de lo ocurrido:\n\n\nLe agradecería poder conversar sobre esta situación para apoyar juntos a {estudiante}.' },
+      cuerpo: 'me comunico con usted para informar que {estudiante} ({curso}) presentó conductas que interrumpieron el normal desarrollo de la clase del día {fecha}, tales como conversar reiteradamente, levantarse de su puesto sin autorización y distraer a sus compañeros, dificultando el avance de las actividades.\n\nHe conversado con el/la estudiante al respecto, y le agradecería reforzar desde el hogar la importancia de mantener una actitud de respeto y concentración durante las clases, para apoyar juntos su proceso.' },
     { id: 'respeto', label: 'Falta de respeto', asunto: 'Situación de convivencia escolar',
-      cuerpo: 'le escribo para informar una situación de falta de respeto protagonizada por {estudiante} ({curso}) durante la clase del día {fecha}.\n\nDetalle de lo sucedido:\n\n\nConsidero importante abordarlo en conjunto. Quedo atento/a a su respuesta.' },
+      cuerpo: 'le escribo para informar una situación de falta de respeto protagonizada por {estudiante} ({curso}) durante la clase del día {fecha}, la cual afectó el clima de convivencia y el normal desarrollo de la actividad.\n\nEsta situación fue abordada en el momento conforme a las normas de convivencia del establecimiento. Considero importante reforzarla también desde el hogar, y quedo atento/a a su respuesta para trabajar en conjunto.' },
     { id: 'conflicto', label: 'Conflicto entre compañeros', asunto: 'Situación de convivencia entre estudiantes',
-      cuerpo: 'me comunico para informar que {estudiante} ({curso}) estuvo involucrado/a en un conflicto con compañeros durante la clase del día {fecha}.\n\nDescripción:\n\n\nLa situación fue abordada en el momento, y me gustaría reforzar el trabajo desde el hogar.' },
+      cuerpo: 'me comunico para informar que {estudiante} ({curso}) estuvo involucrado/a en un conflicto con compañeros durante la clase del día {fecha}. La situación fue abordada en el momento para restablecer el buen clima de trabajo.\n\nDescripción (opcional, puede ampliar o dejar así):\n\n\nLe agradecería reforzar desde el hogar el respeto y la buena convivencia entre compañeros.' },
     { id: 'celular', label: 'Uso de celular', asunto: 'Uso de dispositivos en clases',
-      cuerpo: 'le informo que {estudiante} ({curso}) utilizó el celular durante la clase pese a las indicaciones, el día {fecha}.\n\nLe solicito reforzar en casa la importancia de mantener el dispositivo guardado durante la jornada. Gracias por su apoyo.' },
+      cuerpo: 'le informo que {estudiante} ({curso}) utilizó el teléfono celular durante la clase del día {fecha}, pese a las indicaciones dadas, lo que interfirió con su participación en las actividades.\n\nLe solicito reforzar en casa la importancia de mantener el dispositivo guardado durante la jornada escolar, salvo cuando su uso sea autorizado con fines pedagógicos. Gracias por su apoyo.' },
   ]},
   { cat: 'Trabajo en clases', color: '#FF9500', items: [
     { id: 'materiales', label: 'No trae materiales', asunto: 'Materiales para la asignatura',
-      cuerpo: 'le escribo para informar que {estudiante} ({curso}) no ha traído los materiales necesarios para trabajar en clases, lo que dificulta su participación en las actividades.\n\nMateriales pendientes:\n\n\nAgradecería su colaboración para regularizar esta situación.' },
+      cuerpo: 'le escribo para informar que {estudiante} ({curso}) no trajo los materiales necesarios para trabajar en la clase del día {fecha}. La falta de materiales impide que pueda desarrollar las actividades prácticas junto a sus compañeros y afecta su avance en la asignatura.\n\nLe solicito su colaboración para asegurar que {estudiante} asista a cada clase con los materiales solicitados con anticipación, de modo de poder participar plenamente en el trabajo. Ante cualquier dificultad para conseguirlos, no dude en comunicarse conmigo para buscar una solución. Gracias por su apoyo.' },
     { id: 'noentrega', label: 'No entrega trabajos', asunto: 'Trabajos pendientes de entrega',
-      cuerpo: 'me comunico para informar que {estudiante} ({curso}) mantiene trabajos sin entregar, lo que afecta su evaluación en la asignatura.\n\nTrabajos pendientes:\n\n\nLe agradecería apoyar desde el hogar para que pueda ponerse al día.' },
-    { id: 'instrucciones', label: 'No sigue instrucciones', asunto: 'Seguimiento de trabajo en clases',
-      cuerpo: 'le comento que {estudiante} ({curso}) ha presentado dificultades para seguir las instrucciones y completar las actividades durante la clase.\n\nDetalle:\n\n\nCon el fin de apoyar su proceso, me gustaría contar con su colaboración.' },
+      cuerpo: 'me comunico para informar que {estudiante} ({curso}) mantiene trabajos sin entregar a la fecha ({fecha}), lo que afecta directamente su evaluación y promedio en la asignatura, ya que no es posible calificar actividades que no han sido presentadas.\n\nLe solicito apoyar desde el hogar para que {estudiante} se ponga al día con las entregas pendientes a la brevedad. Quedo disponible para coordinar nuevos plazos y para orientar sobre lo que debe presentar. Su colaboración es fundamental para revertir esta situación antes del cierre del período.' },
+    { id: 'instrucciones', label: 'No trabaja en clases', asunto: 'Trabajo y participación en clases',
+      cuerpo: 'le escribo para informar que {estudiante} ({curso}) ha presentado dificultades para trabajar durante las clases: no sigue las instrucciones entregadas ni avanza en las actividades propuestas, lo que repercute en su aprendizaje y en sus evaluaciones.\n\nHe reforzado las indicaciones directamente con el/la estudiante. Le agradecería acompañar este proceso desde el hogar, motivándole a aprovechar el tiempo de clase y a solicitar ayuda cuando lo necesite. Trabajando en conjunto podremos apoyar su avance en la asignatura.' },
   ]},
   { cat: 'Reconocimiento', color: '#34C759', items: [
     { id: 'felicitacion', label: 'Felicitación', asunto: '¡Felicitaciones!',
-      cuerpo: 'quiero destacar el excelente desempeño de {estudiante} ({curso}) en la asignatura.\n\nMotivo del reconocimiento:\n\n\n¡Felicitaciones por su trabajo y compromiso!' },
+      cuerpo: 'me alegra mucho comunicarle que {estudiante} ({curso}) ha tenido un excelente desempeño en la asignatura, destacando por su compromiso, dedicación y buena disposición al trabajo.\n\nDetalle (opcional, puede ampliar o dejar así):\n\n\n¡Le felicito por su esfuerzo! Le agradezco el apoyo brindado desde el hogar y le invito a seguir reforzando este buen trabajo.' },
     { id: 'mejora', label: 'Mejora notable', asunto: 'Reconocimiento por avance',
-      cuerpo: 'me alegra comunicarle que {estudiante} ({curso}) ha mostrado una mejora notable en su desempeño y actitud en clases.\n\nDetalle del avance:\n\n\nLe agradezco el apoyo brindado desde el hogar.' },
+      cuerpo: 'me alegra comunicarle que {estudiante} ({curso}) ha mostrado una mejora notable en su desempeño, actitud y compromiso durante las últimas clases. Este avance se refleja tanto en su trabajo como en su participación.\n\nLe agradezco el apoyo brindado desde el hogar, que ha sido clave en este progreso. Sigamos reforzando en conjunto este buen camino.' },
   ]},
   { cat: 'Citación / Administrativo', color: '#007AFF', items: [
     { id: 'reunion', label: 'Solicitud de reunión', asunto: 'Solicitud de entrevista con apoderado',
-      cuerpo: 'me gustaría coordinar una reunión con usted para conversar sobre el proceso de {estudiante} ({curso}) en la asignatura.\n\nQuedo atento/a a su disponibilidad para agendar día y hora.' },
+      cuerpo: 'me gustaría coordinar una reunión con usted para conversar sobre el proceso de {estudiante} ({curso}) en la asignatura, con el fin de compartir información y trabajar en conjunto en su acompañamiento.\n\nLe agradecería indicarme su disponibilidad de días y horarios durante esta semana, para agendar una entrevista presencial o virtual según le acomode. Quedo atento/a a su respuesta.' },
     { id: 'inasistencia', label: 'Inasistencias', asunto: 'Inasistencias a la asignatura',
-      cuerpo: 'le escribo para informar que {estudiante} ({curso}) registra inasistencias que están afectando su continuidad en la asignatura.\n\nLe solicito comunicarse para regularizar la situación. Gracias.' },
+      cuerpo: 'le escribo para informar que {estudiante} ({curso}) registra inasistencias reiteradas a la asignatura, lo que está afectando la continuidad de su aprendizaje y la posibilidad de completar sus evaluaciones a tiempo.\n\nLe solicito comunicarse conmigo para informar los motivos y coordinar la puesta al día del material y las actividades pendientes. Su apoyo es importante para evitar que esta situación repercuta en su rendimiento. Gracias.' },
     { id: 'libre', label: 'En blanco', asunto: 'Comunicación', cuerpo: '' },
   ]},
 ];
