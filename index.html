@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v219">
+<meta name="arteval-version" content="v221">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4321,7 +4321,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v219</span>
+      ">v221</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -5531,6 +5531,40 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
 
     <!-- ── LISTA DE ALUMNOS CRÍTICOS (primer elemento visible) ───────────── -->
     <div id="correoListaAnchor"></div>
+
+    <!-- ── MENSAJERO PERSONALIZADO (v221) ────────────────────────────────── -->
+    <div class="config-card" style="margin-bottom:14px;border-left:3px solid #34C759;">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
+        <div style="width:44px;height:44px;background:rgba(52,199,89,0.10);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#34C759" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+        <div style="flex:1;"><h3 style="margin-bottom:2px;">Correo personalizado a un apoderado</h3><div style="font-size:13px;color:var(--text3);">Escribe el nombre del estudiante y su apoderado aparece solo</div></div>
+      </div>
+      <div class="email-campo" style="margin-bottom:10px;">
+        <label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px;">Estudiante</label>
+        <input type="text" id="msgPersEstudiante" list="msgPersListaAlumnos" placeholder="Empieza a escribir el nombre…" autocomplete="off" oninput="_msgPersResolverApoderado()" style="width:100%;padding:10px 12px;border:1px solid var(--border2);border-radius:var(--rad);font-size:14px;background:var(--bg);">
+        <datalist id="msgPersListaAlumnos"></datalist>
+        <div id="msgPersApoderadoInfo" style="font-size:12px;margin-top:6px;min-height:16px;color:var(--text3);"></div>
+      </div>
+      <div id="msgPersFormulario" style="display:none;">
+        <div class="email-campo" style="margin-bottom:10px;">
+          <label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px;">Motivo</label>
+          <div id="msgPersMotivos" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+        </div>
+        <div class="email-campo" style="margin-bottom:10px;">
+          <label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px;">Asunto</label>
+          <input type="text" id="msgPersAsunto" placeholder="Asunto del correo" style="width:100%;padding:10px 12px;border:1px solid var(--border2);border-radius:var(--rad);font-size:14px;background:var(--bg);">
+        </div>
+        <div class="email-campo" style="margin-bottom:12px;">
+          <label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px;">Mensaje</label>
+          <textarea id="msgPersCuerpo" rows="9" placeholder="Escribe aquí tu mensaje al apoderado…" style="width:100%;padding:10px 12px;border:1px solid var(--border2);border-radius:var(--rad);font-size:14px;background:var(--bg);font-family:inherit;line-height:1.6;resize:vertical;"></textarea>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="_msgPersEnviar('api')" style="flex:1;min-width:150px;gap:7px;justify-content:center;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Enviar desde ArtEval</button>
+          <button class="btn" onclick="_msgPersEnviar('compose')" style="gap:7px;justify-content:center;">Abrir en Gmail</button>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:8px;line-height:1.5;">"Enviar desde ArtEval" usa tu cuenta conectada arriba. "Abrir en Gmail" te lleva al redactor con todo listo para revisar antes de enviar.</div>
+      </div>
+    </div>
+
     <div class="config-card" style="margin-bottom:14px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;"><h3 style="margin-bottom:0;">Alumnos con promedio crítico</h3>
         <div style="display:flex;gap:6px;flex-wrap:wrap;" id="correoBtnsFiltro"></div>
@@ -11977,18 +12011,46 @@ async function probarKey() {
 let cursosSeleccionados = new Set(); // vacío = todos
 
 // Cursos predefinidos del colegio — 4 cursos por nivel × 4 niveles
-// ── CURSOS CONFIGURABLES (v219) ──────────────────────────────────────────────
-// Antes los 16 cursos (3°–6° básico A–D) estaban grabados en el HTML y en dos
-// listas fijas del JS — un profesor de media o de un colegio con otra
-// estructura no podía usar la app. Ahora la estructura vive en
-// av_cursos_config (localStorage) y el grid se genera dinámicamente.
-// El colegio de origen queda como configuración por defecto.
-var _CURSOS_DEFAULT = {
+// ── CURSOS CONFIGURABLES (v219 · v220) ───────────────────────────────────────
+// v219: la estructura de cursos dejó de estar grabada en el HTML.
+// v220: la app deja de estar enfocada en 3°–6° básico. Prioridad de fuentes:
+//   1. Configuración guardada por el profesor (av_cursos_config)
+//   2. DERIVACIÓN AUTOMÁTICA desde los datos existentes (registros + nóminas)
+//      — un respaldo restaurado o una base en uso definen su propia estructura
+//   3. Vacío: el grid muestra una invitación a configurar (con presets de
+//      básica y media) en vez de imponer los cursos de un colegio específico.
+var _CURSOS_PRESET_3A6 = {
   '3° Básico': ['3°A','3°B','3°C','3°D'],
   '4° Básico': ['4°A','4°B','4°C','4°D'],
   '5° Básico': ['5°A','5°B','5°C','5°D'],
   '6° Básico': ['6°A','6°B','6°C','6°D'],
 };
+function _derivarNivelesDeDatos() {
+  var cursos = {};
+  (typeof registros !== 'undefined' ? (registros || []) : []).forEach(function(r) {
+    if (r && r.curso) cursos[r.curso] = true;
+  });
+  Object.keys(typeof listaCursos !== 'undefined' ? (listaCursos || {}) : {}).forEach(function(c) {
+    if ((listaCursos[c] || []).length) cursos[c] = true;
+  });
+  var niveles = {};
+  Object.keys(cursos).forEach(function(c) {
+    var m = c.match(/^(\d{1,2})°?M/i);           // 1°MA, 2°M-B… → Medio
+    var b = c.match(/^(\d{1,2})°/);              // 3°A, 7°B…    → Básico
+    var nivel = m ? (m[1] + '° Medio') : b ? (b[1] + '° Básico') : 'Mis cursos';
+    if (!niveles[nivel]) niveles[nivel] = [];
+    niveles[nivel].push(c);
+  });
+  // Orden pedagógico: básica por número, luego media por número, luego otros
+  var orden = Object.keys(niveles).sort(function(a, b) {
+    var pa = a.indexOf('Medio') !== -1 ? 100 : a.indexOf('Básico') !== -1 ? 0 : 200;
+    var pb = b.indexOf('Medio') !== -1 ? 100 : b.indexOf('Básico') !== -1 ? 0 : 200;
+    return (pa + (parseInt(a) || 0)) - (pb + (parseInt(b) || 0));
+  });
+  var out = {};
+  orden.forEach(function(n) { out[n] = niveles[n].sort(); });
+  return out;
+}
 function _getCursosConfig() {
   try {
     var raw = JSON.parse(localStorage.getItem('av_cursos_config') || 'null');
@@ -12002,8 +12064,9 @@ function _getCursosConfig() {
       });
       if (valido) return out;
     }
-  } catch(e) { console.warn('[ArtEval] av_cursos_config inválido — usando cursos por defecto:', e.message); }
-  return JSON.parse(JSON.stringify(_CURSOS_DEFAULT));
+  } catch(e) { console.warn('[ArtEval] av_cursos_config inválido — derivando de los datos:', e.message); }
+  // Sin configuración guardada: derivar de los datos. Sin datos: vacío.
+  return _derivarNivelesDeDatos();
 }
 var CURSOS_PREDEFINIDOS = _getCursosConfig();
 
@@ -12013,6 +12076,9 @@ var CURSOS_PREDEFINIDOS = _getCursosConfig();
 function _renderCursoSidebarGrid() {
   var cont = document.getElementById('cursosGridDinamico');
   if (!cont) return;
+  // v220: sin configuración guardada, la estructura se deriva de los datos —
+  // refrescarla en cada render (los datos pueden haber cambiado, ej. hidratación)
+  if (!localStorage.getItem('av_cursos_config')) CURSOS_PREDEFINIDOS = _getCursosConfig();
   var html = '';
   var enConfig = {};
   Object.keys(CURSOS_PREDEFINIDOS).forEach(function(nivel) {
@@ -12042,6 +12108,15 @@ function _renderCursoSidebarGrid() {
       + '</div></div>';
   }
   cont.innerHTML = html;
+  // v220: app sin cursos ni datos — invitar a configurar en vez de imponer
+  // la estructura de un colegio específico
+  if (!html) {
+    cont.innerHTML = '<div style="text-align:center;padding:1.6rem 0.8rem;color:var(--text3);">'
+      + '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.35;margin-bottom:8px;"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>'
+      + '<div style="font-size:13px;color:var(--text2);font-weight:600;margin-bottom:3px;">Define tus cursos</div>'
+      + '<div style="font-size:11px;line-height:1.6;">Configura los niveles de tu colegio<br>— básica, media o ambos —<br>con el botón de abajo.</div>'
+      + '</div>';
+  }
   // Restaurar resaltado del curso seleccionado tras el re-render
   if (typeof cursoSeleccionado !== 'undefined' && cursoSeleccionado) {
     var b = cont.querySelector('.curso-sidebar-btn[data-curso="' + cursoSeleccionado.replace(/"/g, '\\"') + '"]');
@@ -12065,11 +12140,18 @@ function _abrirConfigCursos() {
   var html = '<div style="padding:2px;">'
     + '<div style="font-size:15px;font-weight:700;margin-bottom:2px;">Configurar cursos</div>'
     + '<div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6;">Define los niveles y cursos de tu colegio. Los cursos se escriben separados por coma (ej: <span style="font-family:var(--font-mono);">1°A, 1°B</span>). Las evaluaciones ya guardadas nunca se pierden: los cursos con datos fuera de esta lista aparecen en "Otros cursos".</div>'
+    + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">'
+    + '<span style="font-size:11px;color:var(--text3);align-self:center;">Agregar rápido:</span>'
+    + '<button class="btn btn-sm" onclick="_cfgAplicarPreset(\'b1\')" style="font-size:11px;">1°–4° Básico</button>'
+    + '<button class="btn btn-sm" onclick="_cfgAplicarPreset(\'b2\')" style="font-size:11px;">5°–8° Básico</button>'
+    + '<button class="btn btn-sm" onclick="_cfgAplicarPreset(\'m\')"  style="font-size:11px;">1°–4° Medio</button>'
+    + '<button class="btn btn-sm" onclick="_cfgAplicarPreset(\'3a6\')" style="font-size:11px;">3°–6° (A–D)</button>'
+    + '</div>'
     + '<div id="cfgCursosLista">' + filas + '</div>'
     + '<button class="btn btn-sm" onclick="_cfgAgregarNivel()" style="gap:5px;font-size:12px;">'
     + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Agregar nivel</button>'
     + '<div style="display:flex;gap:8px;justify-content:space-between;align-items:center;margin-top:18px;flex-wrap:wrap;">'
-    + '<button class="btn btn-sm" onclick="_cfgRestaurarCursos()" style="color:var(--text3);font-size:12px;">Restaurar por defecto</button>'
+    + '<button class="btn btn-sm" onclick="_cfgRestaurarCursos()" style="color:var(--text3);font-size:12px;">Detectar desde mis datos</button>'
     + '<div style="display:flex;gap:8px;">'
     + '<button class="btn" onclick="cerrarModal()">Cancelar</button>'
     + '<button class="btn btn-primary" onclick="_cfgGuardarCursos()">Guardar</button>'
@@ -12089,13 +12171,39 @@ function _cfgAgregarNivel() {
   var inp = lista.lastChild.querySelector('.cfgNivelNombre');
   if (inp) inp.focus();
 }
+// v220: presets rápidos — agregan niveles al editor sin duplicar los existentes.
+// Las letras por defecto (A, B) se editan después en la misma fila.
+function _cfgAplicarPreset(tipo) {
+  var lista = document.getElementById('cfgCursosLista');
+  if (!lista) return;
+  var presentes = {};
+  lista.querySelectorAll('.cfgNivelNombre').forEach(function(i) { if (i.value.trim()) presentes[i.value.trim()] = true; });
+  var niveles = [];
+  if (tipo === 'b1') for (var a = 1; a <= 4; a++) niveles.push([a + '° Básico', a + '°A, ' + a + '°B']);
+  if (tipo === 'b2') for (var b = 5; b <= 8; b++) niveles.push([b + '° Básico', b + '°A, ' + b + '°B']);
+  if (tipo === 'm')  for (var m = 1; m <= 4; m++) niveles.push([m + '° Medio',  m + '°MA, ' + m + '°MB']);
+  if (tipo === '3a6') Object.keys(_CURSOS_PRESET_3A6).forEach(function(n) { niveles.push([n, _CURSOS_PRESET_3A6[n].join(', ')]); });
+  var agregados = 0;
+  niveles.forEach(function(par) {
+    if (presentes[par[0]]) return;
+    _cfgAgregarNivel();
+    var fila = lista.lastChild;
+    fila.querySelector('.cfgNivelNombre').value = par[0];
+    fila.querySelector('.cfgNivelCursos').value = par[1];
+    agregados++;
+  });
+  if (!agregados) toast('Esos niveles ya están en la lista', 'info', 2500);
+}
 function _cfgRestaurarCursos() {
+  // v220: "restaurar" ahora significa volver a la DETECCIÓN AUTOMÁTICA — la
+  // estructura se deriva de los datos existentes (o queda vacía si no hay).
   localStorage.removeItem('av_cursos_config');
   CURSOS_PREDEFINIDOS = _getCursosConfig();
   cerrarModal();
   _renderCursoSidebarGrid();
   if (typeof renderCursosChips === 'function') { try { renderCursosChips(); } catch(e) {} }
-  toast('✓ Cursos restaurados a la configuración por defecto', 'ok', 3000);
+  var n = Object.keys(CURSOS_PREDEFINIDOS).length;
+  toast(n ? '✓ Detección automática: ' + n + ' nivel(es) derivados de tus datos' : '✓ Configuración limpia — define tus cursos cuando quieras', 'ok', 3500);
 }
 function _cfgGuardarCursos() {
   var filas = document.querySelectorAll('#cfgCursosLista .cfgCursoRow');
@@ -17768,6 +17876,135 @@ function _saveApoderadoEmails() {
 }
 
 // Obtener email de un alumno por nombre (búsqueda flexible)
+// ═══════════════════════════════════════════════════════════════════════════
+//  MENSAJERO PERSONALIZADO A APODERADOS — v221
+//  Escribes el nombre del estudiante → el correo del apoderado titular aparece
+//  automáticamente (reutiliza el enlace nombre→email de _apoderadoEmails que ya
+//  construye la importación de la planilla). Redactas un mensaje libre, con
+//  plantillas rápidas para los motivos frecuentes (mal comportamiento, no sigue
+//  instrucciones, felicitación), y envías desde la cuenta conectada o abres en
+//  Gmail. Sin buscar correos a mano.
+// ═══════════════════════════════════════════════════════════════════════════
+var _msgPersApoderadoActual = null; // { nombre, email, curso }
+
+// Nombres para el autocompletado: unión de la planilla + estudiantes evaluados
+function _msgPersPoblarLista() {
+  var dl = document.getElementById('msgPersListaAlumnos');
+  if (!dl) return;
+  var vistos = {}, nombres = [];
+  Object.keys(_apoderadoEmails || {}).forEach(function(k) {
+    var val = _apoderadoEmails[k];
+    var nom = (val && typeof val === 'object' && val.nombre) ? val.nombre : k;
+    var key = nom.trim().toUpperCase();
+    if (nom && !vistos[key]) { vistos[key] = true; nombres.push(nom.trim()); }
+  });
+  (registros || []).forEach(function(r) {
+    if (r && r.nombre) {
+      var key = r.nombre.trim().toUpperCase();
+      if (!vistos[key]) { vistos[key] = true; nombres.push(r.nombre.trim()); }
+    }
+  });
+  nombres.sort(function(a, b) { return a.localeCompare(b, 'es'); });
+  dl.innerHTML = nombres.map(function(n) { return '<option value="' + _esc(n) + '"></option>'; }).join('');
+}
+
+function _msgPersResolverApoderado() {
+  var inp  = document.getElementById('msgPersEstudiante');
+  var info = document.getElementById('msgPersApoderadoInfo');
+  var form = document.getElementById('msgPersFormulario');
+  if (!inp || !info || !form) return;
+  var nombre = (inp.value || '').trim();
+  if (nombre.length < 3) { info.textContent = ''; form.style.display = 'none'; _msgPersApoderadoActual = null; return; }
+
+  var email = _getEmailApoderado(nombre);
+  // Curso del estudiante (de la planilla o de sus registros)
+  var curso = '';
+  var norm = nombre.toUpperCase();
+  if (_apoderadoEmails[norm] && typeof _apoderadoEmails[norm] === 'object') curso = _apoderadoEmails[norm].curso || '';
+  if (!curso) { var reg = (registros || []).find(function(r) { return r && r.nombre && r.nombre.trim().toUpperCase() === norm; }); if (reg) curso = reg.curso || ''; }
+
+  if (_emailValido(email)) {
+    _msgPersApoderadoActual = { nombre: nombre, email: email, curso: curso };
+    info.innerHTML = '<span style="color:#34C759;">✓</span> Apoderado: <strong style="color:var(--text2);">' + _esc(email) + '</strong>' + (curso ? ' <span style="color:var(--text3);">· ' + _esc(curso) + '</span>' : '');
+    form.style.display = 'block';
+    if (!document.getElementById('msgPersMotivos').children.length) _msgPersRenderMotivos();
+  } else {
+    _msgPersApoderadoActual = null;
+    info.innerHTML = '<span style="color:#FF9500;">⚠</span> No hay correo de apoderado para este estudiante. Revisa la planilla importada o agrégalo manualmente.';
+    form.style.display = 'none';
+  }
+}
+
+// Plantillas de motivos frecuentes — rellenan asunto y cuerpo, editables después
+var _MSG_PERS_PLANTILLAS = [
+  { id: 'comportamiento', label: 'Comportamiento', asunto: 'Situación de comportamiento en Artes Visuales',
+    cuerpo: 'Junto con saludar, me comunico con usted para informar que [ESTUDIANTE] presentó dificultades de comportamiento durante la clase de Artes Visuales del día de hoy.\n\nDescripción de lo ocurrido:\n\n\nAgradecería poder conversar el tema para apoyar juntos a [ESTUDIANTE]. Quedo atento/a a su respuesta.' },
+  { id: 'instrucciones', label: 'No sigue instrucciones', asunto: 'Seguimiento de trabajo en clases — Artes Visuales',
+    cuerpo: 'Junto con saludar, le escribo para comentar que [ESTUDIANTE] ha presentado dificultades para seguir las instrucciones y completar las actividades durante la clase de Artes Visuales.\n\nDetalle:\n\n\nCon el fin de apoyar su proceso, me gustaría contar con su colaboración desde el hogar. Quedo atento/a a su respuesta.' },
+  { id: 'felicitacion', label: 'Felicitación', asunto: '¡Felicitaciones! — Artes Visuales',
+    cuerpo: 'Junto con saludar, quiero destacar el excelente desempeño de [ESTUDIANTE] en la clase de Artes Visuales.\n\nMotivo del reconocimiento:\n\n\n¡Felicitaciones por su trabajo y compromiso! Un cordial saludo.' },
+  { id: 'libre', label: 'En blanco', asunto: 'Comunicación — Artes Visuales', cuerpo: '' },
+];
+function _msgPersRenderMotivos() {
+  var cont = document.getElementById('msgPersMotivos');
+  if (!cont) return;
+  cont.innerHTML = _MSG_PERS_PLANTILLAS.map(function(p) {
+    return '<button type="button" class="btn btn-sm" onclick="_msgPersAplicarPlantilla(\'' + p.id + '\')" style="font-size:12px;">' + _esc(p.label) + '</button>';
+  }).join('');
+}
+function _msgPersAplicarPlantilla(id) {
+  var p = _MSG_PERS_PLANTILLAS.find(function(x) { return x.id === id; });
+  if (!p) return;
+  var nombre = _msgPersApoderadoActual ? _msgPersApoderadoActual.nombre : '';
+  var soloNombre = nombre.split(/\s+/).slice(-2).join(' ') || nombre; // nombre de pila aprox.
+  var asuntoEl = document.getElementById('msgPersAsunto');
+  var cuerpoEl = document.getElementById('msgPersCuerpo');
+  if (asuntoEl) asuntoEl.value = p.asunto + (nombre ? ' — ' + nombre : '');
+  if (cuerpoEl) {
+    var prof = localStorage.getItem('av_email_prof') || '';
+    var firma = prof ? ('\n\n' + prof + '\nProfesor/a de Artes Visuales') : '';
+    cuerpoEl.value = 'Estimado/a apoderado/a:\n\n' + p.cuerpo.replace(/\[ESTUDIANTE\]/g, nombre || 'el/la estudiante') + firma;
+  }
+}
+
+function _msgPersEnviar(via) {
+  if (!_msgPersApoderadoActual || !_emailValido(_msgPersApoderadoActual.email)) {
+    toast('⚠ Primero selecciona un estudiante con correo de apoderado válido', 'err', 4000); return;
+  }
+  var asunto = (document.getElementById('msgPersAsunto') || {}).value || '';
+  var cuerpo = (document.getElementById('msgPersCuerpo') || {}).value || '';
+  if (!asunto.trim()) { toast('⚠ Escribe un asunto', 'err', 3000); return; }
+  if (!cuerpo.trim()) { toast('⚠ El mensaje está vacío', 'err', 3000); return; }
+  var dest = _msgPersApoderadoActual.email;
+  var cc   = localStorage.getItem('av_email_utp') || '';
+
+  if (via === 'compose') {
+    var url = 'https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(dest)
+      + '&su=' + encodeURIComponent(asunto) + '&body=' + encodeURIComponent(cuerpo)
+      + (cc ? '&cc=' + encodeURIComponent(cc) : '');
+    window.open(url, '_blank');
+    toast('✉ Abriendo Gmail con el correo listo', 'ok', 3000);
+    return;
+  }
+
+  // Envío directo por la API con la cuenta conectada
+  var tok = (typeof _driveToken !== 'undefined' && _driveToken && Date.now() < _driveTokenExp) ? _driveToken : null;
+  if (!tok) {
+    toast('⚠ Conecta tu cuenta Google arriba para enviar desde ArtEval, o usa "Abrir en Gmail"', 'err', 5000); return;
+  }
+  toast('Enviando…', 'info', 2000);
+  _enviarViaGmailAPI(tok, dest, asunto, cuerpo, cc, _msgPersApoderadoActual.nombre);
+  // Limpiar el formulario tras el envío
+  setTimeout(function() {
+    var c = document.getElementById('msgPersCuerpo'); if (c) c.value = '';
+    var a = document.getElementById('msgPersAsunto'); if (a) a.value = '';
+    var e = document.getElementById('msgPersEstudiante'); if (e) e.value = '';
+    var info = document.getElementById('msgPersApoderadoInfo'); if (info) info.textContent = '';
+    var form = document.getElementById('msgPersFormulario'); if (form) form.style.display = 'none';
+    _msgPersApoderadoActual = null;
+  }, 600);
+}
+
 function _getEmailApoderado(nombre) {
   if (!nombre) return '';
   var norm = (nombre||'').trim().toUpperCase();
@@ -18415,6 +18652,8 @@ function _alumnosSinEvaluacion(){
 function _renderCorreoTab(){ try { /* try-open */
   // Sincronizar la barra de estado institucional al entrar a la pestaña
   if(typeof _actualizarEstadoGmailUI==='function') _actualizarEstadoGmailUI(typeof _gmailLinkedEmail!=='undefined'&&!!_gmailLinkedEmail);
+  // v221: poblar el autocompletado del mensajero personalizado
+  if(typeof _msgPersPoblarLista==='function') _msgPersPoblarLista();
   var ct=document.getElementById('correoTabContainer'),badge=document.getElementById('correoTabEmailBadge');
   if(!ct)return;
   ['correoNombreProf','correoNombreColegio','correoEmailUTP','correoInstitucional','correoGmailIdx'].forEach(function(id){
@@ -19540,7 +19779,7 @@ async function _generarAnalisisIAAlumno(nombre) {
 
   // ── Prompt estructurado ───────────────────────────────────────────────
   var prompt = [
-    'Eres un profesor experto en Artes Visuales de Chile con amplia experiencia evaluando estudiantes de enseñanza básica (3° a 6°).',
+    'Eres un profesor experto en Artes Visuales de Chile con amplia experiencia evaluando estudiantes de enseñanza básica y media.',
     'Debes redactar un INFORME COMPLETO Y DETALLADO de retroalimentación para el apoderado de '+primerNombre+'.',
     '',
     '═══ DATOS DEL ESTUDIANTE ═══',
