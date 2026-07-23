@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v222">
+<meta name="arteval-version" content="v223">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4321,7 +4321,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v222</span>
+      ">v223</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -5549,8 +5549,19 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
       <div id="msgPersBloqueIndividual">
         <div class="email-campo" style="margin-bottom:10px;">
           <label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px;">Estudiante</label>
-          <input type="text" id="msgPersEstudiante" list="msgPersListaAlumnos" placeholder="Empieza a escribir el nombre…" autocomplete="off" oninput="_msgPersResolverApoderado()" style="width:100%;padding:10px 12px;border:1px solid var(--border2);border-radius:var(--rad);font-size:14px;background:var(--bg);">
-          <datalist id="msgPersListaAlumnos"></datalist>
+        <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+          <div style="flex:0 0 auto;min-width:110px;">
+            <label style="display:block;font-size:11px;font-weight:600;color:var(--text3);margin-bottom:4px;">Curso</label>
+            <select id="msgPersCursoFiltro" onchange="_msgPersFiltrarPorCurso()" style="width:100%;padding:10px 8px;border:1px solid var(--border2);border-radius:var(--rad);font-size:14px;background:var(--bg);color:var(--text);">
+              <option value="">Todos</option>
+            </select>
+          </div>
+          <div style="flex:1;min-width:180px;">
+            <label style="display:block;font-size:11px;font-weight:600;color:var(--text3);margin-bottom:4px;">Estudiante (apellido o nombre)</label>
+            <input type="text" id="msgPersEstudiante" list="msgPersListaAlumnos" placeholder="Ej: Pérez, o Juan Pérez…" autocomplete="off" oninput="_msgPersResolverApoderado()" style="width:100%;padding:10px 12px;border:1px solid var(--border2);border-radius:var(--rad);font-size:14px;background:var(--bg);">
+            <datalist id="msgPersListaAlumnos"></datalist>
+          </div>
+        </div>
           <div id="msgPersApoderadoInfo" style="font-size:12px;margin-top:6px;min-height:16px;color:var(--text3);"></div>
         </div>
       </div>
@@ -5596,7 +5607,11 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         <h3 style="margin-bottom:14px;">Datos del remitente</h3>
         <div style="display:flex;align-items:center;padding:12px 0;border-bottom:0.5px solid var(--border);gap:12px;">
           <div style="display:flex;align-items:center;gap:10px;flex:1;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="1.8" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span style="font-size:13px;color:var(--text2);min-width:90px;">Nombre</span></div>
-          <input id="correoNombreProf" type="text" placeholder="Nombre del profesor/a" style="max-width:240px;flex:1;padding:7px 12px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;background:var(--bg);color:var(--text);" oninput="localStorage.setItem('av_email_prof',this.value)">
+          <input id="correoNombreProf" type="text" placeholder="Nombre y apellido del profesor/a" style="max-width:240px;flex:1;padding:7px 12px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;background:var(--bg);color:var(--text);" oninput="localStorage.setItem('av_email_prof',this.value);localStorage.setItem('av_nombre_prof',this.value)">
+        </div>
+        <div style="display:flex;align-items:center;padding:12px 0;border-bottom:0.5px solid var(--border);gap:12px;">
+          <div style="display:flex;align-items:center;gap:10px;flex:1;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="1.8" stroke-linecap="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><span style="font-size:13px;color:var(--text2);min-width:90px;">Asignatura</span></div>
+          <input id="correoAsignatura" type="text" placeholder="Ej: Artes Visuales, Matemática…" style="max-width:240px;flex:1;padding:7px 12px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;background:var(--bg);color:var(--text);" oninput="localStorage.setItem('av_email_asignatura',this.value)">
         </div>
         <div style="display:flex;align-items:center;padding:12px 0;border-bottom:0.5px solid var(--border);gap:12px;">
           <div style="display:flex;align-items:center;gap:10px;flex:1;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="1.8" stroke-linecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg><span style="font-size:13px;color:var(--text2);min-width:90px;">Email personal</span></div>
@@ -17940,26 +17955,68 @@ function _msgPersActualizarContador() {
   badge.textContent = esteMes + ' este mes · ' + total + ' en total';
 }
 
-// Nombres para el autocompletado: unión de la planilla + estudiantes evaluados
-function _msgPersPoblarLista() {
-  var dl = document.getElementById('msgPersListaAlumnos');
-  var vistos = {}, nombres = [];
+// Nombres para el autocompletado: unión de la planilla + estudiantes evaluados.
+// v223: cada entrada guarda nombre y curso, para poder filtrar por curso y
+// desambiguar apellidos repetidos.
+var _msgPersIndiceAlumnos = []; // [{ nombre, curso }]
+function _msgPersConstruirIndice() {
+  var vistos = {}, lista = [];
   Object.keys(_apoderadoEmails || {}).forEach(function(k) {
     var val = _apoderadoEmails[k];
     var nom = (val && typeof val === 'object' && val.nombre) ? val.nombre : k;
+    var cur = (val && typeof val === 'object' && val.curso) ? val.curso : '';
     var key = nom.trim().toUpperCase();
-    if (nom && !vistos[key]) { vistos[key] = true; nombres.push(nom.trim()); }
+    if (nom && !vistos[key]) { vistos[key] = true; lista.push({ nombre: nom.trim(), curso: cur }); }
   });
   (registros || []).forEach(function(r) {
     if (r && r.nombre) {
       var key = r.nombre.trim().toUpperCase();
-      if (!vistos[key]) { vistos[key] = true; nombres.push(r.nombre.trim()); }
+      if (!vistos[key]) { vistos[key] = true; lista.push({ nombre: r.nombre.trim(), curso: r.curso || '' }); }
+      else { // completar curso si faltaba
+        var ex = lista.find(function(x){ return x.nombre.trim().toUpperCase() === key; });
+        if (ex && !ex.curso && r.curso) ex.curso = r.curso;
+      }
     }
   });
-  nombres.sort(function(a, b) { return a.localeCompare(b, 'es'); });
-  if (dl) dl.innerHTML = nombres.map(function(n) { return '<option value="' + _esc(n) + '"></option>'; }).join('');
+  lista.sort(function(a, b) { return a.nombre.localeCompare(b.nombre, 'es'); });
+  _msgPersIndiceAlumnos = lista;
+  return lista;
+}
+function _msgPersPoblarLista() {
+  _msgPersConstruirIndice();
+  _msgPersPoblarSelectorCursos();
+  _msgPersFiltrarPorCurso(); // pinta el datalist según el curso elegido (o todos)
   _msgPersActualizarContador();
-  return nombres;
+  return _msgPersIndiceAlumnos;
+}
+function _msgPersPoblarSelectorCursos() {
+  var sel = document.getElementById('msgPersCursoFiltro');
+  if (!sel) return;
+  var actual = sel.value || '';
+  var cursos = {};
+  _msgPersIndiceAlumnos.forEach(function(a) { if (a.curso) cursos[a.curso] = true; });
+  var lista = Object.keys(cursos).sort(function(a, b) { return a.localeCompare(b, 'es', { numeric: true }); });
+  sel.innerHTML = '<option value="">Todos</option>' + lista.map(function(c) {
+    return '<option value="' + _esc(c) + '">' + _esc(c) + '</option>';
+  }).join('');
+  if (actual && cursos[actual]) sel.value = actual;
+}
+function _msgPersFiltrarPorCurso() {
+  var sel = document.getElementById('msgPersCursoFiltro');
+  var dl  = document.getElementById('msgPersListaAlumnos');
+  if (!dl) return;
+  var curso = sel ? sel.value : '';
+  var filtrados = curso
+    ? _msgPersIndiceAlumnos.filter(function(a) { return a.curso === curso; })
+    : _msgPersIndiceAlumnos;
+  // Mostrar el curso junto al nombre cuando se ven todos, para desambiguar
+  dl.innerHTML = filtrados.map(function(a) {
+    var etiqueta = (!curso && a.curso) ? (a.nombre + ' — ' + a.curso) : a.nombre;
+    return '<option value="' + _esc(a.nombre) + '" label="' + _esc(etiqueta) + '"></option>';
+  }).join('');
+  // Si había un curso elegido y el estudiante escrito no pertenece, limpiar aviso
+  var inp = document.getElementById('msgPersEstudiante');
+  if (inp && inp.value) _msgPersResolverApoderado();
 }
 
 function _msgPersCursoDe(nombre) {
@@ -17969,27 +18026,70 @@ function _msgPersCursoDe(nombre) {
   return reg ? (reg.curso || '') : '';
 }
 
+// v223: buscar estudiantes por apellido/nombre parcial, opcionalmente acotado a
+// un curso. Devuelve coincidencias para desambiguar cuando hay apellidos repetidos.
+function _msgPersBuscarCoincidencias(texto, curso) {
+  var q = (texto || '').trim().toLowerCase();
+  if (q.length < 2) return [];
+  var base = curso ? _msgPersIndiceAlumnos.filter(function(a){ return a.curso === curso; }) : _msgPersIndiceAlumnos;
+  return base.filter(function(a) { return a.nombre.toLowerCase().indexOf(q) !== -1; });
+}
+
 function _msgPersResolverApoderado() {
   var inp  = document.getElementById('msgPersEstudiante');
   var info = document.getElementById('msgPersApoderadoInfo');
   var form = document.getElementById('msgPersFormulario');
   if (!inp || !info || !form) return;
-  var nombre = (inp.value || '').trim();
-  if (nombre.length < 3) { info.textContent = ''; form.style.display = 'none'; _msgPersApoderadoActual = null; return; }
+  var texto = (inp.value || '').trim();
+  var selCurso = (document.getElementById('msgPersCursoFiltro') || {}).value || '';
+  if (texto.length < 2) { info.textContent = ''; form.style.display = 'none'; _msgPersApoderadoActual = null; return; }
+
+  // ¿Coincidencia exacta de nombre? (el usuario eligió del datalist)
+  var norm = texto.toUpperCase();
+  var exacto = _msgPersIndiceAlumnos.find(function(a) { return a.nombre.toUpperCase() === norm; });
+
+  if (!exacto) {
+    // Búsqueda parcial por apellido/nombre — desambiguar
+    var coincidencias = _msgPersBuscarCoincidencias(texto, selCurso);
+    if (coincidencias.length === 0) {
+      _msgPersApoderadoActual = null;
+      info.innerHTML = '<span style="color:var(--text3);">Sin coincidencias' + (selCurso ? ' en ' + _esc(selCurso) : '') + '. Sigue escribiendo o cambia el curso.</span>';
+      form.style.display = 'none';
+      return;
+    }
+    if (coincidencias.length > 1) {
+      _msgPersApoderadoActual = null;
+      var chips = coincidencias.slice(0, 8).map(function(a) {
+        return '<button type="button" class="btn btn-sm" onclick="_msgPersElegir(\'' + _esc(a.nombre).replace(/'/g, "\\'") + '\')" style="font-size:12px;margin:2px 3px 0 0;">' + _esc(a.nombre) + (a.curso ? ' <span style="color:var(--text3);">· ' + _esc(a.curso) + '</span>' : '') + '</button>';
+      }).join('');
+      info.innerHTML = '<div style="font-size:12px;color:var(--text2);margin-bottom:4px;">' + coincidencias.length + ' coincidencias — elige una:</div>' + chips + (coincidencias.length > 8 ? '<div style="font-size:11px;color:var(--text3);margin-top:4px;">…y más. Afina el apellido o el curso.</div>' : '');
+      form.style.display = 'none';
+      return;
+    }
+    exacto = coincidencias[0]; // una sola → resolver directo
+  }
+
+  var nombre = exacto.nombre;
   var email = _getEmailApoderado(nombre);
-  var curso = _msgPersCursoDe(nombre);
+  var curso = exacto.curso || _msgPersCursoDe(nombre);
   if (_emailValido(email)) {
     _msgPersApoderadoActual = { nombre: nombre, email: email, curso: curso };
     var yaContactado = _historialMsgPers.filter(function(h){ return h.nombre.trim().toUpperCase() === nombre.toUpperCase(); });
     var aviso = yaContactado.length ? ' <span style="color:var(--text3);">· ya contactado ' + yaContactado.length + '×</span>' : '';
-    info.innerHTML = '<span style="color:#34C759;">✓</span> Apoderado: <strong style="color:var(--text2);">' + _esc(email) + '</strong>' + (curso ? ' <span style="color:var(--text3);">· ' + _esc(curso) + '</span>' : '') + aviso;
+    info.innerHTML = '<span style="color:#34C759;">✓</span> <strong style="color:var(--text2);">' + _esc(nombre) + '</strong>' + (curso ? ' <span style="color:var(--text3);">· ' + _esc(curso) + '</span>' : '') + '<br><span style="font-size:12px;">Apoderado: ' + _esc(email) + aviso + '</span>';
     form.style.display = 'block';
     if (!document.getElementById('msgPersMotivos').children.length) _msgPersRenderMotivos();
   } else {
     _msgPersApoderadoActual = null;
-    info.innerHTML = '<span style="color:#FF9500;">⚠</span> No hay correo de apoderado para este estudiante. Revisa la planilla importada o agrégalo manualmente.';
+    info.innerHTML = '<span style="color:#FF9500;">⚠</span> <strong>' + _esc(nombre) + '</strong>' + (curso ? ' (' + _esc(curso) + ')' : '') + ' no tiene correo de apoderado. Revisa la planilla importada.';
     form.style.display = 'none';
   }
+}
+// Al elegir un chip de desambiguación
+function _msgPersElegir(nombre) {
+  var inp = document.getElementById('msgPersEstudiante');
+  if (inp) inp.value = nombre;
+  _msgPersResolverApoderado();
 }
 
 // ── Catálogo de plantillas por categoría (neutro para cualquier asignatura) ──
@@ -18496,20 +18596,23 @@ function _procesarPlanillaApoderadosRows(rows, fileName) {
 }
 function _generarTextoEmail(al, nombreProfesor, nombreColegio, fraseIA) {
   var fechaHoy=new Date().toLocaleDateString('es-CL',{day:'numeric',month:'long',year:'numeric'});
+  // v223: asignatura y firma tomadas de la configuración del profesor
+  var _asig = localStorage.getItem('av_email_asignatura') || 'Artes Visuales';
+  var _prof = nombreProfesor || localStorage.getItem('av_nombre_prof') || localStorage.getItem('av_email_prof') || '';
+  var _firma = 'Atentamente,\n' + (_prof ? (_prof + '\n') : '') + 'Profesor/a de ' + _asig + '.';
   // ── Modo "sin evaluaciones": solicitar fotos de la croquera ───────────────
   if (al && al.sinEval) {
     return 'Estimado/a apoderado/a de '+al.nombre+':\n\n'
       +fechaHoy+'\n\n'
-      +'Me dirijo a usted en relaci\u00f3n con la asignatura de Artes Visuales, correspondiente al curso '+al.curso+'.\n\n'
+      +'Me dirijo a usted en relaci\u00f3n con la asignatura de '+_asig+', correspondiente al curso '+al.curso+'.\n\n'
       +'A la fecha, su estudiante no registra ninguna evaluaci\u00f3n en el presente per\u00edodo, ya sea porque a\u00fan no ha presentado sus trabajos o por inasistencia a clases. Para poder calificar y obtener su promedio, es necesario contar con evidencia de su trabajo.\n\n'
-      +'Por lo anterior, solicito que su estudiante env\u00ede a la brevedad, a este mismo correo, fotograf\u00edas de los dibujos realizados en su croquera (cuaderno de dibujo), de modo de poder evaluarlos y regularizar sus calificaciones.\n\n'
+      +'Por lo anterior, solicito que su estudiante env\u00ede a la brevedad, a este mismo correo, fotograf\u00edas de los trabajos realizados, de modo de poder evaluarlos y regularizar sus calificaciones.\n\n'
       +'Indicaciones para enviar las fotograf\u00edas:\n\n'
       +'   \u2022 Tome las fotos con buena luz, sobre una superficie plana y sin sombras.\n'
-      +'   \u2022 Procure que cada dibujo se vea completo y n\u00edtido.\n'
+      +'   \u2022 Procure que cada trabajo se vea completo y n\u00edtido.\n'
       +'   \u2022 Indique el nombre del estudiante y el curso en el correo.\n\n'
       +'Agradezco su apoyo para regularizar esta situaci\u00f3n antes del cierre del per\u00edodo. Quedo atento/a ante cualquier consulta.\n\n'
-      +'Atentamente,\n'
-      +'Profesor de Artes Visuales.';
+      +_firma;
   }
   var notas=al.notas||[],instancias=al.instancias||[],rubricas=al.rubricas||[];
   var prom=al.promedio?al.promedio.toFixed(1):'?';
@@ -18524,20 +18627,19 @@ function _generarTextoEmail(al, nombreProfesor, nombreColegio, fraseIA) {
   return 'Estimado/a apoderado/a de '+al.nombre+':\n\n'
     +fechaHoy+'\n\n'
     +'Me dirijo a usted para informarle sobre la situaci\u00f3n acad\u00e9mica de su estudiante '
-    +'en la asignatura de Artes Visuales, correspondiente al curso '+al.curso+'.\n\n'
+    +'en la asignatura de '+_asig+', correspondiente al curso '+al.curso+'.\n\n'
     +'Durante el per\u00edodo evaluado, el/la estudiante ha obtenido las siguientes calificaciones:\n\n'
     +detalleNotas
     +'\nPromedio actual: '+prom+' (situaci\u00f3n cr\u00edtica \u2014 bajo 4,0)\n\n'
     +'Esta situaci\u00f3n requiere atenci\u00f3n para revertir su rendimiento antes del cierre del per\u00edodo.\n\n'
     +(fraseIA?fraseIA+'\n\n':'')
     +'Para apoyar desde el hogar, le sugerimos:\n\n'
-    +'   \u2022 Revise junto a su estudiante los trabajos y materiales evaluados en Artes Visuales.\n'
-    +'   \u2022 Fomente en casa la pr\u00e1ctica del dibujo, pintura o cualquier actividad creativa.\n'
+    +'   \u2022 Revise junto a su estudiante los trabajos y materiales evaluados en '+_asig+'.\n'
+    +'   \u2022 Fomente en casa la pr\u00e1ctica y el h\u00e1bito de estudio de la asignatura.\n'
     +'   \u2022 Aseg\u00farese de que el educando traiga todos los materiales requeridos a cada clase.\n'
     +'   \u2022 Si desea revisar las evaluaciones o tiene consultas, puede contactar al docente para una reuni\u00f3n y/o visitar la plataforma Classroom de la asignatura.\n\n'
     +'Quedamos atentos ante cualquier consulta.\n\n'
-    +'Atentamente,\n'
-    +'Profesor de Artes Visuales.';
+    +_firma;
 }
 // ── Generador de frase IA para correo a apoderado ────────────────────────────
 // Llama a la API de Anthropic para generar UNA frase contextual personalizada
@@ -18982,8 +19084,8 @@ function _renderCorreoTab(){ try { /* try-open */
   if(typeof _msgPersPoblarLista==='function') _msgPersPoblarLista();
   var ct=document.getElementById('correoTabContainer'),badge=document.getElementById('correoTabEmailBadge');
   if(!ct)return;
-  ['correoNombreProf','correoNombreColegio','correoEmailUTP','correoInstitucional','correoGmailIdx'].forEach(function(id){
-    var el=document.getElementById(id),key={'correoNombreProf':'av_email_prof','correoNombreColegio':'av_email_colegio','correoEmailUTP':'av_email_utp','correoInstitucional':'av_email_institucional','correoGmailIdx':'av_gmail_acct_idx'}[id];
+  ['correoNombreProf','correoNombreColegio','correoEmailUTP','correoInstitucional','correoGmailIdx','correoAsignatura'].forEach(function(id){
+    var el=document.getElementById(id),key={'correoNombreProf':'av_email_prof','correoNombreColegio':'av_email_colegio','correoEmailUTP':'av_email_utp','correoInstitucional':'av_email_institucional','correoGmailIdx':'av_gmail_acct_idx','correoAsignatura':'av_email_asignatura'}[id];
     if(el)el.value=localStorage.getItem(key)||(id==='correoGmailIdx'?'1':'');
   });
   var prof=localStorage.getItem('av_email_prof')||'',cole=localStorage.getItem('av_email_colegio')||'';
