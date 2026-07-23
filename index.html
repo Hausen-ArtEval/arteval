@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v221">
+<meta name="arteval-version" content="v222">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4321,7 +4321,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v221</span>
+      ">v222</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -5532,21 +5532,40 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
     <!-- ── LISTA DE ALUMNOS CRÍTICOS (primer elemento visible) ───────────── -->
     <div id="correoListaAnchor"></div>
 
-    <!-- ── MENSAJERO PERSONALIZADO (v221) ────────────────────────────────── -->
+    <!-- ── MENSAJERO PERSONALIZADO (v221 · v222) ─────────────────────────── -->
     <div class="config-card" style="margin-bottom:14px;border-left:3px solid #34C759;">
       <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
         <div style="width:44px;height:44px;background:rgba(52,199,89,0.10);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#34C759" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
-        <div style="flex:1;"><h3 style="margin-bottom:2px;">Correo personalizado a un apoderado</h3><div style="font-size:13px;color:var(--text3);">Escribe el nombre del estudiante y su apoderado aparece solo</div></div>
+        <div style="flex:1;"><h3 style="margin-bottom:2px;">Correo personalizado a un apoderado</h3><div style="font-size:13px;color:var(--text3);">Conducta, materiales, felicitaciones y más</div></div>
+        <button id="msgPersContador" onclick="_msgPersAbrirHistorial()" style="display:none;align-items:center;gap:5px;font-size:11px;color:#34C759;font-weight:600;background:rgba(52,199,89,0.10);padding:5px 11px;border-radius:20px;white-space:nowrap;border:none;cursor:pointer;"></button>
       </div>
-      <div class="email-campo" style="margin-bottom:10px;">
-        <label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px;">Estudiante</label>
-        <input type="text" id="msgPersEstudiante" list="msgPersListaAlumnos" placeholder="Empieza a escribir el nombre…" autocomplete="off" oninput="_msgPersResolverApoderado()" style="width:100%;padding:10px 12px;border:1px solid var(--border2);border-radius:var(--rad);font-size:14px;background:var(--bg);">
-        <datalist id="msgPersListaAlumnos"></datalist>
-        <div id="msgPersApoderadoInfo" style="font-size:12px;margin-top:6px;min-height:16px;color:var(--text3);"></div>
+
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+        <button id="msgPersBtnGrupal" class="btn btn-sm" onclick="_msgPersToggleGrupal()" style="font-size:12px;gap:5px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>Enviar a varios apoderados</button>
+        <button class="btn btn-sm" onclick="_msgPersAbrirHistorial()" style="font-size:12px;gap:5px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Historial</button>
       </div>
+
+      <!-- Modo individual -->
+      <div id="msgPersBloqueIndividual">
+        <div class="email-campo" style="margin-bottom:10px;">
+          <label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px;">Estudiante</label>
+          <input type="text" id="msgPersEstudiante" list="msgPersListaAlumnos" placeholder="Empieza a escribir el nombre…" autocomplete="off" oninput="_msgPersResolverApoderado()" style="width:100%;padding:10px 12px;border:1px solid var(--border2);border-radius:var(--rad);font-size:14px;background:var(--bg);">
+          <datalist id="msgPersListaAlumnos"></datalist>
+          <div id="msgPersApoderadoInfo" style="font-size:12px;margin-top:6px;min-height:16px;color:var(--text3);"></div>
+        </div>
+      </div>
+
+      <!-- Modo grupal -->
+      <div id="msgPersBloqueGrupal" style="display:none;">
+        <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px;">Selecciona estudiantes</div>
+        <div id="msgPersSelectorGrupal" style="max-height:220px;overflow-y:auto;border:1px solid var(--border2);border-radius:var(--rad);padding:10px;margin-bottom:6px;background:var(--bg);"></div>
+        <div id="msgPersContadorGrupal" style="font-size:12px;color:#34C759;font-weight:600;margin-bottom:10px;">Ninguno seleccionado</div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:10px;line-height:1.5;">💡 Usa <span style="font-family:var(--font-mono);">{estudiante}</span>, <span style="font-family:var(--font-mono);">{curso}</span> y <span style="font-family:var(--font-mono);">{fecha}</span> en el mensaje: se reemplazan por los datos de cada apoderado automáticamente.</div>
+      </div>
+
       <div id="msgPersFormulario" style="display:none;">
         <div class="email-campo" style="margin-bottom:10px;">
-          <label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px;">Motivo</label>
+          <label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px;">Motivo (elige una plantilla o escribe libremente)</label>
           <div id="msgPersMotivos" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
         </div>
         <div class="email-campo" style="margin-bottom:10px;">
@@ -5555,7 +5574,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         </div>
         <div class="email-campo" style="margin-bottom:12px;">
           <label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px;">Mensaje</label>
-          <textarea id="msgPersCuerpo" rows="9" placeholder="Escribe aquí tu mensaje al apoderado…" style="width:100%;padding:10px 12px;border:1px solid var(--border2);border-radius:var(--rad);font-size:14px;background:var(--bg);font-family:inherit;line-height:1.6;resize:vertical;"></textarea>
+          <textarea id="msgPersCuerpo" rows="10" placeholder="Escribe aquí tu mensaje al apoderado…" style="width:100%;padding:10px 12px;border:1px solid var(--border2);border-radius:var(--rad);font-size:14px;background:var(--bg);font-family:inherit;line-height:1.6;resize:vertical;"></textarea>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button class="btn btn-primary" onclick="_msgPersEnviar('api')" style="flex:1;min-width:150px;gap:7px;justify-content:center;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Enviar desde ArtEval</button>
@@ -17877,20 +17896,53 @@ function _saveApoderadoEmails() {
 
 // Obtener email de un alumno por nombre (búsqueda flexible)
 // ═══════════════════════════════════════════════════════════════════════════
-//  MENSAJERO PERSONALIZADO A APODERADOS — v221
-//  Escribes el nombre del estudiante → el correo del apoderado titular aparece
-//  automáticamente (reutiliza el enlace nombre→email de _apoderadoEmails que ya
-//  construye la importación de la planilla). Redactas un mensaje libre, con
-//  plantillas rápidas para los motivos frecuentes (mal comportamiento, no sigue
-//  instrucciones, felicitación), y envías desde la cuenta conectada o abres en
-//  Gmail. Sin buscar correos a mano.
+//  MENSAJERO PERSONALIZADO A APODERADOS — v221 · v222
+//  v221: nombre del estudiante → correo del apoderado automático + envío.
+//  v222: historial propio de mensajes de conducta/situación con contador,
+//  catálogo ampliado de plantillas por categoría (sirve a cualquier asignatura),
+//  plantillas personalizadas del profesor, variables {estudiante}/{curso}/{fecha}
+//  y ENVÍO GRUPAL (mismo mensaje a varios apoderados de una vez).
 // ═══════════════════════════════════════════════════════════════════════════
 var _msgPersApoderadoActual = null; // { nombre, email, curso }
+var _msgPersModoGrupal = false;
+var _msgPersSeleccionGrupal = {};   // NOMBRE_UPPER → { nombre, email, curso }
+
+// ── Historial de mensajes personalizados (independiente de los correos críticos)
+var _historialMsgPers = (function() {
+  try { return JSON.parse(localStorage.getItem('av_historial_msgpers') || '[]') || []; }
+  catch(e) { return []; }
+})();
+function _saveHistorialMsgPers() {
+  try { localStorage.setItem('av_historial_msgpers', JSON.stringify(_historialMsgPers.slice(-500))); }
+  catch(e) { console.warn('[ArtEval] _saveHistorialMsgPers:', e.message); }
+}
+function _registrarMsgPers(nombre, email, curso, motivoLabel) {
+  _historialMsgPers.push({
+    fecha: new Date().toISOString(),
+    nombre: nombre || '', email: email || '', curso: curso || '',
+    motivo: motivoLabel || 'Personalizado', respondido: false
+  });
+  _saveHistorialMsgPers();
+  localStorage.setItem('av_last_edit_ts', new Date().toISOString()); // que entre al sync
+  _msgPersActualizarContador();
+}
+function _msgPersActualizarContador() {
+  var badge = document.getElementById('msgPersContador');
+  if (!badge) return;
+  var total = _historialMsgPers.length;
+  if (!total) { badge.style.display = 'none'; return; }
+  badge.style.display = 'inline-flex';
+  // Contar del mes en curso para el número destacado
+  var ahora = new Date(), mes = ahora.getMonth(), anio = ahora.getFullYear();
+  var esteMes = _historialMsgPers.filter(function(h) {
+    var d = new Date(h.fecha); return d.getMonth() === mes && d.getFullYear() === anio;
+  }).length;
+  badge.textContent = esteMes + ' este mes · ' + total + ' en total';
+}
 
 // Nombres para el autocompletado: unión de la planilla + estudiantes evaluados
 function _msgPersPoblarLista() {
   var dl = document.getElementById('msgPersListaAlumnos');
-  if (!dl) return;
   var vistos = {}, nombres = [];
   Object.keys(_apoderadoEmails || {}).forEach(function(k) {
     var val = _apoderadoEmails[k];
@@ -17905,7 +17957,16 @@ function _msgPersPoblarLista() {
     }
   });
   nombres.sort(function(a, b) { return a.localeCompare(b, 'es'); });
-  dl.innerHTML = nombres.map(function(n) { return '<option value="' + _esc(n) + '"></option>'; }).join('');
+  if (dl) dl.innerHTML = nombres.map(function(n) { return '<option value="' + _esc(n) + '"></option>'; }).join('');
+  _msgPersActualizarContador();
+  return nombres;
+}
+
+function _msgPersCursoDe(nombre) {
+  var norm = (nombre || '').trim().toUpperCase();
+  if (_apoderadoEmails[norm] && typeof _apoderadoEmails[norm] === 'object' && _apoderadoEmails[norm].curso) return _apoderadoEmails[norm].curso;
+  var reg = (registros || []).find(function(r) { return r && r.nombre && r.nombre.trim().toUpperCase() === norm; });
+  return reg ? (reg.curso || '') : '';
 }
 
 function _msgPersResolverApoderado() {
@@ -17915,17 +17976,13 @@ function _msgPersResolverApoderado() {
   if (!inp || !info || !form) return;
   var nombre = (inp.value || '').trim();
   if (nombre.length < 3) { info.textContent = ''; form.style.display = 'none'; _msgPersApoderadoActual = null; return; }
-
   var email = _getEmailApoderado(nombre);
-  // Curso del estudiante (de la planilla o de sus registros)
-  var curso = '';
-  var norm = nombre.toUpperCase();
-  if (_apoderadoEmails[norm] && typeof _apoderadoEmails[norm] === 'object') curso = _apoderadoEmails[norm].curso || '';
-  if (!curso) { var reg = (registros || []).find(function(r) { return r && r.nombre && r.nombre.trim().toUpperCase() === norm; }); if (reg) curso = reg.curso || ''; }
-
+  var curso = _msgPersCursoDe(nombre);
   if (_emailValido(email)) {
     _msgPersApoderadoActual = { nombre: nombre, email: email, curso: curso };
-    info.innerHTML = '<span style="color:#34C759;">✓</span> Apoderado: <strong style="color:var(--text2);">' + _esc(email) + '</strong>' + (curso ? ' <span style="color:var(--text3);">· ' + _esc(curso) + '</span>' : '');
+    var yaContactado = _historialMsgPers.filter(function(h){ return h.nombre.trim().toUpperCase() === nombre.toUpperCase(); });
+    var aviso = yaContactado.length ? ' <span style="color:var(--text3);">· ya contactado ' + yaContactado.length + '×</span>' : '';
+    info.innerHTML = '<span style="color:#34C759;">✓</span> Apoderado: <strong style="color:var(--text2);">' + _esc(email) + '</strong>' + (curso ? ' <span style="color:var(--text3);">· ' + _esc(curso) + '</span>' : '') + aviso;
     form.style.display = 'block';
     if (!document.getElementById('msgPersMotivos').children.length) _msgPersRenderMotivos();
   } else {
@@ -17935,66 +17992,293 @@ function _msgPersResolverApoderado() {
   }
 }
 
-// Plantillas de motivos frecuentes — rellenan asunto y cuerpo, editables después
-var _MSG_PERS_PLANTILLAS = [
-  { id: 'comportamiento', label: 'Comportamiento', asunto: 'Situación de comportamiento en Artes Visuales',
-    cuerpo: 'Junto con saludar, me comunico con usted para informar que [ESTUDIANTE] presentó dificultades de comportamiento durante la clase de Artes Visuales del día de hoy.\n\nDescripción de lo ocurrido:\n\n\nAgradecería poder conversar el tema para apoyar juntos a [ESTUDIANTE]. Quedo atento/a a su respuesta.' },
-  { id: 'instrucciones', label: 'No sigue instrucciones', asunto: 'Seguimiento de trabajo en clases — Artes Visuales',
-    cuerpo: 'Junto con saludar, le escribo para comentar que [ESTUDIANTE] ha presentado dificultades para seguir las instrucciones y completar las actividades durante la clase de Artes Visuales.\n\nDetalle:\n\n\nCon el fin de apoyar su proceso, me gustaría contar con su colaboración desde el hogar. Quedo atento/a a su respuesta.' },
-  { id: 'felicitacion', label: 'Felicitación', asunto: '¡Felicitaciones! — Artes Visuales',
-    cuerpo: 'Junto con saludar, quiero destacar el excelente desempeño de [ESTUDIANTE] en la clase de Artes Visuales.\n\nMotivo del reconocimiento:\n\n\n¡Felicitaciones por su trabajo y compromiso! Un cordial saludo.' },
-  { id: 'libre', label: 'En blanco', asunto: 'Comunicación — Artes Visuales', cuerpo: '' },
+// ── Catálogo de plantillas por categoría (neutro para cualquier asignatura) ──
+var _MSG_PERS_CATALOGO = [
+  { cat: 'Conducta', color: '#FF3B30', items: [
+    { id: 'interrumpe', label: 'Interrumpe la clase', asunto: 'Situación de comportamiento en clases',
+      cuerpo: 'me comunico con usted para informar que {estudiante} ({curso}) presentó conductas que interrumpieron el normal desarrollo de la clase del día {fecha}.\n\nDescripción de lo ocurrido:\n\n\nLe agradecería poder conversar sobre esta situación para apoyar juntos a {estudiante}.' },
+    { id: 'respeto', label: 'Falta de respeto', asunto: 'Situación de convivencia escolar',
+      cuerpo: 'le escribo para informar una situación de falta de respeto protagonizada por {estudiante} ({curso}) durante la clase del día {fecha}.\n\nDetalle de lo sucedido:\n\n\nConsidero importante abordarlo en conjunto. Quedo atento/a a su respuesta.' },
+    { id: 'conflicto', label: 'Conflicto entre compañeros', asunto: 'Situación de convivencia entre estudiantes',
+      cuerpo: 'me comunico para informar que {estudiante} ({curso}) estuvo involucrado/a en un conflicto con compañeros durante la clase del día {fecha}.\n\nDescripción:\n\n\nLa situación fue abordada en el momento, y me gustaría reforzar el trabajo desde el hogar.' },
+    { id: 'celular', label: 'Uso de celular', asunto: 'Uso de dispositivos en clases',
+      cuerpo: 'le informo que {estudiante} ({curso}) utilizó el celular durante la clase pese a las indicaciones, el día {fecha}.\n\nLe solicito reforzar en casa la importancia de mantener el dispositivo guardado durante la jornada. Gracias por su apoyo.' },
+  ]},
+  { cat: 'Trabajo en clases', color: '#FF9500', items: [
+    { id: 'materiales', label: 'No trae materiales', asunto: 'Materiales para la asignatura',
+      cuerpo: 'le escribo para informar que {estudiante} ({curso}) no ha traído los materiales necesarios para trabajar en clases, lo que dificulta su participación en las actividades.\n\nMateriales pendientes:\n\n\nAgradecería su colaboración para regularizar esta situación.' },
+    { id: 'noentrega', label: 'No entrega trabajos', asunto: 'Trabajos pendientes de entrega',
+      cuerpo: 'me comunico para informar que {estudiante} ({curso}) mantiene trabajos sin entregar, lo que afecta su evaluación en la asignatura.\n\nTrabajos pendientes:\n\n\nLe agradecería apoyar desde el hogar para que pueda ponerse al día.' },
+    { id: 'instrucciones', label: 'No sigue instrucciones', asunto: 'Seguimiento de trabajo en clases',
+      cuerpo: 'le comento que {estudiante} ({curso}) ha presentado dificultades para seguir las instrucciones y completar las actividades durante la clase.\n\nDetalle:\n\n\nCon el fin de apoyar su proceso, me gustaría contar con su colaboración.' },
+  ]},
+  { cat: 'Reconocimiento', color: '#34C759', items: [
+    { id: 'felicitacion', label: 'Felicitación', asunto: '¡Felicitaciones!',
+      cuerpo: 'quiero destacar el excelente desempeño de {estudiante} ({curso}) en la asignatura.\n\nMotivo del reconocimiento:\n\n\n¡Felicitaciones por su trabajo y compromiso!' },
+    { id: 'mejora', label: 'Mejora notable', asunto: 'Reconocimiento por avance',
+      cuerpo: 'me alegra comunicarle que {estudiante} ({curso}) ha mostrado una mejora notable en su desempeño y actitud en clases.\n\nDetalle del avance:\n\n\nLe agradezco el apoyo brindado desde el hogar.' },
+  ]},
+  { cat: 'Citación / Administrativo', color: '#007AFF', items: [
+    { id: 'reunion', label: 'Solicitud de reunión', asunto: 'Solicitud de entrevista con apoderado',
+      cuerpo: 'me gustaría coordinar una reunión con usted para conversar sobre el proceso de {estudiante} ({curso}) en la asignatura.\n\nQuedo atento/a a su disponibilidad para agendar día y hora.' },
+    { id: 'inasistencia', label: 'Inasistencias', asunto: 'Inasistencias a la asignatura',
+      cuerpo: 'le escribo para informar que {estudiante} ({curso}) registra inasistencias que están afectando su continuidad en la asignatura.\n\nLe solicito comunicarse para regularizar la situación. Gracias.' },
+    { id: 'libre', label: 'En blanco', asunto: 'Comunicación', cuerpo: '' },
+  ]},
 ];
+function _msgPersPlantillasPersonalizadas() {
+  try { return JSON.parse(localStorage.getItem('av_plantillas_prof') || '[]') || []; }
+  catch(e) { return []; }
+}
+function _msgPersGuardarPlantillasPersonalizadas(arr) {
+  try { localStorage.setItem('av_plantillas_prof', JSON.stringify(arr)); } catch(e) {}
+}
+
 function _msgPersRenderMotivos() {
   var cont = document.getElementById('msgPersMotivos');
   if (!cont) return;
-  cont.innerHTML = _MSG_PERS_PLANTILLAS.map(function(p) {
-    return '<button type="button" class="btn btn-sm" onclick="_msgPersAplicarPlantilla(\'' + p.id + '\')" style="font-size:12px;">' + _esc(p.label) + '</button>';
-  }).join('');
+  var html = '';
+  _MSG_PERS_CATALOGO.forEach(function(grupo) {
+    html += '<div style="width:100%;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:' + grupo.color + ';margin:8px 0 2px;">' + _esc(grupo.cat) + '</div>';
+    grupo.items.forEach(function(p) {
+      html += '<button type="button" class="btn btn-sm" onclick="_msgPersAplicarPlantilla(\'' + p.id + '\')" style="font-size:12px;">' + _esc(p.label) + '</button>';
+    });
+  });
+  var pers = _msgPersPlantillasPersonalizadas();
+  html += '<div style="width:100%;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#AF52DE;margin:8px 0 2px;">Mis plantillas</div>';
+  pers.forEach(function(p, i) {
+    html += '<button type="button" class="btn btn-sm" onclick="_msgPersAplicarPlantilla(\'pers_' + i + '\')" style="font-size:12px;border-color:rgba(175,82,222,0.35);">' + _esc(p.label) + '</button>';
+  });
+  html += '<button type="button" class="btn btn-sm" onclick="_msgPersGuardarComoPlantilla()" style="font-size:12px;color:#AF52DE;gap:4px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Guardar actual</button>';
+  cont.innerHTML = html;
+}
+
+// Sustituye variables {estudiante} {curso} {fecha} — funciona en individual y grupal
+function _msgPersRellenarVars(txt, nombre, curso) {
+  var fecha = new Date().toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' });
+  return (txt || '')
+    .replace(/\{estudiante\}/gi, nombre || 'el/la estudiante')
+    .replace(/\{curso\}/gi, curso || '')
+    .replace(/\{fecha\}/gi, fecha)
+    .replace(/\s*\(\)\s*/g, ' '); // limpia "()" si el curso venía vacío
+}
+function _msgPersBuscarPlantilla(id) {
+  if (id.indexOf('pers_') === 0) {
+    var pers = _msgPersPlantillasPersonalizadas();
+    return pers[parseInt(id.slice(5), 10)] || null;
+  }
+  for (var i = 0; i < _MSG_PERS_CATALOGO.length; i++) {
+    var found = _MSG_PERS_CATALOGO[i].items.find(function(x) { return x.id === id; });
+    if (found) return found;
+  }
+  return null;
 }
 function _msgPersAplicarPlantilla(id) {
-  var p = _MSG_PERS_PLANTILLAS.find(function(x) { return x.id === id; });
+  var p = _msgPersBuscarPlantilla(id);
   if (!p) return;
-  var nombre = _msgPersApoderadoActual ? _msgPersApoderadoActual.nombre : '';
-  var soloNombre = nombre.split(/\s+/).slice(-2).join(' ') || nombre; // nombre de pila aprox.
+  _msgPersPlantillaActual = p.label || 'Personalizado';
+  // En grupal las variables se rellenan por-destinatario al enviar; mostramos con placeholders
+  var esGrupal = _msgPersModoGrupal;
+  var nombre = (!esGrupal && _msgPersApoderadoActual) ? _msgPersApoderadoActual.nombre : '';
+  var curso  = (!esGrupal && _msgPersApoderadoActual) ? _msgPersApoderadoActual.curso  : '';
   var asuntoEl = document.getElementById('msgPersAsunto');
   var cuerpoEl = document.getElementById('msgPersCuerpo');
-  if (asuntoEl) asuntoEl.value = p.asunto + (nombre ? ' — ' + nombre : '');
+  var prof = localStorage.getItem('av_email_prof') || '';
+  var asig = localStorage.getItem('av_email_asignatura') || 'Artes Visuales';
+  if (asuntoEl) asuntoEl.value = _msgPersRellenarVars(p.asunto, nombre, curso) + ' — ' + asig + (nombre ? ' — ' + nombre : '');
   if (cuerpoEl) {
-    var prof = localStorage.getItem('av_email_prof') || '';
-    var firma = prof ? ('\n\n' + prof + '\nProfesor/a de Artes Visuales') : '';
-    cuerpoEl.value = 'Estimado/a apoderado/a:\n\n' + p.cuerpo.replace(/\[ESTUDIANTE\]/g, nombre || 'el/la estudiante') + firma;
+    var firma = prof ? ('\n\nAtentamente,\n' + prof + '\nProfesor/a de ' + asig) : '';
+    var saludo = 'Estimado/a apoderado/a:\n\nJunto con saludar, ';
+    cuerpoEl.value = saludo + _msgPersRellenarVars(p.cuerpo, nombre, curso) + firma;
   }
+}
+var _msgPersPlantillaActual = 'Personalizado';
+
+function _msgPersGuardarComoPlantilla() {
+  var cuerpo = (document.getElementById('msgPersCuerpo') || {}).value || '';
+  var asunto = (document.getElementById('msgPersAsunto') || {}).value || '';
+  if (!cuerpo.trim()) { toast('⚠ Escribe primero un mensaje para guardarlo como plantilla', 'err', 4000); return; }
+  var label = prompt('Nombre para esta plantilla (ej: "Atraso reiterado"):');
+  if (!label || !label.trim()) return;
+  var pers = _msgPersPlantillasPersonalizadas();
+  // Guardar re-variabilizando: el nombre concreto vuelve a {estudiante}
+  var nom = _msgPersApoderadoActual ? _msgPersApoderadoActual.nombre : '';
+  var cur = _msgPersApoderadoActual ? _msgPersApoderadoActual.curso : '';
+  function reVar(t) {
+    if (nom) t = t.split(nom).join('{estudiante}');
+    if (cur) t = t.split(cur).join('{curso}');
+    return t;
+  }
+  pers.push({ label: label.trim(), asunto: reVar(asunto), cuerpo: reVar(cuerpo) });
+  _msgPersGuardarPlantillasPersonalizadas(pers);
+  _msgPersRenderMotivos();
+  toast('✓ Plantilla "' + label.trim() + '" guardada', 'ok', 3000);
+}
+
+// ── Modo grupal ──────────────────────────────────────────────────────────────
+function _msgPersToggleGrupal() {
+  _msgPersModoGrupal = !_msgPersModoGrupal;
+  _msgPersSeleccionGrupal = {};
+  var indiv = document.getElementById('msgPersBloqueIndividual');
+  var grupal = document.getElementById('msgPersBloqueGrupal');
+  var form = document.getElementById('msgPersFormulario');
+  var btn = document.getElementById('msgPersBtnGrupal');
+  if (_msgPersModoGrupal) {
+    if (indiv) indiv.style.display = 'none';
+    if (grupal) grupal.style.display = 'block';
+    if (form) form.style.display = 'block';
+    if (btn) btn.textContent = '← Volver a individual';
+    _msgPersRenderSelectorGrupal();
+    if (!document.getElementById('msgPersMotivos').children.length) _msgPersRenderMotivos();
+  } else {
+    if (indiv) indiv.style.display = 'block';
+    if (grupal) grupal.style.display = 'none';
+    if (form) form.style.display = 'none';
+    if (btn) btn.textContent = 'Enviar a varios apoderados';
+  }
+}
+function _msgPersRenderSelectorGrupal() {
+  var cont = document.getElementById('msgPersSelectorGrupal');
+  if (!cont) return;
+  // Estudiantes con apoderado válido, agrupados por curso
+  var porCurso = {};
+  var vistos = {};
+  function add(nombre) {
+    var key = nombre.trim().toUpperCase();
+    if (vistos[key]) return; vistos[key] = true;
+    var email = _getEmailApoderado(nombre);
+    if (!_emailValido(email)) return;
+    var curso = _msgPersCursoDe(nombre) || 'Sin curso';
+    if (!porCurso[curso]) porCurso[curso] = [];
+    porCurso[curso].push({ nombre: nombre.trim(), email: email, curso: curso === 'Sin curso' ? '' : curso });
+  }
+  Object.keys(_apoderadoEmails || {}).forEach(function(k) {
+    var v = _apoderadoEmails[k];
+    add((v && typeof v === 'object' && v.nombre) ? v.nombre : k);
+  });
+  (registros || []).forEach(function(r) { if (r && r.nombre) add(r.nombre); });
+
+  var cursos = Object.keys(porCurso).sort();
+  if (!cursos.length) { cont.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:12px;text-align:center;">No hay estudiantes con correo de apoderado en la planilla.</div>'; return; }
+  var html = '<input type="text" id="msgPersFiltroGrupal" placeholder="Filtrar por nombre o curso…" oninput="_msgPersFiltrarGrupal()" style="width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--rad);font-size:13px;background:var(--bg);margin-bottom:8px;">';
+  cursos.forEach(function(curso) {
+    html += '<div class="msgPersGrupoCurso" data-curso="' + _esc(curso) + '" style="margin-bottom:8px;">';
+    html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><strong style="font-size:12px;color:var(--text2);">' + _esc(curso) + '</strong>'
+      + '<button type="button" class="btn btn-sm" onclick="_msgPersToggleCurso(\'' + _esc(curso).replace(/'/g,"\\'") + '\')" style="font-size:10px;padding:2px 8px;">Todo el curso</button></div>';
+    porCurso[curso].forEach(function(al) {
+      var k = al.nombre.toUpperCase();
+      html += '<label class="msgPersItemGrupal" data-nombre="' + _esc(al.nombre.toLowerCase()) + '" data-curso="' + _esc(curso.toLowerCase()) + '" style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:8px;cursor:pointer;font-size:13px;">'
+        + '<input type="checkbox" onchange="_msgPersToggleAlumno(this,\'' + _esc(al.nombre).replace(/'/g,"\\'") + '\',\'' + _esc(al.email) + '\',\'' + _esc(al.curso) + '\')" style="width:16px;height:16px;accent-color:#34C759;">'
+        + '<span>' + _esc(al.nombre) + '</span></label>';
+    });
+    html += '</div>';
+  });
+  cont.innerHTML = html;
+  _msgPersActualizarContadorGrupal();
+}
+function _msgPersToggleAlumno(chk, nombre, email, curso) {
+  var k = nombre.toUpperCase();
+  if (chk.checked) _msgPersSeleccionGrupal[k] = { nombre: nombre, email: email, curso: curso };
+  else delete _msgPersSeleccionGrupal[k];
+  _msgPersActualizarContadorGrupal();
+}
+function _msgPersToggleCurso(cursoLower) {
+  var grupo = document.querySelector('.msgPersGrupoCurso[data-curso="' + cursoLower + '"]') ||
+              Array.prototype.find.call(document.querySelectorAll('.msgPersGrupoCurso'), function(g){ return g.dataset.curso.toLowerCase() === cursoLower.toLowerCase(); });
+  if (!grupo) return;
+  var checks = grupo.querySelectorAll('input[type=checkbox]');
+  var algunoSinMarcar = Array.prototype.some.call(checks, function(c){ return !c.checked; });
+  checks.forEach(function(c){ if (c.checked !== algunoSinMarcar) { c.checked = algunoSinMarcar; c.onchange(); } });
+}
+function _msgPersFiltrarGrupal() {
+  var q = (document.getElementById('msgPersFiltroGrupal') || {}).value || '';
+  q = q.toLowerCase().trim();
+  document.querySelectorAll('.msgPersItemGrupal').forEach(function(el) {
+    var match = !q || el.dataset.nombre.indexOf(q) !== -1 || el.dataset.curso.indexOf(q) !== -1;
+    el.style.display = match ? 'flex' : 'none';
+  });
+}
+function _msgPersActualizarContadorGrupal() {
+  var n = Object.keys(_msgPersSeleccionGrupal).length;
+  var el = document.getElementById('msgPersContadorGrupal');
+  if (el) el.textContent = n ? (n + ' apoderado' + (n > 1 ? 's' : '') + ' seleccionado' + (n > 1 ? 's' : '')) : 'Ninguno seleccionado';
 }
 
 function _msgPersEnviar(via) {
-  if (!_msgPersApoderadoActual || !_emailValido(_msgPersApoderadoActual.email)) {
-    toast('⚠ Primero selecciona un estudiante con correo de apoderado válido', 'err', 4000); return;
-  }
   var asunto = (document.getElementById('msgPersAsunto') || {}).value || '';
   var cuerpo = (document.getElementById('msgPersCuerpo') || {}).value || '';
   if (!asunto.trim()) { toast('⚠ Escribe un asunto', 'err', 3000); return; }
   if (!cuerpo.trim()) { toast('⚠ El mensaje está vacío', 'err', 3000); return; }
-  var dest = _msgPersApoderadoActual.email;
-  var cc   = localStorage.getItem('av_email_utp') || '';
+  var cc = localStorage.getItem('av_email_utp') || '';
 
-  if (via === 'compose') {
-    var url = 'https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(dest)
-      + '&su=' + encodeURIComponent(asunto) + '&body=' + encodeURIComponent(cuerpo)
-      + (cc ? '&cc=' + encodeURIComponent(cc) : '');
-    window.open(url, '_blank');
-    toast('✉ Abriendo Gmail con el correo listo', 'ok', 3000);
+  // ── ENVÍO GRUPAL ──
+  if (_msgPersModoGrupal) {
+    var destinatarios = Object.keys(_msgPersSeleccionGrupal).map(function(k){ return _msgPersSeleccionGrupal[k]; });
+    if (!destinatarios.length) { toast('⚠ Selecciona al menos un apoderado', 'err', 3500); return; }
+    var tok = (typeof _driveToken !== 'undefined' && _driveToken && Date.now() < _driveTokenExp) ? _driveToken : null;
+    if (via === 'api' && !tok) { toast('⚠ Conecta tu cuenta Google para envío directo, o usa "Abrir en Gmail" (uno por uno)', 'err', 5000); return; }
+    if (via === 'compose') {
+      // Gmail no permite cuerpos distintos por destinatario en un solo compose:
+      // abrimos secuencialmente, personalizando cada uno.
+      toast('Abriendo ' + destinatarios.length + ' borradores en Gmail…', 'info', 3000);
+      destinatarios.forEach(function(d, i) {
+        setTimeout(function() {
+          var a = _msgPersRellenarVars(asunto, d.nombre, d.curso);
+          var c = _msgPersRellenarVars(cuerpo, d.nombre, d.curso);
+          var url = 'https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(d.email)
+            + '&su=' + encodeURIComponent(a) + '&body=' + encodeURIComponent(c) + (cc ? '&cc=' + encodeURIComponent(cc) : '');
+          window.open(url, '_blank');
+          _registrarMsgPers(d.nombre, d.email, d.curso, _msgPersPlantillaActual);
+        }, i * 400);
+      });
+      return;
+    }
+    // API: enviar a cada uno con su mensaje personalizado, con pausa anti-429
+    toast('Enviando a ' + destinatarios.length + ' apoderados…', 'info', 3000);
+    var enviados = 0;
+    destinatarios.forEach(function(d, i) {
+      setTimeout(function() {
+        var a = _msgPersRellenarVars(asunto, d.nombre, d.curso);
+        var c = _msgPersRellenarVars(cuerpo, d.nombre, d.curso);
+        _enviarViaGmailAPI(tok, d.email, a, c, cc, d.nombre);
+        _registrarMsgPers(d.nombre, d.email, d.curso, _msgPersPlantillaActual);
+        enviados++;
+        if (enviados === destinatarios.length) {
+          setTimeout(function() {
+            toast('✓ ' + enviados + ' correos enviados', 'ok', 4000);
+            _msgPersSeleccionGrupal = {};
+            _msgPersRenderSelectorGrupal();
+            var cu = document.getElementById('msgPersCuerpo'); if (cu) cu.value = '';
+            var au = document.getElementById('msgPersAsunto'); if (au) au.value = '';
+          }, 500);
+        }
+      }, i * 180);
+    });
     return;
   }
 
-  // Envío directo por la API con la cuenta conectada
-  var tok = (typeof _driveToken !== 'undefined' && _driveToken && Date.now() < _driveTokenExp) ? _driveToken : null;
-  if (!tok) {
-    toast('⚠ Conecta tu cuenta Google arriba para enviar desde ArtEval, o usa "Abrir en Gmail"', 'err', 5000); return;
+  // ── ENVÍO INDIVIDUAL ──
+  if (!_msgPersApoderadoActual || !_emailValido(_msgPersApoderadoActual.email)) {
+    toast('⚠ Primero selecciona un estudiante con correo de apoderado válido', 'err', 4000); return;
   }
+  var dest = _msgPersApoderadoActual.email;
+  var nom = _msgPersApoderadoActual.nombre, cur = _msgPersApoderadoActual.curso;
+  var aFinal = _msgPersRellenarVars(asunto, nom, cur);
+  var cFinal = _msgPersRellenarVars(cuerpo, nom, cur);
+
+  if (via === 'compose') {
+    var url2 = 'https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(dest)
+      + '&su=' + encodeURIComponent(aFinal) + '&body=' + encodeURIComponent(cFinal) + (cc ? '&cc=' + encodeURIComponent(cc) : '');
+    window.open(url2, '_blank');
+    _registrarMsgPers(nom, dest, cur, _msgPersPlantillaActual);
+    toast('✉ Abriendo Gmail — registrado en el historial', 'ok', 3000);
+    return;
+  }
+  var tok2 = (typeof _driveToken !== 'undefined' && _driveToken && Date.now() < _driveTokenExp) ? _driveToken : null;
+  if (!tok2) { toast('⚠ Conecta tu cuenta Google arriba para enviar desde ArtEval, o usa "Abrir en Gmail"', 'err', 5000); return; }
   toast('Enviando…', 'info', 2000);
-  _enviarViaGmailAPI(tok, dest, asunto, cuerpo, cc, _msgPersApoderadoActual.nombre);
-  // Limpiar el formulario tras el envío
+  _enviarViaGmailAPI(tok2, dest, aFinal, cFinal, cc, nom);
+  _registrarMsgPers(nom, dest, cur, _msgPersPlantillaActual);
   setTimeout(function() {
     var c = document.getElementById('msgPersCuerpo'); if (c) c.value = '';
     var a = document.getElementById('msgPersAsunto'); if (a) a.value = '';
@@ -18003,6 +18287,48 @@ function _msgPersEnviar(via) {
     var form = document.getElementById('msgPersFormulario'); if (form) form.style.display = 'none';
     _msgPersApoderadoActual = null;
   }, 600);
+}
+
+// ── Panel de historial de mensajes personalizados ──
+function _msgPersAbrirHistorial() {
+  if (!_historialMsgPers.length) { toast('Aún no has enviado mensajes personalizados', 'info', 3000); return; }
+  var ordenado = _historialMsgPers.slice().sort(function(a, b){ return new Date(b.fecha) - new Date(a.fecha); });
+  var filas = ordenado.map(function(h, idx) {
+    var d = new Date(h.fecha);
+    var fecha = d.toLocaleDateString('es-CL', { day: '2-digit', month: 'short' }) + ' ' + d.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+    var realIdx = _historialMsgPers.indexOf(h);
+    return '<div style="display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:0.5px solid var(--border);">'
+      + '<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + _esc(h.nombre) + (h.curso ? ' <span style="color:var(--text3);font-weight:400;">· ' + _esc(h.curso) + '</span>' : '') + '</div>'
+      + '<div style="font-size:11px;color:var(--text3);">' + _esc(h.motivo) + ' · ' + fecha + '</div></div>'
+      + '<button class="btn btn-sm" onclick="_msgPersToggleRespondido(' + realIdx + ')" style="font-size:11px;padding:3px 10px;' + (h.respondido ? 'background:rgba(52,199,89,0.12);color:#34C759;border-color:rgba(52,199,89,0.3);' : 'color:var(--text3);') + '">' + (h.respondido ? '✓ Respondió' : 'Marcar respuesta') + '</button>'
+      + '</div>';
+  }).join('');
+  var pendientes = _historialMsgPers.filter(function(h){ return !h.respondido; }).length;
+  abrirModal('<div style="padding:2px;"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;"><div style="font-size:16px;font-weight:700;">Historial de mensajes</div>'
+    + '<button class="btn btn-sm" onclick="_msgPersExportarHistorial()" style="font-size:11px;gap:4px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Exportar</button></div>'
+    + '<div style="font-size:12px;color:var(--text2);margin-bottom:12px;">' + _historialMsgPers.length + ' mensajes · ' + pendientes + ' sin respuesta registrada</div>'
+    + '<div style="max-height:52vh;overflow-y:auto;">' + filas + '</div>'
+    + '<button class="btn" onclick="cerrarModal()" style="width:100%;margin-top:14px;">Cerrar</button></div>');
+}
+function _msgPersToggleRespondido(idx) {
+  if (!_historialMsgPers[idx]) return;
+  _historialMsgPers[idx].respondido = !_historialMsgPers[idx].respondido;
+  _saveHistorialMsgPers();
+  _msgPersAbrirHistorial(); // refrescar
+}
+function _msgPersExportarHistorial() {
+  var enc = 'Fecha,Estudiante,Curso,Motivo,Email,Respondio\n';
+  var filas = _historialMsgPers.slice().sort(function(a,b){ return new Date(b.fecha)-new Date(a.fecha); }).map(function(h) {
+    function q(s){ return '"' + String(s||'').replace(/"/g,'""') + '"'; }
+    return [q(new Date(h.fecha).toLocaleString('es-CL')), q(h.nombre), q(h.curso), q(h.motivo), q(h.email), h.respondido ? 'Si' : 'No'].join(',');
+  }).join('\n');
+  var blob = new Blob(['\ufeff' + enc + filas], { type: 'text/csv;charset=utf-8;' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'mensajes_apoderados_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+  toast('✓ Historial exportado', 'ok', 2500);
 }
 
 function _getEmailApoderado(nombre) {
@@ -24470,6 +24796,8 @@ async function guardarYLiberarLocalStorage() {
       alexiaDatos:  JSON.parse(JSON.stringify(alexiaDatos || {})),
       apoderadoEmails:  JSON.parse(JSON.stringify(_apoderadoEmails  || {})),
       historialCorreos: JSON.parse(JSON.stringify(_historialCorreos || {})),
+      historialMsgPers: JSON.parse(JSON.stringify(typeof _historialMsgPers !== 'undefined' ? _historialMsgPers : [])),
+      plantillasProf:   JSON.parse(localStorage.getItem('av_plantillas_prof') || '[]'),
       // Configuración de correo y preferencias del profesor
       config: {
         emailProf:         localStorage.getItem('av_email_prof')          || '',
@@ -25254,6 +25582,29 @@ async function syncFromDrive() {
           _historialCorreos[k]=raw.historialCorreos[k];
       });
       try { localStorage.setItem('av_historial_correos', JSON.stringify(_historialCorreos)); } catch(e) {}
+    }
+    // v222: restaurar historial de mensajes personalizados (fusión por fecha, sin duplicar)
+    if (Array.isArray(raw.historialMsgPers) && raw.historialMsgPers.length) {
+      try {
+        if (typeof _historialMsgPers === 'undefined') { _historialMsgPers = []; }
+        var _vistos = {};
+        _historialMsgPers.forEach(function(h){ _vistos[(h.fecha||'') + '|' + (h.nombre||'')] = true; });
+        raw.historialMsgPers.forEach(function(h){
+          var k = (h.fecha||'') + '|' + (h.nombre||'');
+          if (!_vistos[k]) { _historialMsgPers.push(h); _vistos[k] = true; }
+        });
+        _historialMsgPers.sort(function(a,b){ return new Date(a.fecha) - new Date(b.fecha); });
+        localStorage.setItem('av_historial_msgpers', JSON.stringify(_historialMsgPers.slice(-500)));
+      } catch(e) { console.warn('[ArtEval] restore historialMsgPers:', e.message); }
+    }
+    // v222: restaurar plantillas personalizadas del profesor (unión por label)
+    if (Array.isArray(raw.plantillasProf) && raw.plantillasProf.length) {
+      try {
+        var _actuales = JSON.parse(localStorage.getItem('av_plantillas_prof') || '[]');
+        var _labels = {}; _actuales.forEach(function(p){ _labels[p.label] = true; });
+        raw.plantillasProf.forEach(function(p){ if (p && p.label && !_labels[p.label]) { _actuales.push(p); _labels[p.label] = true; } });
+        localStorage.setItem('av_plantillas_prof', JSON.stringify(_actuales));
+      } catch(e) { console.warn('[ArtEval] restore plantillasProf:', e.message); }
     }
     // Restaurar configuración del profesor desde Drive
     if (raw.config) {
