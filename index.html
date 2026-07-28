@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v224">
+<meta name="arteval-version" content="v225">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4321,7 +4321,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v224</span>
+      ">v225</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -17855,6 +17855,19 @@ window.addEventListener('offline', function() {
 document.addEventListener('visibilitychange', function() {
   if (document.visibilityState === 'hidden') {
     _guardiaCierre();
+  } else if (document.visibilityState === 'visible') {
+    // v225: al VOLVER al primer plano, el temporizador de renovación pudo
+    // haberse congelado mientras el iPad estaba suspendido o la app en segundo
+    // plano — dejando el token de Google vencido. Si está expirado o le quedan
+    // menos de 5 minutos, renovarlo en silencio ya, para que el próximo envío
+    // no falle (antes había que cerrar y reabrir la app).
+    try {
+      if (typeof _gisTokenClient !== 'undefined' && _gisTokenClient && _gmailLinkedEmail) {
+        if (!_driveToken || Date.now() >= (_driveTokenExp - 300000)) {
+          _requestTokenSilent();
+        }
+      }
+    } catch(e) { /* nunca interrumpir el retorno a la app */ }
   }
 });
 
@@ -18304,6 +18317,27 @@ function _msgPersActualizarContadorGrupal() {
   if (el) el.textContent = n ? (n + ' apoderado' + (n > 1 ? 's' : '') + ' seleccionado' + (n > 1 ? 's' : '')) : 'Ninguno seleccionado';
 }
 
+// v225: garantiza un token de Google vigente ANTES de enviar. Si está por
+// vencer (o vencido), lo renueva en silencio y espera hasta 6s a que llegue.
+// Resuelve el token válido, o null si no se pudo renovar. Así el envío deja de
+// fallar por un token expirado tras tener la app un rato abierta.
+function _asegurarTokenFresco() {
+  return new Promise(function(resolve) {
+    var vigente = (typeof _driveToken !== 'undefined' && _driveToken && Date.now() < (_driveTokenExp - 30000));
+    if (vigente) { resolve(_driveToken); return; }
+    if (typeof _gisTokenClient === 'undefined' || !_gisTokenClient || !_gmailLinkedEmail) { resolve(null); return; }
+    // Disparar renovación silenciosa y sondear su llegada
+    var expAntes = _driveTokenExp;
+    try { _requestTokenSilent(); } catch(e) { resolve(null); return; }
+    var t0 = Date.now();
+    var iv = setInterval(function() {
+      var renovado = _driveToken && _driveTokenExp > expAntes && Date.now() < _driveTokenExp;
+      if (renovado) { clearInterval(iv); resolve(_driveToken); return; }
+      if (Date.now() - t0 > 6000) { clearInterval(iv); resolve(null); return; } // timeout 6s
+    }, 250);
+  });
+}
+
 function _msgPersEnviar(via) {
   var asunto = (document.getElementById('msgPersAsunto') || {}).value || '';
   var cuerpo = (document.getElementById('msgPersCuerpo') || {}).value || '';
@@ -18316,7 +18350,6 @@ function _msgPersEnviar(via) {
     var destinatarios = Object.keys(_msgPersSeleccionGrupal).map(function(k){ return _msgPersSeleccionGrupal[k]; });
     if (!destinatarios.length) { toast('⚠ Selecciona al menos un apoderado', 'err', 3500); return; }
     var tok = (typeof _driveToken !== 'undefined' && _driveToken && Date.now() < _driveTokenExp) ? _driveToken : null;
-    if (via === 'api' && !tok) { toast('⚠ Conecta tu cuenta Google para envío directo, o usa "Abrir en Gmail" (uno por uno)', 'err', 5000); return; }
     if (via === 'compose') {
       // Gmail no permite cuerpos distintos por destinatario en un solo compose:
       // abrimos secuencialmente, personalizando cada uno.
@@ -18333,27 +18366,16 @@ function _msgPersEnviar(via) {
       });
       return;
     }
-    // API: enviar a cada uno con su mensaje personalizado, con pausa anti-429
-    toast('Enviando a ' + destinatarios.length + ' apoderados…', 'info', 3000);
-    var enviados = 0;
-    destinatarios.forEach(function(d, i) {
-      setTimeout(function() {
-        var a = _msgPersRellenarVars(asunto, d.nombre, d.curso);
-        var c = _msgPersRellenarVars(cuerpo, d.nombre, d.curso);
-        _enviarViaGmailAPI(tok, d.email, a, c, cc, d.nombre);
-        _registrarMsgPers(d.nombre, d.email, d.curso, _msgPersPlantillaActual);
-        enviados++;
-        if (enviados === destinatarios.length) {
-          setTimeout(function() {
-            toast('✓ ' + enviados + ' correos enviados', 'ok', 4000);
-            _msgPersSeleccionGrupal = {};
-            _msgPersRenderSelectorGrupal();
-            var cu = document.getElementById('msgPersCuerpo'); if (cu) cu.value = '';
-            var au = document.getElementById('msgPersAsunto'); if (au) au.value = '';
-          }, 500);
-        }
-      }, i * 180);
-    });
+    // API: v225 — renovar el token en silencio si venció, antes de rendirse
+    if (!tok) {
+      toast('Reconectando con Google…', 'info', 2500);
+      _asegurarTokenFresco().then(function(tokNuevo) {
+        if (!tokNuevo) { toast('⚠ No se pudo reconectar. Usa "Abrir en Gmail", o reconecta tu cuenta arriba.', 'err', 6000); return; }
+        _msgPersEnviarGrupalAPI(tokNuevo, destinatarios, asunto, cuerpo, cc);
+      });
+      return;
+    }
+    _msgPersEnviarGrupalAPI(tok, destinatarios, asunto, cuerpo, cc);
     return;
   }
 
@@ -18375,9 +18397,52 @@ function _msgPersEnviar(via) {
     return;
   }
   var tok2 = (typeof _driveToken !== 'undefined' && _driveToken && Date.now() < _driveTokenExp) ? _driveToken : null;
-  if (!tok2) { toast('⚠ Conecta tu cuenta Google arriba para enviar desde ArtEval, o usa "Abrir en Gmail"', 'err', 5000); return; }
+  // v225: si el token venció (app abierta hace rato), renovarlo en silencio
+  // ANTES de enviar, en vez de detenerse. Solo si la renovación falla se avisa.
+  if (!tok2) {
+    toast('Reconectando con Google…', 'info', 2500);
+    _asegurarTokenFresco().then(function(tokNuevo) {
+      if (!tokNuevo) {
+        toast('⚠ No se pudo reconectar. Usa "Abrir en Gmail" o reconecta tu cuenta arriba.', 'err', 6000);
+        return;
+      }
+      _msgPersEnviarAPI(tokNuevo, dest, aFinal, cFinal, cc, nom, cur);
+    });
+    return;
+  }
+  _msgPersEnviarAPI(tok2, dest, aFinal, cFinal, cc, nom, cur);
+}
+
+// v225: envío grupal efectivo por API (factorizado para usarlo con token
+// vigente o tras renovarlo). Pausa de 180ms entre correos para evitar el 429.
+function _msgPersEnviarGrupalAPI(tok, destinatarios, asunto, cuerpo, cc) {
+  toast('Enviando a ' + destinatarios.length + ' apoderados…', 'info', 3000);
+  var enviados = 0;
+  destinatarios.forEach(function(d, i) {
+    setTimeout(function() {
+      var a = _msgPersRellenarVars(asunto, d.nombre, d.curso);
+      var c = _msgPersRellenarVars(cuerpo, d.nombre, d.curso);
+      _enviarViaGmailAPI(tok, d.email, a, c, cc, d.nombre);
+      _registrarMsgPers(d.nombre, d.email, d.curso, _msgPersPlantillaActual);
+      enviados++;
+      if (enviados === destinatarios.length) {
+        setTimeout(function() {
+          toast('✓ ' + enviados + ' correos enviados', 'ok', 4000);
+          _msgPersSeleccionGrupal = {};
+          _msgPersRenderSelectorGrupal();
+          var cu = document.getElementById('msgPersCuerpo'); if (cu) cu.value = '';
+          var au = document.getElementById('msgPersAsunto'); if (au) au.value = '';
+        }, 500);
+      }
+    }, i * 180);
+  });
+}
+
+// v225: envío efectivo por API + limpieza del formulario (factorizado para
+// usarlo con token vigente o tras renovarlo)
+function _msgPersEnviarAPI(tok, dest, aFinal, cFinal, cc, nom, cur) {
   toast('Enviando…', 'info', 2000);
-  _enviarViaGmailAPI(tok2, dest, aFinal, cFinal, cc, nom);
+  _enviarViaGmailAPI(tok, dest, aFinal, cFinal, cc, nom);
   _registrarMsgPers(nom, dest, cur, _msgPersPlantillaActual);
   setTimeout(function() {
     var c = document.getElementById('msgPersCuerpo'); if (c) c.value = '';
