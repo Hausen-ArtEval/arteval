@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v225">
+<meta name="arteval-version" content="v227">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4321,7 +4321,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v225</span>
+      ">v227</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -4644,6 +4644,10 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
           <!-- v219: GRID DINÁMICO — se genera desde la configuración de cursos
                del profesor (av_cursos_config). Por defecto: 3°–6° básico A–D. -->
           <div id="cursosGridDinamico"></div>
+          <button class="btn btn-sm" onclick="_abrirIngresoRapido()" style="width:100%;margin-top:10px;justify-content:center;gap:6px;font-size:12px;background:var(--accent);color:#fff;border-color:var(--accent);">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Agregar estudiante
+          </button>
           <button class="btn btn-sm" onclick="_abrirConfigCursos()" style="width:100%;margin-top:10px;justify-content:center;gap:6px;font-size:12px;color:var(--text2);">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
             Configurar cursos
@@ -4781,6 +4785,9 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
           <select id="rubricaSelect" onchange="cambiarRubrica()"></select>
         </div>
       </div>
+
+      <!-- Indicador de modo tanda (v226) -->
+      <div id="tandaIndicador" style="display:none;align-items:center;gap:10px;margin-bottom:12px;background:rgba(52,199,89,0.08);border:1px solid rgba(52,199,89,0.35);border-radius:var(--rad-lg);padding:9px 14px;font-size:12.5px;color:var(--text2);"></div>
 
       <!-- Panel de sugerencia de siguiente evaluación -->
       <div id="siguienteEvalPanel" style="display:none;margin-bottom:12px;background:var(--blue-bg,#eff6ff);border:1px solid #93c5fd;border-radius:var(--rad-lg);padding:12px 16px;">
@@ -8627,9 +8634,9 @@ async function guardar() {
     registros.unshift(nuevoReg);
   }
   saveRegistros();
-  // Vibración háptica al guardar — confirma físicamente sin mirar la pantalla
-  // Compatible: iOS Safari 13+, Android Chrome. Silencioso si no está soportado.
-  try { if (navigator.vibrate) navigator.vibrate(40); } catch(e) {}
+  // v226: fijar el contexto de tanda (rúbrica + instancia) para reaplicarlo
+  // automáticamente al siguiente estudiante — evita re-marcar en cada trabajo.
+  try { if (typeof _tandaFijarDesdeActual === 'function') _tandaFijarDesdeActual(); } catch(e) {}
   // Cola offline: guardar cada nota al momento de ingresarse
   // Garantiza recuperación aunque Drive sobreescriba al reconectar
   try {
@@ -17340,6 +17347,7 @@ function showEstudioSub(sub) {
       actualizarResumen();
       actualizarBarraProgresoCurso();
       _reconstruirInstanciaSelect();
+      if (typeof _tandaRenderIndicador === 'function') _tandaRenderIndicador(); // v226
     } catch(e) { console.warn('[ArtEval] evaluar init:', e.message); }
   }
   // requestAnimationFrame: cede el hilo al browser para pintar la navegación primero
@@ -21293,6 +21301,90 @@ function cerrarSugerencia() {
   if (panel) panel.style.display = 'none';
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+//  MODO TANDA — v226
+//  Al evaluar muchos trabajos de la misma actividad (ej: 30 máscaras de 6°),
+//  el profesor usa SIEMPRE la misma rúbrica, instancia y semestre. Antes había
+//  que re-marcarlos en cada estudiante. Ahora, tras la primera evaluación, ese
+//  contexto queda "fijado" y se reaplica solo al escribir el siguiente nombre.
+//  Se fija automáticamente al guardar; el profesor puede soltarlo cuando cambia
+//  de actividad. El semestre se deriva de la instancia, como en todo el sistema.
+// ═══════════════════════════════════════════════════════════════════════════
+var _tandaContexto = (function() {
+  try { return JSON.parse(sessionStorage.getItem('av_tanda_ctx') || 'null'); }
+  catch(e) { return null; }
+})();
+function _tandaGuardarCtx() {
+  try {
+    if (_tandaContexto) sessionStorage.setItem('av_tanda_ctx', JSON.stringify(_tandaContexto));
+    else sessionStorage.removeItem('av_tanda_ctx');
+  } catch(e) {}
+}
+// Captura el contexto actual (llamado al guardar una evaluación)
+function _tandaFijarDesdeActual() {
+  var inst = document.getElementById('instanciaSelect');
+  var rub  = (typeof getRubrica === 'function') ? getRubrica() : null;
+  _tandaContexto = {
+    rubricaNombre: rub ? rub.nombre : '',
+    rubricaIdx:    (typeof rubricaActiva !== 'undefined') ? rubricaActiva : 0,
+    instancia:     inst ? inst.value : 'Evaluación 1',
+    fijada:        true
+  };
+  _tandaGuardarCtx();
+  _tandaRenderIndicador();
+}
+// Reaplica el contexto fijado a los selectores (llamado al elegir estudiante)
+function _tandaAplicarSiActiva() {
+  if (!_tandaContexto || !_tandaContexto.fijada) return false;
+  // Rúbrica: buscar por nombre (robusto ante reordenamientos), fallback a índice
+  var idx = -1;
+  if (_tandaContexto.rubricaNombre && typeof rubricas !== 'undefined') {
+    idx = rubricas.findIndex(function(rb){ return rb.nombre === _tandaContexto.rubricaNombre; });
+  }
+  if (idx < 0 && typeof rubricas !== 'undefined' && rubricas[_tandaContexto.rubricaIdx]) idx = _tandaContexto.rubricaIdx;
+  if (idx > -1 && idx !== rubricaActiva) {
+    rubricaActiva = idx;
+    localStorage.setItem('av_rubrica_activa', idx);
+    if (typeof renderCriterios === 'function') renderCriterios();
+    if (typeof actualizarRubricaSelect === 'function') actualizarRubricaSelect();
+    if (typeof actualizarSlider === 'function') actualizarSlider();
+  }
+  // Instancia (de ahí se deriva el semestre)
+  var selInst = document.getElementById('instanciaSelect');
+  if (selInst && _tandaContexto.instancia) {
+    var found = false;
+    for (var i = 0; i < selInst.options.length; i++) {
+      if (selInst.options[i].value === _tandaContexto.instancia) { selInst.selectedIndex = i; found = true; break; }
+    }
+    if (!found) {
+      var opt = document.createElement('option');
+      opt.value = _tandaContexto.instancia; opt.textContent = _tandaContexto.instancia; opt.selected = true;
+      selInst.appendChild(opt);
+    }
+    if (typeof _sincronizarSemestrePorInstancia === 'function') _sincronizarSemestrePorInstancia();
+    if (typeof actualizarBarraProgresoCurso === 'function') actualizarBarraProgresoCurso();
+  }
+  return true;
+}
+function _tandaSoltar() {
+  _tandaContexto = null;
+  _tandaGuardarCtx();
+  _tandaRenderIndicador();
+  toast('Tanda liberada — la próxima evaluación fijará un nuevo contexto', 'info', 3000);
+}
+// Indicador discreto sobre la zona de evaluación
+function _tandaRenderIndicador() {
+  var cont = document.getElementById('tandaIndicador');
+  if (!cont) return;
+  if (!_tandaContexto || !_tandaContexto.fijada) { cont.style.display = 'none'; cont.innerHTML = ''; return; }
+  var sem = (typeof _semestrePorInstancia === 'function') ? _semestrePorInstancia(_tandaContexto.instancia) : 1;
+  cont.style.display = 'flex';
+  cont.innerHTML =
+      '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#34C759" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>'
+    + '<span style="flex:1;min-width:0;">Evaluando en serie: <strong>' + _esc(_tandaContexto.rubricaNombre || 'rúbrica actual') + '</strong> · ' + _esc(_tandaContexto.instancia) + ' <span style="color:var(--text3);">(Sem ' + sem + ')</span> — se aplica solo a cada estudiante</span>'
+    + '<button onclick="_tandaSoltar()" style="background:transparent;border:1px solid var(--border2);border-radius:7px;padding:4px 10px;font-size:11px;font-weight:600;color:var(--text2);cursor:pointer;white-space:nowrap;">Cambiar actividad</button>';
+}
+
 function seleccionarAutocompletado(nombre, curso) {
   ocultarAutocompletado();
 
@@ -21326,6 +21418,10 @@ function seleccionarAutocompletado(nombre, curso) {
       // Sugerir rúbrica apropiada
       if (typeof _sugerirRubricaPorCurso === 'function') _sugerirRubricaPorCurso(curso);
     }
+    // v226: si hay una tanda activa (misma actividad en curso), reaplicar su
+    // rúbrica e instancia AUTOMÁTICAMENTE — tiene prioridad sobre la sugerencia
+    // por curso, porque el profesor está evaluando la misma actividad en serie.
+    try { if (typeof _tandaAplicarSiActiva === 'function') _tandaAplicarSiActiva(); } catch(e) {}
     // Focus al siguiente campo relevante o al primer criterio sin nivel
     setTimeout(function() {
       var primerCrit = document.querySelector('.nivel-btn:not(.sel-MB):not(.sel-L):not(.sel-M):not(.sel-N)');
@@ -21439,6 +21535,129 @@ document.addEventListener('keydown', e => {
 let cursoSeleccionado = null;
 let estFiltro = 'todos'; // todos | pendiente | entregado | pie
 let instanciaCursoFiltro = ''; // '' = todas las instancias
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  INGRESO RÁPIDO DE ESTUDIANTE — v227
+//  Agregar estudiantes nuevos de forma directa desde la barra de cursos, con
+//  VERIFICACIÓN AUTOMÁTICA contra la planilla Alexia del curso: al escribir el
+//  nombre, ArtEval confirma en el momento si calza con Alexia (sincronización
+//  garantizada) o avisa si no aparece, antes de que haya cualquier problema.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Busca el estudiante en la plantilla Alexia del curso. Devuelve:
+//  { estado:'ok', guid, nombreAlexia }  → calza exacto o fuzzy
+//  { estado:'sin_plantilla' }           → no hay plantilla Alexia para el curso
+//  { estado:'no_encontrado' }           → hay plantilla pero el nombre no aparece
+function _verificarEnAlexia(nombre, curso) {
+  if (!nombre || !curso) return { estado: 'no_encontrado' };
+  var p = (typeof alexiaDatos !== 'undefined') ? alexiaDatos[curso] : null;
+  if (!p && typeof alexiaNormCurso === 'function') {
+    // Tolerar variaciones de la clave de curso (3°A vs 3A)
+    var kBusca = alexiaNormCurso(curso);
+    Object.keys(alexiaDatos || {}).forEach(function(k) {
+      if (!p && alexiaNormCurso(k) === kBusca) p = alexiaDatos[k];
+    });
+  }
+  if (!p || !(p.estudiantes || []).length) return { estado: 'sin_plantilla' };
+  var norm = alexiaNorm(nombre);
+  var match = (p.estudiantes || []).find(function(est) {
+    return mismoEstudiante(alexiaNorm((est.apellidos||'') + ' ' + (est.nombre||'')), norm) ||
+           mismoEstudiante(alexiaNorm((est.nombre||'') + ' ' + (est.apellidos||'')), norm);
+  });
+  if (match) return { estado: 'ok', guid: match.guid || '', nombreAlexia: ((match.apellidos||'') + ' ' + (match.nombre||'')).trim() };
+  return { estado: 'no_encontrado' };
+}
+
+// Abre el ingreso rápido para el curso indicado (o el seleccionado)
+function _abrirIngresoRapido(cursoPre) {
+  var curso = cursoPre || (typeof cursoSeleccionado !== 'undefined' ? cursoSeleccionado : '') || '';
+  var opcionesCurso = '';
+  var cursosDisponibles = (typeof CURSOS_PREDEFINIDOS !== 'undefined')
+    ? Object.keys(CURSOS_PREDEFINIDOS).reduce(function(acc, niv){ return acc.concat(CURSOS_PREDEFINIDOS[niv]); }, [])
+    : Object.keys(listaCursos || {});
+  // incluir cursos que ya tienen estudiantes aunque no estén en la config
+  Object.keys(listaCursos || {}).forEach(function(c){ if ((listaCursos[c]||[]).length && cursosDisponibles.indexOf(c) === -1) cursosDisponibles.push(c); });
+  cursosDisponibles.forEach(function(c) {
+    opcionesCurso += '<option value="' + _esc(c) + '"' + (c === curso ? ' selected' : '') + '>' + _esc(c) + '</option>';
+  });
+
+  var html = '<div style="padding:2px;">'
+    + '<div style="font-size:16px;font-weight:700;margin-bottom:3px;">Agregar estudiante</div>'
+    + '<div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6;">Escribe el nombre completo (Apellidos Nombre). ArtEval verificará al instante si calza con tu planilla de Alexia.</div>'
+    + '<label style="display:block;font-size:11px;font-weight:600;color:var(--text3);margin-bottom:4px;">Curso</label>'
+    + '<select id="irCursoSel" onchange="_irVerificar()" style="width:100%;padding:9px 10px;border:1px solid var(--border2);border-radius:var(--rad);font-size:14px;background:var(--bg);color:var(--text);margin-bottom:12px;">' + opcionesCurso + '</select>'
+    + '<label style="display:block;font-size:11px;font-weight:600;color:var(--text3);margin-bottom:4px;">Nombre del estudiante</label>'
+    + '<input type="text" id="irNombre" oninput="_irVerificar()" placeholder="Ej: Fuenzalida Mora, Valentina" autocomplete="off" style="width:100%;padding:10px 12px;border:1px solid var(--border2);border-radius:var(--rad);font-size:14px;background:var(--bg);color:var(--text);">'
+    + '<div id="irVerificacion" style="font-size:12px;margin-top:8px;min-height:20px;line-height:1.5;"></div>'
+    + '<label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;cursor:pointer;">'
+    + '<input type="checkbox" id="irPie" style="accent-color:var(--pie,#FF9500);width:16px;height:16px;"> Estudiante PIE'
+    + '</label>'
+    + '<input type="text" id="irPieNota" placeholder="Nota PIE (opcional)" style="width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--rad);font-size:13px;background:var(--bg);color:var(--text);margin-top:8px;">'
+    + '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">'
+    + '<button class="btn" onclick="cerrarModal()">Cancelar</button>'
+    + '<button class="btn btn-primary" id="irGuardarBtn" onclick="_irGuardar()">Agregar</button>'
+    + '</div></div>';
+  abrirModal(html);
+  setTimeout(function(){ var n = document.getElementById('irNombre'); if (n) n.focus(); _irVerificar(); }, 60);
+}
+
+// Verificación en vivo mientras se escribe
+function _irVerificar() {
+  var nombre = (document.getElementById('irNombre') || {}).value || '';
+  var curso  = (document.getElementById('irCursoSel') || {}).value || '';
+  var box    = document.getElementById('irVerificacion');
+  if (!box) return;
+  nombre = nombre.trim();
+  if (nombre.length < 3) { box.innerHTML = ''; return; }
+
+  // ¿Ya existe en el curso?
+  var yaExiste = (listaCursos[curso] || []).some(function(e){ return mismoEstudiante(e.nombre||'', nombre); });
+  if (yaExiste) {
+    box.innerHTML = '<span style="color:#FF9500;">⚠ Ya existe un estudiante con ese nombre en ' + _esc(curso) + '.</span>';
+    return;
+  }
+  var v = _verificarEnAlexia(nombre, curso);
+  if (v.estado === 'ok') {
+    box.innerHTML = '<span style="color:#34C759;">✓ Calza con Alexia' + (v.guid ? ' (vínculo exacto por GUID)' : '') + '. Sus notas se exportarán sincronizadas.</span>';
+  } else if (v.estado === 'sin_plantilla') {
+    box.innerHTML = '<span style="color:var(--text3);">Sin planilla Alexia cargada para ' + _esc(curso) + '. Se agregará igual; se casará por nombre cuando importes la planilla.</span>';
+  } else {
+    box.innerHTML = '<span style="color:#FF9500;">⚠ No aparece en la planilla Alexia de ' + _esc(curso) + '. Revisa que el nombre esté escrito igual que en Alexia (Apellidos Nombre), o impórtalo si es realmente nuevo en el sistema.</span>';
+  }
+}
+
+function _irGuardar() {
+  var nombre = ((document.getElementById('irNombre') || {}).value || '').trim();
+  var curso  = (document.getElementById('irCursoSel') || {}).value || '';
+  var esPie  = (document.getElementById('irPie') || {}).checked || false;
+  var pieNota = ((document.getElementById('irPieNota') || {}).value || '').trim();
+  if (nombre.length < 3) { toast('⚠ Escribe el nombre completo', 'err', 3000); return; }
+  if (!curso) { toast('⚠ Selecciona un curso', 'err', 3000); return; }
+
+  if (!listaCursos[curso]) listaCursos[curso] = [];
+  if (listaCursos[curso].some(function(e){ return mismoEstudiante(e.nombre||'', nombre); })) {
+    toast('⚠ Ese estudiante ya está en ' + curso, 'err', 3500); return;
+  }
+
+  // Vincular con Alexia: si calza, guardar el guidMatricula para sincronización exacta
+  var v = _verificarEnAlexia(nombre, curso);
+  var nuevo = { nombre: nombre, pie: esPie, pieNota: esPie ? pieNota : '' };
+  if (v.estado === 'ok' && v.guid) nuevo.guidMatricula = v.guid;
+
+  listaCursos[curso].push(nuevo);
+  saveListaCursos();
+  if (typeof sincronizarRegistrosACursos === 'function') sincronizarRegistrosACursos();
+  if (typeof _renderCursoSidebarGrid === 'function') { try { _renderCursoSidebarGrid(); } catch(e) {} }
+  if (typeof renderSidebarCounts === 'function') { try { renderSidebarCounts(); } catch(e) {} }
+  if (typeof renderCursoMain === 'function' && cursoSeleccionado === curso) { try { renderCursoMain(); } catch(e) {} }
+  if (typeof _driveSaveDebounced === 'function') _driveSaveDebounced();
+
+  cerrarModal();
+  var msg = v.estado === 'ok'
+    ? '✓ ' + nombre + ' agregado a ' + curso + ' · sincronizado con Alexia'
+    : '✓ ' + nombre + ' agregado a ' + curso;
+  toast(msg, 'ok', 3500);
+}
 
 function saveListaCursos() {
   // Normalizar claves de cursos antes de guardar (previene 5D vs 5°D como claves separadas)
