@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v227">
+<meta name="arteval-version" content="v229">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4321,7 +4321,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v227</span>
+      ">v229</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -4647,6 +4647,10 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
           <button class="btn btn-sm" onclick="_abrirIngresoRapido()" style="width:100%;margin-top:10px;justify-content:center;gap:6px;font-size:12px;background:var(--accent);color:#fff;border-color:var(--accent);">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Agregar estudiante
+          </button>
+          <button class="btn btn-sm" onclick="_abrirBajaEstudiante()" style="width:100%;margin-top:6px;justify-content:center;gap:6px;font-size:12px;color:var(--text2);">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Dar de baja
           </button>
           <button class="btn btn-sm" onclick="_abrirConfigCursos()" style="width:100%;margin-top:10px;justify-content:center;gap:6px;font-size:12px;color:var(--text2);">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -11187,7 +11191,38 @@ async function procesarRubricaWord(file) {
       var semDet   = _detectarSemestreDesdeTexto(textoCompleto);
 
       // ── 7. Inyectar en el formulario ──────────────────────────────────────
-      if (typeof mostrarFormRubrica === 'function') mostrarFormRubrica(null);
+      // v229: ACTUALIZAR en vez de duplicar. Si ya existe una rúbrica con el
+      // mismo nombre (o mismo nombre + curso), abrir el formulario en modo
+      // EDICIÓN sobre ella: al guardar, se corrige la existente y se conservan
+      // su posición y las evaluaciones ya hechas con ella. Si no existe, es nueva.
+      var _idxExistente = -1;
+      if (typeof rubricas !== 'undefined' && Array.isArray(rubricas)) {
+        var _nomNorm = (nombreRubrica || '').trim().toLowerCase();
+        var _curNorm = (cursoDet || '').trim().toLowerCase();
+        // 1º intento: nombre + curso coinciden (más preciso)
+        if (_curNorm) {
+          _idxExistente = rubricas.findIndex(function(rb) {
+            return (rb.nombre||'').trim().toLowerCase() === _nomNorm && (rb.curso||'').trim().toLowerCase() === _curNorm;
+          });
+        }
+        // 2º intento: solo por nombre
+        if (_idxExistente < 0) {
+          _idxExistente = rubricas.findIndex(function(rb) {
+            return (rb.nombre||'').trim().toLowerCase() === _nomNorm;
+          });
+        }
+      }
+
+      if (typeof mostrarFormRubrica === 'function') { window._rubricaImportUpdate = (_idxExistente >= 0); mostrarFormRubrica(_idxExistente >= 0 ? _idxExistente : null); window._rubricaImportUpdate = false; }
+
+      if (_idxExistente >= 0) {
+        var _rbEx = rubricas[_idxExistente];
+        var _nEvals = 0;
+        try { _nEvals = (registros||[]).filter(function(r){ return (r.rubricaNombre||'') === _rbEx.nombre; }).length; } catch(e) {}
+        setTimeout(function() {
+          mostrarToast('✏️ Actualizando la rúbrica existente "' + _rbEx.nombre + '"' + (_nEvals ? ' (' + _nEvals + ' evaluación(es) la usan)' : '') + '. Revisa los cambios y guarda para corregirla.', 6500);
+        }, 400);
+      }
 
       var nameInput  = document.getElementById('rubricaNombreInput');
       var cursoInput = document.getElementById('rubricaCursoInput');
@@ -11474,7 +11509,7 @@ function mostrarFormRubrica(idx=null) {
   form.style.display = 'block';
   if (idx !== null) {
     const r = rubricas[idx];
-    if (titulo)    titulo.textContent = 'Editar rúbrica';
+    if (titulo)    titulo.textContent = window._rubricaImportUpdate ? 'Actualizar rúbrica' : 'Editar rúbrica';
     if (nameInput) nameInput.value    = r.nombre;
     if (cursoInput) cursoInput.value  = r.curso    || '';
     if (semInput)   semInput.value    = r.semestre || _semestreActivo || 1;
@@ -21657,6 +21692,114 @@ function _irGuardar() {
     ? '✓ ' + nombre + ' agregado a ' + curso + ' · sincronizado con Alexia'
     : '✓ ' + nombre + ' agregado a ' + curso;
   toast(msg, 'ok', 3500);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  DAR DE BAJA ESTUDIANTE RETIRADO — v228
+//  Para estudiantes que se retiraron del establecimiento. Los quita de la
+//  nómina del curso con la misma facilidad que el ingreso rápido, pero con
+//  DOBLE CONFIRMACIÓN (es una acción definitiva). NO adultera la planilla
+//  Alexia: alexiaDatos guarda la estructura original del archivo subido y es
+//  independiente de listaCursos. El profesor decide qué hacer con las
+//  evaluaciones previas del estudiante.
+// ═══════════════════════════════════════════════════════════════════════════
+function _abrirBajaEstudiante(cursoPre) {
+  var curso = cursoPre || (typeof cursoSeleccionado !== 'undefined' ? cursoSeleccionado : '') || '';
+  var cursosConAlumnos = Object.keys(listaCursos || {}).filter(function(c){ return (listaCursos[c]||[]).length; });
+  if (!cursosConAlumnos.length) { toast('No hay estudiantes en ninguna nómina', 'info', 3000); return; }
+  if (!curso || !(listaCursos[curso]||[]).length) curso = cursosConAlumnos[0];
+
+  var opcionesCurso = cursosConAlumnos.map(function(c) {
+    return '<option value="' + _esc(c) + '"' + (c === curso ? ' selected' : '') + '>' + _esc(c) + ' (' + (listaCursos[c]||[]).length + ')</option>';
+  }).join('');
+
+  var html = '<div style="padding:2px;">'
+    + '<div style="font-size:16px;font-weight:700;margin-bottom:3px;">Dar de baja estudiante</div>'
+    + '<div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6;">Para estudiantes retirados del establecimiento. Se quitarán de la lista del curso. <strong>No afecta tu planilla de Alexia.</strong></div>'
+    + '<label style="display:block;font-size:11px;font-weight:600;color:var(--text3);margin-bottom:4px;">Curso</label>'
+    + '<select id="bajaCursoSel" onchange="_bajaRenderLista()" style="width:100%;padding:9px 10px;border:1px solid var(--border2);border-radius:var(--rad);font-size:14px;background:var(--bg);color:var(--text);margin-bottom:12px;">' + opcionesCurso + '</select>'
+    + '<label style="display:block;font-size:11px;font-weight:600;color:var(--text3);margin-bottom:4px;">Buscar estudiante</label>'
+    + '<input type="text" id="bajaBuscar" oninput="_bajaRenderLista()" placeholder="Escribe para filtrar…" autocomplete="off" style="width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--rad);font-size:14px;background:var(--bg);color:var(--text);margin-bottom:10px;">'
+    + '<div id="bajaLista" style="max-height:260px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--rad);"></div>'
+    + '<div style="display:flex;justify-content:flex-end;margin-top:16px;">'
+    + '<button class="btn" onclick="cerrarModal()">Cerrar</button>'
+    + '</div></div>';
+  abrirModal(html);
+  setTimeout(_bajaRenderLista, 60);
+}
+
+function _bajaRenderLista() {
+  var curso = (document.getElementById('bajaCursoSel') || {}).value || '';
+  var q = ((document.getElementById('bajaBuscar') || {}).value || '').trim().toLowerCase();
+  var cont = document.getElementById('bajaLista');
+  if (!cont) return;
+  var lista = (listaCursos[curso] || []).slice().sort(function(a, b) {
+    return (a.nombre||'').localeCompare(b.nombre||'', 'es');
+  });
+  if (q) lista = lista.filter(function(e){ return (e.nombre||'').toLowerCase().indexOf(q) !== -1; });
+  if (!lista.length) {
+    cont.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);font-size:13px;">' + (q ? 'Sin coincidencias' : 'Sin estudiantes') + '</div>';
+    return;
+  }
+  cont.innerHTML = lista.map(function(e) {
+    var nombreEsc = _esc(e.nombre).replace(/'/g, "\\'");
+    var nEvals = (typeof getRegsEstudiante === 'function') ? getRegsEstudiante(e.nombre, curso).length : 0;
+    var pieTag = e.pie ? ' <span style="font-size:10px;color:var(--pie,#FF9500);font-weight:700;">PIE</span>' : '';
+    return '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid var(--border);">'
+      + '<div style="min-width:0;flex:1;"><div style="font-size:13.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + _esc(e.nombre) + pieTag + '</div>'
+      + (nEvals ? '<div style="font-size:11px;color:var(--text3);">' + nEvals + ' evaluación(es) registrada(s)</div>' : '<div style="font-size:11px;color:var(--text3);">sin evaluaciones</div>')
+      + '</div>'
+      + '<button onclick="_bajaConfirmar(\'' + nombreEsc + '\')" style="flex:none;background:var(--red-bg,#fee);border:1px solid rgba(255,59,48,0.3);color:var(--red,#FF3B30);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">Dar de baja</button>'
+      + '</div>';
+  }).join('');
+}
+
+async function _bajaConfirmar(nombre) {
+  var curso = (document.getElementById('bajaCursoSel') || {}).value || '';
+  var idx = (listaCursos[curso] || []).findIndex(function(e){ return e.nombre === nombre; });
+  if (idx < 0) { toast('⚠ No se encontró al estudiante', 'err', 3000); return; }
+  var regsDelEst = (typeof getRegsEstudiante === 'function') ? getRegsEstudiante(nombre, curso) : [];
+
+  // 1ª confirmación — deliberada, con opción sobre las evaluaciones
+  var mensaje = '¿Confirmas que <strong>' + _esc(nombre) + '</strong> fue retirado/a del establecimiento?<br><br>'
+    + 'Se quitará de la lista de <strong>' + _esc(curso) + '</strong> y no volverá a aparecer.';
+  if (regsDelEst.length) {
+    mensaje += '<br><br><span style="color:var(--text2);">Tiene <strong>' + regsDelEst.length + ' evaluación(es)</strong> registrada(s). '
+      + 'Al darlo de baja también se eliminarán, para que no aparezca en las exportaciones a Alexia.</span>';
+  }
+  mensaje += '<br><br><small style="color:var(--text3);">Tu planilla de Alexia no se modifica. Esta acción no se puede deshacer.</small>';
+
+  var ok1 = await confirmarAccion('Dar de baja — paso 1 de 2', mensaje, '🎓', 'Sí, continuar', 'btn-danger');
+  if (!ok1) return;
+
+  // 2ª confirmación — última barrera antes de borrar definitivamente
+  var ok2 = await confirmarAccion(
+    'Confirmación final',
+    'Esta es la última confirmación.<br><br>Se dará de baja definitivamente a <strong>' + _esc(nombre) + '</strong>' + (regsDelEst.length ? ' junto con sus ' + regsDelEst.length + ' evaluación(es)' : '') + '.',
+    '⚠️', 'Dar de baja definitivamente', 'btn-danger'
+  );
+  if (!ok2) return;
+
+  // Ejecutar: quitar de la nómina + eliminar sus evaluaciones
+  listaCursos[curso].splice(idx, 1);
+  saveListaCursos();
+  if (regsDelEst.length) {
+    regsDelEst.forEach(function(r) {
+      var i = registros.indexOf(r);
+      if (i > -1) registros.splice(i, 1);
+    });
+    saveRegistros();
+    if (typeof actualizarConteo === 'function') actualizarConteo();
+  }
+  if (typeof sincronizarRegistrosACursos === 'function') sincronizarRegistrosACursos();
+  if (typeof renderSidebarCounts === 'function') { try { renderSidebarCounts(); } catch(e) {} }
+  if (typeof _renderCursoSidebarGrid === 'function') { try { _renderCursoSidebarGrid(); } catch(e) {} }
+  if (typeof renderCursoMain === 'function' && cursoSeleccionado === curso) { try { renderCursoMain(); } catch(e) {} }
+  if (typeof renderRegistros === 'function') { try { renderRegistros(); } catch(e) {} }
+  if (typeof _driveSaveDebounced === 'function') _driveSaveDebounced();
+
+  toast('✓ ' + nombre + ' dado/a de baja de ' + curso, 'ok', 3500);
+  _bajaRenderLista(); // refrescar la lista del modal
 }
 
 function saveListaCursos() {
