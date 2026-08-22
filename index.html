@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v229">
+<meta name="arteval-version" content="v230">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4321,7 +4321,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v229</span>
+      ">v230</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -5247,8 +5247,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
             <input class="search-input" type="text" id="buscarRegistros" placeholder="Buscar estudiante..." style="padding-left:45px !important;" oninput="clearTimeout(window._regSearchTimer);window._regSearchTimer=setTimeout(renderRegistros,280)">
           </div>
           <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;margin-left:auto;">
-            <!-- Libro de Clases -->
-            <!-- Vista Lista / Libro — icono cambia, nunca emoji -->
+            <button id="btnVerAnio" onclick="_toggleVerAnioCompleto()" title="Alternar entre semestre actual y año completo" class="reg-curso-chip" style="gap:5px;min-height:30px;padding:5px 11px;"></button>
             <button id="btnVistaLibro" onclick="toggleVistaLibro()" title="Cambiar vista" class="reg-curso-chip" style="gap:5px;min-height:30px;padding:5px 11px;">
               <svg id="icoVistaBtnLista" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
@@ -8888,6 +8887,7 @@ function _setSemestre(n) {
   }, 60);
   // Actualizar UI del segmented control
   _renderSemestreControls();
+  if (typeof _renderToggleAnio === 'function') _renderToggleAnio(); // v230: refrescar etiqueta del botón
   // Re-renderizar vistas que dependen del semestre
   actualizarTodaLaApp();
   // Toast informativo con datos relevantes del semestre
@@ -9175,6 +9175,9 @@ function toggleFiltroPie() {
   if (btn) btn.classList.toggle('activo', filtroPIEactivo);
   renderRegistros();
 }
+// v230: cuando está en false, la vista de registros muestra SOLO el semestre
+// activo (donde el profesor está ubicado); en true, muestra el año completo.
+var _verAnioCompleto = (localStorage.getItem('av_ver_anio_completo') === '1');
 function getRegistrosFiltrados() {
   const fr   = document.getElementById('filtroRubrica')?.value || '';
   const fi   = document.getElementById('filtroInstancia')?.value || '';
@@ -9182,6 +9185,11 @@ function getRegistrosFiltrados() {
   const bus  = (document.getElementById('buscarRegistros')?.value || '').toLowerCase().trim();
   return registros.filter(function(r) {
     if (!r) return false;
+    // v230: filtro por semestre activo (salvo modo "ver todo el año", o si hay
+    // un filtro de instancia explícito que ya acota el semestre)
+    if (!_verAnioCompleto && !fi) {
+      if (_semestrePorInstancia(r.instancia || '') !== _semestreActivo) return false;
+    }
     return (!fr  || r.rubricaNombre === fr) &&
            (!fi  || (r.instancia || 'Evaluación 1') === fi) &&
            (!fc  || _normCursoKey(r.curso||'') === _normCursoKey(fc)) &&
@@ -9192,6 +9200,24 @@ function getRegistrosFiltrados() {
                     (r.instancia||'').toLowerCase().includes(bus)) &&
            (!filtroPIEactivo || r.pie === true);
   });
+}
+function _toggleVerAnioCompleto() {
+  _verAnioCompleto = !_verAnioCompleto;
+  localStorage.setItem('av_ver_anio_completo', _verAnioCompleto ? '1' : '0');
+  _renderToggleAnio();
+  renderRegistros();
+  toast(_verAnioCompleto ? 'Mostrando el año completo (ambos semestres)' : 'Mostrando solo ' + _semestreActivo + '° semestre', 'info', 2500);
+}
+function _renderToggleAnio() {
+  var btn = document.getElementById('btnVerAnio');
+  if (!btn) return;
+  if (_verAnioCompleto) {
+    btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Año completo';
+    btn.style.background = 'var(--accent)'; btn.style.color = '#fff'; btn.style.borderColor = 'var(--accent)';
+  } else {
+    btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Solo ' + _semestreActivo + '° sem';
+    btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = '';
+  }
 }
 
 var _vistaLibroActiva = false;
@@ -9615,7 +9641,13 @@ function renderRegistros() {
     list.innerHTML = '<div class="empty-state"><div>Aún no hay evaluaciones guardadas.</div><div style="font-size:12px;margin-top:4px;">Evalúa un trabajo y presiona "Guardar"</div></div>';
     return;
   }
-  if (titulo) titulo.textContent = filtrados.length + ' trabajo' + (filtrados.length!==1?'s':'') + (filtrados.length !== registros.length ? ' (filtrado)' : '');
+  if (titulo) {
+    // v230: indicar el alcance temporal (semestre activo o año completo)
+    var _alcance = _verAnioCompleto ? ' · Año completo' : ' · ' + _semestreActivo + '° sem';
+    var _fLbl = (filtrados.length !== registros.length ? ' (filtrado)' : '');
+    titulo.textContent = filtrados.length + ' trabajo' + (filtrados.length!==1?'s':'') + _alcance + _fLbl;
+  }
+  if (typeof _renderToggleAnio === 'function') _renderToggleAnio();
   if (btnExp) btnExp.style.display = 'none'; // sustituido por btnExportMenu
   if (btnLim) btnLim.style.display = 'none'; // sustituido por menú
   // Mostrar el botón de menú de exportación unificado
