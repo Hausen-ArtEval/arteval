@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v230">
+<meta name="arteval-version" content="v231">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4321,7 +4321,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v230</span>
+      ">v231</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -12965,6 +12965,17 @@ function alexiaGuardarPlantilla(rows, fileName) {
   var fila7 = (rows[7] || []).map(function(c) { return String(c).trim(); });
   var fila8 = (rows[8] || []).map(function(c) { return String(c); });
 
+  // v231: detectar el SEMESTRE de la planilla desde la fila "Eval." (fila 5).
+  // Alexia marca cada planilla como "Primer Semestre" / "Segundo Semestre" y la
+  // trata como independiente (el 2° semestre empieza en N4). Guardamos esto para
+  // que la exportación mapee solo las instancias del semestre correcto.
+  var _semestrePlantilla = 0; // 0 = desconocido / año completo
+  for (var _hr = 0; _hr < headerRows.length; _hr++) {
+    var _rowTxt = (headerRows[_hr] || []).map(function(c){ return String(c); }).join(' ').toLowerCase();
+    if (/segundo\s+semestre|2°?\s*semestre|2do\s+semestre/.test(_rowTxt)) { _semestrePlantilla = 2; break; }
+    if (/primer\s+semestre|1°?\s*semestre|1er\s+semestre/.test(_rowTxt))  { _semestrePlantilla = 1; break; }
+  }
+
   var colGuidMat = fila9.findIndex(function(h) { return h === 'GuidMatricula'; });
   var colSeccion = fila9.findIndex(function(h) { return h === 'Sección' || h === 'Seccion'; });
   var colNum     = fila9.findIndex(function(h) { return h === 'Núm' || h === 'Num'; });
@@ -13026,6 +13037,7 @@ function alexiaGuardarPlantilla(rows, fileName) {
       colApell: colApell, colNombre: colNombre,
       colNF: colNF, colREC: colREC, colOBS: colOBS,
       colsCON: colsCON, colPorNombre: colPorNombre,
+      semestrePlantilla: _semestrePlantilla,
       estudiantes: estSec,
     };
   });
@@ -13171,7 +13183,14 @@ function alexiaGenerarXLS(curso) {
   //      correcto POR ALUMNO (no global).
   // ══════════════════════════════════════════════════════
   var regsCurso = registros.filter(function(r) {
-    return alexiaNormCurso(r.curso || '') === key;
+    if (alexiaNormCurso(r.curso || '') !== key) return false;
+    // v231: si la plantilla es de un semestre específico, considerar solo los
+    // registros de ese semestre — así ningún fallback puede colar notas del otro.
+    var _sp = p.semestrePlantilla || 0;
+    if (_sp && typeof _semestrePorInstancia === 'function') {
+      if (_semestrePorInstancia(r.instancia || 'Evaluación 1') !== _sp) return false;
+    }
+    return true;
   });
 
   // notasMapNombre: normNombre → { rubricaNombre → nota }
@@ -13182,9 +13201,17 @@ function alexiaGenerarXLS(curso) {
   var notasOrden     = {}; // { normNombre → [rb1, rb2, ...] en orden }
 
   // FIX: calcular orden de instancias DENTRO de la función
+  // v231: si la plantilla Alexia es de un semestre específico (ej: 2° semestre,
+  // que empieza en N4), incluir SOLO las instancias de ese semestre. Así la
+  // primera columna CON de la planilla (N4) recibe la Evaluación 4 —no la Ev.1—
+  // y las notas calzan con la numeración que Alexia espera para ese semestre.
+  var _semPlantilla = p.semestrePlantilla || 0;
   var instanciasOrden = [];
   regsCurso.forEach(function(r) {
     var inst = r.instancia || 'Evaluación 1';
+    if (_semPlantilla && typeof _semestrePorInstancia === 'function') {
+      if (_semestrePorInstancia(inst) !== _semPlantilla) return; // saltar instancias de otro semestre
+    }
     if (instanciasOrden.indexOf(inst) === -1) instanciasOrden.push(inst);
   });
   instanciasOrden.sort(function(a, b) {
