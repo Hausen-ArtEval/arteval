@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v231">
+<meta name="arteval-version" content="v232">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4321,7 +4321,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v231</span>
+      ">v232</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -4708,6 +4708,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
                 <span id="importListaStatus" style="font-size:11px;color:var(--text3);font-family:var(--font-mono);margin-left:auto;"></span>
                 <!-- Exportar todos los cursos que tienen plantilla -->
                 <button class="btn btn-success" style="font-size:12px;padding:5px 14px;" onclick="exportarTodosAlexia()" id="btnExportarTodosAlexia" title="Exportar XLS de todos los cursos con plantilla cargada"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Exportar todos los XLS</button>
+                <button class="btn" style="font-size:12px;padding:5px 14px;" onclick="exportarInformeAnualTodos()" id="btnInformeAnual" title="Informe con todas las notas del año (1° y 2° semestre) y promedios — para cierre de año"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> Informe anual completo</button>
               </div>
             </div>
           </div>
@@ -12677,6 +12678,141 @@ function exportarNapsis(curso) {
 }
 
 // ── Generar Excel genérico (compatible con Colegium y otros) ──────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  INFORME ANUAL COMPLETO — v232
+//  Exporta TODAS las notas del año (1° y 2° semestre juntos) en un solo Excel,
+//  con las evaluaciones separadas visualmente por semestre, el promedio de cada
+//  semestre y el promedio final anual. Independiente de las planillas Alexia:
+//  lee de `registros`, que conserva todo el año aunque se hayan sobrescrito las
+//  planillas de semestre. Pensado para el cierre de año.
+// ═══════════════════════════════════════════════════════════════════════════
+function _promedio(vals) {
+  var nums = vals.filter(function(n){ return n !== '' && n !== null && n !== undefined && !isNaN(Number(n)); }).map(Number);
+  if (!nums.length) return '';
+  return Math.round(nums.reduce(function(a,b){ return a+b; }, 0) / nums.length * 10) / 10;
+}
+
+function _exportarInformeAnualCurso(curso, wbExistente) {
+  if (typeof XLSX === 'undefined') { toast('❌ Librería Excel no cargada', 'err', 4000); return null; }
+  var key  = alexiaNormCurso(curso);
+  var regs = registros.filter(function(r) {
+    return alexiaNormCurso(r.curso || '') === key && !r.noEntregado;
+  });
+  if (!regs.length) return null;
+
+  // Instancias por semestre, ordenadas
+  var instSem1 = [], instSem2 = [];
+  regs.forEach(function(r) {
+    var inst = r.instancia || 'Evaluación 1';
+    var sem  = _semestrePorInstancia(inst);
+    var arr  = (sem === 2) ? instSem2 : instSem1;
+    if (arr.indexOf(inst) === -1) arr.push(inst);
+  });
+  var ordenar = function(a, b) {
+    return parseInt((a.match(/\d+/)||['99'])[0]) - parseInt((b.match(/\d+/)||['99'])[0]);
+  };
+  instSem1.sort(ordenar); instSem2.sort(ordenar);
+
+  // Rúbrica asociada a cada instancia (subtítulo informativo)
+  var rubPorInst = {};
+  regs.forEach(function(r) {
+    var inst = r.instancia || 'Evaluación 1';
+    if (!rubPorInst[inst]) rubPorInst[inst] = r.rubricaNombre || '';
+  });
+
+  // Notas por alumno
+  var porAlumno = {};
+  regs.forEach(function(r) {
+    var n = alexiaNorm(r.nombre || '');
+    var inst = r.instancia || 'Evaluación 1';
+    if (!porAlumno[n]) porAlumno[n] = { nombre: r.nombre, notas: {} };
+    if (porAlumno[n].notas[inst] === undefined) porAlumno[n].notas[inst] = r.nota;
+  });
+  // Incorporar la nómina vigente (para número de lista y PIE)
+  var nomina = listaCursos[curso] || [];
+  nomina.forEach(function(e, idx) {
+    var n = alexiaNorm(e.nombre || '');
+    if (!porAlumno[n]) porAlumno[n] = { nombre: e.nombre, notas: {}, num: idx+1, pie: e.pie };
+    else { porAlumno[n].num = idx+1; porAlumno[n].pie = e.pie; }
+  });
+  var alumnos = Object.values(porAlumno).sort(function(a,b){ return (a.num||999)-(b.num||999); });
+
+  // ── Construir filas ──
+  // Fila 1: encabezado con separadores de semestre
+  var head1 = ['N°', 'Apellidos y Nombre', 'PIE'];
+  instSem1.forEach(function(e){ head1.push(e); });
+  head1.push('Prom. 1° sem');
+  instSem2.forEach(function(e){ head1.push(e); });
+  head1.push('Prom. 2° sem');
+  head1.push('PROMEDIO FINAL');
+
+  // Fila 2: subtítulo con la rúbrica de cada evaluación
+  var head2 = ['', '', ''];
+  instSem1.forEach(function(e){ head2.push(rubPorInst[e] || ''); });
+  head2.push('');
+  instSem2.forEach(function(e){ head2.push(rubPorInst[e] || ''); });
+  head2.push(''); head2.push('');
+
+  var rows = [head1, head2];
+  alumnos.forEach(function(al, idx) {
+    var fila = [ (al.num||idx+1), al.nombre, al.pie ? 'PIE' : '' ];
+    var n1 = instSem1.map(function(e){ return al.notas[e] !== undefined ? al.notas[e] : ''; });
+    var n2 = instSem2.map(function(e){ return al.notas[e] !== undefined ? al.notas[e] : ''; });
+    var p1 = _promedio(n1), p2 = _promedio(n2);
+    fila = fila.concat(n1).concat([p1]).concat(n2).concat([p2]);
+    // Promedio final anual: promedio de los promedios semestrales disponibles
+    var pf = _promedio([p1, p2]);
+    fila.push(pf);
+    rows.push(fila);
+  });
+
+  var ws = XLSX.utils.aoa_to_sheet(rows);
+  var ncols = head1.length;
+  ws['!cols'] = [{wch:4},{wch:34},{wch:5}]
+    .concat(instSem1.map(function(){return {wch:16};})).concat([{wch:12}])
+    .concat(instSem2.map(function(){return {wch:16};})).concat([{wch:12},{wch:14}]);
+
+  var wb = wbExistente || XLSX.utils.book_new();
+  var hoja = ('Notas ' + curso).slice(0, 31); // límite de Excel
+  XLSX.utils.book_append_sheet(wb, ws, hoja);
+  return wb;
+}
+
+// Exporta el curso actualmente seleccionado
+function exportarInformeAnual(curso) {
+  var c = curso || cursoSeleccionado || '';
+  if (!c) { toast('⚠ Selecciona un curso primero', 'err', 3000); return; }
+  var wb = _exportarInformeAnualCurso(c, null);
+  if (!wb) { toast('⚠ No hay notas registradas para ' + c, 'err', 3500); return; }
+  XLSX.writeFile(wb, 'ArtEval_Anual_' + alexiaNormCurso(c) + '.xlsx');
+  toast('✅ Informe anual exportado — ' + c, 'ok', 3000);
+}
+
+// Exporta TODOS los cursos con notas, cada uno en su hoja
+function exportarInformeAnualTodos() {
+  if (typeof XLSX === 'undefined') { toast('❌ Librería Excel no cargada', 'err', 4000); return; }
+  var cursosConNotas = [];
+  var vistos = {};
+  registros.forEach(function(r) {
+    if (r && r.curso && !vistos[alexiaNormCurso(r.curso)]) {
+      vistos[alexiaNormCurso(r.curso)] = true;
+      cursosConNotas.push(r.curso);
+    }
+  });
+  if (!cursosConNotas.length) { toast('⚠ No hay notas registradas', 'err', 3500); return; }
+  cursosConNotas.sort(function(a,b){ return a.localeCompare(b, 'es', {numeric:true}); });
+
+  var wb = XLSX.utils.book_new();
+  var hojas = 0;
+  cursosConNotas.forEach(function(c) {
+    var res = _exportarInformeAnualCurso(c, wb);
+    if (res) hojas++;
+  });
+  if (!hojas) { toast('⚠ No se pudo generar el informe', 'err', 3500); return; }
+  XLSX.writeFile(wb, 'ArtEval_Informe_Anual_Completo.xlsx');
+  toast('✅ Informe anual completo — ' + hojas + ' curso(s)', 'ok', 3500);
+}
+
 function exportarExcelGenerico(curso) {
   if (typeof XLSX === 'undefined') { toast('❌ Librería Excel no cargada', 'err', 4000); return; }
   var key  = alexiaNormCurso(curso);
