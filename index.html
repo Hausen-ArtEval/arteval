@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v234">
+<meta name="arteval-version" content="v235">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4325,7 +4325,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v234</span>
+      ">v235</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -5253,6 +5253,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
           </div>
           <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;margin-left:auto;">
             <button id="btnVerAnio" onclick="_toggleVerAnioCompleto()" title="Alternar entre semestre actual y año completo" class="reg-curso-chip" style="gap:5px;min-height:30px;padding:5px 11px;"></button>
+            <button onclick="_abrirAsistenteNotas()" title="Revisar el estado de mis notas" class="reg-curso-chip" style="gap:5px;min-height:30px;padding:5px 11px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></button>
             <button id="btnVistaLibro" onclick="toggleVistaLibro()" title="Cambiar vista" class="reg-curso-chip" style="gap:5px;min-height:30px;padding:5px 11px;">
               <svg id="icoVistaBtnLista" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
@@ -6984,6 +6985,204 @@ function _checkPendingQueue() {
       banner.style.display = 'none';
     }
   } catch(e) {}
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  PAPELERA DE NOTAS ELIMINADAS — v235
+//  Red de seguridad contra pérdida de notas. CUALQUIER eliminación de registros
+//  pasa por aquí: la nota se guarda en la papelera antes de borrarse, con fecha
+//  y motivo. El profesor puede revisarla y restaurar lo que sea. Se conservan
+//  las últimas 300 eliminaciones (más que suficiente para un año escolar).
+// ═══════════════════════════════════════════════════════════════════════════
+var _papeleraNotas = (function() {
+  try { return JSON.parse(localStorage.getItem('av_papelera_notas') || '[]') || []; }
+  catch(e) { return []; }
+})();
+function _savePapelera() {
+  try {
+    // Podar a 300 entradas
+    if (_papeleraNotas.length > 300) _papeleraNotas = _papeleraNotas.slice(-300);
+    localStorage.setItem('av_papelera_notas', JSON.stringify(_papeleraNotas));
+  } catch(e) {
+    // Si no cabe, podar más agresivo y reintentar
+    try { _papeleraNotas = _papeleraNotas.slice(-100); localStorage.setItem('av_papelera_notas', JSON.stringify(_papeleraNotas)); } catch(e2) {}
+  }
+  if (typeof _driveSaveDebounced === 'function') _driveSaveDebounced();
+}
+// Envía uno o varios registros a la papelera antes de eliminarlos
+function _aPapelera(regs, motivo) {
+  if (!regs) return;
+  var arr = Array.isArray(regs) ? regs : [regs];
+  var ts = new Date().toISOString();
+  arr.forEach(function(r) {
+    if (!r || typeof r !== 'object') return;
+    try {
+      _papeleraNotas.push({
+        eliminadoEn: ts,
+        motivo: motivo || 'eliminación',
+        registro: JSON.parse(JSON.stringify(r))
+      });
+    } catch(e) {}
+  });
+  _savePapelera();
+}
+// Restaura un registro de la papelera de vuelta a registros
+function _restaurarDePapelera(idx) {
+  var entrada = _papeleraNotas[idx];
+  if (!entrada || !entrada.registro) { toast('⚠ No se encontró la nota', 'err', 3000); return; }
+  // Evitar restaurar si ya existe una idéntica
+  var r = entrada.registro;
+  var yaExiste = registros.some(function(x) {
+    return x && x.nombre === r.nombre && x.curso === r.curso &&
+           (x.instancia||'') === (r.instancia||'') && (x.rubricaNombre||'') === (r.rubricaNombre||'') &&
+           x.nota === r.nota;
+  });
+  if (yaExiste) { toast('Esa nota ya está en tus registros', 'info', 3000); return; }
+  registros.push(JSON.parse(JSON.stringify(r)));
+  _papeleraNotas.splice(idx, 1);
+  _savePapelera();
+  saveRegistros();
+  if (typeof actualizarConteo === 'function') actualizarConteo();
+  if (typeof renderRegistros === 'function') renderRegistros();
+  if (typeof renderSidebarCounts === 'function') renderSidebarCounts();
+  toast('✓ Nota restaurada: ' + (r.nombre||'') + ' · ' + (r.nota||'') , 'ok', 3500);
+  _abrirPapelera(); // refrescar la vista
+}
+function _restaurarTodoPapelera() {
+  var restauradas = 0;
+  // Iterar de atrás hacia adelante porque splice modifica índices
+  for (var i = _papeleraNotas.length - 1; i >= 0; i--) {
+    var r = _papeleraNotas[i].registro;
+    if (!r) continue;
+    var yaExiste = registros.some(function(x) {
+      return x && x.nombre === r.nombre && x.curso === r.curso &&
+             (x.instancia||'') === (r.instancia||'') && (x.rubricaNombre||'') === (r.rubricaNombre||'') && x.nota === r.nota;
+    });
+    if (!yaExiste) { registros.push(JSON.parse(JSON.stringify(r))); _papeleraNotas.splice(i, 1); restauradas++; }
+  }
+  _savePapelera();
+  saveRegistros();
+  if (typeof actualizarConteo === 'function') actualizarConteo();
+  if (typeof renderRegistros === 'function') renderRegistros();
+  if (typeof renderSidebarCounts === 'function') renderSidebarCounts();
+  toast(restauradas ? ('✓ ' + restauradas + ' nota(s) restaurada(s)') : 'No había notas para restaurar', restauradas?'ok':'info', 4000);
+  _abrirPapelera();
+}
+// ═══════════════════════════════════════════════════════════════════════════
+//  ASISTENTE DE REVISIÓN DE NOTAS — v235
+//  Da al profesor una radiografía clara del estado de sus notas: total, reparto
+//  por semestre y curso, posibles duplicados o vacíos, y notas en la papelera.
+//  Pensado para dar tranquilidad y detectar anomalías antes de que sorprendan.
+// ═══════════════════════════════════════════════════════════════════════════
+function _abrirAsistenteNotas() {
+  var total = registros.length;
+  var sem1 = 0, sem2 = 0, sinNota = 0, noEntregado = 0;
+  var porCurso = {};
+  var sospechososNotaDistinta = 0;
+  var grupos = {};
+
+  registros.forEach(function(r) {
+    if (!r) return;
+    var sem = _semestrePorInstancia(r.instancia || '');
+    if (sem === 2) sem2++; else sem1++;
+    if (r.noEntregado) noEntregado++;
+    else if (r.nota === null || r.nota === undefined || r.nota === '') sinNota++;
+    var c = r.curso || '(sin curso)';
+    porCurso[c] = (porCurso[c] || 0) + 1;
+    var key = normalizarStrict(r.nombre||'') + '||' + (r.curso||'') + '||' + (r.rubricaNombre||'') + '||' + (r.instancia||'');
+    (grupos[key] = grupos[key] || []).push(r);
+  });
+  // Contar grupos con notas distintas (posibles trabajos legítimos, no duplicados)
+  Object.values(grupos).forEach(function(g) {
+    if (g.length > 1) {
+      var notas = {};
+      g.forEach(function(r){ notas[r.noEntregado?'NE':String(r.nota)] = true; });
+      if (Object.keys(notas).length > 1) sospechososNotaDistinta++;
+    }
+  });
+  var dupsExactos = Object.values(grupos).filter(function(g){
+    if (g.length < 2) return false;
+    var notas = {}; g.forEach(function(r){ notas[r.noEntregado?'NE':String(r.nota)]=true; });
+    return Object.keys(notas).length === 1;
+  }).length;
+
+  var papelera = (typeof _papeleraNotas !== 'undefined') ? _papeleraNotas.length : 0;
+
+  var html = '<div style="padding:2px;max-width:600px;">'
+    + '<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">'
+    + '<div style="width:42px;height:42px;background:rgba(0,122,255,0.1);border-radius:11px;display:flex;align-items:center;justify-content:center;flex:none;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#007AFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>'
+    + '<div><div style="font-size:17px;font-weight:700;">Asistente de revisión de notas</div>'
+    + '<div style="font-size:12px;color:var(--text2);">Estado actual de tus registros</div></div></div>';
+
+  // Tarjetas de resumen
+  html += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">'
+    + _chipResumen(total, 'Notas en total', '#007AFF')
+    + _chipResumen(sem1, '1° semestre', '#5856D6')
+    + _chipResumen(sem2, '2° semestre', '#34C759')
+    + '</div>';
+
+  // Desglose por curso
+  html += '<div style="font-size:12px;font-weight:700;margin:6px 0 6px;color:var(--text2);">Notas por curso</div>';
+  html += '<div style="max-height:26vh;overflow-y:auto;margin-bottom:14px;">';
+  Object.keys(porCurso).sort(function(a,b){ return a.localeCompare(b,'es',{numeric:true}); }).forEach(function(c) {
+    html += '<div style="display:flex;justify-content:space-between;padding:6px 10px;border-bottom:1px solid var(--border);font-size:12.5px;">'
+      + '<span>' + _esc(c) + '</span><strong>' + porCurso[c] + '</strong></div>';
+  });
+  html += '</div>';
+
+  // Diagnóstico / avisos
+  html += '<div style="font-size:12px;font-weight:700;margin:6px 0 6px;color:var(--text2);">Diagnóstico</div>';
+  var avisos = [];
+  if (dupsExactos > 0) avisos.push({ ic:'⚠', col:'#FF9500', txt: dupsExactos + ' grupo(s) de duplicados exactos (misma nota repetida). Puedes limpiarlos con seguridad desde "Limpiar duplicados".' });
+  if (sospechososNotaDistinta > 0) avisos.push({ ic:'ℹ', col:'#007AFF', txt: sospechososNotaDistinta + ' caso(s) con la misma actividad pero notas distintas. Probablemente son trabajos diferentes — se conservan siempre.' });
+  if (sinNota > 0) avisos.push({ ic:'○', col:'var(--text3)', txt: sinNota + ' registro(s) sin nota asignada.' });
+  if (papelera > 0) avisos.push({ ic:'🗑', col:'#34C759', txt: papelera + ' nota(s) en la papelera, recuperables. Ábrela para restaurar.' });
+  if (!avisos.length) avisos.push({ ic:'✓', col:'#34C759', txt: 'Todo en orden. No se detectaron anomalías en tus notas.' });
+  avisos.forEach(function(a) {
+    html += '<div style="display:flex;gap:8px;align-items:flex-start;padding:8px 10px;border-radius:9px;background:var(--bg2,var(--bg));border:1px solid var(--border);margin-bottom:6px;font-size:12px;">'
+      + '<span style="color:' + a.col + ';font-weight:700;flex:none;">' + a.ic + '</span><span style="color:var(--text2);line-height:1.5;">' + a.txt + '</span></div>';
+  });
+
+  html += '<div style="display:flex;justify-content:space-between;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">'
+    + '<button class="btn" onclick="_abrirPapelera()" style="font-size:12px;">Ver papelera (' + papelera + ')</button>'
+    + '<button class="btn" onclick="cerrarModal()">Cerrar</button></div></div>';
+  abrirModal(html);
+}
+
+function _abrirPapelera() {
+  var lista = _papeleraNotas.slice().reverse(); // más recientes primero
+  var html = '<div style="padding:2px;max-width:620px;">'
+    + '<div style="display:flex;align-items:center;gap:12px;margin-bottom:6px;">'
+    + '<div style="width:42px;height:42px;background:rgba(52,199,89,0.1);border-radius:11px;display:flex;align-items:center;justify-content:center;flex:none;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#34C759" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M9 11v6M15 11v6"/></svg></div>'
+    + '<div><div style="font-size:17px;font-weight:700;">Papelera de notas</div>'
+    + '<div style="font-size:12px;color:var(--text2);">Notas eliminadas — puedes restaurarlas aquí</div></div></div>';
+
+  if (!lista.length) {
+    html += '<div style="text-align:center;padding:36px;color:var(--text3);"><div style="font-size:38px;margin-bottom:8px;">✓</div>La papelera está vacía. No se ha eliminado ninguna nota.</div>';
+  } else {
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin:12px 0 8px;">'
+      + '<span style="font-size:12px;color:var(--text2);">' + lista.length + ' nota(s) eliminada(s)</span>'
+      + '<button onclick="_restaurarTodoPapelera()" class="btn btn-sm" style="font-size:12px;background:#34C759;color:#fff;border-color:#34C759;">Restaurar todas</button></div>';
+    html += '<div style="max-height:54vh;overflow-y:auto;">';
+    lista.forEach(function(entrada, i) {
+      var idxReal = _papeleraNotas.length - 1 - i; // índice en el array original
+      var r = entrada.registro || {};
+      var fecha = '';
+      try { fecha = new Date(entrada.eliminadoEn).toLocaleDateString('es-CL',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}); } catch(e){}
+      html += '<div style="display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:10px;background:var(--bg2,var(--bg));border:1px solid var(--border);margin-bottom:6px;">'
+        + '<div style="flex:1;min-width:0;">'
+        + '<div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + _esc(r.nombre||'(sin nombre)') + ' <span style="color:var(--accent);font-weight:700;">' + (r.nota!==undefined&&r.nota!==null?Number(r.nota).toFixed(1):'—') + '</span></div>'
+        + '<div style="font-size:11px;color:var(--text3);">' + _esc(r.curso||'') + ' · ' + _esc(r.instancia||'') + ' · ' + _esc(r.rubricaNombre||r.rubrica||'') + '</div>'
+        + '<div style="font-size:10px;color:var(--text3);margin-top:1px;">Eliminada ' + fecha + ' · ' + _esc(entrada.motivo||'') + '</div>'
+        + '</div>'
+        + '<button onclick="_restaurarDePapelera(' + idxReal + ')" style="flex:none;background:#34C759;border:none;color:#fff;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;">Restaurar</button>'
+        + '</div>';
+    });
+    html += '</div>';
+  }
+  html += '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">'
+    + '<button class="btn" onclick="cerrarModal()">Cerrar</button></div></div>';
+  abrirModal(html);
 }
 
 function saveRegistros() {
@@ -10156,6 +10355,7 @@ async function eliminarDesdeDup(idx) {
     const regId = reg._id || String(idx);
     localStorage.setItem('av_deleted_' + regId, new Date().toISOString());
     const backup = JSON.parse(JSON.stringify(reg));
+    if (typeof _aPapelera === 'function') _aPapelera(reg, 'eliminación manual');
     registros.splice(idx, 1);
     saveRegistros();
     actualizarConteo();
@@ -22174,6 +22374,7 @@ async function _bajaConfirmar(nombre) {
   listaCursos[curso].splice(idx, 1);
   saveListaCursos();
   if (regsDelEst.length) {
+    if (typeof _aPapelera === 'function') _aPapelera(regsDelEst, 'baja de estudiante');
     regsDelEst.forEach(function(r) {
       var i = registros.indexOf(r);
       if (i > -1) registros.splice(i, 1);
@@ -24089,6 +24290,10 @@ function resolverConflictoLibro(idxMantener) {
   // Eliminar los otros en orden descendente para no desplazar indices
   const aEliminar = extras.map(Number).filter(function(i){ return !isNaN(i) && i !== idxMantener && i >= 0; });
   aEliminar.sort(function(a,b){ return b - a; });
+  // v235: respaldar en papelera antes de eliminar
+  if (typeof _aPapelera === 'function') {
+    _aPapelera(aEliminar.map(function(i){ return registros[i]; }).filter(Boolean), 'duplicados del curso');
+  }
   aEliminar.forEach(function(i){ registros.splice(i, 1); });
   saveRegistros();
   actualizarConteo();
@@ -24406,20 +24611,42 @@ async function limpiarRegistrosDuplicados() {
     var gruposDup = Object.values(grupos).filter(function(g){ return g.length > 1; });
     var indicesToEliminar = new Set();
     var detallesDups = [];
+    var gruposDudosos = []; // v235: mismo nombre/inst/rúbrica pero NOTAS DISTINTAS
 
     gruposDup.forEach(function(grupo) {
+      // v235: ¿todas las notas del grupo son IGUALES? Solo entonces es un
+      // duplicado real y seguro de eliminar. Si las notas DIFIEREN, es muy
+      // probable que sean trabajos distintos (dos evaluaciones legítimas en la
+      // misma instancia) — NO se eliminan, solo se avisan para revisión manual.
+      var notasUnicas = {};
+      grupo.forEach(function(item){
+        var k = item.r.noEntregado ? 'NE' : String(item.r.nota);
+        notasUnicas[k] = true;
+      });
+      var mismasNotas = Object.keys(notasUnicas).length === 1;
+
       grupo.sort(function(a, b) {
         if (a.r.noEntregado && !b.r.noEntregado) return 1;
         if (!a.r.noEntregado && b.r.noEntregado) return -1;
         return new Date(b.r.fechaISO||0) - new Date(a.r.fechaISO||0);
       });
       var conservar = grupo[0];
-      grupo.slice(1).forEach(function(item){ indicesToEliminar.add(item.idx); });
-      detallesDups.push({
-        nombre: conservar.r.nombre, curso: conservar.r.curso,
-        rubrica: conservar.r.rubricaNombre, instancia: conservar.r.instancia,
-        nota: conservar.r.nota, eliminadas: grupo.length - 1,
-      });
+
+      if (mismasNotas) {
+        grupo.slice(1).forEach(function(item){ indicesToEliminar.add(item.idx); });
+        detallesDups.push({
+          nombre: conservar.r.nombre, curso: conservar.r.curso,
+          rubrica: conservar.r.rubricaNombre, instancia: conservar.r.instancia,
+          nota: conservar.r.nota, eliminadas: grupo.length - 1,
+        });
+      } else {
+        // Notas distintas → NO eliminar, solo reportar
+        gruposDudosos.push({
+          nombre: conservar.r.nombre, curso: conservar.r.curso,
+          instancia: conservar.r.instancia,
+          notas: grupo.map(function(it){ return it.r.noEntregado ? 'NE' : Number(it.r.nota).toFixed(1); }).join(', ')
+        });
+      }
     });
 
     var totalDups = indicesToEliminar.size;
@@ -24443,10 +24670,33 @@ async function limpiarRegistrosDuplicados() {
       });
       resumenHtml += '</div>';
     }
+    // v235: avisar de casos con notas DISTINTAS que se preservan (posibles trabajos legítimos)
+    if (gruposDudosos.length > 0) {
+      resumenHtml += '<div style="font-size:12px;font-weight:600;margin:14px 0 8px;color:#FF9500;">⚠ Se conservarán (notas distintas — posibles trabajos diferentes):</div>' +
+        '<div style="max-height:160px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;">';
+      gruposDudosos.forEach(function(d) {
+        resumenHtml += '<div style="font-size:11px;padding:6px 10px;background:rgba(255,149,0,0.08);border-radius:var(--rad);">' +
+          '<strong>' + _esc(d.nombre) + '</strong> · ' + _esc(d.curso) + ' · ' + _esc(d.instancia||'Ev.1') + '<br>' +
+          '<span style="color:var(--text2);">Notas: ' + _esc(d.notas) + ' — se mantienen todas</span></div>';
+      });
+      resumenHtml += '</div>';
+    }
 
-    var ok = await confirmarAccion('🔍 Limpieza de registros', resumenHtml, '🔍', 'Sí, aplicar limpieza', 'btn-primary');
+    // v235: si NO hay nada seguro que eliminar, no forzar la limpieza
+    if (indicesToEliminar.size === 0 && corregidos === 0) {
+      var msgSinDup = gruposDudosos.length
+        ? 'No hay duplicados exactos que eliminar. Los ' + gruposDudosos.length + ' caso(s) con notas distintas se conservan (revísalos manualmente si crees que alguno sobra).'
+        : '✅ Sin duplicados. Tus registros están limpios.';
+      toast(msgSinDup, gruposDudosos.length ? 'info' : 'ok', 5000);
+      return;
+    }
     if (!ok) return;
 
+    // v235: antes de eliminar, guardar en la papelera para poder restaurar
+    if (typeof _aPapelera === 'function') {
+      var _aBorrar = registros.filter(function(r, idx){ return indicesToEliminar.has(idx); });
+      _aPapelera(_aBorrar, 'limpieza de duplicados');
+    }
     registros = registros.filter(function(r, idx){ return !indicesToEliminar.has(idx); });
     saveRegistros();
     actualizarConteo(); renderRegistros(); renderSidebarCounts();
