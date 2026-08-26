@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v235">
+<meta name="arteval-version" content="v236">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4325,7 +4325,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v235</span>
+      ">v236</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -4626,6 +4626,17 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         <button class="seg-active" data-seg="todos" onclick="_setAulaFiltro('todos',this)">Todos</button>
         <button data-seg="pendientes" onclick="_setAulaFiltro('pendientes',this)" >Pendientes</button>
         <button data-seg="pie" onclick="_setAulaFiltro('pie',this)" >PIE</button>
+      </div>
+      <!-- v236: acceso grande y visible al Asistente de revisión y la Papelera -->
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+        <button onclick="_abrirAsistenteNotas()" style="flex:1;min-width:180px;display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 16px;background:rgba(0,122,255,0.1);border:1px solid rgba(0,122,255,0.3);border-radius:12px;color:#007AFF;font-size:13.5px;font-weight:700;cursor:pointer;font-family:var(--font-ui);">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          Revisar mis notas
+        </button>
+        <button onclick="_abrirPapelera()" style="flex:1;min-width:180px;display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 16px;background:rgba(52,199,89,0.1);border:1px solid rgba(52,199,89,0.3);border-radius:12px;color:#34C759;font-size:13.5px;font-weight:700;cursor:pointer;font-family:var(--font-ui);">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M9 11v6M15 11v6"/></svg>
+          Papelera de notas
+        </button>
       </div>
     </div>
       <div class="curso-panel">
