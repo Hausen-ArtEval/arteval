@@ -6,7 +6,7 @@
 // presentación en pantalla completa). Ahora el SW nuevo espera en segundo plano
 // y toma control recién en la próxima apertura natural de la app, sin robar foco.
 
-const CACHE = 'arteval-v234';
+const CACHE = 'arteval-v235';
 const SKIP = ['googleapis.com', 'accounts.google.com', 'script.google.com', 'gstatic.com'];
 
 self.addEventListener('install', function(e) {
