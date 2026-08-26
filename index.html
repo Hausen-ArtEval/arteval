@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v232">
+<meta name="arteval-version" content="v234">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4153,12 +4153,16 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
 (function() {
   if (!('serviceWorker' in navigator)) return;
   var swSrc = [
-    "const CACHE='arteval-v66';",
+    "const CACHE='arteval-v233';",
     "const SKIP=['googleapis.com','accounts.google.com','script.google.com'];",
-    "self.addEventListener('install',e=>{self.skipWaiting();});",
+    // v234: NO usar skipWaiting()/clients.claim() automáticos. En una PWA de
+    // escritorio (MacBook) reclamar el control de golpe puede traer la ventana
+    // de ArtEval al frente y sacar al profesor de lo que esté haciendo (ej: una
+    // presentación). El SW nuevo queda 'waiting' y toma control recién en la
+    // próxima apertura natural de la app — sin robar foco.
+    "self.addEventListener('install',e=>{/* esperar, no forzar activación */});",
     "self.addEventListener('activate',e=>{",
     "  e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));",
-    "  self.clients.claim();",
     "});",
     "self.addEventListener('fetch',e=>{",
     "  var u=e.request.url;",
@@ -4321,7 +4325,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v232</span>
+      ">v234</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -5176,7 +5180,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             <div id="dashAlertaTitulo" style="font-size:13px;font-weight:700;color:var(--red);">Alumnos con promedio crítico (&lt; 4.0)</div>
           </div>
-          <div style="display:flex;gap:8px;align-items:center;"><div style="font-size:11px;color:var(--text3);cursor:pointer;" onclick="this.closest('#dashAlertaWrap').querySelector('.dash-alerta-body').style.display=this.closest('#dashAlertaWrap').querySelector('.dash-alerta-body').style.display==='none'?'block':'none'">mostrar/ocultar</div><button onclick="showTab('correo')" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;font-family:var(--font-ui);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Avisar apoderados</button></div>
+          <div style="display:flex;gap:8px;align-items:center;"><div style="font-size:11px;color:var(--text3);cursor:pointer;" onclick="this.closest('#dashAlertaWrap').querySelector('.dash-alerta-body').style.display=this.closest('#dashAlertaWrap').querySelector('.dash-alerta-body').style.display==='none'?'block':'none'">mostrar/ocultar</div><button onclick="showTab('correo')" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;font-family:var(--font-ui);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Avisar apoderados</button><button onclick="_abrirPanelRiesgo()" style="background:var(--card,#fff);color:var(--red);border:1px solid rgba(255,59,48,0.3);border-radius:10px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;font-family:var(--font-ui);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg> Seguimiento de riesgo</button></div>
         </div>
         <div class="dash-alerta-body">
           <div class="dash-alerta-wrap-inner"><div id="dashAlertaCursos"></div></div>
@@ -14588,6 +14592,164 @@ function _renderDashGrid(instFiltro) {
   grid.innerHTML = ''; grid.appendChild(_dashFrag);
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+//  ANÁLISIS DE RIESGO ACADÉMICO ANUAL — v233
+//  Herramienta de gestión (perfil UTP): clasifica a cada estudiante según su
+//  trayectoria de promedio en AMBOS semestres, no solo el actual. Distingue:
+//   • 'arrastra'  → rojo en 1° sem Y rojo en 2° sem (PRIORIDAD MÁXIMA)
+//   • 'nuevo_2'   → venía bien en 1°, cayó a rojo en 2°
+//   • 'recuperado'→ venía rojo en 1°, se recuperó en 2° (seguimiento positivo)
+//   • 'solo_1'    → rojo en 1°, sin notas aún en 2°
+//  Requiere ≥2 notas en el semestre para considerarlo representativo.
+// ═══════════════════════════════════════════════════════════════════════════
+function _analizarRiesgoAnual() {
+  var porCurso = {};
+  var cursosLista = (typeof TODOS_LOS_CURSOS !== 'undefined') ? TODOS_LOS_CURSOS
+    : Object.keys((registros||[]).reduce(function(acc,r){ if(r&&r.curso)acc[r.curso]=1; return acc; }, {}));
+
+  cursosLista.forEach(function(curso) {
+    var regsCurso = (registros || []).filter(function(r) {
+      return (r.curso || '') === curso && r.nota !== undefined && r.nota !== null && !r.noEntregado;
+    });
+    if (!regsCurso.length) return;
+
+    // Agrupar por alumno, separando notas de cada semestre
+    var porAlumno = {};
+    regsCurso.forEach(function(r) {
+      var key = (r.nombre || '').trim().toUpperCase();
+      if (!key) return;
+      if (!porAlumno[key]) porAlumno[key] = { nombre: r.nombre, curso: curso, n1: [], n2: [], pie: false };
+      var sem = _semestrePorInstancia(r.instancia || '');
+      (sem === 2 ? porAlumno[key].n2 : porAlumno[key].n1).push(r.nota);
+      if (r.pie) porAlumno[key].pie = true;
+    });
+
+    var enRiesgo = [];
+    Object.values(porAlumno).forEach(function(al) {
+      var prom = function(arr){ return arr.length ? arr.reduce(function(s,n){return s+n;},0)/arr.length : null; };
+      var p1 = prom(al.n1), p2 = prom(al.n2);
+      // Representatividad: ≥2 notas para tomar el promedio de un semestre en serio
+      var rojo1 = (al.n1.length >= 2 && p1 !== null && p1 < 4.0);
+      var rojo2 = (al.n2.length >= 2 && p2 !== null && p2 < 4.0);
+      var rojo2Parcial = (al.n2.length === 1 && al.n2[0] < 4.0); // señal temprana
+
+      al.p1 = p1; al.p2 = p2;
+      al.prom1 = (p1 !== null) ? Math.round(p1*10)/10 : null;
+      al.prom2 = (p2 !== null) ? Math.round(p2*10)/10 : null;
+
+      var categoria = null, prioridad = 99;
+      if (rojo1 && rojo2)              { categoria = 'arrastra';   prioridad = 1; }
+      else if (!rojo1 && rojo2)        { categoria = 'nuevo_2';    prioridad = 2; }
+      else if (rojo1 && al.n2.length === 0) { categoria = 'solo_1'; prioridad = 3; }
+      else if (rojo1 && rojo2Parcial) { categoria = 'arrastra';   prioridad = 1; } // arrastra + 1ª nota roja
+      else if (!rojo1 && rojo2Parcial){ categoria = 'alerta_2';   prioridad = 4; }
+      else if (rojo1 && p2 !== null && p2 >= 4.0) { categoria = 'recuperado'; prioridad = 5; }
+
+      if (categoria) { al.categoria = categoria; al.prioridad = prioridad; enRiesgo.push(al); }
+    });
+
+    if (enRiesgo.length) {
+      enRiesgo.sort(function(a,b){
+        if (a.prioridad !== b.prioridad) return a.prioridad - b.prioridad;
+        var pa = (a.p2 !== null ? a.p2 : a.p1), pb = (b.p2 !== null ? b.p2 : b.p1);
+        return pa - pb;
+      });
+      porCurso[curso] = enRiesgo;
+    }
+  });
+  return porCurso;
+}
+
+// Etiqueta legible + color por categoría de riesgo
+function _riesgoEtiqueta(cat) {
+  switch (cat) {
+    case 'arrastra':   return { txt: 'Arrastra rojo (1° y 2° sem)', color: '#FF3B30', bg: 'rgba(255,59,48,0.10)', orden: 'CRÍTICO' };
+    case 'nuevo_2':    return { txt: 'Cayó en 2° semestre',          color: '#FF9500', bg: 'rgba(255,149,0,0.10)',  orden: 'ALERTA' };
+    case 'solo_1':     return { txt: 'Rojo en 1° (sin notas 2° aún)', color: '#FF9500', bg: 'rgba(255,149,0,0.08)', orden: 'SEGUIR' };
+    case 'alerta_2':   return { txt: '1ª nota roja en 2° sem',        color: '#FFCC00', bg: 'rgba(255,204,0,0.10)',  orden: 'TEMPRANA' };
+    case 'recuperado': return { txt: 'Recuperado en 2° semestre',     color: '#34C759', bg: 'rgba(52,199,89,0.10)',  orden: 'OK' };
+    default:           return { txt: 'En seguimiento',                color: '#8E8E93', bg: 'rgba(142,142,147,0.10)', orden: '' };
+  }
+}
+
+// ── PANEL DE SEGUIMIENTO DE RIESGO (modal de gestión UTP) — v233 ─────────────
+function _abrirPanelRiesgo() {
+  var porCurso = _analizarRiesgoAnual();
+  var cursos = Object.keys(porCurso).sort(function(a,b){ return a.localeCompare(b,'es',{numeric:true}); });
+
+  // Conteos globales por categoría
+  var conteo = { arrastra:0, nuevo_2:0, solo_1:0, alerta_2:0, recuperado:0 };
+  cursos.forEach(function(c){ porCurso[c].forEach(function(al){ if(conteo[al.categoria]!==undefined) conteo[al.categoria]++; }); });
+  var totalRiesgo = conteo.arrastra + conteo.nuevo_2 + conteo.solo_1 + conteo.alerta_2;
+
+  var html = '<div style="padding:2px;max-width:640px;">'
+    + '<div style="display:flex;align-items:center;gap:12px;margin-bottom:6px;">'
+    + '<div style="width:42px;height:42px;background:rgba(255,59,48,0.1);border-radius:11px;display:flex;align-items:center;justify-content:center;flex:none;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FF3B30" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>'
+    + '<div><div style="font-size:17px;font-weight:700;">Seguimiento de riesgo académico</div>'
+    + '<div style="font-size:12px;color:var(--text2);">Análisis anual — foco en estudiantes que arrastran promedio rojo</div></div></div>';
+
+  // Resumen ejecutivo (mirada UTP)
+  html += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin:14px 0;">'
+    + _chipResumen(conteo.arrastra, 'Arrastran rojo', '#FF3B30')
+    + _chipResumen(conteo.nuevo_2, 'Cayeron en 2°', '#FF9500')
+    + _chipResumen(conteo.alerta_2 + conteo.solo_1, 'Alerta temprana', '#FFCC00')
+    + _chipResumen(conteo.recuperado, 'Recuperados', '#34C759')
+    + '</div>';
+
+  if (!totalRiesgo && !conteo.recuperado) {
+    html += '<div style="text-align:center;padding:30px;color:var(--text3);"><div style="font-size:40px;margin-bottom:8px;">✓</div>Sin estudiantes en riesgo académico. Excelente gestión.</div>';
+  } else {
+    html += '<div style="max-height:52vh;overflow-y:auto;margin-top:6px;">';
+    cursos.forEach(function(curso) {
+      var alumnos = porCurso[curso];
+      var criticosCurso = alumnos.filter(function(a){ return a.categoria !== 'recuperado'; });
+      if (!criticosCurso.length && !alumnos.length) return;
+      html += '<div style="margin-bottom:16px;">'
+        + '<div style="font-size:13px;font-weight:700;color:var(--text);padding:6px 0;border-bottom:2px solid var(--border);margin-bottom:6px;">' + _esc(curso) + ' <span style="color:var(--text3);font-weight:500;">· ' + criticosCurso.length + ' en riesgo</span></div>';
+      alumnos.forEach(function(al) {
+        var et = _riesgoEtiqueta(al.categoria);
+        var yaCont = (typeof _yaContactadoApoderado === 'function') ? _yaContactadoApoderado(al.nombre) : false;
+        var p1txt = al.prom1 !== null ? al.prom1.toFixed(1) : '—';
+        var p2txt = al.prom2 !== null ? al.prom2.toFixed(1) : '—';
+        var nombreEsc = _esc(al.nombre).replace(/'/g, "\\'");
+        html += '<div style="display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:10px;background:' + et.bg + ';margin-bottom:6px;">'
+          + '<div style="flex:1;min-width:0;">'
+          + '<div style="font-size:13.5px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + _esc(al.nombre) + (al.pie?' <span style="font-size:9px;color:var(--pie,#FF9500);font-weight:700;">PIE</span>':'') + '</div>'
+          + '<div style="font-size:11px;color:var(--text2);margin-top:1px;"><span style="color:' + et.color + ';font-weight:600;">' + et.txt + '</span> · 1°: <strong>' + p1txt + '</strong> · 2°: <strong>' + p2txt + '</strong></div>'
+          + '</div>';
+        if (al.categoria !== 'recuperado') {
+          html += yaCont
+            ? '<span style="flex:none;font-size:11px;color:#34C759;font-weight:600;display:flex;align-items:center;gap:3px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Contactado</span>'
+            : '<button onclick="_riesgoContactar(\'' + nombreEsc + '\',\'' + _esc(curso).replace(/'/g,"\\'") + '\')" style="flex:none;background:' + et.color + ';border:none;color:#fff;border-radius:8px;padding:6px 11px;font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap;">Notificar</button>';
+        }
+        html += '</div>';
+      });
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+
+  html += '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">'
+    + '<button class="btn" onclick="cerrarModal()">Cerrar</button></div></div>';
+  abrirModal(html);
+}
+function _chipResumen(n, label, color) {
+  return '<div style="flex:1;min-width:110px;background:var(--bg2,var(--bg));border:1px solid var(--border);border-left:3px solid ' + color + ';border-radius:10px;padding:9px 12px;">'
+    + '<div style="font-size:22px;font-weight:700;color:' + color + ';line-height:1;">' + n + '</div>'
+    + '<div style="font-size:11px;color:var(--text2);margin-top:3px;">' + label + '</div></div>';
+}
+// Llevar al mensajero con el estudiante precargado
+function _riesgoContactar(nombre, curso) {
+  cerrarModal();
+  if (typeof cambiarSub === 'function') cambiarSub('correo');
+  setTimeout(function() {
+    var inp = document.getElementById('msgPersEstudiante');
+    var selC = document.getElementById('msgPersCursoFiltro');
+    if (selC && curso) { selC.value = curso; if (typeof _msgPersFiltrarPorCurso === 'function') _msgPersFiltrarPorCurso(); }
+    if (inp) { inp.value = nombre; if (typeof _msgPersResolverApoderado === 'function') _msgPersResolverApoderado(); inp.scrollIntoView({behavior:'smooth',block:'center'}); }
+  }, 300);
+}
+
 function _renderDashAlertas(instFiltro) {
   const wrap = document.getElementById('dashAlertaWrap');
   const cont = document.getElementById('dashAlertaCursos');
@@ -14626,12 +14788,34 @@ function _renderDashAlertas(instFiltro) {
 
   const totalCriticos = Object.values(porCurso).reduce(function(s, arr) { return s + arr.length; }, 0);
 
-  if (!totalCriticos) {
+  // v234: aunque no haya críticos en el SEMESTRE ACTIVO, si existe riesgo a nivel
+  // ANUAL (estudiantes que arrastran del 1° semestre) mostrar igual el bloque,
+  // para que el botón "Seguimiento de riesgo" siga accesible. Antes quedaba
+  // oculto y no se podía abrir el panel anual.
+  var _hayRiesgoAnual = false;
+  try {
+    if (typeof _analizarRiesgoAnual === 'function') {
+      var _ra = _analizarRiesgoAnual();
+      _hayRiesgoAnual = Object.keys(_ra).some(function(c){
+        return _ra[c].some(function(al){ return al.categoria !== 'recuperado'; });
+      });
+    }
+  } catch(e) {}
+
+  if (!totalCriticos && !_hayRiesgoAnual) {
     wrap.style.display = 'none';
     return;
   }
 
   wrap.style.display = 'block';
+
+  if (!totalCriticos && _hayRiesgoAnual) {
+    // No hay críticos del semestre actual, pero sí riesgo anual: mostrar aviso mínimo
+    var _tit = document.getElementById('dashAlertaTitulo');
+    if (_tit) _tit.textContent = 'Sin críticos este semestre — revisa el seguimiento anual';
+    if (cont) cont.innerHTML = '<div style="font-size:12.5px;color:var(--text2);padding:4px 2px;">Hay estudiantes que arrastran promedio rojo del primer semestre. Ábrelos en <strong>Seguimiento de riesgo</strong>.</div>';
+    return;
+  }
 
   // Construir HTML usando DOM (sin concatenación de strings con comillas anidadas)
   cont.innerHTML = '';
@@ -18147,6 +18331,17 @@ function _marcarCorreoEnviado(nombreAlumno, emailApod, curso, promedio, rubrica,
 
 function _fueEnviado(nombreAlumno) {
   return !!_historialCorreos[(nombreAlumno || '').trim().toUpperCase()];
+}
+
+// v233: ¿se contactó al apoderado por CUALQUIER vía? (correo automático de
+// promedio crítico o mensaje personalizado). Usado por el panel de riesgo.
+function _yaContactadoApoderado(nombreAlumno) {
+  var key = (nombreAlumno || '').trim().toUpperCase();
+  if (_historialCorreos[key]) return true;
+  if (typeof _historialMsgPers !== 'undefined' && Array.isArray(_historialMsgPers)) {
+    return _historialMsgPers.some(function(h){ return (h.nombre||'').trim().toUpperCase() === key; });
+  }
+  return false;
 }
 
 function _getEnvio(nombreAlumno) {
