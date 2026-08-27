@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v236">
+<meta name="arteval-version" content="v237">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4325,7 +4325,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v236</span>
+      ">v237</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -5565,6 +5565,17 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         <div style="width:44px;height:44px;background:rgba(52,199,89,0.10);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#34C759" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
         <div style="flex:1;"><h3 style="margin-bottom:2px;">Correo personalizado a un apoderado</h3><div style="font-size:13px;color:var(--text3);">Conducta, materiales, felicitaciones y más</div></div>
         <button id="msgPersContador" onclick="_msgPersAbrirHistorial()" style="display:none;align-items:center;gap:5px;font-size:11px;color:#34C759;font-weight:600;background:rgba(52,199,89,0.10);padding:5px 11px;border-radius:20px;white-space:nowrap;border:none;cursor:pointer;"></button>
+      </div>
+      <!-- v237: accesos siempre visibles al historial y a agregar apoderado -->
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+        <button onclick="_msgPersAbrirHistorial()" style="flex:1;min-width:150px;display:flex;align-items:center;justify-content:center;gap:7px;padding:9px 14px;background:rgba(52,199,89,0.08);border:1px solid rgba(52,199,89,0.3);border-radius:10px;color:#34C759;font-size:12.5px;font-weight:700;cursor:pointer;font-family:var(--font-ui);">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>
+          Historial de correos enviados
+        </button>
+        <button onclick="_abrirAgregarApoderado()" style="flex:1;min-width:150px;display:flex;align-items:center;justify-content:center;gap:7px;padding:9px 14px;background:rgba(0,122,255,0.08);border:1px solid rgba(0,122,255,0.3);border-radius:10px;color:#007AFF;font-size:12.5px;font-weight:700;cursor:pointer;font-family:var(--font-ui);">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+          Agregar apoderado
+        </button>
       </div>
 
       <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
@@ -12050,12 +12061,20 @@ function exportarBackupJSON() {
     };
   } catch(e) { extras = {}; }
   const data = {
-    version: 3,
+    version: 4,
     app: 'ArtEval',
     fecha: new Date().toISOString(),
     registros: registros,
     listaCursos: (typeof listaCursos !== 'undefined') ? listaCursos : {},
     rubricas: (typeof rubricas !== 'undefined') ? rubricas : [],
+    // v237: incluir historiales de comunicación y emails de apoderados en el
+    // respaldo, para que NUNCA se pierdan al reinstalar. Antes solo vivían en
+    // el almacenamiento local y desaparecían con la reinstalación.
+    historialMsgPers:  (typeof _historialMsgPers !== 'undefined') ? _historialMsgPers : [],
+    historialCorreos:  (typeof _historialCorreos !== 'undefined') ? _historialCorreos : {},
+    apoderadoEmails:   (typeof _apoderadoEmails !== 'undefined') ? _apoderadoEmails : {},
+    plantillasProf:    (function(){ try { return JSON.parse(localStorage.getItem('av_plantillas_prof')||'[]'); } catch(e){ return []; } })(),
+    papeleraNotas:     (typeof _papeleraNotas !== 'undefined') ? _papeleraNotas : [],
     config: extras
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -12135,6 +12154,58 @@ async function restaurarBackupJSON() {
             if (!existe) rubricas.push(rb);
           });
           localStorage.setItem('av_rubricas', JSON.stringify(rubricas));
+        }
+
+        // v237: Merge de HISTORIAL DE MENSAJES a apoderados (no destructivo).
+        // Se fusiona por id; los que no existan se agregan. Así el historial
+        // sobrevive a reinstalaciones cuando se restaura desde respaldo.
+        if (Array.isArray(data.historialMsgPers) && typeof _historialMsgPers !== 'undefined') {
+          var idsMsg = new Set(_historialMsgPers.map(function(h){ return h.id; }).filter(Boolean));
+          var addMsg = 0;
+          data.historialMsgPers.forEach(function(h) {
+            if (!h) return;
+            // Sin id: comparar por nombre+fecha+asunto para no duplicar
+            var dup = h.id ? idsMsg.has(h.id)
+              : _historialMsgPers.some(function(x){ return x.nombre===h.nombre && x.fecha===h.fecha && x.asunto===h.asunto; });
+            if (!dup) { _historialMsgPers.push(h); if (h.id) idsMsg.add(h.id); addMsg++; }
+          });
+          if (addMsg && typeof _saveHistorialMsgPers === 'function') _saveHistorialMsgPers();
+        }
+
+        // v237: Merge del historial de CORREOS CRÍTICOS (objeto por nombre)
+        if (data.historialCorreos && typeof data.historialCorreos === 'object' && typeof _historialCorreos !== 'undefined') {
+          Object.keys(data.historialCorreos).forEach(function(k) {
+            if (!_historialCorreos[k]) _historialCorreos[k] = data.historialCorreos[k];
+          });
+          if (typeof _saveHistorialCorreos === 'function') _saveHistorialCorreos();
+        }
+
+        // v237: Merge de EMAILS DE APODERADOS (no pisar los que ya tienes)
+        if (data.apoderadoEmails && typeof data.apoderadoEmails === 'object' && typeof _apoderadoEmails !== 'undefined') {
+          Object.keys(data.apoderadoEmails).forEach(function(k) {
+            if (!_apoderadoEmails[k]) _apoderadoEmails[k] = data.apoderadoEmails[k];
+          });
+          try { localStorage.setItem('av_apoderado_emails', JSON.stringify(_apoderadoEmails)); } catch(e) {}
+        }
+
+        // v237: Plantillas propias del profesor
+        if (Array.isArray(data.plantillasProf) && data.plantillasProf.length) {
+          try {
+            var plActual = JSON.parse(localStorage.getItem('av_plantillas_prof')||'[]');
+            data.plantillasProf.forEach(function(p){
+              if (!plActual.some(function(x){ return x.label === p.label; })) plActual.push(p);
+            });
+            localStorage.setItem('av_plantillas_prof', JSON.stringify(plActual));
+          } catch(e) {}
+        }
+
+        // v237: Papelera de notas (unir, sin duplicar por eliminadoEn+nombre)
+        if (Array.isArray(data.papeleraNotas) && typeof _papeleraNotas !== 'undefined') {
+          data.papeleraNotas.forEach(function(p){
+            var dup = _papeleraNotas.some(function(x){ return x.eliminadoEn===p.eliminadoEn && (x.registro&&p.registro&&x.registro.nombre===p.registro.nombre); });
+            if (!dup) _papeleraNotas.push(p);
+          });
+          if (typeof _savePapelera === 'function') _savePapelera();
         }
 
         // Config del respaldo v3 — solo rellena valores locales VACÍOS (no destructivo)
@@ -19138,6 +19209,44 @@ function _msgPersExportarHistorial() {
   a.click();
   setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
   toast('✓ Historial exportado', 'ok', 2500);
+}
+
+// v237: agregar el email de un apoderado nuevo manualmente (para estudiantes
+// que llegan sin estar en la planilla importada). Queda guardado y respaldado.
+function _abrirAgregarApoderado() {
+  var cursos = (typeof TODOS_LOS_CURSOS !== 'undefined') ? TODOS_LOS_CURSOS
+    : Object.keys(listaCursos || {});
+  var opcs = cursos.map(function(c){ return '<option value="' + _esc(c) + '">' + _esc(c) + '</option>'; }).join('');
+  var html = '<div style="padding:2px;max-width:440px;">'
+    + '<div style="font-size:16px;font-weight:700;margin-bottom:3px;">Agregar correo de apoderado</div>'
+    + '<div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6;">Para registrar el apoderado de un estudiante nuevo. Queda guardado y se incluye en los respaldos.</div>'
+    + '<label style="display:block;font-size:11px;font-weight:600;color:var(--text3);margin-bottom:4px;">Nombre del estudiante</label>'
+    + '<input type="text" id="apNuevoNombre" placeholder="Apellidos Nombre" autocomplete="off" style="width:100%;padding:10px 12px;border:1px solid var(--border2);border-radius:var(--rad);font-size:14px;background:var(--bg);color:var(--text);margin-bottom:10px;">'
+    + '<label style="display:block;font-size:11px;font-weight:600;color:var(--text3);margin-bottom:4px;">Curso</label>'
+    + '<select id="apNuevoCurso" style="width:100%;padding:10px 8px;border:1px solid var(--border2);border-radius:var(--rad);font-size:14px;background:var(--bg);color:var(--text);margin-bottom:10px;">' + opcs + '</select>'
+    + '<label style="display:block;font-size:11px;font-weight:600;color:var(--text3);margin-bottom:4px;">Correo del apoderado</label>'
+    + '<input type="email" id="apNuevoEmail" placeholder="apoderado@correo.cl" autocomplete="off" style="width:100%;padding:10px 12px;border:1px solid var(--border2);border-radius:var(--rad);font-size:14px;background:var(--bg);color:var(--text);">'
+    + '<div id="apNuevoAviso" style="font-size:12px;margin-top:8px;min-height:16px;"></div>'
+    + '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">'
+    + '<button class="btn" onclick="cerrarModal()">Cancelar</button>'
+    + '<button class="btn btn-primary" onclick="_guardarApoderadoNuevo()">Guardar</button></div></div>';
+  abrirModal(html);
+  setTimeout(function(){ var n=document.getElementById('apNuevoNombre'); if(n)n.focus(); }, 60);
+}
+function _guardarApoderadoNuevo() {
+  var nombre = ((document.getElementById('apNuevoNombre')||{}).value||'').trim();
+  var curso  = (document.getElementById('apNuevoCurso')||{}).value||'';
+  var email  = ((document.getElementById('apNuevoEmail')||{}).value||'').trim().toLowerCase();
+  var aviso  = document.getElementById('apNuevoAviso');
+  if (nombre.length < 3) { if(aviso){aviso.innerHTML='<span style="color:#FF9500;">⚠ Escribe el nombre completo</span>';} return; }
+  if (!_emailValido(email)) { if(aviso){aviso.innerHTML='<span style="color:#FF9500;">⚠ El correo no es válido</span>';} return; }
+  var key = nombre.toUpperCase();
+  _apoderadoEmails[key] = { email: email, curso: curso, nombre: nombre };
+  try { localStorage.setItem('av_apoderado_emails', JSON.stringify(_apoderadoEmails)); } catch(e) {}
+  if (typeof _driveSaveDebounced === 'function') _driveSaveDebounced();
+  if (typeof _msgPersConstruirIndice === 'function') _msgPersConstruirIndice();
+  cerrarModal();
+  toast('✓ Apoderado de ' + nombre + ' guardado', 'ok', 3000);
 }
 
 function _getEmailApoderado(nombre) {
