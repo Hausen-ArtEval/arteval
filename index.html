@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v238">
+<meta name="arteval-version" content="v239">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4325,7 +4325,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v238</span>
+      ">v239</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -18659,6 +18659,8 @@ var _historialMsgPers = (function() {
 function _saveHistorialMsgPers() {
   try { localStorage.setItem('av_historial_msgpers', JSON.stringify(_historialMsgPers.slice(-500))); }
   catch(e) { console.warn('[ArtEval] _saveHistorialMsgPers:', e.message); }
+  // v238: sincronizar a Drive para que el historial esté en todos los dispositivos
+  if (typeof _driveSaveDebounced === 'function') _driveSaveDebounced();
 }
 function _registrarMsgPers(nombre, email, curso, motivoLabel) {
   _historialMsgPers.push({
@@ -19403,6 +19405,11 @@ function _procesarPlanillaApoderadosRows(rows, fileName) {
   });
 
   _saveApoderadoEmails();
+  // v238: subir de inmediato a Drive para que la planilla esté en todos los
+  // dispositivos (no solo en este equipo). _saveApoderadoEmails ya dispara el
+  // guardado con debounce; forzamos además una subida completa del snapshot.
+  if (typeof _driveSaveDebounced === 'function') _driveSaveDebounced();
+  setTimeout(function(){ try { if (typeof syncToDrive === 'function' && typeof _driveToken !== 'undefined' && _driveToken) syncToDrive(); } catch(e){} }, 1200);
   var cursosStr = Array.from(cursosEncontrados).filter(function(c){
     return /^[3-6]/.test(c);
   }).sort().join(', ');
