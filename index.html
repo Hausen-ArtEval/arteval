@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v239">
+<meta name="arteval-version" content="v240">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4325,7 +4325,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v239</span>
+      ">v240</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -5580,7 +5580,6 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
 
       <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
         <button id="msgPersBtnGrupal" class="btn btn-sm" onclick="_msgPersToggleGrupal()" style="font-size:12px;gap:5px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>Enviar a varios apoderados</button>
-        <button class="btn btn-sm" onclick="_msgPersAbrirHistorial()" style="font-size:12px;gap:5px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Historial</button>
       </div>
 
       <!-- Modo individual -->
@@ -26542,6 +26541,14 @@ async function syncToDrive() {
         (typeof _historialCorreos!=='undefined')?(_historialCorreos||{}):
         (JSON.parse(localStorage.getItem('av_historial_correos')||'{}'))
       )),
+      // v240: historial de mensajes personalizados a apoderados y plantillas
+      // propias — faltaban en este snapshot principal, por eso no llegaban al
+      // celular aunque el guardado automático corriera.
+      historialMsgPers: JSON.parse(JSON.stringify(
+        (typeof _historialMsgPers!=='undefined')?(_historialMsgPers||[]):
+        (JSON.parse(localStorage.getItem('av_historial_msgpers')||'[]'))
+      )),
+      plantillasProf:   JSON.parse(localStorage.getItem('av_plantillas_prof') || '[]'),
       config: {
         emailProf:          localStorage.getItem('av_email_prof')          || '',
         emailColegio:       localStorage.getItem('av_email_colegio')       || '',
@@ -26676,6 +26683,11 @@ async function _runDailyBackup() {
       listaCursos: JSON.parse(JSON.stringify(listaCursos)),
       rubricaActiva: rubricaActiva,
       alexiaDatos:  JSON.parse(JSON.stringify(alexiaDatos || {})),
+      // v240: incluir también emails e historiales en el respaldo diario
+      apoderadoEmails:  JSON.parse(JSON.stringify(typeof _apoderadoEmails!=='undefined'?(_apoderadoEmails||{}):{})),
+      historialCorreos: JSON.parse(JSON.stringify(typeof _historialCorreos!=='undefined'?(_historialCorreos||{}):{})),
+      historialMsgPers: JSON.parse(JSON.stringify(typeof _historialMsgPers!=='undefined'?(_historialMsgPers||[]):[])),
+      plantillasProf:   JSON.parse(localStorage.getItem('av_plantillas_prof') || '[]'),
     };
 
     var payload  = JSON.stringify(snapshot);
