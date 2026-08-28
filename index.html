@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v242">
+<meta name="arteval-version" content="v243">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4372,7 +4372,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v242</span>
+      ">v243</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -7359,9 +7359,23 @@ var _driveSaveTimer = null;
 function _driveSaveDebounced() {
   clearTimeout(_driveSaveTimer);
   _driveSaveTimer = setTimeout(function() {
+    // v243: si el token está vigente, subir directo. Si venció, intentar
+    // RENOVARLO automáticamente antes de subir — antes las subidas se saltaban
+    // en silencio cuando el token expiraba, y los cambios nunca llegaban a Drive
+    // (causa de que un dispositivo mostrara más notas que otro).
     if (_driveToken && Date.now() < _driveTokenExp) {
       syncToDrive().catch(function(e) {
         console.warn('[ArtEval] Drive auto-save error:', e.message);
+      });
+    } else if (typeof _asegurarTokenFresco === 'function' && typeof _gmailLinkedEmail !== 'undefined' && _gmailLinkedEmail) {
+      _asegurarTokenFresco().then(function(tok) {
+        if (tok) {
+          syncToDrive().catch(function(e) { console.warn('[ArtEval] Drive auto-save (post-refresh) error:', e.message); });
+        } else {
+          // No se pudo renovar: avisar visualmente que hay cambios sin subir
+          try { _updateCloudUI && _updateCloudUI('pending'); } catch(e){}
+          console.warn('[ArtEval] Token vencido y no renovable: cambios pendientes de subir');
+        }
       });
     }
   }, 2000); // esperar 2s para agrupar cambios rápidos
@@ -26783,6 +26797,10 @@ function _scheduleAutoBackup() {
 // Actualizar solo el panel Drive (sin re-renderizar todo)
 // Forzar respaldo ahora — usa deep copy, nunca muta localStorage
 async function _forzarRespaldoAhora() {
+  // v243: intentar renovar el token automáticamente antes de rendirse
+  if ((!_driveToken || Date.now() >= _driveTokenExp) && typeof _asegurarTokenFresco === 'function') {
+    try { await _asegurarTokenFresco(); } catch(e) {}
+  }
   if (!_driveToken || Date.now() >= _driveTokenExp) {
     // CLARIDAD v200: en vez de un toast fugaz, explicar QUÉ pasó y CÓMO resolverlo.
     abrirModal(
