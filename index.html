@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v244">
+<meta name="arteval-version" content="v245">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4372,7 +4372,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v244</span>
+      ">v245</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -27021,8 +27021,24 @@ async function syncFromDrive() {
 
     if (!raw._v || !raw.registros) throw new Error('Formato de backup no reconocido');
 
-    // Anti-zombie: no restaurar registros que fueron eliminados localmente
-    if (raw.deletedRegistry) {
+    // Anti-zombie: no restaurar registros que fueron eliminados localmente.
+    // v244: si es un "Traer todo desde Drive" explícito (pull forzado), se
+    // OMITE este filtro y se limpian las marcas de borrado locales — el usuario
+    // pidió expresamente traer todo lo de Drive, que es la fuente de verdad.
+    // Esto corrige el caso en que un dispositivo mostraba MENOS notas que Drive
+    // por marcas de borrado viejas (ej. tras limpiar memoria en el teléfono).
+    var _forzarPull = (localStorage.getItem('av_force_drive_pull') === '1');
+    if (_forzarPull) {
+      try {
+        var _keysDel = [];
+        for (var _i = 0; _i < localStorage.length; _i++) {
+          var _k = localStorage.key(_i);
+          if (_k && _k.indexOf('av_deleted_') === 0) _keysDel.push(_k);
+        }
+        _keysDel.forEach(function(k){ localStorage.removeItem(k); });
+        console.info('[ArtEval] Pull forzado: ' + _keysDel.length + ' marcas de borrado limpiadas — se trae TODO de Drive');
+      } catch(e) {}
+    } else if (raw.deletedRegistry) {
       raw.registros = raw.registros.filter(function(r) {
         if (!r._id) return true; // registros sin UUID siempre pasan
         var delKey = 'av_deleted_' + r._id;
