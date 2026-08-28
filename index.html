@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v245">
+<meta name="arteval-version" content="v246">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4372,7 +4372,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v245</span>
+      ">v246</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -26959,7 +26959,23 @@ async function traerTodoDesdeDrive() {
   } catch(e) {}
 
   // Mostrar diagnóstico de lo que había en Drive
-  if (diag) {
+  var dp = window._diagPull || null;
+  if (dp) {
+    var alerta = '';
+    if (dp.driveS2 > dp.trasFiltroS2) alerta = '⚠ El filtro anti-zombie descartó ' + (dp.driveS2 - dp.trasFiltroS2) + ' notas del 2° sem al bajar.';
+    else if (dp.trasFiltroS2 > dp.guardadoS2) alerta = '⚠ Se perdieron notas AL GUARDAR (posible falta de espacio en el teléfono): bajaron ' + dp.trasFiltroS2 + ' pero solo se guardaron ' + dp.guardadoS2 + '.';
+    var msg = '<div style="text-align:left;font-size:12.5px;line-height:1.9;">'
+      + '<div style="font-weight:700;margin-bottom:8px;">Diagnóstico de sincronización (2° sem):</div>'
+      + '① En Drive: <strong>' + dp.driveS2 + '</strong><br>'
+      + '② Tras filtro anti-zombie: <strong>' + dp.trasFiltroS2 + '</strong><br>'
+      + '③ En memoria: <strong>' + (dp.memoriaS2!==undefined?dp.memoriaS2:'?') + '</strong><br>'
+      + '④ Guardado en el equipo: <strong>' + (dp.guardadoS2!==undefined?dp.guardadoS2:'?') + '</strong><br>'
+      + '<div style="font-size:11px;color:var(--text3);margin-top:6px;">Pull forzado: ' + (dp.forzado?'sí':'no') + '</div>';
+    if (alerta) msg += '<div style="margin-top:10px;padding:9px;background:rgba(255,59,48,0.1);border-radius:8px;color:#FF3B30;font-size:12px;">' + alerta + '</div>';
+    else msg += '<div style="margin-top:10px;padding:9px;background:rgba(52,199,89,0.1);border-radius:8px;color:#34C759;font-size:12px;">✓ Todo bajó y se guardó correctamente.</div>';
+    msg += '</div>';
+    abrirModal('<div style="max-width:420px;">' + msg + '<div style="text-align:right;margin-top:14px;"><button class="btn btn-primary" onclick="cerrarModal()">Entendido</button></div></div>');
+  } else if (diag) {
     var faltantes = [];
     if (!diag.emails) faltantes.push('correos de apoderados');
     if (!diag.alexia) faltantes.push('planillas de Alexia');
@@ -27063,6 +27079,17 @@ async function syncFromDrive() {
 
     // Deep copy al aplicar — no mutar raw directamente
     registros     = JSON.parse(JSON.stringify(raw.registros    || []));
+    // v246: DIAGNÓSTICO CRUDO — guardar conteos para mostrar qué pasó realmente
+    try {
+      var _cnt2 = function(arr){ return (arr||[]).filter(function(r){ var m=String(r.instancia||'').match(/\d+/); return m && parseInt(m[0])>=4; }).length; };
+      window._diagPull = {
+        driveTotal: (raw.registros||[]).length,
+        driveS2: _cnt2(raw.registros),
+        trasFiltroTotal: registros.length,
+        trasFiltroS2: _cnt2(registros),
+        forzado: (localStorage.getItem('av_force_drive_pull') === '1')
+      };
+    } catch(e) {}
     // FIX: fusionar rubricas Drive+local
     (function(){
       var driveRubs=(raw.rubricas&&raw.rubricas.length)?raw.rubricas:null;
@@ -27150,6 +27177,18 @@ async function syncFromDrive() {
     saveRubricas();
     localStorage.setItem('av_rubrica_activa', rubricaActiva);
     localStorage.setItem('av_last_drive_sync', file.modifiedTime);
+
+    // v246: verificar cuánto quedó REALMENTE guardado (detecta fallo de cuota)
+    try {
+      var _releido = JSON.parse(_lsGetRegistrosRaw() || '[]');
+      var _cnt2b = function(arr){ return (arr||[]).filter(function(r){ var m=String(r.instancia||'').match(/\d+/); return m && parseInt(m[0])>=4; }).length; };
+      if (window._diagPull) {
+        window._diagPull.guardadoTotal = _releido.length;
+        window._diagPull.guardadoS2 = _cnt2b(_releido);
+        window._diagPull.memoriaTotal = registros.length;
+        window._diagPull.memoriaS2 = _cnt2b(registros);
+      }
+    } catch(e) {}
 
     // Refrescar toda la UI
     actualizarConteo();
