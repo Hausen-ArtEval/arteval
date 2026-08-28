@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v243">
+<meta name="arteval-version" content="v244">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4372,7 +4372,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v243</span>
+      ">v244</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -26841,6 +26841,26 @@ async function _forzarRespaldoAhora() {
     await _runDailyBackup();
     _updateDrivePanel();
     if (btn) { btn.disabled = false; btn.textContent = '☁️ Forzar respaldo ahora'; }
+    // v244: DIAGNÓSTICO — confirmar leyendo de vuelta lo que quedó en Drive
+    try {
+      var _fid = await _getOrCreateFolder();
+      var _f = await _findDbFile(_fid);
+      if (_f) {
+        var _rr = await _driveRequest('GET', 'https://www.googleapis.com/drive/v3/files/' + _f.id + '?alt=media');
+        var _raw = await _rr.json();
+        var _driveN = (_raw.registros||[]).length;
+        var _localN = registros.length;
+        function _s2(arr){ return (arr||[]).filter(function(r){ var m=String(r.instancia||'').match(/\d+/); return m && parseInt(m[0])>=4; }).length; }
+        abrirModal('<div style="max-width:420px;padding:2px;"><div style="font-size:16px;font-weight:700;margin-bottom:10px;">Respaldo a Drive completado</div>'
+          + '<div style="font-size:13px;line-height:1.9;">'
+          + '📱 En este equipo: <strong>' + _localN + '</strong> notas (2° sem: ' + _s2(registros) + ')<br>'
+          + '☁️ Subido a Drive: <strong>' + _driveN + '</strong> notas (2° sem: ' + _s2(_raw.registros) + ')</div>'
+          + (_localN === _driveN
+              ? '<div style="margin-top:12px;padding:10px;background:rgba(52,199,89,0.1);border-radius:8px;color:#34C759;font-size:12px;">✓ Drive quedó igual que este equipo. Ahora en el otro dispositivo usa "Traer todo desde Drive".</div>'
+              : '<div style="margin-top:12px;padding:10px;background:rgba(255,59,48,0.1);border-radius:8px;color:#FF3B30;font-size:12px;">⚠ Drive quedó con un número distinto. Si Drive tiene MENOS, vuelve a tocar "Forzar respaldo" una vez más. Si persiste, avísame.</div>')
+          + '<div style="text-align:right;margin-top:14px;"><button class="btn btn-primary" onclick="cerrarModal()">Entendido</button></div></div>');
+      }
+    } catch(e) { console.warn('[ArtEval] diag post-respaldo:', e.message); }
   } catch(e) {
     var _eName = e.name || '';
     var _eMsg  = (e.message || '').toLowerCase();
