@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v240">
+<meta name="arteval-version" content="v241">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -2805,6 +2805,53 @@ button, .btn, .tab, .curso-chip, .reg-card, .config-card, input, select {
   .sub-tab { font-size: 12px !important; padding: 6px 10px !important; }
 }
 
+/* ── v241: ADAPTACIÓN MÓVIL INTEGRAL (teléfonos ≤ 560px) ──────────────── */
+@media (max-width: 560px) {
+  /* Barra superior: que el buscador y contadores no se aprieten ni se corten */
+  .topbar { flex-wrap: wrap !important; height: auto !important; padding: 8px 10px !important; gap: 6px !important; }
+  .topbar .search-wrap, .topbar input[type="search"], #buscadorGlobal {
+    width: 100% !important; order: 10 !important; min-width: 0 !important;
+  }
+  /* Contadores de semestre / evaluados: más chicos y que quepan */
+  .sem-badge, .eval-badge, .cloud-status, [class*="badge"] {
+    font-size: 11px !important; padding: 4px 8px !important;
+  }
+
+  /* Contenido: menos padding lateral para aprovechar el ancho */
+  .content { padding: 0 10px 24px !important; }
+
+  /* Tarjetas de resumen (asistente, riesgo): una columna, legibles */
+  .stats-grid { grid-template-columns: repeat(2,1fr) !important; gap: 8px !important; }
+
+  /* Botones grandes que agregamos (revisar notas, papelera, historial):
+     apilados verticalmente y a todo el ancho para que sean fáciles de tocar */
+  .content > div > div[style*="flex-wrap:wrap"] > button,
+  div[style*="min-width:150px"], div[style*="min-width:180px"] {
+    min-width: 100% !important;
+  }
+
+  /* Modales: casi todo el ancho, con scroll interno */
+  .modal-box, .modal-content { width: 96vw !important; max-width: 96vw !important; max-height: 88vh !important; }
+
+  /* Grillas de cursos: 2 columnas cómodas */
+  .dash-grid, #cursosGridDinamico { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
+
+  /* Tablas de registros: permitir scroll horizontal sin romper el layout */
+  .reg-tabla-wrap, .tabla-scroll { overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; }
+
+  /* Encabezados un poco más chicos */
+  h3 { font-size: 15px !important; }
+
+  /* Inputs y selects: altura táctil cómoda */
+  input, select, textarea { font-size: 16px !important; } /* 16px evita el zoom automático de iOS */
+}
+
+/* Teléfonos muy angostos */
+@media (max-width: 380px) {
+  .dash-grid, #cursosGridDinamico { grid-template-columns: 1fr !important; }
+  .stats-grid { grid-template-columns: 1fr !important; }
+}
+
 @media (pointer: coarse) {
   .tab { min-height: 44px !important; }
   .sub-tab { min-height: 28px !important; padding: 5px 12px !important; }
@@ -4325,7 +4372,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v240</span>
+      ">v241</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -26836,9 +26883,33 @@ async function traerTodoDesdeDrive() {
     'Sí, traer todo', 'btn-primary'
   );
   if (!ok) return;
-  // Forzar: marcar que Drive es la fuente para evitar la barrera de fecha
+  // Forzar: quitar barrera de fecha para que NUNCA se niegue a bajar
   try { localStorage.removeItem('av_last_drive_sync'); } catch(e) {}
+  try { localStorage.setItem('av_force_drive_pull', '1'); } catch(e) {}
+
+  // v241: diagnóstico — leer el archivo de Drive y mostrar QUÉ contiene, para
+  // saber con certeza si el problema es la subida (escritorio) o la bajada.
+  var diag = null;
+  try {
+    var folderId = await _getOrCreateFolder();
+    var file = await _findDbFile(folderId);
+    if (file) {
+      var r = await _driveRequest('GET', 'https://www.googleapis.com/drive/v3/files/' + file.id + '?alt=media');
+      var raw = await r.json();
+      diag = {
+        registros: (raw.registros||[]).length,
+        cursos: Object.keys(raw.listaCursos||{}).length,
+        alexia: Object.keys(raw.alexiaDatos||{}).length,
+        emails: Object.keys(raw.apoderadoEmails||{}).length,
+        histMsg: (raw.historialMsgPers||[]).length,
+        histCorreos: Object.keys(raw.historialCorreos||{}).length,
+        fecha: file.modifiedTime
+      };
+    }
+  } catch(e) { console.warn('[ArtEval] diag Drive:', e.message); }
+
   if (typeof syncFromDrive === 'function') await syncFromDrive();
+  try { localStorage.removeItem('av_force_drive_pull'); } catch(e) {}
   // Refrescar toda la UI tras traer
   try {
     if (typeof actualizarConteo === 'function') actualizarConteo();
@@ -26848,6 +26919,34 @@ async function traerTodoDesdeDrive() {
     if (typeof _renderCursoSidebarGrid === 'function') _renderCursoSidebarGrid();
     if (typeof actualizarTodaLaApp === 'function') actualizarTodaLaApp();
   } catch(e) {}
+
+  // Mostrar diagnóstico de lo que había en Drive
+  if (diag) {
+    var faltantes = [];
+    if (!diag.emails) faltantes.push('correos de apoderados');
+    if (!diag.alexia) faltantes.push('planillas de Alexia');
+    if (!diag.histMsg && !diag.histCorreos) faltantes.push('historial de mensajes');
+    var msg = '<div style="text-align:left;font-size:13px;line-height:1.7;">'
+      + '<div style="font-weight:700;margin-bottom:8px;">Lo que había en tu Drive:</div>'
+      + '📝 Notas: <strong>' + diag.registros + '</strong><br>'
+      + '📚 Cursos: <strong>' + diag.cursos + '</strong><br>'
+      + '📋 Planillas de Alexia: <strong>' + diag.alexia + '</strong><br>'
+      + '✉️ Emails de apoderados: <strong>' + diag.emails + '</strong><br>'
+      + '💬 Historial de mensajes: <strong>' + diag.histMsg + '</strong><br>'
+      + '📨 Historial de correos: <strong>' + diag.histCorreos + '</strong><br>'
+      + '<div style="font-size:11px;color:var(--text3);margin-top:8px;">Actualizado en Drive: ' + new Date(diag.fecha).toLocaleString('es-CL') + '</div>';
+    if (faltantes.length) {
+      msg += '<div style="margin-top:12px;padding:10px;background:rgba(255,149,0,0.1);border-radius:8px;color:#FF9500;font-size:12px;">'
+        + '⚠ En Drive faltan: <strong>' + faltantes.join(', ') + '</strong>.<br>Debes ir al <strong>computador de escritorio</strong>, asegurarte de que esos datos estén cargados ahí, y tocar <strong>"Forzar respaldo ahora"</strong> para subirlos a Drive. Luego vuelve a traer aquí.</div>';
+    } else {
+      msg += '<div style="margin-top:12px;padding:10px;background:rgba(52,199,89,0.1);border-radius:8px;color:#34C759;font-size:12px;">✓ Todo estaba en Drive y se trajo a este dispositivo.</div>';
+    }
+    msg += '</div>';
+    abrirModal('<div style="max-width:420px;">' + msg + '<div style="text-align:right;margin-top:14px;"><button class="btn btn-primary" onclick="cerrarModal()">Entendido</button></div></div>');
+  } else {
+    toast('✓ Información traída desde Drive', 'ok', 3500);
+  }
+}
   toast('✓ Información traída desde Drive', 'ok', 3500);
 }
 
@@ -26867,7 +26966,7 @@ async function syncFromDrive() {
     var localSync = localStorage.getItem('av_last_drive_sync');
     var localDate = localSync ? new Date(localSync) : new Date(0);
 
-    if (localDate > driveDate) {
+    if (localDate > driveDate && localStorage.getItem('av_force_drive_pull') !== '1') {
       // Local más reciente — confirmar antes de sobreescribir
       var ok = await confirmarAccion(
         'Datos locales más recientes',
