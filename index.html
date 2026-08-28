@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v246">
+<meta name="arteval-version" content="v247">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4372,7 +4372,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v246</span>
+      ">v247</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -26855,6 +26855,9 @@ async function _forzarRespaldoAhora() {
           + '<div style="font-size:13px;line-height:1.9;">'
           + '📱 En este equipo: <strong>' + _localN + '</strong> notas (2° sem: ' + _s2(registros) + ')<br>'
           + '☁️ Subido a Drive: <strong>' + _driveN + '</strong> notas (2° sem: ' + _s2(_raw.registros) + ')</div>'
+          + '<div style="margin-top:8px;padding:8px;background:var(--bg3,rgba(0,0,0,0.05));border-radius:8px;font-size:11px;color:var(--text2);word-break:break-all;">'
+          + '<strong>Cuenta Google:</strong> ' + ((typeof _gmailLinkedEmail!=='undefined'&&_gmailLinkedEmail)?_gmailLinkedEmail:'(no identificada)') + '<br>'
+          + '<strong>Archivo Drive (ID):</strong> ' + String(_f.id||'').slice(0,18) + '…</div>'
           + (_localN === _driveN
               ? '<div style="margin-top:12px;padding:10px;background:rgba(52,199,89,0.1);border-radius:8px;color:#34C759;font-size:12px;">✓ Drive quedó igual que este equipo. Ahora en el otro dispositivo usa "Traer todo desde Drive".</div>'
               : '<div style="margin-top:12px;padding:10px;background:rgba(255,59,48,0.1);border-radius:8px;color:#FF3B30;font-size:12px;">⚠ Drive quedó con un número distinto. Si Drive tiene MENOS, vuelve a tocar "Forzar respaldo" una vez más. Si persiste, avísame.</div>')
@@ -26970,6 +26973,11 @@ async function traerTodoDesdeDrive() {
       + '② Tras filtro anti-zombie: <strong>' + dp.trasFiltroS2 + '</strong><br>'
       + '③ En memoria: <strong>' + (dp.memoriaS2!==undefined?dp.memoriaS2:'?') + '</strong><br>'
       + '④ Guardado en el equipo: <strong>' + (dp.guardadoS2!==undefined?dp.guardadoS2:'?') + '</strong><br>'
+      + '<div style="margin-top:8px;padding:8px;background:var(--bg3,rgba(0,0,0,0.05));border-radius:8px;font-size:11px;color:var(--text2);word-break:break-all;">'
+      + '<strong>Cuenta Google:</strong> ' + dp.cuenta + '<br>'
+      + '<strong>Archivo Drive (ID):</strong> ' + (dp.fileId||'').slice(0,18) + '…<br>'
+      + '<strong>Modificado:</strong> ' + (dp.fileMod!=='?' ? new Date(dp.fileMod).toLocaleString('es-CL') : '?')
+      + '</div>'
       + '<div style="font-size:11px;color:var(--text3);margin-top:6px;">Pull forzado: ' + (dp.forzado?'sí':'no') + '</div>';
     if (alerta) msg += '<div style="margin-top:10px;padding:9px;background:rgba(255,59,48,0.1);border-radius:8px;color:#FF3B30;font-size:12px;">' + alerta + '</div>';
     else msg += '<div style="margin-top:10px;padding:9px;background:rgba(52,199,89,0.1);border-radius:8px;color:#34C759;font-size:12px;">✓ Todo bajó y se guardó correctamente.</div>';
@@ -27087,7 +27095,10 @@ async function syncFromDrive() {
         driveS2: _cnt2(raw.registros),
         trasFiltroTotal: registros.length,
         trasFiltroS2: _cnt2(registros),
-        forzado: (localStorage.getItem('av_force_drive_pull') === '1')
+        forzado: (localStorage.getItem('av_force_drive_pull') === '1'),
+        cuenta: (typeof _gmailLinkedEmail !== 'undefined' && _gmailLinkedEmail) ? _gmailLinkedEmail : '(no identificada)',
+        fileId: (file && file.id) ? file.id : '(sin archivo)',
+        fileMod: (file && file.modifiedTime) ? file.modifiedTime : '?'
       };
     } catch(e) {}
     // FIX: fusionar rubricas Drive+local
