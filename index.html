@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v249">
+<meta name="arteval-version" content="v250">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -1680,6 +1680,11 @@ select#inputCurso:focus, select.curso-select:focus { outline: none; border-color
 .libro-tabla .promedio-cell { font-family: var(--font-mono); font-weight: 700; text-align: center; background: var(--accent-bg); color: var(--accent); font-size: 13px; }
 
 .libro-tabla .sin-nota { color: var(--text3); font-family: var(--font-mono); text-align: center; }
+/* v250: celda vacía clickeable — el ＋ aparece sutil y se resalta al pasar */
+.libro-tabla .libro-celda-vacia { text-align: center; transition: background 0.12s; }
+.libro-tabla .libro-celda-vacia .libro-vacia-mas { opacity: 0.35; font-weight: 700; font-size: 15px; transition: opacity 0.12s, color 0.12s; }
+.libro-tabla .libro-celda-vacia:hover { background: var(--accent-bg); }
+.libro-tabla .libro-celda-vacia:hover .libro-vacia-mas { opacity: 1; color: var(--accent); }
 
 .libro-tabla .pie-cell { font-size: 11px; text-align: center; }
 
@@ -4428,7 +4433,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v249</span>
+      ">v250</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -10201,6 +10206,65 @@ function _construirCardAlumno(grupo, _cardIndex) {
 }
 
 // ── Libro de Clases: tabla dinámica por curso con columnas por instancia ──
+// v250: poner una nota faltante directamente desde la celda del Libro, sin
+// abrir otra pestaña. Convierte la celda en un input; al confirmar, crea el
+// registro con la misma estructura que el resto de la app y refresca la vista.
+function _libroPonerNota(td, nombre, instancia, curso) {
+  if (!td || td.querySelector('input')) return; // ya está en edición
+  // Buscar la rúbrica asociada a esa instancia en el curso (para heredarla)
+  var rubricaNombre = '';
+  for (var i = 0; i < registros.length; i++) {
+    var r = registros[i];
+    if ((r.curso||'') === curso && (r.instancia||'Evaluación 1') === instancia && (r.rubricaNombre || r.rubrica)) {
+      rubricaNombre = r.rubricaNombre || r.rubrica; break;
+    }
+  }
+  var prev = td.innerHTML;
+  td.innerHTML = '<input type="text" inputmode="decimal" class="libro-nota-input" '
+    + 'value="" placeholder="?" maxlength="3" '
+    + 'style="width:48px;" />';
+  var inp = td.querySelector('input');
+  inp.focus();
+
+  function cancelar() { td.innerHTML = prev; }
+  function guardar() {
+    var raw = (inp.value || '').trim().replace(',', '.');
+    if (raw === '') { cancelar(); return; }
+    var nota = parseFloat(raw);
+    if (isNaN(nota) || nota < 1 || nota > 7) {
+      inp.style.borderColor = 'var(--red)';
+      toast('La nota debe estar entre 1.0 y 7.0', 'err', 2500);
+      return;
+    }
+    nota = Math.round(nota * 10) / 10;
+    // Crear el registro con la misma forma que usa el resto de la app
+    var nuevo = {
+      _id: (typeof _uuid === 'function') ? _uuid() : ('r_' + Date.now() + '_' + Math.random().toString(36).slice(2,8)),
+      nombre: nombre,
+      curso: curso,
+      instancia: instancia,
+      rubricaNombre: rubricaNombre || '',
+      nota: nota,
+      semestre: (typeof _semestrePorInstancia === 'function') ? _semestrePorInstancia(instancia) : undefined,
+      fechaISO: new Date().toISOString(),
+      noEntregado: false
+    };
+    registros.push(nuevo);
+    saveRegistros();
+    if (typeof _driveSaveDebounced === 'function') _driveSaveDebounced();
+    if (typeof actualizarConteo === 'function') actualizarConteo();
+    toast('✓ Nota ' + nota.toFixed(1) + ' · ' + (nombre||'').split(' ').slice(0,2).join(' '), 'ok', 2200);
+    // Refrescar la vista activa (libro en Estudio o libro por curso)
+    if (typeof renderRegistros === 'function') renderRegistros();
+    if (_vistaLibroCursoActiva && typeof renderCursoMain === 'function') renderCursoMain();
+  }
+  inp.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); guardar(); }
+    else if (e.key === 'Escape') { e.preventDefault(); cancelar(); }
+  });
+  inp.addEventListener('blur', function() { setTimeout(guardar, 120); });
+}
+
 function renderLibroClases(filtrados, container) {
   if (!container) return; // guard: el contenedor puede no existir si el tab no está visible
   if (!filtrados || !filtrados.length) {
@@ -10221,8 +10285,24 @@ function renderLibroClases(filtrados, container) {
   Object.keys(porCurso).sort().forEach(function(curso) {
     const regs = porCurso[curso];
 
-    // Detectar instancias únicas en este curso → columnas dinámicas
-    const instancias = [...new Set(regs.map(function(r){ return r.instancia || 'Evaluación 1'; }))].sort();
+    // Detectar instancias únicas en este curso → columnas dinámicas.
+    // v250: respetar el semestre activo (1°/2°/año completo) para no saturar el
+    // ancho. Si _verAnioCompleto está activo, se muestran todas; si no, solo las
+    // instancias del semestre en curso.
+    var _instTodas = [...new Set(regs.map(function(r){ return r.instancia || 'Evaluación 1'; }))];
+    var instancias = _instTodas.filter(function(inst) {
+      if (typeof _verAnioCompleto !== 'undefined' && _verAnioCompleto) return true;
+      if (typeof _semestrePorInstancia === 'function' && typeof _semestreActivo !== 'undefined') {
+        return _semestrePorInstancia(inst) === _semestreActivo;
+      }
+      return true;
+    });
+    // Ordenar numéricamente (Evaluación 2 antes que Evaluación 10)
+    instancias.sort(function(a, b) {
+      var na = parseInt((a.match(/\d+/) || ['99'])[0]);
+      var nb = parseInt((b.match(/\d+/) || ['99'])[0]);
+      return na - nb;
+    });
 
     // Agrupar por alumno — primero desde registros
     // Clave = normalizarStrict(nombre) para que "Rivas PeñAloza" y "Rivas Peñaloza" sean la misma fila
@@ -10294,7 +10374,18 @@ function renderLibroClases(filtrados, container) {
     alumnos.forEach(function(al, i) {
       const notasCols = instancias.map(function(inst) {
         const n = al.notas[inst];
-        if (n === undefined) return '<td class="sin-nota">—</td>';
+        if (n === undefined) {
+          // v250: celda vacía CLICKEABLE → permite poner la nota faltante aquí
+          // mismo, sin cambiar de pestaña ni perder la vista del curso.
+          var _nombreEsc = (al.nombre||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+          var _instEsc = (inst||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+          var _cursoEsc = (curso||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+          return '<td class="sin-nota libro-celda-vacia" '
+            + 'onclick="_libroPonerNota(this,\'' + _nombreEsc + '\',\'' + _instEsc + '\',\'' + _cursoEsc + '\')" '
+            + 'title="Toca para poner la nota" '
+            + 'style="cursor:pointer;color:var(--text3);">'
+            + '<span class="libro-vacia-mas">＋</span></td>';
+        }
         if (al.noEntregado && al.noEntregado[inst]) {
           var _neI=-1;
           registros.forEach(function(rx,ri){
@@ -28517,14 +28608,52 @@ function _completarPromedioPreview() {
   var curso = _promEstado.curso, inst = _promEstado.instancia;
   var regs = _registrosConNota(curso); // semestre activo, nota>0, no borrados
   var grupos = _promAgruparAlumnos(regs);
+  // v250: para promediar, poder usar TAMBIÉN las notas del otro semestre.
+  // Caso real: completar la N4 (primera del 2° sem) de un estudiante que aún no
+  // tiene otras notas en el 2° semestre → se promedia con sus notas del 1°.
+  var _regsTodoAnio = registros.filter(function(r) {
+    if ((r.curso || '') !== curso) return false;
+    if (r._deletedAt) return false;
+    var n = (typeof r.nota === 'number') ? r.nota : parseFloat(r.nota);
+    return !isNaN(n) && n > 0;
+  });
   var candidatos = [];
   grupos.forEach(function(g) {
     var tiene = g.items.some(function(r) { return (r.instancia || 'Evaluación 1') === inst; });
     if (tiene) return;
-    var notas = g.items.map(function(r) { return (typeof r.nota === 'number') ? r.nota : parseFloat(r.nota); }).filter(function(n) { return !isNaN(n) && n > 0; });
+    // Notas del semestre activo (preferentes)
+    var notasSem = g.items.map(function(r) { return (typeof r.nota === 'number') ? r.nota : parseFloat(r.nota); }).filter(function(n) { return !isNaN(n) && n > 0; });
+    // Notas de TODO el año para este alumno (respaldo si no hay del semestre)
+    var notasAnio = _regsTodoAnio.filter(function(r){ return mismoEstudiante(r.nombre||'', g.nombre); })
+      .map(function(r){ return (typeof r.nota === 'number') ? r.nota : parseFloat(r.nota); })
+      .filter(function(n){ return !isNaN(n) && n > 0; });
+    // Usar las del semestre si existen; si no, las del año completo
+    var notas = notasSem.length ? notasSem : notasAnio;
+    var origenAnio = (notasSem.length === 0 && notasAnio.length > 0);
     if (!notas.length) return;
     var avg = Math.round(notas.reduce(function(a, b) { return a + b; }, 0) / notas.length * 10) / 10;
-    candidatos.push({ nombre: g.nombre, notas: notas, avg: avg, incluir: true });
+    candidatos.push({ nombre: g.nombre, notas: notas, avg: avg, incluir: true, origenAnio: origenAnio });
+  });
+  // v250: incluir también alumnos que NO tienen ninguna nota en el semestre
+  // activo pero sí en el otro (no aparecen en 'grupos', que es del semestre).
+  var _nombresEnGrupos = {};
+  grupos.forEach(function(g){ _nombresEnGrupos[normalizarStrict(g.nombre)] = true; });
+  var _porNombreAnio = {};
+  _regsTodoAnio.forEach(function(r) {
+    var k = normalizarStrict(r.nombre || '');
+    if (!_porNombreAnio[k]) _porNombreAnio[k] = { nombre: r.nombre || '', items: [] };
+    _porNombreAnio[k].items.push(r);
+    if ((r.nombre||'').length > _porNombreAnio[k].nombre.length) _porNombreAnio[k].nombre = r.nombre;
+  });
+  Object.keys(_porNombreAnio).forEach(function(k) {
+    if (_nombresEnGrupos[k]) return; // ya evaluado arriba
+    var g = _porNombreAnio[k];
+    var tiene = g.items.some(function(r) { return (r.instancia || 'Evaluación 1') === inst; });
+    if (tiene) return;
+    var notas = g.items.map(function(r){ return (typeof r.nota === 'number') ? r.nota : parseFloat(r.nota); }).filter(function(n){ return !isNaN(n) && n > 0; });
+    if (!notas.length) return;
+    var avg = Math.round(notas.reduce(function(a, b) { return a + b; }, 0) / notas.length * 10) / 10;
+    candidatos.push({ nombre: g.nombre, notas: notas, avg: avg, incluir: true, origenAnio: true });
   });
   candidatos.sort(function(a, b) { return a.nombre.localeCompare(b.nombre, 'es'); });
   _promEstado.candidatos = candidatos;
