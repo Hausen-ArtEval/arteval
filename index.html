@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v251">
+<meta name="arteval-version" content="v252">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4433,7 +4433,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v251</span>
+      ">v252</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -14203,9 +14203,25 @@ function abrirExportAlexia(cursoDirecto){
       + '</div>';
   }
 
+  // v252: detectar de qué semestre son las plantillas cargadas, para informarlo
+  var _semsPlantillas = {};
+  conPlantilla.forEach(function(x) {
+    var sp = (x.plantilla && x.plantilla.semestrePlantilla) || 0;
+    _semsPlantillas[sp] = (_semsPlantillas[sp] || 0) + 1;
+  });
+  var _avisoSem = '';
+  if (_semsPlantillas[2] && !_semsPlantillas[1] && !_semsPlantillas[0]) {
+    _avisoSem = '<div style="margin-bottom:10px;padding:8px 12px;background:rgba(52,199,89,0.08);border:1px solid rgba(52,199,89,0.3);border-radius:var(--rad);font-size:12px;color:var(--green);">📗 Exportando <strong>2° semestre</strong> — las notas saldrán en la N4 en adelante, como espera Alexia.</div>';
+  } else if (_semsPlantillas[1] && !_semsPlantillas[2] && !_semsPlantillas[0]) {
+    _avisoSem = '<div style="margin-bottom:10px;padding:8px 12px;background:rgba(0,122,255,0.08);border:1px solid rgba(0,122,255,0.3);border-radius:var(--rad);font-size:12px;color:var(--blue);">📘 Exportando <strong>1° semestre</strong> — las notas saldrán desde la N1.</div>';
+  } else if (_semsPlantillas[1] || _semsPlantillas[2]) {
+    _avisoSem = '<div style="margin-bottom:10px;padding:8px 12px;background:rgba(255,149,0,0.08);border:1px solid rgba(255,149,0,0.3);border-radius:var(--rad);font-size:12px;color:var(--amber);">ℹ️ Cada curso se exporta según el semestre de <strong>su</strong> plantilla cargada. Para cambiar de semestre, carga la plantilla de Alexia de ese semestre en «Plantillas Alexia».</div>';
+  }
+
   abrirModal(
     '<div class="modal-title">Exportar XLS para Alexia</div>'
     + '<div class="modal-hint" style="margin-bottom:10px;">Selecciona uno o más cursos. Solo aparecen los que tienen plantilla cargada.</div>'
+    + _avisoSem
     + '<div style="display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto;margin-bottom:12px;" id="alexiaCursosCheck">'
     + filas + '</div>'
     + '<div style="display:flex;gap:8px;margin-bottom:12px;">'
@@ -14354,28 +14370,48 @@ function alexiaDescargarResultados() {
     return;
   }
 
-  var generados = 0;
-  resultados.forEach(function(item) {
+  cerrarModal();
+
+  // v252: descargar los archivos UNO A UNO con una pausa entre cada uno.
+  // Los navegadores BLOQUEAN descargas múltiples disparadas de golpe (por eso
+  // "no dejaba descargar todas juntas"). Secuenciándolas con ~350ms de espacio,
+  // el navegador las acepta todas.
+  var generados = 0, errores = 0;
+  var total = resultados.length;
+  var idx = 0;
+
+  function descargarSiguiente() {
+    if (idx >= resultados.length) {
+      window._alexiaResultadosPendientes = null;
+      if (generados > 0) {
+        toast('✅ ' + generados + ' archivo' + (generados !== 1 ? 's' : '') + ' descargado' + (generados !== 1 ? 's' : '') + (errores ? ' · ' + errores + ' con error' : '') + ' — listos para subir a Alexia', 'ok', 5000);
+      } else {
+        toast('⚠️ No se descargó ningún archivo', 'err', 4000);
+      }
+      return;
+    }
+    var item = resultados[idx];
+    idx++;
     try {
       if (!item.res || !item.res.wsData || !item.res.wsData.length) {
-        toast('⚠️ ' + (item.curso || 'Curso') + ': sin datos para exportar', 'err', 4000);
-        return;
+        toast('⚠️ ' + (item.curso || 'Curso') + ': sin datos', 'err', 3500);
+        errores++;
+      } else {
+        var wb = XLSX.utils.book_new();
+        var ws = XLSX.utils.aoa_to_sheet(item.res.wsData);
+        XLSX.utils.book_append_sheet(wb, ws, 'Hoja1');
+        var nombreArchivo = 'Alexia_' + (item.res.curso || item.res.key).replace(/[^a-zA-Z0-9_\-]/g, '_') + '.xls';
+        XLSX.writeFile(wb, nombreArchivo, { bookType: 'biff8', type: 'binary' });
+        generados++;
+        if (total > 1) toast('⬇ ' + generados + '/' + total + '…', 'info', 900);
       }
-      var wb = XLSX.utils.book_new();
-      var ws = XLSX.utils.aoa_to_sheet(item.res.wsData);
-      XLSX.utils.book_append_sheet(wb, ws, 'Hoja1');
-      var nombreArchivo = 'Alexia_' + (item.res.curso || item.res.key).replace(/[^a-zA-Z0-9_\-]/g, '_') + '.xls';
-      // FIX: usar bookType biff8 para compatibilidad con Alexia (.xls)
-      XLSX.writeFile(wb, nombreArchivo, { bookType: 'biff8', type: 'binary' });
-      generados++;
     } catch(e) {
-      toast('❌ Error al escribir ' + (item.curso || '') + ': ' + e.message, 'err', 5000);
+      toast('❌ Error en ' + (item.curso || '') + ': ' + e.message, 'err', 4000);
+      errores++;
     }
-  });
-  cerrarModal();
-  window._alexiaResultadosPendientes = null;
-  if (generados > 0)
-    toast('✅ ' + generados + ' archivo' + (generados !== 1 ? 's' : '') + ' descargado' + (generados !== 1 ? 's' : '') + ' — listos para subir a Alexia', 'ok', 4000);
+    setTimeout(descargarSiguiente, 350);
+  }
+  descargarSiguiente();
 }
 
 
