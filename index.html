@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v250">
+<meta name="arteval-version" content="v251">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4433,7 +4433,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v250</span>
+      ">v251</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -10237,15 +10237,21 @@ function _libroPonerNota(td, nombre, instancia, curso) {
       return;
     }
     nota = Math.round(nota * 10) / 10;
-    // Crear el registro con la misma forma que usa el resto de la app
+    // Crear el registro con la misma forma que usa el resto de la app.
+    // v251: normalizar el curso (3A → 3°A) y añadir 'fecha' dd-mm-aaaa para que
+    // el registro sea 100% consistente y editable desde el editor estándar.
+    var _cursoNorm = (typeof normalizarCurso === 'function') ? (normalizarCurso(curso) || curso) : curso;
+    var _hoy = new Date();
+    var _fechaStr = String(_hoy.getDate()).padStart(2,'0') + '-' + String(_hoy.getMonth()+1).padStart(2,'0') + '-' + _hoy.getFullYear();
     var nuevo = {
       _id: (typeof _uuid === 'function') ? _uuid() : ('r_' + Date.now() + '_' + Math.random().toString(36).slice(2,8)),
       nombre: nombre,
-      curso: curso,
+      curso: _cursoNorm,
       instancia: instancia,
       rubricaNombre: rubricaNombre || '',
       nota: nota,
       semestre: (typeof _semestrePorInstancia === 'function') ? _semestrePorInstancia(instancia) : undefined,
+      fecha: _fechaStr,
       fechaISO: new Date().toISOString(),
       noEntregado: false
     };
@@ -10403,9 +10409,15 @@ function renderLibroClases(filtrados, container) {
         }
         const clr = n>=6.0?'var(--blue)':n>=4.0?'var(--green)':'var(--red)';
         // Buscar TODOS los registros de este alumno+instancia (puede haber conflicto de rubrica)
+        // v251: comparar el curso con _normCursoKey (tolerante a "3A" vs "3°A") para
+        // que las notas creadas desde el Libro —o con otro formato de curso— también
+        // queden asociadas y editables. Antes la comparación exacta dejaba algunas
+        // celdas sin el clic de editar.
         const regsMatch = [];
+        const _cursoKeyCol = (typeof _normCursoKey === 'function') ? _normCursoKey(curso) : curso;
         registros.forEach(function(rx, ri) {
-          if ((rx.curso||'') === curso && mismoEstudiante(rx.nombre||'', al.nombre) && (rx.instancia||'Evaluación 1') === inst) {
+          var _rxKey = (typeof _normCursoKey === 'function') ? _normCursoKey(rx.curso||'') : (rx.curso||'');
+          if (_rxKey === _cursoKeyCol && mismoEstudiante(rx.nombre||'', al.nombre) && (rx.instancia||'Evaluación 1') === inst) {
             regsMatch.push({r: rx, i: ri});
           }
         });
