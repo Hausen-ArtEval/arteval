@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v252">
+<meta name="arteval-version" content="v253">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -210,7 +210,7 @@ body {
 .logo-sub {
   font-family: var(--font-mono);
   font-size: 9px; color: var(--text3);
-  letter-spacing: 1px; text-transform: uppercase; margin-top: 2px;
+  letter-spacing: 1px; text-transform: none; margin-top: 2px;
 }
 
 .topbar-search { width: 100%; max-width: 380px; justify-self: center; position: relative; }
@@ -412,7 +412,7 @@ button:focus-visible,
   padding: 11px 16px; border-bottom: 0.5px solid var(--border);
   display: flex; align-items: center; gap: 8px;
   font-family: var(--font-ui); font-size: 10.5px; font-weight: 600;
-  color: var(--text3); text-transform: uppercase; letter-spacing: 0.7px;
+  color: var(--text3); text-transform: none; letter-spacing: 0.7px;
   background: var(--bg3);
 }
 
@@ -423,7 +423,7 @@ button:focus-visible,
 
 .field-wrap label {
   font-size: 11px; color: var(--text3); display: block; margin-bottom: 5px;
-  text-transform: uppercase; letter-spacing: 0.5px; font-family: var(--font-mono); font-weight: 500;
+  text-transform: none; letter-spacing: 0.5px; font-family: var(--font-mono); font-weight: 500;
 }
 
 .field-wrap input, .field-wrap select,
@@ -539,7 +539,7 @@ input[type="text"]:focus, textarea:focus, select:focus {
 
 .resumen-footer { padding: 12px 16px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; background: var(--bg3); border-radius: 0 0 var(--rad-lg) var(--rad-lg); }
 
-.nivel-pill { font-size: 12px; font-weight: 700; padding: 5px 14px; border-radius: 20px; display: none; letter-spacing: 0.3px; text-transform: uppercase; }
+.nivel-pill { font-size: 12px; font-weight: 700; padding: 5px 14px; border-radius: 20px; display: none; letter-spacing: 0.3px; text-transform: none; }
 
 /* ── REGISTROS ──────────────────────────────────────────── */
 .reg-toolbar {
@@ -1017,7 +1017,7 @@ input[type="text"]:focus, textarea:focus, select:focus {
 
 .prog-stat strong { display: block; font-size: 18px; font-weight: 700; font-family: var(--font-mono); }
 
-.prog-stat span { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; }
+.prog-stat span { font-size: 10px; color: var(--text3); text-transform: none; letter-spacing: 0.5px; }
 
 .prog-chart-wrap { width: 100%; overflow: hidden; border-radius: var(--rad); }
 
@@ -1065,7 +1065,7 @@ input[type="text"]:focus, textarea:focus, select:focus {
 
 .csn { font-size: 22px; font-weight: 700; color: var(--text); font-family: var(--font-mono); line-height: 1.1; }
 
-.csl { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+.csl { font-size: 10px; color: var(--text3); text-transform: none; letter-spacing: 0.5px; margin-top: 2px; }
 
 .ccs-entregado .csn { color: var(--green); }
 
@@ -1150,7 +1150,7 @@ input[type="text"]:focus, textarea:focus, select:focus {
 
 .libro-tabla { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; min-width: 600px; }
 
-.libro-tabla th { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; padding: 12px 18px; border-bottom: 0.5px solid var(--border); background: var(--bg3); white-space: nowrap; }
+.libro-tabla th { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: none; letter-spacing: 0.5px; padding: 12px 18px; border-bottom: 0.5px solid var(--border); background: var(--bg3); white-space: nowrap; }
 
 .libro-tabla td { padding: 16px 20px; font-size: 15px; border-bottom: 0.5px solid var(--border); vertical-align: middle;; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -1162,7 +1162,7 @@ input[type="text"]:focus, textarea:focus, select:focus {
 
 .libro-tabla tr.fila-sin-evaluar td { background: rgba(255,159,10,0.04); border-left: 2px solid var(--amber); color: var(--text3); }
 
-.libro-seccion { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.8px; padding: 14px 16px 6px; }
+.libro-seccion { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: none; letter-spacing: 0.8px; padding: 14px 16px 6px; }
 
 .sin-nota-pendiente { color: var(--amber); font-family: var(--font-mono); font-weight: 700; text-align: center; font-size: 13px; opacity: 0.7; }
 
@@ -1357,7 +1357,7 @@ a:hover { text-decoration: underline; }
 .pie-badge {
   display: inline-flex; align-items: center; gap: 4px;
   font-size: 10px; font-weight: 600; letter-spacing: 0.3px;
-  text-transform: uppercase; font-family: var(--font-mono);
+  text-transform: none; font-family: var(--font-mono);
   background: rgba(255,149,0,0.10); color: #FF9500;
   border: 1px solid rgba(255,149,0,0.30);
   border-radius: 20px; padding: 2px 8px 2px 5px; flex-shrink: 0;
@@ -1389,7 +1389,7 @@ a:hover { text-decoration: underline; }
 
 .pie-options.open { display: flex; }
 
-.pie-opt-label { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.4px; font-family: var(--font-mono); margin-bottom: 2px; }
+.pie-opt-label { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: none; letter-spacing: 0.4px; font-family: var(--font-mono); margin-bottom: 2px; }
 
 .pie-rubrica-select { width: 100%; padding: 7px 10px; border: 1px solid var(--border2); border-radius: var(--rad); background: var(--bg2); font-family: var(--font-ui); font-size: 13px; color: var(--text); }
 
@@ -1446,7 +1446,7 @@ select#inputCurso:focus, select.curso-select:focus { outline: none; border-color
 
 .exigencia-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 
-.exigencia-label { font-size: 11px; font-weight: 700; color: var(--text); text-transform: uppercase; letter-spacing: 0.4px; font-family: var(--font-mono); }
+.exigencia-label { font-size: 11px; font-weight: 700; color: var(--text); text-transform: none; letter-spacing: 0.4px; font-family: var(--font-mono); }
 
 .exigencia-valor { font-size: 11px; font-weight: 600; color: var(--accent); font-family: var(--font-mono); }
 
@@ -1482,7 +1482,7 @@ select#inputCurso:focus, select.curso-select:focus { outline: none; border-color
 
 .dist-row.active .dist-chevron { transform: rotate(90deg); }
 
-.dist-bar-wrap h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text3); margin-bottom: 14px; }
+.dist-bar-wrap h3 { font-size: 12px; text-transform: none; letter-spacing: 0.5px; color: var(--text3); margin-bottom: 14px; }
 
 .curso-section { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--rad-lg); overflow: hidden; margin-bottom: 16px; }
 
@@ -1536,7 +1536,7 @@ select#inputCurso:focus, select.curso-select:focus { outline: none; border-color
 
 .modal-field { margin-bottom: 12px; }
 
-.modal-field label { font-size: 11px; color: var(--text3); display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.4px; font-family: var(--font-mono); }
+.modal-field label { font-size: 11px; color: var(--text3); display: block; margin-bottom: 4px; text-transform: none; letter-spacing: 0.4px; font-family: var(--font-mono); }
 
 .modal-field input, .modal-field select { width: 100%; font-size: 13px; padding: 9px 12px; border: 1px solid rgba(60,45,30,0.22); border-radius: var(--rad); background: var(--bg2); color: var(--text); font-family: var(--font-ui); box-shadow: inset 0 1px 3px rgba(30,20,10,0.05); }
 
@@ -1599,7 +1599,7 @@ select#inputCurso:focus, select.curso-select:focus { outline: none; border-color
 
 .detalle-meta { font-size: 12px; color: var(--text3); font-family: var(--font-mono); margin-top: 4px; }
 
-.detalle-resultado { font-size: 11px; font-weight: 600; padding: 3px 12px; border-radius: 20px; display: inline-block; margin-top: 6px; text-transform: uppercase; letter-spacing: 0.4px; }
+.detalle-resultado { font-size: 11px; font-weight: 600; padding: 3px 12px; border-radius: 20px; display: inline-block; margin-top: 6px; text-transform: none; letter-spacing: 0.4px; }
 
 .detalle-criterios { display: flex; flex-direction: column; gap: 6px; }
 
@@ -1724,7 +1724,7 @@ select:focus:not(:focus-visible) { outline: none; }
 
 .cursos-nivel-titulo {
   font-size: 11px; font-weight: 700; color: var(--text3);
-  text-transform: uppercase; letter-spacing: 1px;
+  text-transform: none; letter-spacing: 1px;
   font-family: var(--font-mono); padding: 0 2px;
   margin-bottom: 8px; display: flex; align-items: center; gap: 8px;
 }
@@ -1757,7 +1757,7 @@ select:focus:not(:focus-visible) { outline: none; }
 
 .curso-chip-stat .csn { font-size: 22px; font-weight: 700; font-family: var(--font-mono); }
 
-.curso-chip-stat .csl { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.4px; font-family: var(--font-mono); margin-top: 2px; }
+.curso-chip-stat .csl { font-size: 10px; color: var(--text3); text-transform: none; letter-spacing: 0.4px; font-family: var(--font-mono); margin-top: 2px; }
 
 .ccs-pie       .csn { color: var(--pie); }
 
@@ -1791,7 +1791,7 @@ select:focus:not(:focus-visible) { outline: none; }
 .merge-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
 
 .merge-table th { background: var(--bg3); padding: 6px 10px; text-align: left;
-  font-family: var(--font-mono); font-size: 10px; text-transform: uppercase;
+  font-family: var(--font-mono); font-size: 10px; text-transform: none;
   letter-spacing: 0.5px; color: var(--text2); border-bottom: 2px solid var(--border2); }
 
 .merge-table td { padding: 7px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
@@ -2285,7 +2285,7 @@ select:focus:not(:focus-visible) { outline: none; }
 
 .email-campo label {
   font-size: 11px; font-weight: 600; color: var(--text3);
-  text-transform: uppercase; letter-spacing: 0.5px;
+  text-transform: none; letter-spacing: 0.5px;
   min-width: 90px; flex-shrink: 0;
 }
 
@@ -2389,7 +2389,7 @@ select:focus:not(:focus-visible) { outline: none; }
 }
 
 .reg-group-header {
-  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  font-size: 11px; font-weight: 700; text-transform: none;
   letter-spacing: 0.6px; color: var(--ae-gray, #8E8E93);
   padding: 12px 20px 8px;
   background: var(--ae-gray-light, #F2F2F7);
@@ -2956,7 +2956,7 @@ button, .btn, .tab, .curso-chip, .reg-card, .config-card, input, select {
 
 .dash-lbl {
   font-size: 11px; color: var(--text3);
-  text-transform: uppercase; letter-spacing: 0.5px;
+  text-transform: none; letter-spacing: 0.5px;
 }
 
 /* Dashboard course cards */
@@ -3004,7 +3004,7 @@ button, .btn, .tab, .curso-chip, .reg-card, .config-card, input, select {
 
 .dash-estado-badge {
   display: inline-block; font-size: 9px; font-weight: 700;
-  text-transform: uppercase; letter-spacing: 0.5px;
+  text-transform: none; letter-spacing: 0.5px;
   padding: 2px 7px; border-radius: 20px; margin-bottom: 8px;
 }
 
@@ -3018,7 +3018,7 @@ button, .btn, .tab, .curso-chip, .reg-card, .config-card, input, select {
 
 .dash-alerta-curso-nombre {
   font-size: 11px; font-weight: 700; color: var(--red);
-  text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px;
+  text-transform: none; letter-spacing: .5px; margin-bottom: 6px;
 }
 
 .dash-alerta-alumnos { display: flex; flex-direction: column; }
@@ -3254,7 +3254,7 @@ button:focus-visible, .tab:focus-visible, .sub-tab:focus-visible {
 
 .resumen-val { font-size: 20px; font-weight: 700; color: var(--text); font-family: var(--font-mono); letter-spacing: -0.5px; }
 
-.resumen-lbl { font-size: 9px; color: var(--text3); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+.resumen-lbl { font-size: 9px; color: var(--text3); margin-top: 2px; text-transform: none; letter-spacing: 0.5px; font-weight: 600; }
 
 /* Reg cards más limpias */
 .reg-card {
@@ -3275,7 +3275,7 @@ button:focus-visible, .tab:focus-visible, .sub-tab:focus-visible {
 
 .reg-nota-num { font-size: 24px; font-weight: 700; line-height: 1; font-family: var(--font-mono); letter-spacing: -1px; }
 
-.reg-nota-lbl { font-size: 9px; color: var(--text3); margin-top: 2px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+.reg-nota-lbl { font-size: 9px; color: var(--text3); margin-top: 2px; font-weight: 600; text-transform: none; letter-spacing: 0.3px; }
 
 .reg-vdivider { width: 0.5px; height: 36px; background: var(--border); flex-shrink: 0; margin-right: 12px; }
 
@@ -3577,7 +3577,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
 }
 .reg-group-header {
   font-size: 11px; font-weight: 700;
-  text-transform: uppercase; letter-spacing: 0.7px;
+  text-transform: none; letter-spacing: 0.7px;
   color: var(--text3);
   padding: 10px 18px 8px;
   background: var(--bg3);
@@ -4251,6 +4251,83 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
   .tabs   { top: 50px !important; height: 44px !important; }
   #subnavLayer { top: 94px !important; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   v253 — REFINAMIENTO VISUAL "NATIVO MAC"
+   Misma paleta ArtEval (naranja #FF9500 + grises de sistema). Lo que cambia
+   es la DISCIPLINA, para que se sienta como una app nativa de macOS, no como
+   una plantilla generada. Se quitan los "tells" de IA:
+   · labels EN MAYÚSCULAS → capitalización normal
+   · fuente monoespaciada en datos/labels → la misma DM Sans de la app
+   · letter-spacing forzado en labels → natural
+   · sombras más suaves en capas · bordes hairline
+   El logo original NO se toca (es <img> con el base64, invariante protegido).
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* 1 ─ Quitar MAYÚSCULAS SOSTENIDAS de los labels de sección/campo.
+   Mantiene el tamaño y color; solo cambia a capitalización normal, que es
+   más legible y menos "plantilla". No afecta siglas reales (PIE, N4) que
+   van escritas en mayúscula en el HTML, no por text-transform. */
+.email-campo label,
+.modal-field label,
+.dash-alerta-curso-nombre,
+.cursos-nivel-titulo,
+.prog-stat-label,
+.curso-chip-stat,
+.detalle-meta,
+.exigencia-label,
+.pie-opt-label,
+.csl,
+.resumen-footer,
+.logo-sub,
+.dist-bar-label,
+.stat-label,
+.kpi-label,
+.section-eyebrow,
+.field-label {
+  text-transform: none !important;
+  letter-spacing: -0.1px !important;
+  font-family: var(--font-ui) !important;
+}
+
+/* 2 ─ Quitar el monoespaciado de las píldoras de datos del header
+   (contadores de semestre, evaluados, hoy). Pasan a la fuente de la app. */
+#semPill1, #semPill2,
+.conteo-pill, #hoyBadge,
+.curso-chip-stat, .prog-stat-num,
+.libro-tabla th {
+  font-family: var(--font-ui) !important;
+  letter-spacing: -0.1px !important;
+}
+
+/* 3 ─ Sombras más suaves en capas — el sello de las apps nativas de Mac.
+   Reemplaza las sombras existentes por versiones más delicadas. */
+:root {
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03) !important;
+  --shadow:    0 2px 8px rgba(0,0,0,0.045), 0 1px 3px rgba(0,0,0,0.03) !important;
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.035) !important;
+  --shadow-xl: 0 16px 48px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04) !important;
+}
+
+/* 4 ─ Bordes hairline más finos y delicados (como macOS) */
+.stats-grid .stat-card,
+.dash-card, .acceso-card,
+.curso-card, .libro-wrap,
+.modal-box {
+  border-width: 0.5px !important;
+}
+
+/* 5 ─ KPIs del dashboard: números con letter-spacing negativo estilo Apple,
+   labels en capitalización normal sin monoespaciado. */
+.stat-num, .kpi-num, .dash-kpi-num {
+  letter-spacing: -1px !important;
+}
+
+/* 6 ─ Transiciones de hover más suaves y discretas en tarjetas */
+.acceso-card, .dash-card, .curso-card {
+  transition: box-shadow 0.2s cubic-bezier(0.25,0.46,0.45,0.94),
+              transform 0.2s cubic-bezier(0.25,0.46,0.45,0.94) !important;
+}
 </style>
 
 <script>
@@ -4330,7 +4407,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
     </div>
     <div style="margin-top:4px;font-family:-apple-system,system-ui,sans-serif;
                 font-size:13px;font-weight:500;color:rgba(255,255,255,0.8);
-                text-transform:uppercase;letter-spacing:2px;">
+                text-transform:none;letter-spacing:2px;">
       Artes Visuales
     </div>
   </div>
@@ -4433,7 +4510,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v252</span>
+      ">v253</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -4583,16 +4660,16 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
         <div>
-          <div style="font-size:10px;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;margin-bottom:3px;">Total curso</div>
+          <div style="font-size:10px;color:var(--text3);font-family:var(--font-mono);text-transform:none;margin-bottom:3px;">Total curso</div>
           <input id="ctxTotalCurso" type="number" min="1" max="60" placeholder="Ej: 32" style="width:100%;padding:6px 8px;border:1px solid var(--border2);border-radius:var(--rad);background:var(--bg);font-size:13px;font-family:var(--font-mono);">
         </div>
         <div>
-          <div style="font-size:10px;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;margin-bottom:3px;">Estudiantes PIE</div>
+          <div style="font-size:10px;color:var(--text3);font-family:var(--font-mono);text-transform:none;margin-bottom:3px;">Estudiantes PIE</div>
           <input id="ctxTotalPIE" type="number" min="0" max="60" placeholder="Ej: 5" style="width:100%;padding:6px 8px;border:1px solid var(--border2);border-radius:var(--rad);background:var(--bg);font-size:13px;font-family:var(--font-mono);">
         </div>
       </div>
       <div style="margin-bottom:10px;">
-        <div style="font-size:10px;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;margin-bottom:3px;">Nota del profe (contexto general)</div>
+        <div style="font-size:10px;color:var(--text3);font-family:var(--font-mono);text-transform:none;margin-bottom:3px;">Nota del profe (contexto general)</div>
         <div class="obs-input-wrap">
           <textarea id="ctxNota" rows="3" placeholder="Ej: Unidad Arte Románico. Faltan 3 alumnos por evaluar. Máx. exposición: viernes 21." style="width:100%;padding:6px 38px 6px 8px;border:1px solid var(--border2);border-radius:var(--rad);background:var(--bg);font-size:12px;font-family:var(--font-ui);resize:vertical;"></textarea>
           <button class="mic-btn" title="Dictar nota" aria-label="Dictar" onclick="activarMicrofono(this,'ctxNota')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="9" y1="22" x2="15" y2="22"/></svg></button>
@@ -4711,7 +4788,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
     </div>
     <!-- Sistema: Drive | Rúbricas | Duplicados | Ajustes -->
     <div id="sistemaSubNav" class="ae-subnav" style="gap:6px;padding:8px 16px;">
-      <span style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-right:4px;white-space:nowrap;">Sistema:</span>
+      <span style="font-size:11px;font-weight:700;color:var(--text3);text-transform:none;letter-spacing:0.5px;margin-right:4px;white-space:nowrap;">Sistema:</span>
       <button data-sub="drive" onclick="showSistemaSub('drive')" class="sub-tab sub-active ios-segment-btn active">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>
         Drive
@@ -4753,7 +4830,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         <div id="cursoSidebar">
           <!-- Selector de instancia global en sidebar -->
           <div style="padding:8px 4px 12px 4px;border-bottom:1px solid var(--border);margin-bottom:10px;">
-            <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;font-family:var(--font-mono);margin-bottom:4px;">Instancia evaluativa</div>
+            <div style="font-size:9px;color:var(--text3);text-transform:none;letter-spacing:0.5px;font-family:var(--font-mono);margin-bottom:4px;">Instancia evaluativa</div>
             <select id="instanciaSidebarCursos" class="filter-select" style="width:100%;font-size:12px;padding:5px 8px;" onchange="cambiarInstanciaSidebar(this.value)">
               <option value="">Todas</option>
               <option value="Evaluación 1">Evaluación 1</option>
@@ -4928,7 +5005,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
             <div style="font-size:12px;font-weight:700;color:var(--blue,#2563eb);"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--blue,#2563eb)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;" ><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> Sugerencia para siguiente evaluación</div>
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
               <div>
-                <div style="font-size:9px;color:var(--text3);text-transform:uppercase;font-family:var(--font-mono);margin-bottom:2px;">Instancia</div>
+                <div style="font-size:9px;color:var(--text3);text-transform:none;font-family:var(--font-mono);margin-bottom:2px;">Instancia</div>
                 <select id="sigInstanciaSugerida" class="filter-select" style="font-size:12px;padding:4px 8px;">
                   <option value="Evaluación 1">Evaluación 1</option>
                   <option value="Evaluación 2">Evaluación 2</option>
@@ -4939,7 +5016,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
                 </select>
               </div>
               <div>
-                <div style="font-size:9px;color:var(--text3);text-transform:uppercase;font-family:var(--font-mono);margin-bottom:2px;">Rúbrica</div>
+                <div style="font-size:9px;color:var(--text3);text-transform:none;font-family:var(--font-mono);margin-bottom:2px;">Rúbrica</div>
                 <select id="sigRubricaSugerida" class="filter-select" style="font-size:12px;padding:4px 8px;"></select>
               </div>
             </div>
@@ -5065,7 +5142,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
             <span class="nivel-pill" id="nivelPill"></span>
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
               <div style="display:flex;flex-direction:column;gap:2px;">
-                <label style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;font-family:var(--font-mono);">Instancia evaluativa</label>
+                <label style="font-size:9px;color:var(--text3);text-transform:none;letter-spacing:0.5px;font-family:var(--font-mono);">Instancia evaluativa</label>
                 <select id="instanciaSelect" class="filter-select" style="font-size:12px;padding:5px 10px;min-width:130px;" onchange="actualizarBarraProgresoCurso();_sincronizarSemestrePorInstancia()">
                   <option value="Evaluación 1">Evaluación 1</option>
                 </select>
@@ -5133,7 +5210,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
       <div id="dashSesionWidget" style="display:none;margin-bottom:16px;border-radius:var(--rad-xl);overflow:hidden;box-shadow:var(--shadow);">
         <div id="dashSesionHeader" style="background:var(--accent);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;">
           <div>
-            <div style="font-size:10px;color:rgba(255,255,255,0.75);text-transform:uppercase;letter-spacing:1px;font-weight:600;">Próxima evaluación</div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.75);text-transform:none;letter-spacing:1px;font-weight:600;">Próxima evaluación</div>
             <div id="dashSesionCurso" style="font-size:18px;font-weight:700;color:#fff;margin-top:3px;letter-spacing:-0.3px;">—</div>
           </div>
           <div style="text-align:right;">
@@ -5288,7 +5365,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
 
       <!-- RESUMEN DEL DÍA -->
       <div id="dashSesionHoy" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
-        <div style="font-size:11px;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.5px;">Resumen de hoy</div>
+        <div style="font-size:11px;color:var(--text3);font-family:var(--font-mono);text-transform:none;letter-spacing:.5px;">Resumen de hoy</div>
         <div id="dashHoyStat" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
       </div>
 
@@ -5307,7 +5384,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
       </div>
 
       <!-- GRID DE CURSOS -->
-      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;font-family:var(--font-mono);margin-bottom:10px;">
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:none;letter-spacing:.5px;font-family:var(--font-mono);margin-bottom:10px;">
         Estado por curso <span id="dashInstanciaLabel" style="color:var(--accent);"></span>
         <select id="dashInstanciaFiltro" class="filter-select" style="margin-left:10px;font-size:11px;padding:3px 8px;" onchange="renderDashboard()">
           <option value="">Todas las instancias</option>
@@ -5531,13 +5608,13 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         border-radius:var(--rad-lg);padding:10px 16px;align-items:center;
         z-index:80;">
         <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
-          <label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;font-family:'DM Mono',monospace;white-space:nowrap;">Total del curso</label>
+          <label style="font-size:10px;color:var(--text3);text-transform:none;letter-spacing:0.5px;font-family:'DM Mono',monospace;white-space:nowrap;">Total del curso</label>
           <input type="number" id="totalAlumnosCurso" min="1" max="60" value="45"
             style="width:58px;font-size:15px;font-weight:700;font-family:'DM Mono',monospace;padding:3px 6px;border:0.5px solid var(--border2);border-radius:var(--rad);background:var(--bg3);color:var(--text);text-align:center;"
             oninput="_debouncedEstadisticas()">
         </div>
         <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
-          <label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;font-family:'DM Mono',monospace;white-space:nowrap;">Entregados</label>
+          <label style="font-size:10px;color:var(--text3);text-transform:none;letter-spacing:0.5px;font-family:'DM Mono',monospace;white-space:nowrap;">Entregados</label>
           <input type="number" id="trabajosEntregados" min="0" max="60" value=""
             placeholder="auto"
             style="width:58px;font-size:15px;font-weight:700;font-family:'DM Mono',monospace;padding:3px 6px;border:0.5px solid var(--border2);border-radius:var(--rad);background:var(--bg3);color:var(--text);text-align:center;"
@@ -5802,15 +5879,15 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         </div>
         <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
           <div style="flex:1;min-width:130px;">
-            <div style="font-size:10px;color:var(--text3);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;">Nivel</div>
+            <div style="font-size:10px;color:var(--text3);margin-bottom:4px;font-weight:600;text-transform:none;letter-spacing:.5px;">Nivel</div>
             <select id="utpFiltroNivel" class="filter-select" style="width:100%;" onchange="_renderInformeUTP()"><option value="">Todos</option></select>
           </div>
           <div style="flex:1;min-width:130px;">
-            <div style="font-size:10px;color:var(--text3);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;">Curso</div>
+            <div style="font-size:10px;color:var(--text3);margin-bottom:4px;font-weight:600;text-transform:none;letter-spacing:.5px;">Curso</div>
             <select id="utpFiltroCurso" class="filter-select" style="width:100%;" onchange="_renderInformeUTP()"><option value="">Todos</option></select>
           </div>
           <div style="flex:1;min-width:130px;">
-            <div style="font-size:10px;color:var(--text3);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;">Estado</div>
+            <div style="font-size:10px;color:var(--text3);margin-bottom:4px;font-weight:600;text-transform:none;letter-spacing:.5px;">Estado</div>
             <select id="utpFiltroEstado" class="filter-select" style="width:100%;" onchange="_renderInformeUTP()">
               <option value="">Todos</option>
               <option value="enviado">✓ Enviados</option>
@@ -6022,7 +6099,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
           <!-- Curso y semestre — clasificación para las carpetas -->
           <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
             <div style="flex:1;min-width:130px;">
-              <label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;font-family:'DM Mono',monospace;display:block;margin-bottom:4px;">Curso</label>
+              <label style="font-size:10px;color:var(--text3);text-transform:none;letter-spacing:.4px;font-family:'DM Mono',monospace;display:block;margin-bottom:4px;">Curso</label>
               <input class="rubrica-nombre-input" id="rubricaCursoInput"
                      placeholder="Ej: 5° Básico"
                      style="margin-bottom:0;font-size:13px;"
@@ -6030,7 +6107,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
               <datalist id="cursosSugeridos"></datalist>
             </div>
             <div style="min-width:110px;">
-              <label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;font-family:'DM Mono',monospace;display:block;margin-bottom:4px;">Semestre</label>
+              <label style="font-size:10px;color:var(--text3);text-transform:none;letter-spacing:.4px;font-family:'DM Mono',monospace;display:block;margin-bottom:4px;">Semestre</label>
               <select id="rubricaSemestreInput"
                       style="width:100%;padding:9px 12px;border-radius:var(--rad);border:0.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:13px;font-family:var(--font-ui);">
                 <option value="1">1° Semestre</option>
@@ -6038,7 +6115,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
               </select>
             </div>
           </div>
-          <div style="font-size:11px;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.4px;font-family:'DM Mono',monospace;">Criterios (cada uno vale MB=3 / L=2 / M=1 / N=0 pts)</div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:8px;text-transform:none;letter-spacing:0.4px;font-family:'DM Mono',monospace;">Criterios (cada uno vale MB=3 / L=2 / M=1 / N=0 pts)</div>
           <div id="critEditList"></div>
           <button class="btn-add-crit" onclick="agregarCritEditor()">+ Agregar criterio</button>
           <div class="divider"></div>
@@ -6151,7 +6228,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
               <div class="drive-step-desc">Ve a <strong>APIs y servicios → Credenciales</strong> → <strong>+ Crear credenciales → ID de cliente de OAuth</strong>. En tipo de aplicación selecciona <strong>Aplicación web</strong>. Ponle nombre <em>"ArtEval Web"</em>.</div>
               <div class="drive-step-hint">En <strong>"Orígenes de JavaScript autorizados"</strong> agrega la dirección donde usas ArtEval:</div>
               <div style="margin-top:10px;padding:12px;background:var(--bg3);border-radius:var(--rad);border:1px solid var(--border);">
-                <div style="font-size:11px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;font-family:var(--font-mono);letter-spacing:0.4px;">Tu origen actual (agrégalo en Google Cloud):</div>
+                <div style="font-size:11px;color:var(--text3);margin-bottom:6px;text-transform:none;font-family:var(--font-mono);letter-spacing:0.4px;">Tu origen actual (agrégalo en Google Cloud):</div>
                 <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                   <code id="driveCurrentOrigin" style="font-size:13px;font-weight:700;color:var(--accent);background:var(--accent-bg);padding:4px 10px;border-radius:var(--rad);font-family:var(--font-mono);"></code>
                   <button onclick="if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(document.getElementById('driveCurrentOrigin').textContent).then(function(){toast('✅ Copiado','ok',1500)}).catch(function(){toast('No se pudo copiar — selecciona y copia manualmente','err',3000)})}else{toast('Copia manualmente el texto mostrado','err',3000)}" class="btn btn-sm" style="font-size:11px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg> Copiar</button>
@@ -6170,7 +6247,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
             <div class="drive-step-body">
               <div class="drive-step-title">Copia el Client ID y pégalo aquí</div>
               <div class="drive-step-desc">Después de crear las credenciales, aparecerá una ventana con el <strong>ID de cliente</strong>. Cópialo y pégalo en el campo de abajo. Tiene el formato <code style="font-size:11px;">xxxx.apps.googleusercontent.com</code></div>
-              <label style="font-size:11px;color:var(--text3);display:block;margin:10px 0 4px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.4px;">Tu Client ID de Google OAuth 2.0</label>
+              <label style="font-size:11px;color:var(--text3);display:block;margin:10px 0 4px;font-family:var(--font-mono);text-transform:none;letter-spacing:0.4px;">Tu Client ID de Google OAuth 2.0</label>
               <input class="config-input" type="text" id="googClientIdInput"
                 placeholder="xxxxxxxxxx-xxxxxxxx.apps.googleusercontent.com"
                 style="font-size:12px;font-family:var(--font-mono);">
@@ -9627,7 +9704,7 @@ function _mostrarMenuNE(ri,nombre,inst,cur,evt){
     +'<div style="font-size:11px;color:#8E8E93;margin-top:2px;">'+inst+' \u00b7 '+cur
     +' \u00b7 <span style="color:#FF3B30;font-weight:600;">NE</span></div></div>';
   var opt1='<div style="padding:12px 16px;border-bottom:0.5px solid #F2F2F7;">'
-    +'<div style="font-size:11px;font-weight:700;color:#8E8E93;text-transform:uppercase;'
+    +'<div style="font-size:11px;font-weight:700;color:#8E8E93;text-transform:none;'
     +'letter-spacing:0.5px;margin-bottom:8px;">Ingresar nota directa</div>'
     +'<div style="display:flex;gap:8px;align-items:center;">'
     +'<input id="neNotaInput" type="number" min="1" max="7" step="0.1" value="1.0" '
@@ -9726,7 +9803,7 @@ function editarNotaRapida(idx, btnEl) {
   pop.style.left = Math.max(8, rect.left - 60) + 'px';
 
   pop.innerHTML = `
-    <div style="font-size:11px;font-weight:700;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;margin-bottom:10px;letter-spacing:.5px;">
+    <div style="font-size:11px;font-weight:700;color:var(--text3);font-family:var(--font-mono);text-transform:none;margin-bottom:10px;letter-spacing:.5px;">
       Editar nota · ${r.nombre}
     </div>
     <div style="font-size:9px;color:var(--text3);margin-bottom:4px;">NUEVA NOTA (1.0 – 7.0)</div>
@@ -15063,11 +15140,11 @@ function _mostrarDetalleCursoDash(curso) {
       +'</div>'
 
       // Instancias
-      +(instHTML ? '<div style="margin-bottom:14px;"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:6px;">Por instancia</div>'+instHTML+'</div>' : '')
+      +(instHTML ? '<div style="margin-bottom:14px;"><div style="font-size:10px;font-weight:700;text-transform:none;letter-spacing:.5px;color:var(--text3);margin-bottom:6px;">Por instancia</div>'+instHTML+'</div>' : '')
 
       // En riesgo
       +'<div style="margin-bottom:16px;">'
-      +'<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:8px;">En riesgo (< 4.0)</div>'
+      +'<div style="font-size:10px;font-weight:700;text-transform:none;letter-spacing:.5px;color:var(--text3);margin-bottom:8px;">En riesgo (< 4.0)</div>'
       +'<div>'+riesgoHTML+'</div>'
       +'</div>'
 
@@ -15561,7 +15638,7 @@ function renderReporteOA(curso,containerId){
   var cont=document.getElementById(containerId);if(!cont)return;
   var datos=calcularLogroOA(curso);
   if(!datos.length){cont.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px;">Sin OA vinculados en este curso</div>';return;}
-  var html='<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Logro OA — '+curso+'</div>';
+  var html='<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:none;letter-spacing:0.5px;margin-bottom:10px;">Logro OA — '+curso+'</div>';
   datos.forEach(function(d){
     var clr=d.pctLogro>=70?'#34C759':d.pctLogro>=50?'#FF9500':'#FF3B30';
     html+='<div style="margin-bottom:8px;"><div style="display:flex;justify-content:space-between;">'
@@ -16033,7 +16110,7 @@ function generarActaUTP(cursoFiltro, modoVista) {
             +'<div style="font-size:13px;color:var(--text3);">Sin datos</div></div>';
           var pc=b.prom>=6?'var(--blue)':b.prom>=4?'var(--green)':'var(--red)';
           return '<div style="flex:1;background:var(--bg3);border-radius:10px;padding:12px;">'
-            +'<div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">'+num+'\u00b0 Semestre</div>'
+            +'<div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:none;letter-spacing:.4px;margin-bottom:6px;">'+num+'\u00b0 Semestre</div>'
             +'<div style="font-size:22px;font-weight:700;color:'+pc+';font-family:var(--font-mono);margin-bottom:4px;">'+b.prom.toFixed(1)+'</div>'
             +'<div style="font-size:11px;color:var(--text3);">Logrado: '+b.pctLogro+'%</div>'
             +'<div style="font-size:11px;color:var(--text3);">Cobertura: '+b.cobertura+'%</div>'
@@ -16086,7 +16163,7 @@ function generarActaUTP(cursoFiltro, modoVista) {
           +_actaKpi('Destacado',b.destacados.length+' alum.','\u2265 6.0','var(--blue)')
           +'</div>'
           +'<div style="margin-top:4px;">'
-          +'<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:4px;">En riesgo (< 4.0)</div>'
+          +'<div style="font-size:10px;color:var(--text3);text-transform:none;letter-spacing:.5px;font-weight:600;margin-bottom:4px;">En riesgo (< 4.0)</div>'
           +'<div>'+riesgoNombres+'</div></div>'
           +'<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">'
           +(b.ne.length?'<span style="font-size:11px;background:var(--amber-bg);color:var(--amber);border-radius:6px;padding:2px 8px;">NE: '+b.ne.length+'</span>':'')
@@ -16138,7 +16215,7 @@ function _actaKpi(label, valor, sub, color) {
   color = color || 'var(--text)';
   return '<div style="background:var(--bg2);border:0.5px solid var(--border);'
     + 'border-radius:10px;padding:8px 10px;text-align:center;">'
-    + '<div style="font-size:10px;color:var(--text3);text-transform:uppercase;'
+    + '<div style="font-size:10px;color:var(--text3);text-transform:none;'
     +      'letter-spacing:.4px;font-weight:500;margin-bottom:2px;">' + label + '</div>'
     + '<div style="font-size:15px;font-weight:700;color:' + color + ';font-family:var(--font-mono);">'
     +   valor + '</div>'
@@ -16305,8 +16382,8 @@ function _generarInformeEstudiante(nombre, curso, incluirObs) {
     + '*{box-sizing:border-box;}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#1c1c1e;margin:0;padding:32px;background:#fff;}'
     + '.wrap{max-width:760px;margin:0 auto;}h1{font-size:20px;margin:0 0 2px;}.sub{color:#666;font-size:13px;margin-bottom:18px;}'
     + '.cole{font-size:13px;font-weight:700;}.card{border:1px solid #e5e5e7;border-radius:12px;padding:16px 18px;margin-bottom:16px;}'
-    + 'table{width:100%;border-collapse:collapse;font-size:13px;}th,td{padding:8px 10px;border-bottom:1px solid #eee;text-align:left;}th{background:#f7f7f8;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#666;}'
-    + '.kpis{display:flex;gap:12px;flex-wrap:wrap;}.kpi{flex:1;min-width:110px;border:1px solid #e5e5e7;border-radius:12px;padding:12px 14px;text-align:center;}.kpi .v{font-size:22px;font-weight:800;}.kpi .l{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.5px;}'
+    + 'table{width:100%;border-collapse:collapse;font-size:13px;}th,td{padding:8px 10px;border-bottom:1px solid #eee;text-align:left;}th{background:#f7f7f8;font-size:11px;text-transform:none;letter-spacing:.5px;color:#666;}'
+    + '.kpis{display:flex;gap:12px;flex-wrap:wrap;}.kpi{flex:1;min-width:110px;border:1px solid #e5e5e7;border-radius:12px;padding:12px 14px;text-align:center;}.kpi .v{font-size:22px;font-weight:800;}.kpi .l{font-size:11px;color:#666;text-transform:none;letter-spacing:.5px;}'
     + '.firma{margin-top:44px;display:flex;justify-content:space-between;gap:24px;}.firma div{flex:1;border-top:1px solid #999;padding-top:6px;font-size:12px;color:#555;text-align:center;}'
     + '@media print{body{padding:0;}.noprint{display:none;}.card,.kpi{break-inside:avoid;}}'
     + '.btnbar{position:fixed;top:12px;right:12px;}.btnbar button{font-size:13px;padding:8px 16px;border-radius:8px;border:none;background:#FF9500;color:#fff;font-weight:600;cursor:pointer;}'
@@ -16409,7 +16486,7 @@ function generarInformeUTP() {
     h1 { font-size: 22px; font-weight: 800; color: #FF9500; margin-bottom: 4px; }
     .meta { font-size: 12px; color: #6b7280; margin-bottom: 24px; }
     table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
-    th { background: #f3f4f6; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; padding: 8px 12px; border-bottom: 2px solid #e5e7eb; }
+    th { background: #f3f4f6; font-size: 11px; font-weight: 700; text-transform: none; letter-spacing: .5px; padding: 8px 12px; border-bottom: 2px solid #e5e7eb; }
     td { padding: 8px 12px; border-bottom: 1px solid #f3f4f6; }
     tr:hover td { background: #fafafa; }
     tfoot td { font-weight: 700; background: #f9fafb; border-top: 2px solid #e5e7eb; }
@@ -16692,7 +16769,7 @@ small, .text-xs, code { font-size: 12px; }
 /* Reducir ruido visual en el header de evaluación */
 .alumno-row label {
   font-size: 10px !important;
-  text-transform: uppercase;
+  text-transform: none;
   letter-spacing: 0.5px;
   color: var(--text3) !important;
 }
@@ -16815,7 +16892,7 @@ body { font-family: var(--font-ui); font-size: 14px; color: var(--text); backgro
 .config-card > h3 {
   padding: 12px 18px 10px;
   font-size: 13px; font-weight: 600; color: var(--ios-label3);
-  text-transform: uppercase; letter-spacing: 0.5px;
+  text-transform: none; letter-spacing: 0.5px;
   border-bottom: 0.5px solid var(--ios-sep-solid);
   background: none; margin: 0;
 }
@@ -16837,7 +16914,7 @@ body { font-family: var(--font-ui); font-size: 14px; color: var(--text); backgro
 .libro-tabla { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 14px; }
 .libro-tabla th {
   font-size: 11px; font-weight: 600; color: var(--text3);
-  text-transform: uppercase; letter-spacing: 0.6px;
+  text-transform: none; letter-spacing: 0.6px;
   padding: 10px 16px; border-bottom: 0.5px solid var(--border);
   background: var(--bg3); white-space: nowrap;
 }
@@ -16871,7 +16948,7 @@ body { font-family: var(--font-ui); font-size: 14px; color: var(--text); backgro
   box-shadow: var(--shadow) !important;
 }
 .csn { font-size: 24px !important; font-weight: 700 !important; color: var(--text) !important; font-family: var(--font-mono) !important; }
-.csl { font-size: 11px !important; color: var(--text3) !important; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+.csl { font-size: 11px !important; color: var(--text3) !important; text-transform: none; letter-spacing: 0.5px; margin-top: 2px; }
 
 /* Criterios rúbrica */
 .criterio-row { padding: 14px !important; border-radius: 12px !important; background: var(--bg2) !important; border: 0.5px solid var(--border) !important; margin-bottom: 6px !important; }
@@ -16940,7 +17017,7 @@ body { font-family: var(--font-ui); font-size: 14px; color: var(--text); backgro
 /* Stat cards */
 .stat-card { background: var(--bg2) !important; border: 0.5px solid var(--border) !important; border-left: 3px solid var(--accent) !important; border-radius: 14px !important; padding: 18px !important; box-shadow: var(--shadow) !important; }
 .stat-val { font-family: var(--font-mono) !important; font-size: 28px !important; font-weight: 700 !important; }
-.stat-lbl { font-size: 11px !important; color: var(--text3) !important; text-transform: uppercase; letter-spacing: 1px; }
+.stat-lbl { font-size: 11px !important; color: var(--text3) !important; text-transform: none; letter-spacing: 1px; }
 
 /* Rubrica cards */
 .rubrica-card { border-radius: 14px !important; border: 0.5px solid var(--border) !important; }
@@ -16961,7 +17038,7 @@ body { font-family: var(--font-ui); font-size: 14px; color: var(--text); backgro
 .ne-tag { font-size: 9px !important; padding: 1px 5px !important; border-radius: 6px !important; font-weight: 700 !important; }
 
 /* Libro sección */
-.libro-seccion { font-size: 11px !important; font-weight: 600 !important; color: var(--text3) !important; text-transform: uppercase !important; letter-spacing: 0.8px !important; padding: 16px 16px 8px !important; }
+.libro-seccion { font-size: 11px !important; font-weight: 600 !important; color: var(--text3) !important; text-transform: none !important; letter-spacing: 0.8px !important; padding: 16px 16px 8px !important; }
 
 /* Override BG tokens to neutral Apple */
 :root {
@@ -17097,7 +17174,7 @@ input[type="search"]:not(.noop), .global-search-input {
 .perfil-curso { font-size:12px; color:var(--text3); margin-top:3px; }
 .perfil-prom-wrap { text-align:right; flex-shrink:0; }
 .perfil-prom-num { font-size:32px; font-weight:800; font-family:var(--font-mono); letter-spacing:-1px; line-height:1; }
-.perfil-prom-lbl { font-size:10px; color:var(--text3); margin-top:3px; text-transform:uppercase; letter-spacing:0.5px; font-weight:600; }
+.perfil-prom-lbl { font-size:10px; color:var(--text3); margin-top:3px; text-transform:none; letter-spacing:0.5px; font-weight:600; }
 .perfil-evals { display:flex; flex-direction:column; gap:8px; max-height:55vh; overflow-y:auto; padding-right:2px; }
 .perfil-eval-card { background:var(--bg3); border:0.5px solid var(--border); border-radius:12px; overflow:hidden; transition:box-shadow var(--t-fast); }
 .perfil-eval-card:hover { box-shadow:var(--shadow); }
@@ -17223,7 +17300,7 @@ input[type="search"]:not(.noop), .global-search-input {
 .ca-logro-lbl {
   font-size: 9px;
   font-weight: 600;
-  text-transform: uppercase;
+  text-transform: none;
   letter-spacing: 0.5px;
   opacity: 0.7;
   margin-top: 2px;
@@ -17625,7 +17702,7 @@ input:focus, textarea:focus, select:focus {
 .hc-warn   { color: var(--amber, #f59e0b); }
 .hc-error  { color: var(--red,   #ef4444); }
 .hc-header {
-  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  font-size: 11px; font-weight: 600; text-transform: none;
   letter-spacing: .5px; color: var(--text3);
   padding: 12px 0 6px; border-bottom: 0.5px solid var(--border2);
   margin-bottom: 4px;
@@ -19125,13 +19202,13 @@ function _msgPersRenderMotivos() {
   if (!cont) return;
   var html = '';
   _MSG_PERS_CATALOGO.forEach(function(grupo) {
-    html += '<div style="width:100%;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:' + grupo.color + ';margin:8px 0 2px;">' + _esc(grupo.cat) + '</div>';
+    html += '<div style="width:100%;font-size:10px;font-weight:700;text-transform:none;letter-spacing:0.5px;color:' + grupo.color + ';margin:8px 0 2px;">' + _esc(grupo.cat) + '</div>';
     grupo.items.forEach(function(p) {
       html += '<button type="button" class="btn btn-sm" onclick="_msgPersAplicarPlantilla(\'' + p.id + '\')" style="font-size:12px;">' + _esc(p.label) + '</button>';
     });
   });
   var pers = _msgPersPlantillasPersonalizadas();
-  html += '<div style="width:100%;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#AF52DE;margin:8px 0 2px;">Mis plantillas</div>';
+  html += '<div style="width:100%;font-size:10px;font-weight:700;text-transform:none;letter-spacing:0.5px;color:#AF52DE;margin:8px 0 2px;">Mis plantillas</div>';
   pers.forEach(function(p, i) {
     html += '<button type="button" class="btn btn-sm" onclick="_msgPersAplicarPlantilla(\'pers_' + i + '\')" style="font-size:12px;border-color:rgba(175,82,222,0.35);">' + _esc(p.label) + '</button>';
   });
@@ -20481,13 +20558,13 @@ function abrirModalCorreosApoderados() {
         '</div>' +
         '<div style="display:flex;gap:8px;margin-bottom:14px;">' +
           '<div style="flex:1">' +
-            '<label style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:4px;">Tu nombre</label>' +
+            '<label style="font-size:11px;font-weight:600;color:var(--text3);text-transform:none;letter-spacing:0.5px;display:block;margin-bottom:4px;">Tu nombre</label>' +
             '<input id="emailNombreProf" type="text" placeholder="Nombre del profesor/a" ' +
               'style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--border);' +
                 'background:var(--bg3);color:var(--text);font-size:13px;">' +
           '</div>' +
           '<div style="flex:1">' +
-            '<label style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:4px;">Nombre del colegio</label>' +
+            '<label style="font-size:11px;font-weight:600;color:var(--text3);text-transform:none;letter-spacing:0.5px;display:block;margin-bottom:4px;">Nombre del colegio</label>' +
             '<input id="emailNombreColegio" type="text" placeholder="Nombre del establecimiento" ' +
               'style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--border);' +
                 'background:var(--bg3);color:var(--text);font-size:13px;">' +
@@ -20631,7 +20708,7 @@ function _renderEmailCards() {
           'value="' + (localStorage.getItem('av_email_utp') || '') + '">' +
       '</div>' +
       '<div style="margin-top:10px;">' +
-        '<div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;' +
+        '<div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:none;' +
           'letter-spacing:0.5px;margin-bottom:6px;">Texto del correo</div>' +
         '<pre class="email-preview" id="emailTexto_' + idx + '">' + texto + '</pre>' +
       '</div>' +
@@ -21372,7 +21449,7 @@ async function _generarAnalisisIAAlumno(nombre) {
     res.innerHTML = ''
       + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-bottom:10px;border-bottom:0.5px solid var(--border);">'
       +   '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round"><path d="M12 2a10 10 0 0 1 10 10"/><path d="M12 12V2"/><circle cx="12" cy="12" r="2"/></svg>'
-      +   '<span style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;">Informe IA · ' + nombreReal + '</span>'
+      +   '<span style="font-size:11px;font-weight:700;color:var(--accent);text-transform:none;letter-spacing:.5px;">Informe IA · ' + nombreReal + '</span>'
       +   '<span style="font-size:10px;color:var(--text3);margin-left:auto;font-family:var(--font-mono);">' + new Date().toLocaleDateString('es-CL') + '</span>'
       + '</div>'
       + '<div id="_perfilIATexto" style="background:var(--bg3);border-radius:10px;padding:14px 16px;border:0.5px solid var(--border);max-height:320px;overflow-y:auto;">'
@@ -21772,7 +21849,7 @@ function _renderSemConfigUI() {
   if (cfg.especiales && cfg.especiales.length) {
     var sep = document.createElement('div');
     sep.style.cssText = 'grid-column:1/-1;font-size:11px;color:var(--text3);font-family:var(--font-mono);' +
-      'text-transform:uppercase;letter-spacing:0.5px;margin-top:4px;padding:0 2px;';
+      'text-transform:none;letter-spacing:0.5px;margin-top:4px;padding:0 2px;';
     sep.textContent = 'Especiales (ambos semestres)';
     // Agregar info de especiales debajo de las dos columnas
   }
@@ -23878,7 +23955,7 @@ function _informeRubricaCSS(masivo) {
   var css = '@page { size: A4 portrait; margin: 14mm; }'
     + '* { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }'
     + 'body { font-family: "Helvetica Neue", Arial, sans-serif; color: #000; margin: 0; font-size: 12px; }'
-    + 'h1 { font-size: 16px; margin: 0 0 2px; text-transform: uppercase; letter-spacing: 0.5px; }'
+    + 'h1 { font-size: 16px; margin: 0 0 2px; text-transform: none; letter-spacing: 0.5px; }'
     + '.sub { font-size: 11px; margin-bottom: 12px; }'
     + 'table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }'
     + 'th, td { border: 1px solid #000; padding: 5px 7px; vertical-align: top; }'
@@ -23895,7 +23972,7 @@ function _informeRubricaCSS(masivo) {
     + '.resumen div { flex: 1; padding: 8px 10px; border-right: 1px solid #000; text-align: center; }'
     + '.resumen div:last-child { border-right: none; }'
     + '.resumen .v { font-size: 20px; font-weight: 800; display: block; }'
-    + '.resumen .l { font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; }'
+    + '.resumen .l { font-size: 9px; text-transform: none; letter-spacing: 0.5px; }'
     + '.ne { border: 1.5px solid #000; padding: 7px 10px; font-weight: 700; margin-bottom: 12px; font-size: 11px; }'
     + '.leyenda { font-size: 9.5px; margin-bottom: 16px; }'
     + '.firmas { display: flex; gap: 40px; margin-top: 44px; }'
@@ -24725,7 +24802,7 @@ async function limpiarDuplicadosCurso(curso) {
           (g.est.pie ? ' <span class="pie-badge" style="font-size:9px;"><svg width="12" height="12" viewBox="0 0 100 100" fill="#FF9500" style="flex-shrink:0;vertical-align:middle;display:inline-block" aria-label="PIE"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="#FF9500" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/></svg> PIE</span>' : '') +
           '</li>';
       }).join('');
-      return '<div style="margin-bottom:10px;"><div style="font-size:10px;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;margin-bottom:4px;">Grupo duplicado</div><ul style="margin:0;padding-left:16px;font-size:13px;">' + nombres + '</ul></div>';
+      return '<div style="margin-bottom:10px;"><div style="font-size:10px;color:var(--text3);font-family:var(--font-mono);text-transform:none;margin-bottom:4px;">Grupo duplicado</div><ul style="margin:0;padding-left:16px;font-size:13px;">' + nombres + '</ul></div>';
     }).join('');
 
     const ok = await confirmarAccion(
@@ -25283,7 +25360,7 @@ function renderPanelDuplicados(containerId) {
       // Header de la tarjeta
       + '<div style="padding:10px 16px 8px;background:rgba(255,149,0,0.04);border-bottom:0.5px solid #F2F2F7;display:flex;align-items:center;gap:8px;">'
       + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
-      + '<span style="font-size:11px;font-weight:700;color:#FF9500;text-transform:uppercase;letter-spacing:0.4px;">Conflicto #'+(gi+1)+'</span>'
+      + '<span style="font-size:11px;font-weight:700;color:#FF9500;text-transform:none;letter-spacing:0.4px;">Conflicto #'+(gi+1)+'</span>'
       + '<span style="font-size:11px;color:#8E8E93;margin-left:auto;">'+conflictoDesc+'</span>'
       + '</div>';
 
