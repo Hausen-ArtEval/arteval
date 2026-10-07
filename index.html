@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v253">
+<meta name="arteval-version" content="v254">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4510,7 +4510,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v253</span>
+      ">v254</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -15028,21 +15028,48 @@ function _renderDashKpiGlobal(instFiltro) {
   const bajo4Color  = pctBajo4>=30?'#FF3B30':pctBajo4>=15?'var(--amber)':'var(--green)';
   const bajo4Bg     = pctBajo4>=30?'rgba(255,59,48,0.09)':pctBajo4>=15?'rgba(255,159,10,0.08)':'';
 
-  kpiEl.innerHTML = [
-    { val: totalEval,      lbl: 'Evaluaciones',    color: 'var(--accent)',       bg: '' },
-    { val: cursos,         lbl: 'Cursos activos',  color: 'var(--blue,#2563eb)', bg: '' },
-    { val: prom,           lbl: 'Promedio general',color: notaColor,             bg: '' },
-    { val: pctAprob+'%',   lbl: 'Tasa de logro',   color: aprobColor,            bg: '' },
-    { val: aprobados,      lbl: 'Logrado (≥4.0)',  color: 'var(--green)',        bg: '' },
-    { val: pctBajo4+'%',   lbl: 'Bajo 4.0 ⚠',     color: bajo4Color,            bg: bajo4Bg, alert: pctBajo4>0 },
-    { val: pie,            lbl: 'Alumnos PIE',     color: 'var(--accent)',       bg: '' },
-    { val: ne,             lbl: 'Sin entregar',    color: 'var(--amber)',        bg: '' },
+  // v254 — Dashboard rediseñado: tarjeta "hero" con el dato principal del
+  // semestre + cifras secundarias. Misma paleta, estética nativa de Mac.
+  var semTxt = (_semestreActivo === 2) ? 'segundo semestre' : 'primer semestre';
+  var alDia = (ne === 0);
+  var heroTag = alDia
+    ? '<span style="font-size:12px;font-weight:600;color:var(--accent);background:var(--accent-bg);padding:4px 11px;border-radius:7px;">Al día</span>'
+    : '<span style="font-size:12px;font-weight:600;color:var(--amber);background:rgba(255,159,10,0.1);padding:4px 11px;border-radius:7px;">' + ne + ' sin entregar</span>';
+
+  var hero = '<div class="dash-hero" style="'
+    + 'grid-column:1/-1;background:var(--bg2);border:0.5px solid var(--border);'
+    + 'border-radius:18px;padding:24px 26px;box-shadow:var(--shadow);margin-bottom:2px;">'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">'
+    +   '<span style="font-size:13.5px;color:var(--text2);font-weight:500;">Evaluaciones del ' + semTxt + '</span>'
+    +   heroTag
+    + '</div>'
+    + '<div style="display:flex;align-items:baseline;gap:13px;">'
+    +   '<span style="font-size:58px;font-weight:700;letter-spacing:-2px;line-height:1;color:var(--text);">' + totalEval + '</span>'
+    +   '<span style="font-size:15px;font-weight:500;color:var(--text3);letter-spacing:-0.2px;">registradas en ' + cursos + ' cursos</span>'
+    + '</div>'
+    + '<div style="margin-top:13px;font-size:14.5px;color:var(--text2);line-height:1.5;">'
+    +   'Promedio general <b style="color:var(--text);font-weight:600;">' + prom + '</b>, '
+    +   'con un <b style="color:var(--text);font-weight:600;">' + pctAprob + '%</b> de logro.'
+    +   (pctBajo4 > 0 ? ' <b style="color:var(--red);font-weight:600;">' + pctBajo4 + '%</b> bajo 4,0.' : '')
+    + '</div>'
+    + '</div>';
+
+  // Cifras secundarias — tarjetas suaves
+  var cifras = [
+    { val: prom,          lbl: 'Promedio general', color: notaColor },
+    { val: aprobados,     lbl: 'Logrado, 4,0 o más', color: 'var(--green)' },
+    { val: cursos,        lbl: 'Cursos activos',   color: 'var(--blue,#2563eb)' },
+    { val: pctBajo4+'%',  lbl: 'Bajo 4,0',         color: bajo4Color, alert: pctBajo4>=30 },
   ].map(function(k){ return '<div class="stat-card" style="'
-    + (k.bg?'background:'+k.bg+';border-color:'+k.color+';border-width:'+(k.alert?'1.5':'0.5')+'px;':'')
+    + 'box-shadow:var(--shadow-sm);border-width:0.5px;'
+    + (k.alert?'border-color:'+k.color+';':'')
     + '">'
-    + '<div class="stat-val" style="color:'+k.color+';'+(k.alert?'font-size:22px;':'')+'">'+k.val+'</div>'
-    + '<div class="stat-lbl" style="'+(k.alert?'color:'+k.color+';font-weight:600;':'')+'">'+k.lbl+'</div>'
+    + '<div class="stat-val" style="color:'+k.color+';letter-spacing:-1px;">'+k.val+'</div>'
+    + '<div class="stat-lbl">'+k.lbl+'</div>'
     + '</div>';}).join('');
+
+  kpiEl.innerHTML = hero + cifras;
+  kpiEl.style.gridTemplateColumns = 'repeat(4,1fr)';
 }
 
 function _renderDashHoy() {
