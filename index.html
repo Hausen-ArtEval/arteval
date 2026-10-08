@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v260">
+<meta name="arteval-version" content="v262">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -2011,27 +2011,32 @@ select:focus:not(:focus-visible) { outline: none; }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg:        #141210;
-    --bg2:       #1c1916;
-    --bg3:       #242018;
-    --bg4:       #2c271e;
-    --surface:   #342e22;
-    --border:    rgba(255,240,210,0.08);
-    --border2:   rgba(255,240,210,0.15);
-    --text:      #f0e8d8;
-    --text2:     #b8a88a;
-    --text3:     #7a6a52;
-    --accent:    #e06d3a;
-    --accent2:   #f08050;
-    --accent-bg: rgba(224,109,58,0.12);
-    --accent-border: rgba(224,109,58,0.32);
-    --green:     #5ab87a;
-    --blue:      #5090d0;
-    --red:       #e05555;
-    --shadow-sm: 0 1px 3px rgba(0,0,0,0.4);
-    --shadow:    0 4px 12px rgba(0,0,0,0.5);
-    --shadow-lg: 0 8px 32px rgba(0,0,0,0.6);
+    /* v261 — Modo oscuro NATIVO iOS: grises neutros (no sepia), mismo naranja
+       de marca. Coherente con la identidad refinada y con las apps de Mac. */
+    --bg:        #000000;   /* negro verdadero, como iOS dark */
+    --bg2:       #1C1C1E;   /* gris oscuro de superficie iOS */
+    --bg3:       #2C2C2E;   /* gris de tarjetas elevadas */
+    --bg4:       #3A3A3C;
+    --surface:   #2C2C2E;
+    --border:    rgba(255,255,255,0.10);
+    --border2:   rgba(255,255,255,0.16);
+    --text:      #F5F5F7;   /* casi blanco, texto principal */
+    --text2:     #AEAEB2;   /* gris claro secundario iOS */
+    --text3:     #8E8E93;   /* gris terciario iOS (ok en dark) */
+    --accent:    #FF9F0A;   /* naranja de marca, variante dark iOS */
+    --accent2:   #FFB340;
+    --accent-bg: rgba(255,159,10,0.15);
+    --accent-border: rgba(255,159,10,0.35);
+    --green:     #30D158;   /* verde iOS dark */
+    --blue:      #0A84FF;   /* azul iOS dark */
+    --red:       #FF453A;   /* rojo iOS dark */
+    --amber:     #FFD60A;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.5);
+    --shadow:    0 4px 12px rgba(0,0,0,0.6);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.7);
   }
+  /* v261: textos con color negro fijo (#1C1C1E) pasan a claro en modo oscuro */
+  [style*="#1C1C1E"], [style*="#1c1c1e"] { color: var(--text) !important; }
   .card-est, .config-card, .modal-box { border-color: var(--border2); }
   .topbar { backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
 }
@@ -4389,6 +4394,57 @@ input:focus, select:focus, textarea:focus {
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   v262 — RENDERIZADO DE FUENTE NÍTIDO (como las apps nativas de Mac)
+   Mejora la definición de los textos y optimiza el kerning. */
+body, button, input, select, textarea, .btn, .tab {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+/* Títulos y números grandes: kerning óptico ajustado estilo Apple */
+h1, h2, h3, .stat-num, .stat-val, .hero-num, .cifra-num,
+.modal-title, .seccion-titulo, .bloque-titulo {
+  font-kerning: normal;
+  letter-spacing: -0.3px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   v261 — MICRO-PULIDOS NATIVOS
+   Detalles que suman a la sensación de app de Mac bien hecha. */
+
+/* Selección de texto con el naranja de marca (en vez del azul del navegador) */
+::selection { background: rgba(255,149,0,0.22); color: inherit; }
+::-moz-selection { background: rgba(255,149,0,0.22); color: inherit; }
+
+/* Scrollbars finas estilo macOS (solo en escritorio con puntero fino) */
+@media (pointer: fine) {
+  ::-webkit-scrollbar { width: 11px; height: 11px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(120,120,128,0.4);
+    border-radius: 10px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(120,120,128,0.6); background-clip: content-box; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   v261 — NÚMEROS TABULARES: todos los dígitos con el mismo ancho, para que
+   notas, promedios y contadores se alineen perfectamente en columnas (como
+   en una app financiera profesional). Evita que los números "bailen" al
+   cambiar o al listarse en tablas. */
+.stat-num, .stat-val, .cifra-num, .hero-num, .kpi-num, .crit-num,
+.prog-stat-num, .curso-chip-stat, .promedio, .libro-nota,
+.libro-tabla td, .libro-tabla th, .libro-nota-input,
+.dash-hero span, .nota-badge, .nota-valor, .nivel-pill,
+.conteo-pill, #semPill1, #semPill2, .exigencia-value,
+[class*="num"], [class*="promedio"], [class*="nota"] {
+  font-variant-numeric: tabular-nums !important;
+  font-feature-settings: "tnum" 1 !important;
+}
+
 /* 12 ─ FIX v258: el texto/placeholder de las barras de búsqueda NUNCA debe
    encimarse con el icono de lupa. Se garantiza espacio a la izquierda en
    todos los buscadores y se ancla la lupa dentro de su contenedor. */
@@ -4590,7 +4646,7 @@ input:focus, select:focus, textarea:focus {
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v260</span>
+      ">v262</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
