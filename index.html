@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v257">
+<meta name="arteval-version" content="v258">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -76,7 +76,7 @@
   /* Texto */
   --text:  #1C1C1E;
   --text2: #3A3A3C;
-  --text3: #8E8E93;
+  --text3: #6E6E73;
 
   /* Semánticos */
   --green:      #30D158;
@@ -117,7 +117,7 @@
   --ae-orange:      #FF9500;
   --ae-orange-dark: #E08000;
   --ae-black:       #1C1C1E;
-  --ae-gray:        #8E8E93;
+  --ae-gray:        #6E6E73;
   --ae-gray-light:  #F2F2F7;
   --ae-white:       #FFFFFF;
   --ae-border:      #E5E5EA;
@@ -2390,7 +2390,7 @@ select:focus:not(:focus-visible) { outline: none; }
 
 .reg-group-header {
   font-size: 11px; font-weight: 700; text-transform: none;
-  letter-spacing: 0.6px; color: var(--ae-gray, #8E8E93);
+  letter-spacing: 0.6px; color: var(--ae-gray, #6E6E73);
   padding: 12px 20px 8px;
   background: var(--ae-gray-light, #F2F2F7);
 }
@@ -2891,7 +2891,7 @@ button, .btn, .tab, .curso-chip, .reg-card, .config-card, input, select {
 }
 
 /* v249: ÍCONOS DE NAVEGACIÓN VISIBLES EN MODO OSCURO ─────────────────────
-   Los tabs inactivos usaban --text3 (#8E8E93), demasiado tenue sobre fondo
+   Los tabs inactivos usaban --text3 (#6E6E73), demasiado tenue sobre fondo
    oscuro. Se refuerzan para que se distingan bien. */
 @media (prefers-color-scheme: dark) {
   .tab:not(.active) { color: #B8B8BE !important; }
@@ -3750,7 +3750,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
     --border2: rgba(255,255,255,0.15);
     --text:    #F2F2F7;
     --text2:   #EBEBF0;
-    --text3:   #8E8E93;
+    --text3:   #6E6E73;
     --accent:  #FF9F0A;
     --accent-bg:     rgba(255,159,10,0.14);
     --accent-border: rgba(255,159,10,0.30);
@@ -4328,6 +4328,66 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
   transition: box-shadow 0.2s cubic-bezier(0.25,0.46,0.45,0.94),
               transform 0.2s cubic-bezier(0.25,0.46,0.45,0.94) !important;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   v258 — AUDITORÍA UI/UX SENIOR: microinteracciones + accesibilidad
+   Estándares de producción aplicados a la tecnología real de ArtEval.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* 7 ─ FEEDBACK AL TOCAR: todos los botones responden al clic con un
+   hundimiento sutil (estado :active), como las apps nativas. */
+button:active:not(:disabled),
+.btn:active:not(:disabled),
+.tab:active,
+.curso-card:active,
+.acceso-card:active,
+.stat-card.editable:active {
+  transform: scale(0.975);
+  transition: transform 0.08s ease-out;
+}
+
+/* 8 ─ HOVER consistente en botones primarios: leve realce de brillo */
+.btn-primary:hover:not(:disabled),
+.btn-success:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+/* 9 ─ ACCESIBILIDAD DE TECLADO: anillo de foco visible y elegante
+   solo para navegación por teclado (no molesta al usar el mouse). */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+.tab:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+/* quitar el outline por defecto al hacer clic con mouse */
+button:focus:not(:focus-visible),
+.tab:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* 10 ─ RESPETO A "REDUCIR MOVIMIENTO": para usuarios con sensibilidad
+   al movimiento (preferencia del sistema), se desactivan las animaciones. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* 11 ─ INPUTS: foco más claro y consistente (feedback de edición) */
+input:focus, select:focus, textarea:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px var(--accent-bg) !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
 </style>
 
 <script>
@@ -4510,7 +4570,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v257</span>
+      ">v258</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -5715,7 +5775,7 @@ input::placeholder { color: var(--text3); opacity: 0.7; }
               <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
               Conectar cuenta de Google
             </button>
-            <div style="margin-top:10px;font-size:11px;color:#8E8E93;text-align:center;line-height:1.5;">Usa tu cuenta institucional <strong>@colegio.cl</strong> para enviar correos directamente desde ArtEval</div>
+            <div style="margin-top:10px;font-size:11px;color:#6E6E73;text-align:center;line-height:1.5;">Usa tu cuenta institucional <strong>@colegio.cl</strong> para enviar correos directamente desde ArtEval</div>
           </div>
           <div id="gmailBtnConectado" style="display:none;">
             <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
@@ -9701,10 +9761,10 @@ function _mostrarMenuNE(ri,nombre,inst,cur,evt){
   }else{m.style.top='50%';m.style.left='50%';m.style.transform='translate(-50%,-50%)';}
   var hdr='<div style="padding:14px 16px 10px;border-bottom:0.5px solid #E5E5EA;">'
     +'<div style="font-size:13px;font-weight:700;color:#1C1C1E;">'+nombre+'</div>'
-    +'<div style="font-size:11px;color:#8E8E93;margin-top:2px;">'+inst+' \u00b7 '+cur
+    +'<div style="font-size:11px;color:#6E6E73;margin-top:2px;">'+inst+' \u00b7 '+cur
     +' \u00b7 <span style="color:#FF3B30;font-weight:600;">NE</span></div></div>';
   var opt1='<div style="padding:12px 16px;border-bottom:0.5px solid #F2F2F7;">'
-    +'<div style="font-size:11px;font-weight:700;color:#8E8E93;text-transform:none;'
+    +'<div style="font-size:11px;font-weight:700;color:#6E6E73;text-transform:none;'
     +'letter-spacing:0.5px;margin-bottom:8px;">Ingresar nota directa</div>'
     +'<div style="display:flex;gap:8px;align-items:center;">'
     +'<input id="neNotaInput" type="number" min="1" max="7" step="0.1" value="1.0" '
@@ -9715,7 +9775,7 @@ function _mostrarMenuNE(ri,nombre,inst,cur,evt){
     +'style="flex:1;padding:9px 14px;background:#FF9500;color:#fff;border:none;'
     +'border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">'
     +'Registrar nota</button></div>'
-    +'<div style="font-size:11px;color:#8E8E93;margin-top:6px;">'
+    +'<div style="font-size:11px;color:#6E6E73;margin-top:6px;">'
     +'Nota m\u00ednima por no entrega: 1.0</div></div>';
   var opt2=ri>-1
     ?'<button onclick="_evaluarDesdeNEMenu('+ri+')" '
@@ -9728,11 +9788,11 @@ function _mostrarMenuNE(ri,nombre,inst,cur,evt){
       +'<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>'
       +'<div style="flex:1;"><div style="font-size:13px;font-weight:600;color:#1C1C1E;">'
       +'Evaluar con r\u00fabrica</div>'
-      +'<div style="font-size:11px;color:#8E8E93;">Abre la r\u00fabrica para entrega atrasada</div>'
+      +'<div style="font-size:11px;color:#6E6E73;">Abre la r\u00fabrica para entrega atrasada</div>'
       +'</div></button>':'';
   var can='<button onclick="document.getElementById(\'menuNE\').remove()" '
     +'style="width:100%;padding:14px 16px;text-align:center;border:none;background:none;'
-    +'cursor:pointer;font-size:15px;font-weight:600;color:#8E8E93;font-family:inherit;">'
+    +'cursor:pointer;font-size:15px;font-weight:600;color:#6E6E73;font-family:inherit;">'
     +'Cancelar</button>';
   m.innerHTML=hdr+opt1+opt2+can;
   document.body.appendChild(m);
@@ -15310,7 +15370,7 @@ function _riesgoEtiqueta(cat) {
     case 'solo_1':     return { txt: 'Rojo en 1° (sin notas 2° aún)', color: '#FF9500', bg: 'rgba(255,149,0,0.08)', orden: 'SEGUIR' };
     case 'alerta_2':   return { txt: '1ª nota roja en 2° sem',        color: '#FFCC00', bg: 'rgba(255,204,0,0.10)',  orden: 'TEMPRANA' };
     case 'recuperado': return { txt: 'Recuperado en 2° semestre',     color: '#34C759', bg: 'rgba(52,199,89,0.10)',  orden: 'OK' };
-    default:           return { txt: 'En seguimiento',                color: '#8E8E93', bg: 'rgba(142,142,147,0.10)', orden: '' };
+    default:           return { txt: 'En seguimiento',                color: '#6E6E73', bg: 'rgba(142,142,147,0.10)', orden: '' };
   }
 }
 
@@ -15696,7 +15756,7 @@ function renderRadarEstudiante(nombreAlumno,containerId){
   canvas.width=260;canvas.height=260;canvas.style.cssText='max-width:100%;display:block;margin:0 auto;';
   cont.appendChild(canvas);
   if(cont._radarChart)cont._radarChart.destroy();
-  cont._radarChart=new Chart(canvas,{type:'radar',data:{labels:EJES.map(function(e){return e.label;}),datasets:[{label:nombreAlumno,data:scores,backgroundColor:'rgba(255,149,0,0.20)',borderColor:'#FF9500',borderWidth:2.5,pointBackgroundColor:'#FF9500',pointBorderColor:'#fff',pointBorderWidth:2,pointRadius:5}]},options:{responsive:false,scales:{r:{min:1,max:7,ticks:{stepSize:2,font:{size:9},color:'#8E8E93',backdropColor:'transparent'},grid:{color:'rgba(142,142,147,0.2)'},angleLines:{color:'rgba(142,142,147,0.2)'},pointLabels:{font:{size:10,weight:'600'},color:'#1C1C1E'}}},plugins:{legend:{display:false}},animation:{duration:400}}});
+  cont._radarChart=new Chart(canvas,{type:'radar',data:{labels:EJES.map(function(e){return e.label;}),datasets:[{label:nombreAlumno,data:scores,backgroundColor:'rgba(255,149,0,0.20)',borderColor:'#FF9500',borderWidth:2.5,pointBackgroundColor:'#FF9500',pointBorderColor:'#fff',pointBorderWidth:2,pointRadius:5}]},options:{responsive:false,scales:{r:{min:1,max:7,ticks:{stepSize:2,font:{size:9},color:'#6E6E73',backdropColor:'transparent'},grid:{color:'rgba(142,142,147,0.2)'},angleLines:{color:'rgba(142,142,147,0.2)'},pointLabels:{font:{size:10,weight:'600'},color:'#1C1C1E'}}},plugins:{legend:{display:false}},animation:{duration:400}}});
 }
 
 function _renderDashChart(instFiltro) {
@@ -17075,7 +17135,7 @@ body { font-family: var(--font-ui); font-size: 14px; color: var(--text); backgro
   --ios-orange-bg:     rgba(255,149,0,0.10);
   --ios-label:         #1C1C1E;
   --ios-label2:        #3C3C43;
-  --ios-label3:        #8E8E93;
+  --ios-label3:        #6E6E73;
   --ios-label4:        #C7C7CC;
   --ios-bg:            #F2F2F7;
   --ios-bg2:           #FFFFFF;
@@ -18207,7 +18267,7 @@ function _rrAppendBatch(cont, batchSize) {
           </div>`;
         }).join('')}
       </div>
-      <div style="font-size:11px;color:#8E8E93;border-top:0.5px solid #E5E5EA;padding-top:8px;display:flex;gap:16px;">
+      <div style="font-size:11px;color:#6E6E73;border-top:0.5px solid #E5E5EA;padding-top:8px;display:flex;gap:16px;">
         <span>Puntaje: <strong>${r.pts||0}/${r.maxPts||0} pts</strong></span>
         <span>Porcentaje: <strong>${r.pct||0}%</strong></span>
         <span style="margin-left:auto;display:flex;align-items:center;gap:5px;">
@@ -20189,7 +20249,7 @@ function _renderCriticosList(criticos) {
         + '<button class="btn" onclick="_copiarCorreoTab('+idxReal+')" style="display:inline-flex;align-items:center;gap:6px;min-height:36px;font-size:13px;border-radius:10px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copiar</button>'
         + '<button class="btn" data-idx="'+idxReal+'" data-nom="'+al.nombre.replace(/"/g,'&quot;')+'" onclick="_guardarCorreoTab(parseInt(this.dataset.idx),this.dataset.nom)" style="display:inline-flex;align-items:center;gap:6px;min-height:36px;font-size:13px;border-radius:10px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Guardar</button>'
         + (enviado
-          ? '<button class="btn" data-nom="'+al.nombre.replace(/"/g,'&quot;')+'" onclick="var k=this.dataset.nom.toUpperCase();delete _historialCorreos[k];_saveHistorialCorreos();_correoFiltroActivo=null;_renderCorreoTab();" style="display:inline-flex;align-items:center;gap:5px;min-height:36px;font-size:12px;border-radius:10px;color:#8E8E93;border-color:rgba(142,142,147,0.3);"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#8E8E93" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Desmarcar</button>'
+          ? '<button class="btn" data-nom="'+al.nombre.replace(/"/g,'&quot;')+'" onclick="var k=this.dataset.nom.toUpperCase();delete _historialCorreos[k];_saveHistorialCorreos();_correoFiltroActivo=null;_renderCorreoTab();" style="display:inline-flex;align-items:center;gap:5px;min-height:36px;font-size:12px;border-radius:10px;color:#6E6E73;border-color:rgba(142,142,147,0.3);"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#6E6E73" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Desmarcar</button>'
           : '<button class="btn" data-nom="'+al.nombre.replace(/"/g,'&quot;')+'" data-curso="'+al.curso+'" data-prom="'+promData+'" onclick="_marcarCorreoEnviado(this.dataset.nom,this.dataset.email||String(),this.dataset.curso,parseFloat(this.dataset.prom)||0);_renderCorreoTab();" style="display:inline-flex;align-items:center;gap:5px;min-height:36px;font-size:12px;border-radius:10px;color:#34C759;border-color:rgba(52,199,89,0.3);background:rgba(52,199,89,0.08);"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#34C759" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Marcar enviado</button>')
         + '</div></div>';
     });
@@ -20361,7 +20421,7 @@ function _abrirCorreoTab(idx){
   h1.style.cssText='font-size:17px;font-weight:700;color:#1C1C1E;margin-bottom:4px;';
   h1.textContent='Enviar correo';
   var h2=document.createElement('div');
-  h2.style.cssText='font-size:13px;color:#8E8E93;';
+  h2.style.cssText='font-size:13px;color:#6E6E73;';
   h2.textContent='Selecciona desde qué cuenta deseas enviar';
   hdr.appendChild(h1); hdr.appendChild(h2);
   box.appendChild(hdr);
@@ -20405,7 +20465,7 @@ function _abrirCorreoTab(idx){
   }
 
   var SVG_MAIL='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>';
-  var SVG_COPY='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8E8E93" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+  var SVG_COPY='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6E6E73" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
   var SVG_SEND='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34C759" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>';
 
   // Opción 0 (PRIORITARIA): envío directo vía API de Gmail con la cuenta
@@ -20422,7 +20482,7 @@ function _abrirCorreoTab(idx){
         });
       });
     } else {
-      mkBtn(SVG_SEND, 'Enviar desde '+_gmailLinkedEmail, '\u26a0 Primero escribe el correo del apoderado en la tarjeta del alumno', '#8E8E93', function(){
+      mkBtn(SVG_SEND, 'Enviar desde '+_gmailLinkedEmail, '\u26a0 Primero escribe el correo del apoderado en la tarjeta del alumno', '#6E6E73', function(){
         toast('\u26a0 Ingresa el correo del apoderado antes de enviar por API','err',4000);
       });
     }
@@ -20440,7 +20500,7 @@ function _abrirCorreoTab(idx){
   }
 
   // Opción 2: Gmail sin especificar cuenta
-  mkBtn(SVG_MAIL, 'Abrir Gmail y elegir cuenta', 'Se abre Gmail — puedes cambiar la cuenta ahí', '#8E8E93', function(){
+  mkBtn(SVG_MAIL, 'Abrir Gmail y elegir cuenta', 'Se abre Gmail — puedes cambiar la cuenta ahí', '#6E6E73', function(){
     try { navigator.clipboard.writeText(texto); } catch(e){}
     window.open(buildGmailCompose(''), '_blank');
     _marcarCorreoEnviado(al.nombre, email, al.curso, al.promedio);
@@ -20448,7 +20508,7 @@ function _abrirCorreoTab(idx){
   });
 
   // Opción 3: Copiar texto
-  mkBtn(SVG_COPY, 'Solo copiar el texto', 'Pégalo en Gmail, Outlook o cualquier correo', '#8E8E93', function(){
+  mkBtn(SVG_COPY, 'Solo copiar el texto', 'Pégalo en Gmail, Outlook o cualquier correo', '#6E6E73', function(){
     navigator.clipboard.writeText(texto)
       .then(function(){ toast('\u2713 Texto copiado \u2014 ábrelo en tu Gmail institucional','ok',4000); })
       .catch(function(){
@@ -20511,7 +20571,7 @@ function _abrirCorreoTab(idx){
   var cancelBtn=document.createElement('button');
   cancelBtn.style.cssText='width:100%;padding:13px;border-radius:14px;border:none;'
     +'background:#F2F2F7;cursor:pointer;font-size:15px;font-weight:600;'
-    +'color:#8E8E93;font-family:inherit;transition:background 0.1s;';
+    +'color:#6E6E73;font-family:inherit;transition:background 0.1s;';
   cancelBtn.textContent='Cancelar';
   cancelBtn.addEventListener('mouseover',function(){cancelBtn.style.background='#E5E5EA';});
   cancelBtn.addEventListener('mouseout', function(){cancelBtn.style.background='#F2F2F7';});
@@ -25358,7 +25418,7 @@ function renderPanelDuplicados(containerId) {
     cont.innerHTML = '<div style="text-align:center;padding:48px 30px;color:#34C759;background:rgba(52,199,89,0.06);border-radius:14px;border:0.5px solid rgba(52,199,89,0.25);">'
       + '<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#34C759" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:0 auto 12px;"><polyline points="20 6 9 17 4 12"/></svg>'
       + '<div style="font-size:15px;font-weight:700;">Sin duplicados detectados</div>'
-      + '<div style="font-size:12px;color:#8E8E93;margin-top:4px;">Todos los registros son únicos</div></div>';
+      + '<div style="font-size:12px;color:#6E6E73;margin-top:4px;">Todos los registros son únicos</div></div>';
     return;
   }
   // ── Header del panel ──
@@ -25367,7 +25427,7 @@ function renderPanelDuplicados(containerId) {
     + '<div style="font-size:13px;font-weight:700;color:#1C1C1E;">'
     + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="2" style="vertical-align:middle;margin-right:6px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
     + grupos.length + ' grupo' + (grupos.length!==1?'s de posibles duplicados detectados':' de posible duplicado detectado')+'</div>'
-    + '<div style="font-size:11px;color:#8E8E93;margin-top:2px;">Mismo alumno · mismo curso · misma rúbrica · misma instancia — registro accidental doble. Fusiona para conservar el más reciente.</div>'
+    + '<div style="font-size:11px;color:#6E6E73;margin-top:2px;">Mismo alumno · mismo curso · misma rúbrica · misma instancia — registro accidental doble. Fusiona para conservar el más reciente.</div>'
     + '</div>'
     + '</div>';
 
@@ -25388,14 +25448,14 @@ function renderPanelDuplicados(containerId) {
       + '<div style="padding:10px 16px 8px;background:rgba(255,149,0,0.04);border-bottom:0.5px solid #F2F2F7;display:flex;align-items:center;gap:8px;">'
       + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
       + '<span style="font-size:11px;font-weight:700;color:#FF9500;text-transform:none;letter-spacing:0.4px;">Conflicto #'+(gi+1)+'</span>'
-      + '<span style="font-size:11px;color:#8E8E93;margin-left:auto;">'+conflictoDesc+'</span>'
+      + '<span style="font-size:11px;color:#6E6E73;margin-left:auto;">'+conflictoDesc+'</span>'
       + '</div>';
 
     grupo.forEach(function(ri, k) {
       var r = registros[ri];
       if (!r) return;
       var nota = r.nota ? r.nota.toFixed(1) : (r.noEntregado ? 'NE' : '—');
-      var notaColor = r.nota >= 4 ? '#34C759' : r.nota >= 1 ? '#FF3B30' : '#8E8E93';
+      var notaColor = r.nota >= 4 ? '#34C759' : r.nota >= 1 ? '#FF3B30' : '#6E6E73';
       var pieSVG = r.pie ? '<svg width="11" height="11" viewBox="0 0 100 100" fill="#FF9500" style="vertical-align:middle;margin-left:4px;" aria-label="PIE"><path d="M50 3a47 47 0 1 1 0 94A47 47 0 0 1 50 3zm0 6a41 41 0 1 0 0 82A41 41 0 0 0 50 9z"/><circle cx="50" cy="24" r="8"/><path d="M50 34 L50 56" stroke="#FF9500" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M23 42 L50 36 L77 42" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M38 56 L34 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M62 56 L66 80" stroke="#FF9500" stroke-width="8" stroke-linecap="round" fill="none"/></svg>' : '';
 
       html += '<div style="padding:10px 16px;'+(k>0?'border-top:0.5px solid #F2F2F7;':'')+'display:flex;align-items:center;gap:12;">'
@@ -25405,7 +25465,7 @@ function renderPanelDuplicados(containerId) {
         + (r.nombre || 'Sin nombre') + pieSVG
         + '</div>'
         // Curso + instancia + fecha + nota
-        + '<div style="font-size:11px;color:#8E8E93;margin-top:2px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'
+        + '<div style="font-size:11px;color:#6E6E73;margin-top:2px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'
         + '<span style="background:#F2F2F7;padding:1px 7px;border-radius:20px;font-weight:600;color:#3A3A3C;">'+(r.curso||'Sin curso')+'</span>'
         + '<span>'+(r.instancia||'Sin instancia')+'</span>'
         + '<span>'+r.fecha+'</span>'
@@ -25424,7 +25484,7 @@ function renderPanelDuplicados(containerId) {
       + 'data-grupo="'+gi+'" '
       + 'style="flex:1;padding:9px;background:#FF9500;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">Sí aceptar y fusionar</button>'
       + '<button onclick="this.closest(\'div[style*=border-left]\').remove()" '
-      + 'style="padding:9px 14px;background:none;border:0.5px solid #E5E5EA;border-radius:10px;font-size:13px;color:#8E8E93;cursor:pointer;font-family:inherit;">Ignorar</button>'
+      + 'style="padding:9px 14px;background:none;border:0.5px solid #E5E5EA;border-radius:10px;font-size:13px;color:#6E6E73;cursor:pointer;font-family:inherit;">Ignorar</button>'
       + '</div></div>';
   });
   cont.innerHTML = html;
