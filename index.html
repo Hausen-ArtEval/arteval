@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v262">
+<meta name="arteval-version" content="v263">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4646,7 +4646,7 @@ h1, h2, h3, .stat-num, .stat-val, .hero-num, .cifra-num,
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v262</span>
+      ">v263</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -13824,9 +13824,14 @@ function alexiaGuardarPlantilla(rows, fileName) {
   // Alexia marca cada planilla como "Primer Semestre" / "Segundo Semestre" y la
   // trata como independiente (el 2° semestre empieza en N4). Guardamos esto para
   // que la exportación mapee solo las instancias del semestre correcto.
+  // v263: además de 1° y 2° semestre, detectar la planilla "Evaluación Final"
+  // (marcador = 3). Esa planilla NO tiene columnas de notas, solo la Nota Final,
+  // y ahí va el PROMEDIO ANUAL del estudiante (promedio del 1° y 2° semestre).
+  // Es la nota que ven los apoderados para el riesgo de repitencia.
   var _semestrePlantilla = 0; // 0 = desconocido / año completo
   for (var _hr = 0; _hr < headerRows.length; _hr++) {
     var _rowTxt = (headerRows[_hr] || []).map(function(c){ return String(c); }).join(' ').toLowerCase();
+    if (/evaluaci[oó]n\s+final|evaluacion\s+final|nota\s+final\s+anual|promedio\s+anual|^final$|\bfinal\b/.test(_rowTxt) && !/semestre/.test(_rowTxt)) { _semestrePlantilla = 3; break; }
     if (/segundo\s+semestre|2°?\s*semestre|2do\s+semestre/.test(_rowTxt)) { _semestrePlantilla = 2; break; }
     if (/primer\s+semestre|1°?\s*semestre|1er\s+semestre/.test(_rowTxt))  { _semestrePlantilla = 1; break; }
   }
@@ -14037,8 +14042,13 @@ function alexiaGenerarXLS(curso) {
   //      no un objeto plano, para poder hacer el fallback posicional
   //      correcto POR ALUMNO (no global).
   // ══════════════════════════════════════════════════════
+  // v263: ¿es la planilla "Evaluación Final" (promedio anual)?
+  var _esFinalAnual = (p.semestrePlantilla === 3);
+
   var regsCurso = registros.filter(function(r) {
     if (alexiaNormCurso(r.curso || '') !== key) return false;
+    // Para la Evaluación Final usamos TODO el año; para 1°/2° solo su semestre.
+    if (_esFinalAnual) return true;
     // v231: si la plantilla es de un semestre específico, considerar solo los
     // registros de ese semestre — así ningún fallback puede colar notas del otro.
     var _sp = p.semestrePlantilla || 0;
@@ -14047,6 +14057,46 @@ function alexiaGenerarXLS(curso) {
     }
     return true;
   });
+
+  // v263: PROMEDIO ANUAL por estudiante para la Evaluación Final.
+  // promedioAnual[normNombre] = promedio( promedio 1er sem , promedio 2do sem )
+  // Replica cómo Alexia debería calcular el final: media de las medias
+  // semestrales (no media de todas las notas revueltas), para que el apoderado
+  // vea el promedio correcto de riesgo de repitencia.
+  var promedioAnualNombre = {};
+  var promedioAnualGuid   = {};
+  if (_esFinalAnual) {
+    var _porAlum = {}; // norm → { s1:[], s2:[], guid }
+    regsCurso.forEach(function(r) {
+      if (r.noEntregado) return;
+      var nt = Number(r.nota);
+      if (r.nota === null || r.nota === undefined || r.nota === '' || isNaN(nt)) return;
+      var norm = alexiaNorm(r.nombre || '');
+      if (!_porAlum[norm]) _porAlum[norm] = { s1: [], s2: [], guid: r.guidMatricula || '' };
+      var sem = (typeof _semestrePorInstancia === 'function') ? _semestrePorInstancia(r.instancia || 'Evaluación 1') : 1;
+      (sem === 2 ? _porAlum[norm].s2 : _porAlum[norm].s1).push(nt);
+      if (!_porAlum[norm].guid && r.guidMatricula) _porAlum[norm].guid = r.guidMatricula;
+    });
+    var _media = function(arr){ return arr.length ? arr.reduce(function(a,b){return a+b;},0)/arr.length : null; };
+    Object.keys(_porAlum).forEach(function(norm) {
+      var a = _porAlum[norm];
+      var p1 = _media(a.s1), p2 = _media(a.s2);
+      var proms = [p1, p2].filter(function(x){ return x !== null; });
+      if (!proms.length) return;
+      var anual = Math.round(_media(proms) * 10) / 10; // media de las medias semestrales
+      promedioAnualNombre[norm] = anual;
+      // resolver GUID si no lo tiene el registro
+      var guid = a.guid;
+      if (!guid) {
+        var estM = (p.estudiantes || []).find(function(est) {
+          return mismoEstudiante(alexiaNorm((est.apellidos||'') + ' ' + (est.nombre||'')), norm) ||
+                 mismoEstudiante(alexiaNorm((est.nombre||'') + ' ' + (est.apellidos||'')), norm);
+        });
+        if (estM) guid = estM.guid || '';
+      }
+      if (guid) promedioAnualGuid[guid] = anual;
+    });
+  }
 
   // notasMapNombre: normNombre → { rubricaNombre → nota }
   // notasMapGuid:  guid        → { rubricaNombre → nota }
@@ -14188,6 +14238,25 @@ function alexiaGenerarXLS(curso) {
         notasEst  = notasMapNombre[normKey];
         normAlumn = normKey;
       }
+    }
+
+    // v263: EVALUACIÓN FINAL — escribir el promedio anual en la columna NF.
+    // Esta planilla no tiene columnas CON, así que el flujo normal no aplica.
+    if (_esFinalAnual) {
+      var promAnual = null;
+      if (guid_ && promedioAnualGuid[guid_] !== undefined) {
+        promAnual = promedioAnualGuid[guid_];
+      } else {
+        var _nk = alexiaMatchNombreConKey(promedioAnualNombre, apellidos, nomPila);
+        if (_nk !== null) promAnual = promedioAnualNombre[_nk];
+      }
+      if (promAnual !== null && promAnual !== undefined && !isNaN(Number(promAnual))) {
+        if (colNF > -1) fila[colNF] = Number(promAnual);
+        matchLog.push({ alexia: apellidos + ' / ' + nomPila, guid: guid_, match: true, notas: { Final: Number(promAnual) } });
+      } else {
+        matchLog.push({ alexia: apellidos + ' / ' + nomPila, guid: guid_, match: false, notas: {} });
+      }
+      continue; // no seguir con el flujo de columnas CON
     }
 
     var logEntry = { alexia: apellidos + ' / ' + nomPila, guid: guid_, match: !!notasEst, notas: {} };
