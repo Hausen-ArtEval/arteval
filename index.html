@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v263">
+<meta name="arteval-version" content="v264">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4646,7 +4646,7 @@ h1, h2, h3, .stat-num, .stat-val, .hero-num, .cifra-num,
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v263</span>
+      ">v264</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -14330,7 +14330,12 @@ function alexiaGenerarXLS(curso) {
     rows[hi] = rows[hi].slice(0, totalCols);
   }
 
-  return { wsData: rows, matchLog: matchLog, key: key, curso: curso };
+  // v264: contar cuántos promedios finales se calcularon (para avisar al usuario)
+  var _promediosFinales = _esFinalAnual
+    ? matchLog.filter(function(m){ return m.match && m.notas && m.notas.Final !== undefined; }).length
+    : 0;
+  return { wsData: rows, matchLog: matchLog, key: key, curso: curso,
+           esFinalAnual: _esFinalAnual, promediosFinales: _promediosFinales };
   } catch(err) {
     console.error('[Alexia] Error generando XLS para', curso, ':', err.message);
     toast('❌ Error al generar ' + curso + ': ' + err.message, 'err', 6000);
