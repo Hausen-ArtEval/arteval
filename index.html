@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v264">
+<meta name="arteval-version" content="v265">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4646,7 +4646,7 @@ h1, h2, h3, .stat-num, .stat-val, .hero-num, .cifra-num,
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v264</span>
+      ">v265</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -10828,6 +10828,51 @@ async function eliminarDesdeDup(idx) {
     if (typeof toast === "function") toast("⚠️ Error inesperado: " + e.message, "err", 3000);
   }}
 
+// v265: dejar un estudiante PENDIENTE (quitar la nota, marcar No Entregado).
+// Para cuando se puso una nota por error a alguien que aún no entrega su trabajo.
+async function _dejarPendiente(idx) {
+  var r = registros[idx]; if (!r) return;
+  var ok = await confirmarAccion('Dejar pendiente',
+    `Se quitará la nota de <strong>${_esc(r.nombre||'')}</strong> y quedará como <strong>pendiente (No Entregado)</strong>, para cuando entregue su trabajo.`,
+    '⏳', 'Sí, dejar pendiente');
+  if (!ok) return;
+  // Convertir el registro a NE: sin nota, marcado noEntregado
+  r.noEntregado = true;
+  r.nota = 1.0;            // valor interno; no cuenta como nota real por el flag
+  r.pct = 0;
+  r.conteo = { MB:0, L:0, M:0, N:(r.detalle ? r.detalle.length : 0) };
+  if (r.detalle && Array.isArray(r.detalle)) {
+    r.detalle = r.detalle.map(function(d){ return Object.assign({}, d, { nivel:'N', pts:0 }); });
+  }
+  saveRegistros();
+  if (typeof _driveSaveDebounced === 'function') _driveSaveDebounced();
+  if (typeof actualizarConteo === 'function') actualizarConteo();
+  if (typeof renderRegistros === 'function') renderRegistros();
+  if (typeof sincronizarRegistrosACursos === 'function') sincronizarRegistrosACursos();
+  if (_vistaLibroCursoActiva && typeof renderCursoMain === 'function') renderCursoMain();
+  cerrarModal();
+  toast('⏳ ' + (r.nombre||'').split(' ').slice(0,2).join(' ') + ' quedó pendiente', 'ok', 2800);
+}
+
+// v265: eliminar una nota por completo desde el editor (va a la papelera).
+async function _eliminarNotaDesdeEditor(idx) {
+  var r = registros[idx]; if (!r) return;
+  var ok = await confirmarAccion('Eliminar nota',
+    `¿Eliminar por completo esta evaluación de <strong>${_esc(r.nombre||'')}</strong>? Puedes recuperarla desde la Papelera.`,
+    '🗑️', 'Sí, eliminar');
+  if (!ok) return;
+  if (typeof _aPapelera === 'function') _aPapelera(r, 'eliminación desde editor');
+  registros.splice(idx, 1);
+  saveRegistros();
+  if (typeof _driveSaveDebounced === 'function') _driveSaveDebounced();
+  if (typeof actualizarConteo === 'function') actualizarConteo();
+  if (typeof renderRegistros === 'function') renderRegistros();
+  if (typeof sincronizarRegistrosACursos === 'function') sincronizarRegistrosACursos();
+  if (_vistaLibroCursoActiva && typeof renderCursoMain === 'function') renderCursoMain();
+  cerrarModal();
+  toast('🗑️ Nota eliminada — recuperable en Papelera', 'ok', 3000);
+}
+
 function editarRegistro(idx) {
   const r = registros[idx]; if (!r) return;
   abrirModal(`
@@ -10937,7 +10982,12 @@ function editarRegistro(idx) {
       <span style="color:var(--accent);font-size:11px;">· haz clic en el nombre del criterio para editarlo</span>
     </div>
     <div class="modal-criterios" id="editCriterios"></div>
-    <div class="modal-footer">
+    <div class="modal-footer" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+      ${!r.noEntregado ? `<button class="btn" onclick="_dejarPendiente(${idx})" style="color:#FF9500;border-color:rgba(255,149,0,0.4);" title="Quitar la nota y dejar al estudiante pendiente (No Entregado)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Dejar pendiente</button>` : ''}
+      <button class="btn" onclick="_eliminarNotaDesdeEditor(${idx})" style="color:var(--red);border-color:rgba(255,59,48,0.35);" title="Eliminar esta nota por completo (va a la papelera)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>Eliminar</button>
+      <span style="flex:1;"></span>
       <button class="btn" onclick="cerrarModal()">Cancelar</button>
       <button class="btn btn-primary" onclick="confirmarEdicion(${idx})">Guardar cambios</button>
     </div>
