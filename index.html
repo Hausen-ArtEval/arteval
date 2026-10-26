@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v265">
+<meta name="arteval-version" content="v266">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4646,7 +4646,7 @@ h1, h2, h3, .stat-num, .stat-val, .hero-num, .cifra-num,
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v265</span>
+      ">v266</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -9403,15 +9403,65 @@ function _reconstruirInstanciaSelect() {
     sel.appendChild(g3);
   }
 
-  // Restaurar valor previo si sigue existiendo, o usar primera del semestre activo
+  // Restaurar valor previo si sigue existiendo, o sugerir la SIGUIENTE instancia
   var opciones = Array.from(sel.options).map(function(o){ return o.value; });
   if (valorPrev && opciones.indexOf(valorPrev) !== -1) {
     sel.value = valorPrev;
   } else {
-    // Primera instancia del semestre activo
-    var listaSem = _semestreActivo === 1 ? cfg.sem1 : cfg.sem2;
-    sel.value = (listaSem && listaSem[0]) ? listaSem[0] : (opciones[0] || 'Evaluación 1');
+    // v266: sugerir inteligentemente la siguiente instancia según las notas que
+    // el curso ya tiene en el semestre activo, en vez de ir siempre a la primera.
+    var sugerida = _sugerirSiguienteInstancia(cfg);
+    sel.value = sugerida || (opciones[0] || 'Evaluación 1');
   }
+}
+
+// v266: calcula la SIGUIENTE instancia evaluativa que corresponde, mirando las
+// notas ya ingresadas en el curso seleccionado para el semestre activo.
+// Ejemplo: si el curso ya tiene notas en Ev.4 (1ª del 2° sem), sugiere Ev.5.
+// Evita que el sistema asuma siempre la 1ª instancia y se dupliquen notas.
+function _sugerirSiguienteInstancia(cfg) {
+  cfg = cfg || _getSemConfig();
+  var listaSem = (_semestreActivo === 1) ? (cfg.sem1 || []) : (cfg.sem2 || []);
+  if (!listaSem.length) return null;
+
+  var curso = (typeof cursoSeleccionado !== 'undefined' && cursoSeleccionado) ? cursoSeleccionado : '';
+  // Contar, por cada instancia del semestre, cuántas notas reales tiene el curso
+  var conteoPorInst = {};
+  listaSem.forEach(function(inst){ conteoPorInst[inst] = 0; });
+  (registros || []).forEach(function(r) {
+    if (!r || r.noEntregado) return;
+    if (curso && (r.curso || '') !== curso) return;
+    var inst = r.instancia || 'Evaluación 1';
+    if (conteoPorInst.hasOwnProperty(inst)) {
+      var n = Number(r.nota);
+      if (!isNaN(n) && n > 0) conteoPorInst[inst]++;
+    }
+  });
+
+  // La "última instancia trabajada" es la más avanzada que tiene al menos 1 nota.
+  var ultimaConNotas = -1;
+  for (var i = 0; i < listaSem.length; i++) {
+    if (conteoPorInst[listaSem[i]] > 0) ultimaConNotas = i;
+  }
+
+  // Si no hay ninguna nota aún en el semestre → primera instancia.
+  if (ultimaConNotas === -1) return listaSem[0];
+
+  // Si la última instancia trabajada ya está "completa" para el curso (todos o
+  // casi todos evaluados), sugerir la SIGUIENTE. Si aún está a medias, quedarse
+  // en ella (probablemente se sigue ingresando esa misma instancia).
+  var totalCurso = 0;
+  if (curso && typeof listaCursos !== 'undefined' && listaCursos[curso]) {
+    totalCurso = listaCursos[curso].length;
+  }
+  var notasUltima = conteoPorInst[listaSem[ultimaConNotas]];
+  // "Completa" = tiene notas para (casi) todo el curso. Umbral: 60% o más.
+  var completa = totalCurso > 0 ? (notasUltima >= Math.ceil(totalCurso * 0.6)) : true;
+
+  if (completa && ultimaConNotas < listaSem.length - 1) {
+    return listaSem[ultimaConNotas + 1]; // siguiente instancia
+  }
+  return listaSem[ultimaConNotas]; // seguir en la que está a medias
 }
 
 
