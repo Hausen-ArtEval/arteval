@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v266">
+<meta name="arteval-version" content="v267">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4646,7 +4646,7 @@ h1, h2, h3, .stat-num, .stat-val, .hero-num, .cifra-num,
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v266</span>
+      ">v267</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -5279,10 +5279,13 @@ h1, h2, h3, .stat-num, .stat-val, .hero-num, .cifra-num,
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
               <div style="display:flex;flex-direction:column;gap:2px;">
                 <label style="font-size:11px;color:var(--text3);text-transform:none;letter-spacing:0.5px;font-family:var(--font-mono);">Instancia evaluativa</label>
-                <select id="instanciaSelect" class="filter-select" style="font-size:12px;padding:5px 10px;min-width:130px;" onchange="actualizarBarraProgresoCurso();_sincronizarSemestrePorInstancia()">
+                <select id="instanciaSelect" class="filter-select" style="font-size:12px;padding:5px 10px;min-width:130px;" onchange="window._instanciaManual=true;actualizarBarraProgresoCurso();_sincronizarSemestrePorInstancia()">
                   <option value="Evaluación 1">Evaluación 1</option>
                 </select>
               </div>
+              <button class="btn" onclick="_marcarTodoMB()" title="Marcar todos los criterios en Muy bien logrado — para trabajos completos" style="color:#1a9944;border-color:rgba(48,209,88,0.4);font-weight:600;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:3px;"><polyline points="20 6 9 17 4 12"/></svg>Todo bueno
+              </button>
               <button class="btn" onclick="limpiarEvaluacion()">Limpiar</button>
               <button class="btn btn-no-entregado" onclick="guardarNoEntregado()" title="Registrar trabajo no entregado — nota 1.0, todos los criterios en N">
                 ✕ NE
@@ -7843,6 +7846,19 @@ function renderCriterios() {
   }
 }
 
+// v267: marcar TODOS los criterios en "Muy bien logrado" (MB) de una vez.
+// Para trabajos completos que cumplen todos los objetivos — evita tener que
+// hacer clic en cada ítem uno por uno.
+function _marcarTodoMB() {
+  var crits = getCriterios();
+  if (!crits || !crits.length) return;
+  crits.forEach(function(c, i) { evaluacion[i] = { nivel: 'MB', nota: evaluacion[i] && evaluacion[i].nota || '' }; });
+  try { if (navigator.vibrate) navigator.vibrate(18); } catch(e) {}
+  renderCriterios();
+  if (typeof _actualizarContadorCriterios === 'function') _actualizarContadorCriterios();
+  toast('✓ Todos los criterios en Muy bien logrado', 'ok', 2200);
+}
+
 function setNivel(i, k) {
   if (evaluacion[i]?.nivel === k) delete evaluacion[i];
   else evaluacion[i] = { nivel: k, nota: evaluacion[i]?.nota || '' };
@@ -9403,15 +9419,17 @@ function _reconstruirInstanciaSelect() {
     sel.appendChild(g3);
   }
 
-  // Restaurar valor previo si sigue existiendo, o sugerir la SIGUIENTE instancia
+  // v267: SIEMPRE sugerir la siguiente instancia según las notas del curso,
+  // salvo que el profesor haya elegido manualmente una instancia en esta sesión
+  // de evaluación (bandera _instanciaManual). Antes se quedaba pegado en el
+  // valor previo ("Evaluación 1") y por eso no avanzaba solo.
   var opciones = Array.from(sel.options).map(function(o){ return o.value; });
-  if (valorPrev && opciones.indexOf(valorPrev) !== -1) {
+  if (window._instanciaManual && valorPrev && opciones.indexOf(valorPrev) !== -1) {
+    // el usuario fijó la instancia a mano → respetar su elección
     sel.value = valorPrev;
   } else {
-    // v266: sugerir inteligentemente la siguiente instancia según las notas que
-    // el curso ya tiene en el semestre activo, en vez de ir siempre a la primera.
     var sugerida = _sugerirSiguienteInstancia(cfg);
-    sel.value = sugerida || (opciones[0] || 'Evaluación 1');
+    sel.value = sugerida || valorPrev || (opciones[0] || 'Evaluación 1');
   }
 }
 
@@ -23527,6 +23545,10 @@ function sincronizarRegistrosACursos() {
 function selCurso(curso) {
   cursoSeleccionado = curso;
   estFiltro = 'todos';
+  // v267: al cambiar de curso, olvidar la elección manual de instancia y
+  // recalcular la sugerencia según las notas de este curso.
+  window._instanciaManual = false;
+  if (typeof _reconstruirInstanciaSelect === 'function') { try { _reconstruirInstanciaSelect(); } catch(e){} }
   // Actualizar barra de continuidad
   setTimeout(actualizarBarraContinuidad, 40);
   // Preservar instanciaCursoFiltro para poder navegar cursos con el mismo filtro de instancia
