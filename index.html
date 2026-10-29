@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v267">
+<meta name="arteval-version" content="v269">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4646,7 +4646,7 @@ h1, h2, h3, .stat-num, .stat-val, .hero-num, .cifra-num,
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v267</span>
+      ">v269</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -9171,6 +9171,40 @@ async function guardar() {
       }) || {}).guid || ''
     : (listaCursos[curso] || []).find(function(e){ return mismoEstudiante(e.nombre||'', nombre||''); })?.guidMatricula || '';
 
+  // v269: ADVERTENCIA ANTI-DUPLICADO. Si el estudiante YA tiene una nota en esta
+  // instancia (aunque sea con otra rúbrica), avisar antes de guardar para que el
+  // profesor confirme — evita duplicar por quedarse en "Evaluación 1" por error.
+  var _instanciaActual = document.getElementById('instanciaSelect')?.value || 'Evaluación 1';
+  var _rubricaActualNom = rubricaEfectiva?.nombre || '';
+  var _notaExistente = registros.find(function(r) {
+    return !r.noEntregado &&
+           mismoEstudiante(r.nombre||'', nombre) &&
+           (r.curso||'') === curso &&
+           (r.instancia||'Evaluación 1') === _instanciaActual;
+  });
+  if (_notaExistente) {
+    var _mismaRubrica = (_notaExistente.rubricaNombre||'') === _rubricaActualNom;
+    var _notaPrev = (_notaExistente.nota !== undefined && _notaExistente.nota !== null)
+      ? Number(_notaExistente.nota).toFixed(1) : '—';
+    // Si es la MISMA rúbrica, el sistema reemplaza (actualización normal) → no molestar.
+    // Si es DISTINTA rúbrica, es el caso problemático: posible duplicado por instancia equivocada.
+    if (!_mismaRubrica) {
+      guardar._saving = false; // liberar el guard para poder volver a intentar
+      var _ok = await confirmarAccion(
+        '⚠ Ya existe una nota en esta instancia',
+        '<strong>' + _esc(nombre) + '</strong> ya tiene una nota en <strong>' + _esc(_instanciaActual) + '</strong>:<br><br>'
+        + '• Nota actual: <strong>' + _notaPrev + '</strong> (rúbrica «' + _esc(_notaExistente.rubricaNombre||'—') + '»)<br>'
+        + '• Vas a ingresar: rúbrica «' + _esc(_rubricaActualNom) + '»<br><br>'
+        + '¿Seguro que esta nota va en <strong>' + _esc(_instanciaActual) + '</strong>? Si te equivocaste de instancia, cancela y elige la correcta arriba.',
+        '⚠', 'Sí, guardar aquí');
+      if (!_ok) {
+        // El profesor canceló para revisar la instancia → no guardar, no duplicar
+        return;
+      }
+      guardar._saving = true; // re-activar el guard para continuar el guardado
+    }
+  }
+
   const nuevoReg = {
     _id: _uuidV4(), // UUID único por registro — integridad anti-duplicados
     _savedAt: new Date().toISOString(), // timestamp de edición — usado por SmartSync
@@ -9337,6 +9371,23 @@ async function guardar() {
 var _semestreActivo = parseInt(localStorage.getItem('av_semestre_activo') || '1', 10);
 
 // Determinar semestre a partir de la instancia — usa config guardada
+// v268: comparador único de cursos para que SIEMPRE queden ordenados
+// 3°A, 3°B, 3°C, 3°D, 4°A... (primero por número de nivel, luego por letra).
+// Reemplaza los .sort() simples que desordenaban al dar de baja o en rúbricas.
+function _cmpCurso(a, b) {
+  a = String(a || ''); b = String(b || '');
+  var ma = a.match(/(\d+)\s*°?\s*([A-Za-z]*)/);
+  var mb = b.match(/(\d+)\s*°?\s*([A-Za-z]*)/);
+  if (ma && mb) {
+    var na = parseInt(ma[1], 10), nb = parseInt(mb[1], 10);
+    if (na !== nb) return na - nb;                 // por nivel: 3° antes que 4°
+    return (ma[2] || '').localeCompare(mb[2] || '', 'es'); // por letra: A,B,C,D
+  }
+  return a.localeCompare(b, 'es', { numeric: true });
+}
+// Ordena una lista de nombres de curso in-place y la devuelve.
+function _ordenarCursos(arr) { return (arr || []).sort(_cmpCurso); }
+
 function _semestrePorInstancia(instancia) {
   var inst = (instancia || '').trim();
   if (!inst) return _semestreActivo;
@@ -10569,7 +10620,7 @@ function renderLibroClases(filtrados, container) {
   });
 
   var html = '';
-  Object.keys(porCurso).sort().forEach(function(curso) {
+  Object.keys(porCurso).sort(_cmpCurso).forEach(function(curso) {
     const regs = porCurso[curso];
 
     // Detectar instancias únicas en este curso → columnas dinámicas.
@@ -11302,6 +11353,12 @@ function confirmarEdicion(idx) {
   renderRegistros();
   renderCursosChips();
   renderSidebarCounts();
+  // v268: si estamos en la vista Libro, forzar su reconstrucción inmediata
+  // para que la nota editada se vea al instante (antes había que salir y volver).
+  if (_vistaLibroCursoActiva && cursoSeleccionado && typeof renderCursoMain === 'function') {
+    renderCursoMain();
+    setTimeout(function(){ try { if (_vistaLibroCursoActiva) renderCursoMain(); } catch(e){} }, 60);
+  }
   if (cursoSeleccionado) {
     renderCursoMain();
     // Si estábamos en la pestaña Cursos, volver a ella (no redirigir a Registros)
@@ -12120,7 +12177,7 @@ function renderRubricas() {
   var cursos = Object.keys(grupos).sort(function(a, b) {
     if (a === 'Sin clasificar') return 1;
     if (b === 'Sin clasificar') return -1;
-    return a.localeCompare(b, 'es');
+    return _cmpCurso(a, b);  // v268: orden correcto 3°A,3°B,4°A...
   });
 
   var frag = document.createDocumentFragment();
@@ -12155,6 +12212,11 @@ function renderRubricas() {
   /* ── Carpetas por curso ────────────────────────────────────────────────── */
   cursos.forEach(function(curso) {
     var items    = grupos[curso];
+    // v268: ordenar las rúbricas dentro del curso por su nombre con numeric,
+    // para que N1, N2, N3... queden en orden (antes N10 iba antes que N2).
+    items.sort(function(x, y) {
+      return (x.r.nombre || '').localeCompare((y.r.nombre || ''), 'es', { numeric: true });
+    });
     var tieneAct = items.some(function(o) { return o.i === rubricaActiva; });
     var isOpen   = tieneAct || cursos.length === 1 || items.length <= 3;
 
@@ -15031,7 +15093,7 @@ function _renderDashPendientes(forzar) {
 
     // ── PASO 2: scan de nómina con lookup O(1) ───────────────────────────────
     var pendientes = [];
-    Object.keys(listaCursos || {}).sort().forEach(function(curso) {
+    Object.keys(listaCursos || {}).sort(_cmpCurso).forEach(function(curso) {
       var nomina = listaCursos[curso] || [];
       nomina.forEach(function(nombreNomina) {
         // Las entradas de nómina son objetos {nombre, pie}; extraer el texto.
@@ -15790,7 +15852,7 @@ function _renderDashAlertas(instFiltro) {
   // Construir HTML usando DOM (sin concatenación de strings con comillas anidadas)
   cont.innerHTML = '';
 
-  Object.keys(porCurso).sort().forEach(function(curso) {
+  Object.keys(porCurso).sort(_cmpCurso).forEach(function(curso) {
     const alumnos = porCurso[curso];
 
     const cursoDiv = document.createElement('div');
