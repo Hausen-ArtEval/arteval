@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v269">
+<meta name="arteval-version" content="v270">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4646,7 +4646,7 @@ h1, h2, h3, .stat-num, .stat-val, .hero-num, .cifra-num,
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v269</span>
+      ">v270</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -9171,39 +9171,18 @@ async function guardar() {
       }) || {}).guid || ''
     : (listaCursos[curso] || []).find(function(e){ return mismoEstudiante(e.nombre||'', nombre||''); })?.guidMatricula || '';
 
-  // v269: ADVERTENCIA ANTI-DUPLICADO. Si el estudiante YA tiene una nota en esta
-  // instancia (aunque sea con otra rúbrica), avisar antes de guardar para que el
-  // profesor confirme — evita duplicar por quedarse en "Evaluación 1" por error.
+  // v270: detectar posible duplicado por instancia equivocada SIN bloquear el
+  // guardado. Se calcula aquí y se avisa DESPUÉS de guardar (no interrumpe el
+  // flujo; la v269 colgaba el guardado al usar await en medio del try).
   var _instanciaActual = document.getElementById('instanciaSelect')?.value || 'Evaluación 1';
-  var _rubricaActualNom = rubricaEfectiva?.nombre || '';
-  var _notaExistente = registros.find(function(r) {
-    return !r.noEntregado &&
+  var _rubricaActualNom = (rubricaEfectiva && rubricaEfectiva.nombre) || '';
+  var _notaDistintaRubrica = registros.find(function(r) {
+    return r && !r.noEntregado &&
            mismoEstudiante(r.nombre||'', nombre) &&
            (r.curso||'') === curso &&
-           (r.instancia||'Evaluación 1') === _instanciaActual;
+           (r.instancia||'Evaluación 1') === _instanciaActual &&
+           (r.rubricaNombre||'') !== _rubricaActualNom;
   });
-  if (_notaExistente) {
-    var _mismaRubrica = (_notaExistente.rubricaNombre||'') === _rubricaActualNom;
-    var _notaPrev = (_notaExistente.nota !== undefined && _notaExistente.nota !== null)
-      ? Number(_notaExistente.nota).toFixed(1) : '—';
-    // Si es la MISMA rúbrica, el sistema reemplaza (actualización normal) → no molestar.
-    // Si es DISTINTA rúbrica, es el caso problemático: posible duplicado por instancia equivocada.
-    if (!_mismaRubrica) {
-      guardar._saving = false; // liberar el guard para poder volver a intentar
-      var _ok = await confirmarAccion(
-        '⚠ Ya existe una nota en esta instancia',
-        '<strong>' + _esc(nombre) + '</strong> ya tiene una nota en <strong>' + _esc(_instanciaActual) + '</strong>:<br><br>'
-        + '• Nota actual: <strong>' + _notaPrev + '</strong> (rúbrica «' + _esc(_notaExistente.rubricaNombre||'—') + '»)<br>'
-        + '• Vas a ingresar: rúbrica «' + _esc(_rubricaActualNom) + '»<br><br>'
-        + '¿Seguro que esta nota va en <strong>' + _esc(_instanciaActual) + '</strong>? Si te equivocaste de instancia, cancela y elige la correcta arriba.',
-        '⚠', 'Sí, guardar aquí');
-      if (!_ok) {
-        // El profesor canceló para revisar la instancia → no guardar, no duplicar
-        return;
-      }
-      guardar._saving = true; // re-activar el guard para continuar el guardado
-    }
-  }
 
   const nuevoReg = {
     _id: _uuidV4(), // UUID único por registro — integridad anti-duplicados
@@ -9246,6 +9225,13 @@ async function guardar() {
     toast('✓ Evaluación de <strong>' + nombre + '</strong> actualizada (reemplaza registro anterior)', 'ok', 4000);
   } else {
     registros.unshift(nuevoReg);
+    // v270: si el alumno ya tenía nota en esta instancia con OTRA rúbrica, avisar
+    // (sin bloquear) por si se equivocó de instancia y acaba de duplicar.
+    if (_notaDistintaRubrica) {
+      setTimeout(function(){
+        toast('⚠ Ojo: <strong>' + _esc(nombre) + '</strong> ya tenía otra nota en <strong>' + _esc(_instanciaActual) + '</strong>. Si te equivocaste de instancia, revisa en el Libro.', 'info', 6000);
+      }, 700);
+    }
   }
   saveRegistros();
   // v226: fijar el contexto de tanda (rúbrica + instancia) para reaplicarlo
