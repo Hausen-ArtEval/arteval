@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v270">
+<meta name="arteval-version" content="v272">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4646,7 +4646,7 @@ h1, h2, h3, .stat-num, .stat-val, .hero-num, .cifra-num,
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v270</span>
+      ">v272</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -5093,7 +5093,7 @@ h1, h2, h3, .stat-num, .stat-val, .hero-num, .cifra-num,
         </div>
         <div class="field-wrap" style="max-width:140px;">
           <label>Curso</label>
-          <select id="inputCurso" class="curso-select" onchange="actualizarBarraProgresoCurso()">
+          <select id="inputCurso" class="curso-select" onchange="_aplicarRubricaDeCurso();actualizarBarraProgresoCurso()">
             <option value="">— Seleccionar curso —</option>
 <optgroup label="3° Básico">
 <option value="3°A">3°A</option>
@@ -8700,6 +8700,68 @@ function actualizarSlider() {
   const curso  = inferirCursoDesdeRubrica();
   const sufijo = curso ? ` — ${curso}` : '';
   setEl('exigenciaValor', niv.label + sufijo);
+}
+
+// v272: al seleccionar un curso para evaluar, asumir la rúbrica que corresponde
+// a ese curso, en vez de quedarse con la última rúbrica usada en otro curso.
+// Prioridad: (1) la rúbrica más usada en ese curso+instancia actual (lo que ya
+// estás evaluando), (2) la rúbrica asociada al curso por su carpeta.
+// Devuelve el índice de la rúbrica sugerida, o -1 si no encuentra ninguna.
+function _sugerirRubricaParaCurso(curso) {
+  if (!curso || !Array.isArray(rubricas) || !rubricas.length) return -1;
+  var cursoKey = (typeof _normCursoKey === 'function') ? _normCursoKey(curso) : curso;
+  var instActual = document.getElementById('instanciaSelect')?.value || '';
+
+  // (1) Rúbrica más usada en este curso para la instancia actual.
+  var conteo = {};
+  (registros || []).forEach(function(r) {
+    if (!r || r.noEntregado) return;
+    var rk = (typeof _normCursoKey === 'function') ? _normCursoKey(r.curso||'') : (r.curso||'');
+    if (rk !== cursoKey) return;
+    if (instActual && (r.instancia||'Evaluación 1') !== instActual) return;
+    var nom = r.rubricaNombre || '';
+    if (!nom) return;
+    conteo[nom] = (conteo[nom] || 0) + 1;
+  });
+  var masUsada = null, maxN = 0;
+  Object.keys(conteo).forEach(function(nom){ if (conteo[nom] > maxN) { maxN = conteo[nom]; masUsada = nom; } });
+  if (masUsada) {
+    var idx1 = rubricas.findIndex(function(rb){ return (rb.nombre||'') === masUsada; });
+    if (idx1 > -1) return idx1;
+  }
+
+  // (2) Rúbrica asociada al curso por su carpeta (campo .curso de la rúbrica).
+  // Preferir las del semestre activo. Si hay varias, la más reciente.
+  var candidatas = [];
+  rubricas.forEach(function(rb, i) {
+    var rbCursoKey = rb.curso ? ((typeof _normCursoKey === 'function') ? _normCursoKey(rb.curso) : rb.curso) : '';
+    if (rbCursoKey && rbCursoKey === cursoKey) candidatas.push(i);
+  });
+  if (candidatas.length) {
+    // preferir las del semestre activo
+    var delSem = candidatas.filter(function(i){ return parseInt(rubricas[i].semestre||1) === _semestreActivo; });
+    var pool = delSem.length ? delSem : candidatas;
+    return pool[pool.length - 1]; // la última (más reciente) del pool
+  }
+
+  return -1; // sin asociación clara: no cambiar la rúbrica actual
+}
+
+// Aplica la rúbrica sugerida al seleccionar un curso en el panel de evaluación.
+function _aplicarRubricaDeCurso() {
+  var curso = (document.getElementById('inputCurso')?.value || '').trim();
+  if (!curso) return;
+  var idx = _sugerirRubricaParaCurso(curso);
+  if (idx > -1 && idx !== rubricaActiva) {
+    rubricaActiva = idx;
+    try { localStorage.setItem('av_rubrica_activa', String(idx)); } catch(e) {}
+    // refrescar el selector de rúbrica y la vista de criterios
+    if (typeof actualizarRubricaSelect === 'function') actualizarRubricaSelect();
+    if (typeof renderCriterios === 'function') renderCriterios();
+    if (typeof actualizarSlider === 'function') actualizarSlider();
+    var nom = (rubricas[idx] && rubricas[idx].nombre) || '';
+    if (nom) toast('Rúbrica: ' + nom, 'info', 1800);
+  }
 }
 
 async function analizarAhora() {
@@ -13577,6 +13639,105 @@ function _promedio(vals) {
   return Math.round(nums.reduce(function(a,b){ return a+b; }, 0) / nums.length * 10) / 10;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+//  INFORME DE RIESGO DE REPITENCIA (para UTP y apoderados) — v271
+//  Genera un Excel con: (1) hoja RESUMEN con todos los estudiantes en riesgo,
+//  ordenados por prioridad, con promedios de ambos semestres, promedio anual y
+//  categoría; (2) una hoja por curso con el detalle. Pensado para reuniones de
+//  UTP, entrevistas con apoderados y respaldo de quiénes pueden reprobar.
+// ═══════════════════════════════════════════════════════════════════════════
+function _etiquetaRiesgoTexto(cat) {
+  switch (cat) {
+    case 'arrastra':   return 'Crítico — bajo 4,0 en ambos semestres';
+    case 'nuevo_2':    return 'Alerta — cayó a rojo en 2° semestre';
+    case 'solo_1':     return 'Seguir — rojo en 1° (sin notas 2° aún)';
+    case 'alerta_2':   return 'Temprana — 1ª nota roja en 2° semestre';
+    case 'recuperado': return 'Recuperado en 2° semestre';
+    default:           return 'En seguimiento';
+  }
+}
+
+function exportarInformeRiesgo() {
+  if (typeof XLSX === 'undefined') { toast('❌ Librería Excel no cargada', 'err', 4000); return; }
+  var porCurso = (typeof _analizarRiesgoAnual === 'function') ? _analizarRiesgoAnual() : {};
+  var cursos = Object.keys(porCurso).sort(_cmpCurso);
+
+  // ¿Hay estudiantes en riesgo (excluyendo recuperados)?
+  var hayRiesgo = cursos.some(function(c){
+    return porCurso[c].some(function(al){ return al.categoria !== 'recuperado'; });
+  });
+  if (!hayRiesgo) { toast('✓ No hay estudiantes en riesgo de repitencia', 'ok', 4000); return; }
+
+  var _promAnual = function(al){
+    var proms = [al.p1, al.p2].filter(function(x){ return x !== null && x !== undefined; });
+    if (!proms.length) return null;
+    return Math.round((proms.reduce(function(a,b){return a+b;},0)/proms.length)*10)/10;
+  };
+
+  var wb = XLSX.utils.book_new();
+  var hoy = new Date().toLocaleDateString('es-CL', {day:'numeric', month:'long', year:'numeric'});
+
+  // ── HOJA 1: RESUMEN GENERAL ──
+  var resumen = [];
+  resumen.push(['INFORME DE RIESGO DE REPITENCIA — Artes Visuales']);
+  resumen.push(['Generado el ' + hoy]);
+  resumen.push([]);
+  resumen.push(['Curso', 'Estudiante', 'PIE', 'Prom. 1° sem', 'Prom. 2° sem', 'Promedio anual', 'Situación', '¿Contactado apoderado?']);
+
+  var totalCriticos = 0, totalArrastra = 0;
+  cursos.forEach(function(curso) {
+    porCurso[curso].forEach(function(al) {
+      if (al.categoria === 'recuperado') return; // el resumen es de riesgo
+      totalCriticos++;
+      if (al.categoria === 'arrastra') totalArrastra++;
+      var pa = _promAnual(al);
+      var contactado = (typeof _yaContactadoApoderado === 'function' && _yaContactadoApoderado(al.nombre)) ? 'Sí' : 'No';
+      resumen.push([
+        curso,
+        al.nombre,
+        al.pie ? 'PIE' : '',
+        al.prom1 !== null ? al.prom1 : '—',
+        al.prom2 !== null ? al.prom2 : '—',
+        pa !== null ? pa : '—',
+        _etiquetaRiesgoTexto(al.categoria),
+        contactado
+      ]);
+    });
+  });
+  // Línea de totales al final
+  resumen.push([]);
+  resumen.push(['TOTAL en riesgo: ' + totalCriticos + '  ·  Críticos (arrastran bajo 4,0): ' + totalArrastra]);
+
+  var wsR = XLSX.utils.aoa_to_sheet(resumen);
+  wsR['!cols'] = [{wch:8},{wch:34},{wch:5},{wch:12},{wch:12},{wch:14},{wch:40},{wch:20}];
+  XLSX.utils.book_append_sheet(wb, wsR, 'Resumen riesgo');
+
+  // ── HOJAS POR CURSO (detalle individual) ──
+  cursos.forEach(function(curso) {
+    var criticos = porCurso[curso].filter(function(al){ return al.categoria !== 'recuperado'; });
+    if (!criticos.length) return;
+    var filas = [];
+    filas.push(['Curso ' + curso + ' — Estudiantes en riesgo']);
+    filas.push([]);
+    criticos.forEach(function(al) {
+      var pa = _promAnual(al);
+      filas.push(['Estudiante:', al.nombre + (al.pie ? '  (PIE)' : '')]);
+      filas.push(['Situación:', _etiquetaRiesgoTexto(al.categoria)]);
+      filas.push(['Promedio 1° semestre:', al.prom1 !== null ? al.prom1 : 'Sin notas']);
+      filas.push(['Promedio 2° semestre:', al.prom2 !== null ? al.prom2 : 'Sin notas']);
+      filas.push(['Promedio anual:', pa !== null ? pa : '—']);
+      filas.push(['Apoderado contactado:', (typeof _yaContactadoApoderado === 'function' && _yaContactadoApoderado(al.nombre)) ? 'Sí' : 'No']);
+      filas.push([]);
+    });
+    var ws = XLSX.utils.aoa_to_sheet(filas);
+    ws['!cols'] = [{wch:24},{wch:40}];
+    XLSX.utils.book_append_sheet(wb, ws, ('Riesgo ' + curso).slice(0,31));
+  });
+
+  XLSX.writeFile(wb, 'ArtEval_Riesgo_Repitencia.xlsx');
+  toast('✅ Informe de riesgo exportado — ' + totalCriticos + ' estudiante(s)', 'ok', 4000);
+}
+
 function _exportarInformeAnualCurso(curso, wbExistente) {
   if (typeof XLSX === 'undefined') { toast('❌ Librería Excel no cargada', 'err', 4000); return null; }
   var key  = alexiaNormCurso(curso);
@@ -15747,7 +15908,9 @@ function _abrirPanelRiesgo() {
     html += '</div>';
   }
 
-  html += '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top: 16px;padding-top: 12px;border-top:1px solid var(--border);">'
+  html += '<div style="display:flex;justify-content:space-between;gap:8px;margin-top: 16px;padding-top: 12px;border-top:1px solid var(--border);">'
+    + '<button class="btn" onclick="exportarInformeRiesgo()" style="background:var(--green,#30D158);color:#fff;border-color:var(--green,#30D158);font-weight:600;display:flex;align-items:center;gap:6px;">'
+    + '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Descargar informe (UTP)</button>'
     + '<button class="btn" onclick="cerrarModal()">Cerrar</button></div></div>';
   abrirModal(html);
 }
