@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v273">
+<meta name="arteval-version" content="v274">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4646,7 +4646,7 @@ h1, h2, h3, .stat-num, .stat-val, .hero-num, .cifra-num,
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v273</span>
+      ">v274</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -15920,26 +15920,67 @@ function _chipResumen(n, label, color) {
     + '<div style="font-size:11px;color:var(--text2);margin-top: 4px;">' + label + '</div></div>';
 }
 // Llevar al mensajero con el estudiante precargado
+// v274: arma el detalle de notas del estudiante para incluir en el correo de
+// riesgo: promedio 1° sem, 2° sem, promedio final y situación de aprobación.
+function _detalleNotasEstudiante(nombre, curso) {
+  var cursoKey = (typeof alexiaNormCurso === 'function') ? alexiaNormCurso(curso) : curso;
+  var n1 = [], n2 = [];
+  (registros || []).forEach(function(r) {
+    if (!r || r.noEntregado) return;
+    if (!mismoEstudiante(r.nombre || '', nombre)) return;
+    var rk = (typeof alexiaNormCurso === 'function') ? alexiaNormCurso(r.curso || '') : (r.curso || '');
+    if (rk !== cursoKey) return;
+    var nt = Number(r.nota);
+    if (isNaN(nt) || nt <= 0) return;
+    var sem = (typeof _semestrePorInstancia === 'function') ? _semestrePorInstancia(r.instancia || '') : 1;
+    (sem === 2 ? n2 : n1).push(nt);
+  });
+  var media = function(a){ return a.length ? Math.round(a.reduce(function(x,y){return x+y;},0)/a.length*10)/10 : null; };
+  var p1 = media(n1), p2 = media(n2);
+  var proms = [p1, p2].filter(function(x){ return x !== null; });
+  var pf = proms.length ? Math.round(proms.reduce(function(a,b){return a+b;},0)/proms.length*10)/10 : null;
+  var situacion = (pf !== null && pf < 4.0)
+    ? 'bajo el nivel de aprobación (riesgo de reprobar la asignatura)'
+    : (pf !== null ? 'cercano al límite de aprobación' : 'en evaluación');
+  var txt = '\\n\\nDetalle de notas a la fecha:';
+  txt += '\\n• Promedio 1° semestre: ' + (p1 !== null ? p1.toFixed(1) : 'sin notas');
+  txt += '\\n• Promedio 2° semestre: ' + (p2 !== null ? p2.toFixed(1) : 'sin notas');
+  txt += '\\n• Promedio final: ' + (pf !== null ? pf.toFixed(1) : '—') + '  (' + situacion + ')';
+  return { texto: txt, p1: p1, p2: p2, pf: pf, situacion: situacion };
+}
+
 function _riesgoContactar(nombre, curso) {
   cerrarModal();
-  if (typeof cambiarSub === 'function') cambiarSub('correo');
+  // v274: ir DIRECTO a la pestaña Correo (es un tab principal → showTab).
+  if (typeof showTab === 'function') showTab('correo');
   setTimeout(function() {
     var inp = document.getElementById('msgPersEstudiante');
     var selC = document.getElementById('msgPersCursoFiltro');
     if (selC && curso) { selC.value = curso; if (typeof _msgPersFiltrarPorCurso === 'function') _msgPersFiltrarPorCurso(); }
     if (inp) { inp.value = nombre; if (typeof _msgPersResolverApoderado === 'function') _msgPersResolverApoderado(); }
-    // v273: cargar automáticamente el mensaje de "Riesgo por promedio bajo",
-    // ya dirigido al apoderado y listo para enviar. Se aplica tras resolver el
-    // apoderado para que el mensaje salga con el nombre y curso rellenados.
     setTimeout(function() {
+      // Cargar el mensaje de riesgo con el apoderado y datos rellenados
       if (typeof _msgPersAplicarPlantilla === 'function') _msgPersAplicarPlantilla('riesgo_repitencia');
-      // reflejar la selección en el selector de plantilla si existe
       var selP = document.getElementById('msgPersPlantillaSel');
       if (selP) { try { selP.value = 'riesgo_repitencia'; } catch(e) {} }
+      // v274: insertar las notas reales del estudiante en el cuerpo del correo
+      var cuerpoEl = document.getElementById('msgPersCuerpo');
+      if (cuerpoEl) {
+        var det = _detalleNotasEstudiante(nombre, curso);
+        // insertar el detalle de notas antes de la firma (antes de "Atentamente")
+        var cuerpo = cuerpoEl.value || '';
+        var idxFirma = cuerpo.indexOf('\nAtentamente');
+        var detTxt = det.texto.replace(/\\n/g, '\n');
+        if (idxFirma > -1) {
+          cuerpoEl.value = cuerpo.slice(0, idxFirma) + detTxt + cuerpo.slice(idxFirma);
+        } else {
+          cuerpoEl.value = cuerpo + detTxt;
+        }
+      }
       if (inp) inp.scrollIntoView({behavior:'smooth',block:'center'});
-      toast('✉ Mensaje de riesgo cargado — revisa y envía', 'info', 2800);
-    }, 250);
-  }, 300);
+      toast('✉ Correo de riesgo con notas cargado — revisa y envía', 'info', 3200);
+    }, 280);
+  }, 350);
 }
 
 function _renderDashAlertas(instFiltro) {
