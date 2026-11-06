@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v274">
+<meta name="arteval-version" content="v276">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4646,7 +4646,7 @@ h1, h2, h3, .stat-num, .stat-val, .hero-num, .cifra-num,
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v274</span>
+      ">v276</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -10638,17 +10638,36 @@ function _libroPonerNota(td, nombre, instancia, curso) {
     registros.push(nuevo);
     saveRegistros();
     if (typeof _driveSaveDebounced === 'function') _driveSaveDebounced();
+    // v275: sincronizar con la estructura de cursos y actualizar TODOS los
+    // contadores en tiempo real (igual que el guardado desde Evaluar). Antes
+    // faltaban estas llamadas, por eso el contador y el monitoreo de "quién
+    // falta" no se actualizaban al poner notas desde el Libro.
+    if (typeof sincronizarRegistrosACursos === 'function') sincronizarRegistrosACursos();
     if (typeof actualizarConteo === 'function') actualizarConteo();
+    if (typeof actualizarBarraProgresoCurso === 'function') { try { actualizarBarraProgresoCurso(); } catch(e){} }
+    if (typeof renderSidebarCounts === 'function') { try { renderSidebarCounts(); } catch(e){} }
+    if (typeof renderCursosChips === 'function') { try { renderCursosChips(); } catch(e){} }
     toast('✓ Nota ' + nota.toFixed(1) + ' · ' + (nombre||'').split(' ').slice(0,2).join(' '), 'ok', 2200);
     // Refrescar la vista activa (libro en Estudio o libro por curso)
     if (typeof renderRegistros === 'function') renderRegistros();
     if (_vistaLibroCursoActiva && typeof renderCursoMain === 'function') renderCursoMain();
+    if (typeof actualizarTodaLaApp === 'function') setTimeout(actualizarTodaLaApp, 80);
+  }
+  // v276: guardar de forma INMEDIATA y a prueba de "segundo plano". Antes se
+  // usaba setTimeout(guardar,120) en el blur, y con la ventana minimizada o en
+  // segundo plano el navegador ralentiza/pausa los timers, dejando la nota sin
+  // guardar. Ahora se guarda directo, con una guarda para no duplicar.
+  var _yaGuardado = false;
+  function _guardarUnaVez() {
+    if (_yaGuardado) return;
+    _yaGuardado = true;
+    guardar();
   }
   inp.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') { e.preventDefault(); guardar(); }
-    else if (e.key === 'Escape') { e.preventDefault(); cancelar(); }
+    if (e.key === 'Enter') { e.preventDefault(); _guardarUnaVez(); }
+    else if (e.key === 'Escape') { e.preventDefault(); _yaGuardado = true; cancelar(); }
   });
-  inp.addEventListener('blur', function() { setTimeout(guardar, 120); });
+  inp.addEventListener('blur', function() { _guardarUnaVez(); });
 }
 
 function renderLibroClases(filtrados, container) {
