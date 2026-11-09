@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v276">
+<meta name="arteval-version" content="v277">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4646,7 +4646,7 @@ h1, h2, h3, .stat-num, .stat-val, .hero-num, .cifra-num,
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v276</span>
+      ">v277</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -6566,6 +6566,14 @@ let rubricas=(function(){try{var s=JSON.parse(localStorage.getItem('av_rubricas'
 let contextoGuardado = {}; // se carga en init desde localStorage
 // FIX QA v72: init protegido — JSON corrupto no congela la app
 // ── normalizarCurso: definida antes de IIFEs de carga ─────────────────────
+// v277: JSON.parse seguro — si el dato está corrupto (no solo vacío), devuelve
+// el valor por defecto en vez de lanzar un error que rompa la carga de la app.
+function _safeJSONParse(raw, fallback) {
+  if (raw === null || raw === undefined || raw === '') return fallback;
+  try { var v = JSON.parse(raw); return (v === null || v === undefined) ? fallback : v; }
+  catch(e) { console.warn('[ArtEval] JSON corrupto, usando valor por defecto:', e.message); return fallback; }
+}
+
 function normalizarCurso(c) {
   if (!c) return '';
   var s = (c || '').toString().trim().replace(/[°º]/g, '').replace(/\s+/g, '').toUpperCase();
@@ -12734,7 +12742,7 @@ function exportarBackupJSON() {
   try {
     extras = {
       rubricaActiva: (typeof rubricaActiva !== 'undefined') ? rubricaActiva : 0,
-      contextosCursos: JSON.parse(localStorage.getItem('av_contextos_cursos') || 'null'),
+      contextosCursos: _safeJSONParse(localStorage.getItem('av_contextos_cursos'), null),
       emailColegio: localStorage.getItem('av_email_colegio') || '',
       emailUTP: localStorage.getItem('av_email_utp') || '',
       nombreProf: localStorage.getItem('av_nombre_prof') || ''
@@ -13128,7 +13136,7 @@ function _derivarNivelesDeDatos() {
 }
 function _getCursosConfig() {
   try {
-    var raw = JSON.parse(localStorage.getItem('av_cursos_config') || 'null');
+    var raw = _safeJSONParse(localStorage.getItem('av_cursos_config'), null);
     if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
       var out = {}, valido = false;
       Object.keys(raw).forEach(function(nivel) {
@@ -21533,7 +21541,10 @@ function _rtConfirm(nombre, curso, esPIE) {
   evaluacion = evalT;
   var pc = document.getElementById('pieCheck'); if (pc) pc.checked = esPIE;
   _rtClose();
-  setTimeout(function(){ guardar(); }, 100);
+  // v277: guardar de forma INMEDIATA (no con setTimeout, que el navegador pausa
+  // cuando la ventana está minimizada o en segundo plano, dejando la nota sin
+  // guardar). Mismo arreglo que se aplicó al Libro en v276.
+  guardar();
 }
 
 function toast(msg, tipo = 'ok', duracion = 3200) {
