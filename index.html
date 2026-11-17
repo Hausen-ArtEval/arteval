@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v277">
+<meta name="arteval-version" content="v278">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4646,7 +4646,7 @@ h1, h2, h3, .stat-num, .stat-val, .hero-num, .cifra-num,
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v277</span>
+      ">v278</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -5530,6 +5530,18 @@ h1, h2, h3, .stat-num, .stat-val, .hero-num, .cifra-num,
         </select>
       </div>
       <div class="dashboard-grid" id="dashCursosGrid"></div>
+
+      <!-- ACCESOS A PANELES DE GESTIÓN (siempre visibles) -->
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin:4px 0 16px;">
+        <button onclick="_abrirPanelDestacados('curso')" style="flex:1;min-width:200px;background:var(--card,#fff);border:1px solid rgba(255,149,0,0.3);border-radius:var(--rad-lg);padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;font-family:var(--font-ui);text-align:left;">
+          <div style="width:34px;height:34px;background:rgba(255,149,0,0.12);border-radius:9px;display:flex;align-items:center;justify-content:center;flex:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+          <div style="min-width:0;"><div style="font-size:13px;font-weight:700;color:var(--text);">Estudiantes destacados</div><div style="font-size:11px;color:var(--text3);">Mejor rendimiento anual · premiación</div></div>
+        </button>
+        <button onclick="_abrirPanelRiesgo()" style="flex:1;min-width:200px;background:var(--card,#fff);border:1px solid rgba(255,59,48,0.3);border-radius:var(--rad-lg);padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;font-family:var(--font-ui);text-align:left;">
+          <div style="width:34px;height:34px;background:rgba(255,59,48,0.10);border-radius:9px;display:flex;align-items:center;justify-content:center;flex:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF3B30" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+          <div style="min-width:0;"><div style="font-size:13px;font-weight:700;color:var(--text);">Seguimiento de riesgo</div><div style="font-size:11px;color:var(--text3);">Estudiantes en riesgo de repitencia</div></div>
+        </button>
+      </div>
 
       <!-- FILA INFERIOR: Riesgo + Criterios fallados + Gráfico comparativo -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top: 4px;" id="dashBottomRow">
@@ -13765,6 +13777,83 @@ function exportarInformeRiesgo() {
   toast('✅ Informe de riesgo exportado — ' + totalCriticos + ' estudiante(s)', 'ok', 4000);
 }
 
+function exportarInformeDestacados() {
+  if (typeof XLSX === 'undefined') { toast('❌ Librería Excel no cargada', 'err', 4000); return; }
+  var porCurso = (typeof _analizarDestacados === 'function') ? _analizarDestacados() : {};
+  var cursos = Object.keys(porCurso).sort(_cmpCurso);
+
+  var todos = [];
+  cursos.forEach(function(c){ porCurso[c].forEach(function(al){ todos.push(al); }); });
+  if (!todos.length) { toast('☆ Aún no hay estudiantes destacados (promedio anual ≥ 6,0)', 'ok', 4000); return; }
+
+  var _etq = function(cat){
+    if (cat === 'perfecto')  return 'Promedio perfecto 7,0';
+    if (cat === 'excelente') return 'Excelente (6,5 – 6,9)';
+    if (cat === 'muy_bueno') return 'Muy bueno (6,0 – 6,4)';
+    return 'Destacado';
+  };
+
+  var wb = XLSX.utils.book_new();
+  var hoy = new Date().toLocaleDateString('es-CL', {day:'numeric', month:'long', year:'numeric'});
+
+  // ── HOJA 1: RANKING GENERAL ──
+  var general = [];
+  general.push(['ESTUDIANTES DESTACADOS — Artes Visuales']);
+  general.push(['Generado el ' + hoy]);
+  general.push([]);
+  general.push(['N°', 'Curso', 'Estudiante', 'PIE', 'Prom. 1° sem', 'Prom. 2° sem', 'Promedio anual', 'Nivel', '¿Seleccionado?']);
+
+  todos.sort(function(a,b){ return (b.pf - a.pf) || a.nombre.localeCompare(b.nombre,'es'); });
+  todos.forEach(function(al, i) {
+    general.push([
+      i + 1,
+      al.curso,
+      al.nombre,
+      al.pie ? 'PIE' : '',
+      al.prom1 !== null ? al.prom1 : '—',
+      al.prom2 !== null ? al.prom2 : '—',
+      al.pf !== null ? al.pf : '—',
+      _etq(al.categoria),
+      _esDestacadoSel(al.nombre, al.curso) ? 'Sí ★' : ''
+    ]);
+  });
+  general.push([]);
+  general.push(['Total destacados: ' + todos.length + '  ·  Promedio 7,0: '
+    + todos.filter(function(a){return a.categoria==='perfecto';}).length
+    + '  ·  Seleccionados: ' + _destacadosSeleccionados().length]);
+
+  var wsG = XLSX.utils.aoa_to_sheet(general);
+  wsG['!cols'] = [{wch:5},{wch:8},{wch:34},{wch:5},{wch:12},{wch:12},{wch:14},{wch:24},{wch:14}];
+  XLSX.utils.book_append_sheet(wb, wsG, 'Ranking general');
+
+  // ── HOJAS POR CURSO ──
+  cursos.forEach(function(curso) {
+    var alumnos = porCurso[curso];
+    if (!alumnos.length) return;
+    var filas = [];
+    filas.push(['Curso ' + curso + ' — Estudiantes destacados']);
+    filas.push([]);
+    filas.push(['Estudiante', 'PIE', 'Prom. 1° sem', 'Prom. 2° sem', 'Promedio anual', 'Nivel', '¿Seleccionado?']);
+    alumnos.forEach(function(al) {
+      filas.push([
+        al.nombre,
+        al.pie ? 'PIE' : '',
+        al.prom1 !== null ? al.prom1 : '—',
+        al.prom2 !== null ? al.prom2 : '—',
+        al.pf !== null ? al.pf : '—',
+        _etq(al.categoria),
+        _esDestacadoSel(al.nombre, al.curso) ? 'Sí ★' : ''
+      ]);
+    });
+    var ws = XLSX.utils.aoa_to_sheet(filas);
+    ws['!cols'] = [{wch:34},{wch:5},{wch:12},{wch:12},{wch:14},{wch:24},{wch:14}];
+    XLSX.utils.book_append_sheet(wb, ws, ('Destacados ' + curso).slice(0,31));
+  });
+
+  XLSX.writeFile(wb, 'ArtEval_Estudiantes_Destacados.xlsx');
+  toast('✅ Listado de destacados exportado — ' + todos.length + ' estudiante(s)', 'ok', 4000);
+}
+
 function _exportarInformeAnualCurso(curso, wbExistente) {
   if (typeof XLSX === 'undefined') { toast('❌ Librería Excel no cargada', 'err', 4000); return null; }
   var key  = alexiaNormCurso(curso);
@@ -15876,6 +15965,187 @@ function _riesgoEtiqueta(cat) {
     case 'recuperado': return { txt: 'Recuperado en 2° semestre',     color: '#34C759', bg: 'rgba(52,199,89,0.10)',  orden: 'OK' };
     default:           return { txt: 'En seguimiento',                color: '#6E6E73', bg: 'rgba(142,142,147,0.10)', orden: '' };
   }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  MOTOR DE ESTUDIANTES DESTACADOS — v278
+//  Complemento del panel de riesgo: identifica a los estudiantes con mejor
+//  rendimiento anual por curso y en ranking general, para seleccionar a los
+//  premiados de fin de año.
+//  Promedio anual = media de las medias semestrales (igual que informe UTP).
+//  Niveles por promedio anual (pf):
+//   • 'perfecto'  → pf = 7,0
+//   • 'excelente' → 6,5 ≤ pf < 7,0
+//   • 'muy_bueno' → 6,0 ≤ pf < 6,5
+//  Requiere ≥2 notas en el año para ser representativo.
+// ═══════════════════════════════════════════════════════════════════════════
+function _analizarDestacados() {
+  var porCurso = {};
+  var cursosLista = (typeof TODOS_LOS_CURSOS !== 'undefined') ? TODOS_LOS_CURSOS
+    : Object.keys((registros||[]).reduce(function(acc,r){ if(r&&r.curso)acc[r.curso]=1; return acc; }, {}));
+
+  cursosLista.forEach(function(curso) {
+    var regsCurso = (registros || []).filter(function(r) {
+      return (r.curso || '') === curso && r.nota !== undefined && r.nota !== null && !r.noEntregado;
+    });
+    if (!regsCurso.length) return;
+
+    var porAlumno = {};
+    regsCurso.forEach(function(r) {
+      var key = (r.nombre || '').trim().toUpperCase();
+      if (!key) return;
+      if (!porAlumno[key]) porAlumno[key] = { nombre: r.nombre, curso: curso, n1: [], n2: [], pie: false };
+      var sem = _semestrePorInstancia(r.instancia || '');
+      (sem === 2 ? porAlumno[key].n2 : porAlumno[key].n1).push(r.nota);
+      if (r.pie) porAlumno[key].pie = true;
+    });
+
+    var destacados = [];
+    Object.values(porAlumno).forEach(function(al) {
+      var prom = function(arr){ return arr.length ? arr.reduce(function(s,n){return s+n;},0)/arr.length : null; };
+      var p1 = prom(al.n1), p2 = prom(al.n2);
+      al.p1 = p1; al.p2 = p2;
+      al.prom1 = (p1 !== null) ? Math.round(p1*10)/10 : null;
+      al.prom2 = (p2 !== null) ? Math.round(p2*10)/10 : null;
+      al.totalNotas = al.n1.length + al.n2.length;
+
+      var proms = [p1, p2].filter(function(x){ return x !== null && x !== undefined; });
+      al.pf = proms.length ? Math.round((proms.reduce(function(a,b){return a+b;},0)/proms.length)*10)/10 : null;
+
+      // Representatividad: al menos 2 notas en el año, y promedio anual ≥ 6,0
+      if (al.totalNotas < 2 || al.pf === null || al.pf < 6.0) return;
+
+      var categoria;
+      if (al.pf >= 7.0)      categoria = 'perfecto';
+      else if (al.pf >= 6.5) categoria = 'excelente';
+      else                   categoria = 'muy_bueno';
+      al.categoria = categoria;
+      destacados.push(al);
+    });
+
+    if (destacados.length) {
+      destacados.sort(function(a,b){ return (b.pf - a.pf) || a.nombre.localeCompare(b.nombre,'es'); });
+      porCurso[curso] = destacados;
+    }
+  });
+  return porCurso;
+}
+
+// Etiqueta legible + color por nivel de excelencia
+function _destacadoEtiqueta(cat) {
+  switch (cat) {
+    case 'perfecto':  return { txt: 'Promedio perfecto 7,0', color: '#FF9500', bg: 'rgba(255,149,0,0.12)' };
+    case 'excelente': return { txt: 'Excelente (6,5 – 6,9)',  color: '#34C759', bg: 'rgba(52,199,89,0.10)' };
+    case 'muy_bueno': return { txt: 'Muy bueno (6,0 – 6,4)',  color: '#30B0C7', bg: 'rgba(48,176,199,0.10)' };
+    default:          return { txt: 'Destacado',               color: '#6E6E73', bg: 'rgba(142,142,147,0.10)' };
+  }
+}
+
+// ── Selección de estudiantes premiados (persistente) ────────────────────────
+function _destacadosSelKey(nombre, curso) {
+  return (curso || '').trim().toUpperCase() + '|' + (nombre || '').trim().toUpperCase();
+}
+function _destacadosSeleccionados() {
+  try {
+    var raw = localStorage.getItem('arteval_destacados_sel');
+    var arr = raw ? (typeof _safeJSONParse === 'function' ? _safeJSONParse(raw, []) : JSON.parse(raw)) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch (e) { return []; }
+}
+function _esDestacadoSel(nombre, curso) {
+  return _destacadosSeleccionados().indexOf(_destacadosSelKey(nombre, curso)) !== -1;
+}
+function _toggleDestacado(nombre, curso, modo) {
+  var sel = _destacadosSeleccionados();
+  var k = _destacadosSelKey(nombre, curso);
+  var i = sel.indexOf(k);
+  if (i === -1) sel.push(k); else sel.splice(i, 1);
+  try { localStorage.setItem('arteval_destacados_sel', JSON.stringify(sel)); } catch (e) {}
+  _abrirPanelDestacados(modo || 'curso'); // re-render manteniendo la vista
+}
+
+// ── PANEL DE ESTUDIANTES DESTACADOS (modal fin de año) — v278 ────────────────
+function _abrirPanelDestacados(modo) {
+  modo = (modo === 'general') ? 'general' : 'curso';
+  var porCurso = _analizarDestacados();
+  var cursos = Object.keys(porCurso).sort(_cmpCurso);
+
+  // Conteos globales por nivel
+  var conteo = { perfecto:0, excelente:0, muy_bueno:0 };
+  var todos = [];
+  cursos.forEach(function(c){ porCurso[c].forEach(function(al){ if(conteo[al.categoria]!==undefined) conteo[al.categoria]++; todos.push(al); }); });
+  var totalDest = todos.length;
+  var selCount = _destacadosSeleccionados().length;
+
+  var html = '<div style="padding: 2px;max-width:640px;">'
+    + '<div style="display:flex;align-items:center;gap:12px;margin-bottom: 6px;">'
+    + '<div style="width:42px;height:42px;background:rgba(255,149,0,0.12);border-radius:10px;display:flex;align-items:center;justify-content:center;flex:none;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>'
+    + '<div><div style="font-size:17px;font-weight:700;">Estudiantes destacados</div>'
+    + '<div style="font-size:12px;color:var(--text2);">Mejor rendimiento anual — para premiación de fin de año</div></div></div>';
+
+  // Resumen ejecutivo
+  html += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin:14px 0;">'
+    + _chipResumen(conteo.perfecto, 'Promedio 7,0', '#FF9500')
+    + _chipResumen(conteo.excelente, 'Excelentes (6,5+)', '#34C759')
+    + _chipResumen(conteo.muy_bueno, 'Muy buenos (6,0+)', '#30B0C7')
+    + _chipResumen(selCount, 'Seleccionados ★', '#FFCC00')
+    + '</div>';
+
+  if (!totalDest) {
+    html += '<div style="text-align:center;padding: 32px;color:var(--text3);"><div style="font-size:40px;margin-bottom: 8px;">☆</div>Aún no hay estudiantes con promedio anual ≥ 6,0 (se requieren al menos 2 notas).</div>';
+  } else {
+    // Toggle de vista: por curso / ranking general
+    var btnBase = 'flex:1;padding:7px 10px;font-size:12px;font-weight:600;border:none;cursor:pointer;font-family:var(--font-ui);';
+    html += '<div style="display:flex;background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom: 12px;">'
+      + '<button onclick="_abrirPanelDestacados(\'curso\')" style="' + btnBase + (modo==='curso'?'background:var(--accent);color:#fff;':'background:transparent;color:var(--text2);') + '">Por curso</button>'
+      + '<button onclick="_abrirPanelDestacados(\'general\')" style="' + btnBase + (modo==='general'?'background:var(--accent);color:#fff;':'background:transparent;color:var(--text2);') + '">Ranking general</button>'
+      + '</div>';
+
+    html += '<div style="max-height:50vh;overflow-y:auto;margin-top: 2px;">';
+
+    var _fila = function(al, rank) {
+      var et = _destacadoEtiqueta(al.categoria);
+      var sel = _esDestacadoSel(al.nombre, al.curso);
+      var p1txt = al.prom1 !== null ? al.prom1.toFixed(1) : '—';
+      var p2txt = al.prom2 !== null ? al.prom2.toFixed(1) : '—';
+      var pftxt = al.pf !== null ? al.pf.toFixed(1) : '—';
+      var nombreEsc = _esc(al.nombre).replace(/'/g, "\\'");
+      var cursoEsc = _esc(al.curso).replace(/'/g, "\\'");
+      var rankTxt = rank ? '<span style="flex:none;width:22px;text-align:center;font-size:12px;font-weight:700;color:var(--text3);font-family:var(--font-mono);">' + rank + '</span>' : '';
+      return '<div style="display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:10px;background:' + (sel?'rgba(255,204,0,0.12)':et.bg) + ';margin-bottom: 6px;' + (sel?'box-shadow:inset 0 0 0 1.5px rgba(255,204,0,0.55);':'') + '">'
+        + rankTxt
+        + '<div style="flex:1;min-width:0;">'
+        + '<div style="font-size:13.5px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + _esc(al.nombre)
+          + (modo==='general'?' <span style="font-size:11px;color:var(--text3);font-weight:500;">· ' + _esc(al.curso) + '</span>':'')
+          + (al.pie?' <span style="font-size:11px;color:var(--pie,#FF9500);font-weight:700;">PIE</span>':'') + '</div>'
+        + '<div style="font-size:11px;color:var(--text2);margin-top: 2px;"><span style="color:' + et.color + ';font-weight:600;">Anual ' + pftxt + '</span> · 1°: <strong>' + p1txt + '</strong> · 2°: <strong>' + p2txt + '</strong></div>'
+        + '</div>'
+        + '<button onclick="_toggleDestacado(\'' + nombreEsc + '\',\'' + cursoEsc + '\',\'' + modo + '\')" title="' + (sel?'Quitar de seleccionados':'Marcar como destacado') + '" style="flex:none;background:' + (sel?'#FFCC00':'transparent') + ';border:1px solid ' + (sel?'#FFCC00':'var(--border)') + ';border-radius:9px;padding:6px 9px;cursor:pointer;display:flex;align-items:center;justify-content:center;">'
+        + '<svg width="16" height="16" viewBox="0 0 24 24" fill="' + (sel?'#fff':'none') + '" stroke="' + (sel?'#fff':'var(--text3)') + '" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'
+        + '</button>'
+        + '</div>';
+    };
+
+    if (modo === 'general') {
+      todos.sort(function(a,b){ return (b.pf - a.pf) || a.nombre.localeCompare(b.nombre,'es'); });
+      todos.forEach(function(al, i){ html += _fila(al, i+1); });
+    } else {
+      cursos.forEach(function(curso) {
+        var alumnos = porCurso[curso];
+        html += '<div style="margin-bottom: 16px;">'
+          + '<div style="font-size:13px;font-weight:700;color:var(--text);padding:6px 0;border-bottom:2px solid var(--border);margin-bottom: 6px;">' + _esc(curso) + ' <span style="color:var(--text3);font-weight:500;">· ' + alumnos.length + ' destacado' + (alumnos.length===1?'':'s') + '</span></div>';
+        alumnos.forEach(function(al){ html += _fila(al, null); });
+        html += '</div>';
+      });
+    }
+    html += '</div>';
+  }
+
+  html += '<div style="display:flex;justify-content:space-between;gap:8px;margin-top: 16px;padding-top: 12px;border-top:1px solid var(--border);">'
+    + '<button class="btn" onclick="exportarInformeDestacados()" style="background:var(--green,#30D158);color:#fff;border-color:var(--green,#30D158);font-weight:600;display:flex;align-items:center;gap:6px;">'
+    + '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Descargar listado</button>'
+    + '<button class="btn" onclick="cerrarModal()">Cerrar</button></div></div>';
+  abrirModal(html);
 }
 
 // ── PANEL DE SEGUIMIENTO DE RIESGO (modal de gestión UTP) — v233 ─────────────
