@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v278">
+<meta name="arteval-version" content="v279">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4646,7 +4646,7 @@ h1, h2, h3, .stat-num, .stat-val, .hero-num, .cifra-num,
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v278</span>
+      ">v279</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -13688,10 +13688,11 @@ function _promedio(vals) {
 function _etiquetaRiesgoTexto(cat) {
   switch (cat) {
     case 'arrastra':   return 'Crítico — bajo 4,0 en ambos semestres';
-    case 'nuevo_2':    return 'Alerta — cayó a rojo en 2° semestre';
+    case 'nuevo_2':    return 'Alerta — cayó en 2° y el anual quedó bajo 4,0';
+    case 'recup_insuf':return 'Repitencia — subió en 2° pero el anual sigue bajo 4,0';
     case 'solo_1':     return 'Seguir — rojo en 1° (sin notas 2° aún)';
-    case 'alerta_2':   return 'Temprana — 1ª nota roja en 2° semestre';
-    case 'recuperado': return 'Recuperado en 2° semestre';
+    case 'alerta_2':   return 'Temprana — bajó en 2° (anual aún sobre 4,0)';
+    case 'recuperado': return 'Recuperado — promedio anual ya sobre 4,0';
     default:           return 'En seguimiento';
   }
 }
@@ -15888,13 +15889,15 @@ function _renderDashGrid(instFiltro) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-//  ANÁLISIS DE RIESGO ACADÉMICO ANUAL — v233
-//  Herramienta de gestión (perfil UTP): clasifica a cada estudiante según su
-//  trayectoria de promedio en AMBOS semestres, no solo el actual. Distingue:
-//   • 'arrastra'  → rojo en 1° sem Y rojo en 2° sem (PRIORIDAD MÁXIMA)
-//   • 'nuevo_2'   → venía bien en 1°, cayó a rojo en 2°
-//   • 'recuperado'→ venía rojo en 1°, se recuperó en 2° (seguimiento positivo)
-//   • 'solo_1'    → rojo en 1°, sin notas aún en 2°
+//  ANÁLISIS DE RIESGO ACADÉMICO ANUAL — v233 · v279: lo decide el PROMEDIO ANUAL
+//  Herramienta de gestión (perfil UTP). El promedio anual (media de las medias
+//  semestrales) es el que define la repitencia, igual que la nota final de Alexia.
+//   • 'arrastra'    → bajo 4,0 en 1° Y en 2° (anual rojo, PRIORIDAD MÁXIMA)
+//   • 'nuevo_2'     → venía bien en 1°, cayó en 2° y el anual quedó bajo 4,0
+//   • 'recup_insuf' → rojo en 1°, subió en 2° (≥4,0) PERO el anual sigue bajo 4,0 → repitencia
+//   • 'solo_1'      → rojo en 1°, sin notas aún en 2° (seguimiento)
+//   • 'alerta_2'    → bajó en 2° pero el anual aún se sostiene sobre 4,0 (temprana)
+//   • 'recuperado'  → rojo en 1° pero el promedio ANUAL ya está sobre 4,0 (positivo)
 //  Requiere ≥2 notas en el semestre para considerarlo representativo.
 // ═══════════════════════════════════════════════════════════════════════════
 function _analizarRiesgoAnual() {
@@ -15932,13 +15935,35 @@ function _analizarRiesgoAnual() {
       al.prom1 = (p1 !== null) ? Math.round(p1*10)/10 : null;
       al.prom2 = (p2 !== null) ? Math.round(p2*10)/10 : null;
 
+      // ── PROMEDIO ANUAL: lo que DECIDE la repitencia ──
+      // Media de las medias semestrales disponibles (mismo cálculo que el
+      // informe UTP y la nota final de Alexia). Un 1,0 en 1° y un 4,5 en 2°
+      // dan 2,75 anual → el estudiante SIGUE en riesgo aunque "suba" en 2°.
+      var promsAnual = [p1, p2].filter(function(x){ return x !== null && x !== undefined; });
+      var pf = promsAnual.length ? promsAnual.reduce(function(a,b){return a+b;},0)/promsAnual.length : null;
+      al.pf = pf;
+      al.promAnual = (pf !== null) ? Math.round(pf*10)/10 : null;
+      var totalNotas = al.n1.length + al.n2.length;
+      // Anual rojo = con notas en AMBOS semestres (≥2 en total), la media
+      // semestral queda bajo 4,0 → opción concreta de repitir la asignatura.
+      var rojoAnual = (pf !== null && pf < 4.0 && al.n1.length > 0 && al.n2.length > 0 && totalNotas >= 2);
+
       var categoria = null, prioridad = 99;
-      if (rojo1 && rojo2)              { categoria = 'arrastra';   prioridad = 1; }
-      else if (!rojo1 && rojo2)        { categoria = 'nuevo_2';    prioridad = 2; }
-      else if (rojo1 && al.n2.length === 0) { categoria = 'solo_1'; prioridad = 3; }
-      else if (rojo1 && rojo2Parcial) { categoria = 'arrastra';   prioridad = 1; } // arrastra + 1ª nota roja
-      else if (!rojo1 && rojo2Parcial){ categoria = 'alerta_2';   prioridad = 4; }
-      else if (rojo1 && p2 !== null && p2 >= 4.0) { categoria = 'recuperado'; prioridad = 5; }
+      if (rojo1 && al.n2.length === 0) {
+        // Rojo en 1°, aún sin notas de 2° → seguimiento (año incompleto)
+        categoria = 'solo_1'; prioridad = 3;
+      } else if (rojoAnual) {
+        if (rojo1 && (rojo2 || rojo2Parcial)) { categoria = 'arrastra';    prioridad = 1; } // bajo en ambos semestres
+        else if (rojo1 && p2 !== null && p2 >= 4.0) { categoria = 'recup_insuf'; prioridad = 2; } // subió en 2° pero el anual sigue rojo
+        else if (!rojo1)                      { categoria = 'nuevo_2';    prioridad = 2; } // venía bien y el anual cayó a rojo
+        else                                  { categoria = 'arrastra';   prioridad = 1; }
+      } else if (rojo1 && pf !== null && pf >= 4.0) {
+        // Estuvo rojo en 1° pero el promedio ANUAL ya está sobre 4,0 → recuperado de verdad
+        categoria = 'recuperado'; prioridad = 5;
+      } else if (rojo2 || rojo2Parcial) {
+        // Bajó en 2° pero el anual aún se sostiene sobre 4,0 → alerta temprana
+        categoria = 'alerta_2'; prioridad = 4;
+      }
 
       if (categoria) { al.categoria = categoria; al.prioridad = prioridad; enRiesgo.push(al); }
     });
@@ -15946,7 +15971,8 @@ function _analizarRiesgoAnual() {
     if (enRiesgo.length) {
       enRiesgo.sort(function(a,b){
         if (a.prioridad !== b.prioridad) return a.prioridad - b.prioridad;
-        var pa = (a.p2 !== null ? a.p2 : a.p1), pb = (b.p2 !== null ? b.p2 : b.p1);
+        var pa = (a.pf !== null ? a.pf : (a.p2 !== null ? a.p2 : a.p1));
+        var pb = (b.pf !== null ? b.pf : (b.p2 !== null ? b.p2 : b.p1));
         return pa - pb;
       });
       porCurso[curso] = enRiesgo;
@@ -15959,10 +15985,11 @@ function _analizarRiesgoAnual() {
 function _riesgoEtiqueta(cat) {
   switch (cat) {
     case 'arrastra':   return { txt: 'Arrastra rojo (1° y 2° sem)', color: '#FF3B30', bg: 'rgba(255,59,48,0.10)', orden: 'CRÍTICO' };
-    case 'nuevo_2':    return { txt: 'Cayó en 2° semestre',          color: '#FF9500', bg: 'rgba(255,149,0,0.10)',  orden: 'ALERTA' };
+    case 'nuevo_2':    return { txt: 'Cayó en 2° — anual rojo',      color: '#FF9500', bg: 'rgba(255,149,0,0.10)',  orden: 'ALERTA' };
+    case 'recup_insuf':return { txt: 'Subió en 2° pero anual rojo',  color: '#FF3B30', bg: 'rgba(255,59,48,0.08)',  orden: 'REPITENCIA' };
     case 'solo_1':     return { txt: 'Rojo en 1° (sin notas 2° aún)', color: '#FF9500', bg: 'rgba(255,149,0,0.08)', orden: 'SEGUIR' };
-    case 'alerta_2':   return { txt: '1ª nota roja en 2° sem',        color: '#FFCC00', bg: 'rgba(255,204,0,0.10)',  orden: 'TEMPRANA' };
-    case 'recuperado': return { txt: 'Recuperado en 2° semestre',     color: '#34C759', bg: 'rgba(52,199,89,0.10)',  orden: 'OK' };
+    case 'alerta_2':   return { txt: 'Bajó en 2° (anual aún sobre 4,0)', color: '#FFCC00', bg: 'rgba(255,204,0,0.10)',  orden: 'TEMPRANA' };
+    case 'recuperado': return { txt: 'Recuperado — anual sobre 4,0',   color: '#34C759', bg: 'rgba(52,199,89,0.10)',  orden: 'OK' };
     default:           return { txt: 'En seguimiento',                color: '#6E6E73', bg: 'rgba(142,142,147,0.10)', orden: '' };
   }
 }
@@ -16154,19 +16181,22 @@ function _abrirPanelRiesgo() {
   var cursos = Object.keys(porCurso).sort(function(a,b){ return a.localeCompare(b,'es',{numeric:true}); });
 
   // Conteos globales por categoría
-  var conteo = { arrastra:0, nuevo_2:0, solo_1:0, alerta_2:0, recuperado:0 };
+  var conteo = { arrastra:0, nuevo_2:0, recup_insuf:0, solo_1:0, alerta_2:0, recuperado:0 };
   cursos.forEach(function(c){ porCurso[c].forEach(function(al){ if(conteo[al.categoria]!==undefined) conteo[al.categoria]++; }); });
-  var totalRiesgo = conteo.arrastra + conteo.nuevo_2 + conteo.solo_1 + conteo.alerta_2;
+  // En riesgo de repitencia (promedio anual bajo 4,0) + seguimiento temprano
+  var totalRepitencia = conteo.arrastra + conteo.nuevo_2 + conteo.recup_insuf;
+  var totalRiesgo = totalRepitencia + conteo.solo_1 + conteo.alerta_2;
 
   var html = '<div style="padding: 2px;max-width:640px;">'
     + '<div style="display:flex;align-items:center;gap:12px;margin-bottom: 6px;">'
     + '<div style="width:42px;height:42px;background:rgba(255,59,48,0.1);border-radius:10px;display:flex;align-items:center;justify-content:center;flex:none;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FF3B30" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>'
     + '<div><div style="font-size:17px;font-weight:700;">Seguimiento de riesgo académico</div>'
-    + '<div style="font-size:12px;color:var(--text2);">Análisis anual — foco en estudiantes que arrastran promedio rojo</div></div></div>';
+    + '<div style="font-size:12px;color:var(--text2);">El <strong>promedio anual</strong> (media de ambos semestres) define la repitencia</div></div></div>';
 
   // Resumen ejecutivo (mirada UTP)
   html += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin:14px 0;">'
     + _chipResumen(conteo.arrastra, 'Arrastran rojo', '#FF3B30')
+    + _chipResumen(conteo.recup_insuf, 'Subió pero anual rojo', '#FF3B30')
     + _chipResumen(conteo.nuevo_2, 'Cayeron en 2°', '#FF9500')
     + _chipResumen(conteo.alerta_2 + conteo.solo_1, 'Alerta temprana', '#FFCC00')
     + _chipResumen(conteo.recuperado, 'Recuperados', '#34C759')
@@ -16185,18 +16215,29 @@ function _abrirPanelRiesgo() {
       alumnos.forEach(function(al) {
         var et = _riesgoEtiqueta(al.categoria);
         var yaCont = (typeof _yaContactadoApoderado === 'function') ? _yaContactadoApoderado(al.nombre) : false;
+        var tieneApo = (typeof _getEmailApoderado === 'function') ? !!_getEmailApoderado(al.nombre) : false;
         var p1txt = al.prom1 !== null ? al.prom1.toFixed(1) : '—';
         var p2txt = al.prom2 !== null ? al.prom2.toFixed(1) : '—';
+        var paTxt = al.promAnual !== null ? al.promAnual.toFixed(1) : '—';
+        var anualRojo = al.promAnual !== null && al.promAnual < 4.0;
         var nombreEsc = _esc(al.nombre).replace(/'/g, "\\'");
         html += '<div style="display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:10px;background:' + et.bg + ';margin-bottom: 6px;">'
           + '<div style="flex:1;min-width:0;">'
           + '<div style="font-size:13.5px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + _esc(al.nombre) + (al.pie?' <span style="font-size:11px;color:var(--pie,#FF9500);font-weight:700;">PIE</span>':'') + '</div>'
-          + '<div style="font-size:11px;color:var(--text2);margin-top: 2px;"><span style="color:' + et.color + ';font-weight:600;">' + et.txt + '</span> · 1°: <strong>' + p1txt + '</strong> · 2°: <strong>' + p2txt + '</strong></div>'
+          + '<div style="font-size:11px;color:var(--text2);margin-top: 2px;">'
+            + '<span style="color:' + et.color + ';font-weight:600;">' + et.txt + '</span>'
+            + ' · Anual: <strong style="color:' + (anualRojo?'#FF3B30':'var(--text)') + ';">' + paTxt + '</strong>'
+            + ' <span style="color:var(--text3);">(1°: ' + p1txt + ' · 2°: ' + p2txt + ')</span>'
+          + '</div>'
           + '</div>';
         if (al.categoria !== 'recuperado') {
-          html += yaCont
-            ? '<span style="flex:none;font-size:11px;color:#34C759;font-weight:600;display:flex;align-items:center;gap:4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Contactado</span>'
-            : '<button onclick="_riesgoContactar(\'' + nombreEsc + '\',\'' + _esc(curso).replace(/'/g,"\\'") + '\')" style="flex:none;background:' + et.color + ';border:none;color:#fff;border-radius:10px;padding:6px 11px;font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap;">Notificar</button>';
+          if (yaCont) {
+            html += '<span style="flex:none;font-size:11px;color:#34C759;font-weight:600;display:flex;align-items:center;gap:4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Contactado</span>';
+          } else if (tieneApo) {
+            html += '<button onclick="_riesgoContactar(\'' + nombreEsc + '\',\'' + _esc(curso).replace(/'/g,"\\'") + '\')" title="Cargar correo al apoderado con el panorama de notas" style="flex:none;background:' + et.color + ';border:none;color:#fff;border-radius:10px;padding:6px 11px;font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:5px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Notificar</button>';
+          } else {
+            html += '<button onclick="_riesgoContactar(\'' + nombreEsc + '\',\'' + _esc(curso).replace(/'/g,"\\'") + '\')" title="Sin correo del apoderado — se abrirá el panel para agregarlo" style="flex:none;background:transparent;border:1px dashed var(--border2,var(--border));color:var(--text3);border-radius:10px;padding:6px 10px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:5px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Agregar apoderado</button>';
+          }
         }
         html += '</div>';
       });
