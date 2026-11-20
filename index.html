@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>ArtEval · Evaluador de Artes Visuales</title>
-<meta name="arteval-version" content="v279">
+<meta name="arteval-version" content="v281">
 
 <!-- ── SEO ── -->
 <meta name="description" content="ArtEval — Evalúa trabajos de Artes Visuales con IA. Cámara en vivo, rúbricas personalizadas y registro automático para profesores de básica y media.">
@@ -4646,7 +4646,7 @@ h1, h2, h3, .stat-num, .stat-val, .hero-num, .cifra-num,
         cursor:default;
         user-select:none;
         opacity:0.7;
-      ">v279</span>
+      ">v281</span>
     </div>
 
     <!-- Panel Google Drive — Rediseñado M5 -->
@@ -8771,6 +8771,15 @@ function _sugerirRubricaParaCurso(curso) {
 function _aplicarRubricaDeCurso() {
   var curso = (document.getElementById('inputCurso')?.value || '').trim();
   if (!curso) return;
+  // v280: mantener el contexto de curso compartido alineado al curso que se
+  // está evaluando. Así la sugerencia de siguiente instancia usa el curso
+  // correcto y, al pasar a ESTUDIO, se aterriza en este mismo curso.
+  try {
+    if (typeof cursoSeleccionado !== 'undefined' &&
+        (typeof TODOS_LOS_CURSOS === 'undefined' || TODOS_LOS_CURSOS.indexOf(curso) > -1)) {
+      cursoSeleccionado = curso;
+    }
+  } catch(e) {}
   var idx = _sugerirRubricaParaCurso(curso);
   if (idx > -1 && idx !== rubricaActiva) {
     rubricaActiva = idx;
@@ -9561,7 +9570,13 @@ function _sugerirSiguienteInstancia(cfg) {
   var listaSem = (_semestreActivo === 1) ? (cfg.sem1 || []) : (cfg.sem2 || []);
   if (!listaSem.length) return null;
 
-  var curso = (typeof cursoSeleccionado !== 'undefined' && cursoSeleccionado) ? cursoSeleccionado : '';
+  // v280: usar SIEMPRE el curso del formulario de evaluación si está presente
+  // (es el curso que realmente se está evaluando); si no, caer al seleccionado
+  // en ESTUDIO. Antes solo miraba cursoSeleccionado y podía contar las notas de
+  // otro curso, sugiriendo una instancia equivocada (riesgo de nota duplicada).
+  var _inpCursoEl = document.getElementById('inputCurso');
+  var _cursoForm = _inpCursoEl ? (_inpCursoEl.value || '').trim() : '';
+  var curso = _cursoForm || ((typeof cursoSeleccionado !== 'undefined' && cursoSeleccionado) ? cursoSeleccionado : '');
   // Contar, por cada instancia del semestre, cuántas notas reales tiene el curso
   var conteoPorInst = {};
   listaSem.forEach(function(inst){ conteoPorInst[inst] = 0; });
@@ -10341,6 +10356,9 @@ function filtrarPorInstancia(instancia) {
 
 function renderRegistros() {
   if (!Array.isArray(registros)) return;
+  // v281: vaciar primero una nota del Libro en edición para no perderla al
+  // reconstruir (null-first evita recursión con el propio guardado).
+  if (window._libroFlush) { var _lf0 = window._libroFlush; window._libroFlush = null; try { _lf0(); } catch(e){} }
   const list   = document.getElementById('registrosList');
   const libro  = document.getElementById('libroClasesView');
   if (!list) return;
@@ -10626,8 +10644,9 @@ function _libroPonerNota(td, nombre, instancia, curso) {
   var inp = td.querySelector('input');
   inp.focus();
 
-  function cancelar() { td.innerHTML = prev; }
+  function cancelar() { window._libroFlush = null; td.innerHTML = prev; }
   function guardar() {
+    window._libroFlush = null; // ya se está guardando: evitar flush recursivo
     var raw = (inp.value || '').trim().replace(',', '.');
     if (raw === '') { cancelar(); return; }
     var nota = parseFloat(raw);
@@ -10643,19 +10662,58 @@ function _libroPonerNota(td, nombre, instancia, curso) {
     var _cursoNorm = (typeof normalizarCurso === 'function') ? (normalizarCurso(curso) || curso) : curso;
     var _hoy = new Date();
     var _fechaStr = String(_hoy.getDate()).padStart(2,'0') + '-' + String(_hoy.getMonth()+1).padStart(2,'0') + '-' + _hoy.getFullYear();
-    var nuevo = {
-      _id: (typeof _uuid === 'function') ? _uuid() : ('r_' + Date.now() + '_' + Math.random().toString(36).slice(2,8)),
-      nombre: nombre,
-      curso: _cursoNorm,
-      instancia: instancia,
-      rubricaNombre: rubricaNombre || '',
-      nota: nota,
-      semestre: (typeof _semestrePorInstancia === 'function') ? _semestrePorInstancia(instancia) : undefined,
-      fecha: _fechaStr,
-      fechaISO: new Date().toISOString(),
-      noEntregado: false
-    };
-    registros.push(nuevo);
+    var _nowISO = new Date().toISOString();
+    // v281: MISMA guarda anti-duplicados que el guardado de Evaluar. Si ya existe
+    // una nota para esta celda (mismo alumno + curso + instancia), se REEMPLAZA
+    // conservando el _id y sumando al historial, en vez de crear un registro
+    // nuevo. Antes el Libro siempre hacía push → generaba duplicados que
+    // descuadraban el conteo y que, al sincronizar/deduplicar con Drive (más
+    // lento con internet débil), podían colapsarse y "perder" la nota.
+    var _idxExist = registros.findIndex(function(r){
+      return r && (typeof mismoEstudiante === 'function' ? mismoEstudiante(r.nombre||'', nombre) : (r.nombre||'') === nombre) &&
+             (r.curso||'') === _cursoNorm &&
+             (r.instancia||'Evaluación 1') === instancia;
+    });
+    var nuevo;
+    if (_idxExist !== -1) {
+      var _ant = registros[_idxExist] || {};
+      nuevo = Object.assign({}, _ant, {
+        nombre: nombre,
+        curso: _cursoNorm,
+        instancia: instancia,
+        rubricaNombre: _ant.rubricaNombre || rubricaNombre || '',
+        nota: nota,
+        noEntregado: false,
+        semestre: (typeof _semestrePorInstancia === 'function') ? _semestrePorInstancia(instancia) : _ant.semestre,
+        fecha: _fechaStr,
+        fechaISO: _nowISO,
+        _savedAt: _nowISO,
+        _editHistory: (_ant._editHistory || []).concat([{
+          at: _nowISO,
+          prof: localStorage.getItem('av_nombre_prof') || localStorage.getItem('av_email_prof') || 'Docente',
+          notaAnterior: _ant.nota,
+          notaNueva: nota
+        }])
+      });
+      if (!nuevo._id) nuevo._id = (typeof _uuid === 'function') ? _uuid() : ('r_' + Date.now() + '_' + Math.random().toString(36).slice(2,8));
+      registros.splice(_idxExist, 1, nuevo);
+    } else {
+      nuevo = {
+        _id: (typeof _uuid === 'function') ? _uuid() : ('r_' + Date.now() + '_' + Math.random().toString(36).slice(2,8)),
+        _savedAt: _nowISO,
+        _editHistory: [],
+        nombre: nombre,
+        curso: _cursoNorm,
+        instancia: instancia,
+        rubricaNombre: rubricaNombre || '',
+        nota: nota,
+        semestre: (typeof _semestrePorInstancia === 'function') ? _semestrePorInstancia(instancia) : undefined,
+        fecha: _fechaStr,
+        fechaISO: _nowISO,
+        noEntregado: false
+      };
+      registros.push(nuevo);
+    }
     saveRegistros();
     if (typeof _driveSaveDebounced === 'function') _driveSaveDebounced();
     // v275: sincronizar con la estructura de cursos y actualizar TODOS los
@@ -10683,14 +10741,23 @@ function _libroPonerNota(td, nombre, instancia, curso) {
     _yaGuardado = true;
     guardar();
   }
+  // v281: si cualquier re-render del Libro (p. ej. una sincronización de Drive
+  // que termina mientras el profesor escribe, más probable con internet débil)
+  // va a reconstruir la tabla, primero vacía esta nota pendiente para que NO se
+  // pierda al destruirse el input. renderLibroClases/renderRegistros llaman este
+  // flush antes de reconstruir.
+  window._libroFlush = _guardarUnaVez;
   inp.addEventListener('keydown', function(e) {
     if (e.key === 'Enter') { e.preventDefault(); _guardarUnaVez(); }
-    else if (e.key === 'Escape') { e.preventDefault(); _yaGuardado = true; cancelar(); }
+    else if (e.key === 'Escape') { e.preventDefault(); _yaGuardado = true; window._libroFlush = null; cancelar(); }
   });
   inp.addEventListener('blur', function() { _guardarUnaVez(); });
 }
 
 function renderLibroClases(filtrados, container) {
+  // v281: vaciar primero cualquier nota del Libro en edición para no perderla
+  // al reconstruir la tabla (null-first evita recursión con el propio guardado).
+  if (window._libroFlush) { var _lf = window._libroFlush; window._libroFlush = null; try { _lf(); } catch(e){} }
   if (!container) return; // guard: el contenedor puede no existir si el tab no está visible
   if (!filtrados || !filtrados.length) {
     container.innerHTML = '<div class="empty-state">Sin registros para mostrar.</div>';
@@ -19297,6 +19364,9 @@ function _restoreScroll(secId) {
 }
 
 function showEstudioSub(sub) {
+  // v280: recordar desde qué sub-sección venimos (para sincronizar el curso
+  // de ESTUDIO con el que se está evaluando).
+  var _prevSub = _estudioSubTab;
   // Actualizar contexto al cambiar sección
   // Al salir de evaluar: desactivar modo no molestar Drive
   if (sub !== 'evaluar') _driveEvaluando = false;
@@ -19327,6 +19397,15 @@ function showEstudioSub(sub) {
   if (sub === 'evaluar') {
     _driveEvaluando = true;   // modo no molestar Drive activo durante evaluación
     try {
+      // v280: al venir desde ESTUDIO/cursos, si el campo de curso está vacío,
+      // heredar el curso que se estaba viendo (evita reelegirlo al evaluar).
+      var _inpC = document.getElementById('inputCurso');
+      if (_prevSub === 'cursos' && _inpC && !(_inpC.value || '').trim() &&
+          typeof cursoSeleccionado !== 'undefined' && cursoSeleccionado &&
+          (typeof TODOS_LOS_CURSOS === 'undefined' || TODOS_LOS_CURSOS.indexOf(cursoSeleccionado) > -1)) {
+        _inpC.value = cursoSeleccionado;
+        if (typeof _aplicarRubricaDeCurso === 'function') { try { _aplicarRubricaDeCurso(); } catch(_e) {} }
+      }
       var _clist = document.getElementById('criteriosList');
       if (!_clist || !_clist.children.length) renderCriterios();
       actualizarResumen();
@@ -19338,12 +19417,42 @@ function showEstudioSub(sub) {
   // requestAnimationFrame: cede el hilo al browser para pintar la navegación primero
   if (sub === 'cursos') {
     requestAnimationFrame(function() {
+      // v280: si venimos de evaluar, aterrizar en el curso del estudiante que
+      // se estaba evaluando (evita el click extra para reubicar el curso).
+      var _cEval = (document.getElementById('inputCurso') || {}).value || '';
+      _cEval = (_cEval || '').trim();
+      var _validCurso = _cEval && (typeof TODOS_LOS_CURSOS === 'undefined' || TODOS_LOS_CURSOS.indexOf(_cEval) > -1);
+      if (_prevSub === 'evaluar' && _validCurso && _cEval !== cursoSeleccionado && typeof selCurso === 'function') {
+        try { selCurso(_cEval); } catch(e) { try { cursoSeleccionado = _cEval; renderCursoMain(); } catch(_e) {} }
+        return; // selCurso ya posiciona la vista; no restaurar scroll antiguo
+      }
+      if (_prevSub === 'evaluar' && _validCurso && _cEval === cursoSeleccionado && typeof selCurso === 'function') {
+        // Mismo curso: re-marcar el sidebar y refrescar por si cambió el registro
+        try { selCurso(_cEval); } catch(e) { try { renderCursoMain(); } catch(_e) {} }
+        return;
+      }
       if (cursoSeleccionado) { try { renderCursoMain(); } catch(e) {} }
       _restoreScroll('estudio-sec-cursos');
     });
   }
   if (sub === 'registros') {
     requestAnimationFrame(function() {
+      // v281: si venimos de evaluar, enfocar el Libro/registros en el curso del
+      // estudiante que se estaba evaluando (evita reelegir el curso al abrir Libro).
+      try {
+        var _cEvalR = (document.getElementById('inputCurso') || {}).value || '';
+        _cEvalR = (typeof normalizarCurso === 'function') ? (normalizarCurso(_cEvalR.trim()) || _cEvalR.trim()) : _cEvalR.trim();
+        var _validR = _cEvalR && (typeof TODOS_LOS_CURSOS === 'undefined' || TODOS_LOS_CURSOS.indexOf(_cEvalR) > -1);
+        if (_prevSub === 'evaluar' && _validR && typeof cursosSeleccionados !== 'undefined') {
+          var _yaSolo = (cursosSeleccionados.size === 1 &&
+                         normalizarCurso(Array.from(cursosSeleccionados)[0]) === _cEvalR);
+          if (!_yaSolo) {
+            cursosSeleccionados.clear();
+            cursosSeleccionados.add(_cEvalR);
+            if (typeof renderRegCursoChips === 'function') { try { renderRegCursoChips(); } catch(e){} }
+          }
+        }
+      } catch(e) { console.warn('[ArtEval] sync curso registros:', e.message); }
       try { renderRegistros(); } catch(e) { console.warn('[ArtEval] renderRegistros:', e.message); }
       _restoreScroll('estudio-sec-registros');
     });
@@ -23459,6 +23568,15 @@ function seleccionarAutocompletado(nombre, curso) {
     }
     if (inpCurso && curso) {
       inpCurso.value = curso;
+      // v280: alinear el contexto de curso compartido al alumno que se evalúa,
+      // para que ESTUDIO aterrice en este curso y la sugerencia de instancia
+      // cuente las notas del curso correcto.
+      try {
+        if (typeof cursoSeleccionado !== 'undefined' &&
+            (typeof TODOS_LOS_CURSOS === 'undefined' || TODOS_LOS_CURSOS.indexOf(curso) > -1)) {
+          cursoSeleccionado = curso;
+        }
+      } catch(e) {}
       // Actualizar barra de progreso del curso
       if (typeof actualizarBarraProgresoCurso === 'function') actualizarBarraProgresoCurso();
       // Sugerir rúbrica apropiada
